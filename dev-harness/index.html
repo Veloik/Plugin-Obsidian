@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>NoteLens harness</title>
+<style>
+  :root {
+    --text-normal: #dcddde; --text-muted: #999; --text-faint: #666; --text-on-accent: #fff;
+    --interactive-accent: #7f6df2; --background-primary: #202020; --background-primary-alt: #1a1a1a;
+    --background-secondary: #161616; --background-modifier-border: #333; --font-monospace: Consolas, monospace;
+    --font-text: -apple-system, "Segoe UI", sans-serif; --font-interface: -apple-system, "Segoe UI", sans-serif;
+    --radius-s: 4px; --radius-m: 8px; --size-4-2: 8px;
+  }
+  html, body { margin: 0; height: 100%; background: #202020; color: var(--text-normal); font-family: var(--font-interface); font-size: 14px; }
+  .view-container { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .view-header { height: 0; }
+  .view-content { flex: 1; position: relative; overflow: hidden; }
+  .svg-icon { width: 18px; height: 18px; }
+  button { font: inherit; }
+  .notice { position: fixed; right: 12px; top: 12px; background: #333; color: #fff; padding: 8px 12px; border-radius: 6px; z-index: 5000; }
+  .menu { position: fixed; background: #262626; border: 1px solid #444; border-radius: 6px; padding: 4px; z-index: 5000; }
+  .menu-item { display: flex; gap: 8px; padding: 6px 10px; cursor: pointer; }
+  .menu-item:hover { background: #3a3a3a; }
+  .modal-container { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: grid; place-items: center; z-index: 6000; }
+  .modal { background: #262626; border-radius: 8px; padding: 16px; min-width: 380px; }
+</style>
+<link rel="stylesheet" href="file:///C:/Users/jtiob/Desktop/Nueva%20carpeta/NoteLens/styles.css">
+</head>
+<body>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>window.MathJax = { tex: { inlineMath: [["$","$"]] }, startup: { typeset: false } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js" data-manual></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+<script src="shim.js"></script>
+<script>
+  window.module = { exports: {} };
+  window.exports = window.module.exports;
+  window.require = (name) => {
+    if (name === "obsidian") return window.__obsidian;
+    throw new Error("harness: module not available: " + name);
+  };
+</script>
+<script src="file:///C:/Users/jtiob/Desktop/Nueva%20carpeta/NoteLens/main.js"></script>
+<script>
+(async () => {
+  const O = window.__obsidian;
+  const PluginClass = window.module.exports.default || window.module.exports;
+  const file = new window.__TFile("Pizarra_prueba.notelens");
+  window.__saved = null;
+  const app = {
+    vault: {
+      read: async () => "",
+      modify: async (f, content) => { window.__saved = content; },
+      create: async (p, c) => new window.__TFile(p),
+      createBinary: async (p) => new window.__TFile(p),
+      createFolder: async () => {},
+      readBinary: async () => new ArrayBuffer(0),
+      getAbstractFileByPath: () => null,
+      getFiles: () => [],
+      getResourcePath: (f) => f.path,
+      adapter: { getResourcePath: (p) => p, exists: async () => false }
+    },
+    workspace: {
+      getActiveViewOfType: () => window.__view,
+      getLeaf: () => ({ openFile: async () => {} }),
+      openLinkText: () => {},
+      activeLeaf: null
+    },
+    fileManager: { getAvailablePathForAttachment: async (n) => "attachments/" + n },
+    metadataCache: { getFirstLinkpathDest: () => null }
+  };
+  const plugin = new PluginClass(app, { id: "notelens", dir: ".obsidian/plugins/notelens", version: "test" });
+  await plugin.onload();
+  const factory = Object.values(plugin.views)[0];
+  const leaf = { app, view: null };
+  const view = factory(leaf);
+  window.__view = view;
+  document.body.appendChild(view.containerEl);
+  await view.onOpen();
+  await view.onLoadFile(file);
+  window.__ready = true;
+})().catch(e => { console.error("HARNESS BOOT FAILED", e); window.__bootError = String(e && e.stack || e); });
+</script>
+</body>
+</html>
