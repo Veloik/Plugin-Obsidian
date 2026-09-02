@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.3.0
+
+### Added
+
+- Board-to-LaTeX now reads dominant symbols the way OneNote's ink recognizer does: a radical owns what is written under its vinculum, and a sum or an integral owns the limits above and below the sign. Each region is parsed again on its own, so a root can hold a fraction and a limit can hold a sum.
+- Radicals and integrals are recognized from their geometry instead of from template matching, which read a hand-drawn root as "m" and an integral as "j".
+
+### Fixed
+
+- Two collinear marks are no longer merged into one glyph. Every cross product of collinear segments is zero, so the classic sign test called them crossing however far apart they were, and the limits above and below an integral became a single symbol.
+- A dominant symbol written on its own stays a plain symbol instead of producing an empty root or empty limits.
+
 ## 2.2.1
 
 ### Fixed

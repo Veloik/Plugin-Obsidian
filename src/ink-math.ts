@@ -146,6 +146,16 @@ function lineIntersection(a: StrokeInfo, b: StrokeInfo): boolean {
 	if (!p || !p2 || !q || !q2) return false;
 	const cross = (u: InkMathPoint, v: InkMathPoint, w: InkMathPoint) => (v.x - u.x) * (w.y - u.y) - (v.y - u.y) * (w.x - u.x);
 	const d1 = cross(p, p2, q), d2 = cross(p, p2, q2), d3 = cross(q, q2, p), d4 = cross(q, q2, p2);
+	// Collinear segments make every cross product zero, and the sign test then
+	// calls them crossing however far apart they are. Two marks on the same
+	// vertical — the limits above and below an integral — are not one glyph, so
+	// the extents have to overlap for real.
+	const eps = 1e-6;
+	if (Math.abs(d1) < eps && Math.abs(d2) < eps && Math.abs(d3) < eps && Math.abs(d4) < eps) {
+		return overlap(a.bounds.x, a.bounds.right, b.bounds.x, b.bounds.right) >= 0
+			&& overlap(a.bounds.y, a.bounds.bottom, b.bounds.y, b.bounds.bottom) >= 0
+			&& minStrokeDistance([a.stroke], [b.stroke]) < Math.max(a.bounds.h, a.bounds.w) * 0.35;
+	}
 	return d1 * d2 <= 0 && d3 * d4 <= 0;
 }
 
@@ -383,6 +393,42 @@ function maskDistance(a: Mask, b: Mask): number {
 	return spatial + aspect + density;
 }
 
+/**
+ * A radical: down into a sharp vertex, steeply up to the top, then a long flat
+ * run to the right for the vinculum. The tail is what separates it from a "2"
+ * or an "m", both of which finish at the bottom.
+ */
+function looksLikeRadical(points: InkMathPoint[], b: Bounds): boolean {
+	if (points.length < 8 || b.h < 8 || b.w < 8) return false;
+	let vertex = 0;
+	for (let i = 1; i < points.length; i++) if (points[i].y > points[vertex].y) vertex = i;
+	const position = vertex / (points.length - 1);
+	if (position < 0.08 || position > 0.75) return false;
+	if (points[vertex].y < b.y + b.h * 0.6) return false;
+
+	let peak = vertex;
+	for (let i = vertex; i < points.length; i++) if (points[i].y < points[peak].y) peak = i;
+	if (peak <= vertex || points[peak].y > b.y + b.h * 0.35) return false;
+
+	const last = points[points.length - 1];
+	const tailWidth = last.x - points[peak].x;
+	const tailDrop = Math.abs(last.y - points[peak].y);
+	return tailWidth > b.w * 0.28 && tailDrop < b.h * 0.3 && last.x > b.right - b.w * 0.15;
+}
+
+/**
+ * An integral: tall, narrow and curved, with the top hook to the right of the
+ * bottom one. A "1" or an "l" fails the curvature test, a "j" the lean.
+ */
+function looksLikeIntegral(info: StrokeInfo, points: InkMathPoint[], b: Bounds): boolean {
+	if (points.length < 6) return false;
+	if (b.h < b.w * 1.9 || b.w < 4) return false;
+	if (info.straightness > 0.82) return false;
+	const first = points[0], last = points[points.length - 1];
+	if (first.y > b.y + b.h * 0.28 || last.y < b.bottom - b.h * 0.28) return false;
+	return first.x > last.x + b.w * 0.3;
+}
+
 function hardGeometry(group: GlyphGroup): { value: string; alternatives: string[]; confidence: number } | null {
 	const infos = group.strokes.map(strokeInfo);
 	const b = group.bounds;
@@ -406,6 +452,11 @@ function hardGeometry(group: GlyphGroup): { value: string; alternatives: string[
 		const info = infos[0];
 		const first = info.stroke.points[0], last = info.stroke.points[info.stroke.points.length - 1];
 		const points = info.stroke.points;
+		// A radical and an integral are the two shapes template matching gets
+		// worst — a hand-drawn root came back as "m" and an integral as "j" —
+		// and they are also the two easiest to describe geometrically.
+		if (looksLikeRadical(points, b)) return { value: "sqrt", alternatives: ["sqrt", "v", "r"], confidence: 0.9 };
+		if (looksLikeIntegral(info, points, b)) return { value: "int", alternatives: ["int", "j", "f"], confidence: 0.86 };
 		if (points.length >= 5 && first && last) {
 			const earlyEnd = Math.max(1, points.length - 2);
 			let maxXIndex = 0;
@@ -496,6 +547,123 @@ function combine(parts: ParsedExpression[]): ParsedExpression {
 	};
 }
 
+
+// -------------------------------------------------------------------------
+// Subordinate sub-expressions
+//
+// A radical, a sum and an integral are dominant symbols: they own regions of
+// the page (inside the hook, above and below the sign) and whatever is written
+// there belongs to them rather than to the baseline. Reading those regions and
+// recursing into them is what turns a row of loose glyphs into a real formula,
+// and it is the step Microsoft's ink recognizer calls subordinate
+// sub-expression analysis.
+// -------------------------------------------------------------------------
+
+/** A glyph that keeps the strokes it came from, so a region can be re-parsed. */
+interface PlacedGlyph extends GlyphResult {
+	strokes: InkMathStroke[];
+}
+
+interface DominantSplit {
+	kind: "sqrt" | "sum" | "int";
+	left: PlacedGlyph[];
+	inside: PlacedGlyph[];
+	above: PlacedGlyph[];
+	below: PlacedGlyph[];
+	right: PlacedGlyph[];
+}
+
+const DOMINANT_VALUES = new Set(["sqrt", "sum", "int"]);
+
+/**
+ * Splits the glyphs around the first dominant symbol that owns something.
+ * Returns null when nothing was written in its regions, so a lone radical is
+ * still serialised as an ordinary glyph instead of producing an empty root.
+ */
+function findDominant(glyphs: PlacedGlyph[]): DominantSplit | null {
+	for (let index = 0; index < glyphs.length; index++) {
+		const dominant = glyphs[index];
+		if (!DOMINANT_VALUES.has(dominant.value) || dominant.confidence < 0.45) continue;
+		const d = dominant.bounds;
+		const scale = Math.max(10, d.h);
+		const others = glyphs.filter((_, i) => i !== index);
+		const left = others.filter(glyph => centre(glyph.bounds).x < centre(d).x && glyph.bounds.right <= d.x + scale * 0.2);
+		const rest = others.filter(glyph => !left.includes(glyph));
+
+		if (dominant.value === "sqrt") {
+			// Everything the vinculum covers, plus a glyph written just past a
+			// short hook, belongs under the root.
+			const inside: PlacedGlyph[] = [];
+			const right: PlacedGlyph[] = [];
+			for (const glyph of rest) {
+				const b = glyph.bounds;
+				const vertical = overlap(b.y, b.bottom, d.y, d.bottom) / Math.max(1, Math.min(b.h, d.h));
+				const covered = b.x < d.right;
+				const justAfter = !right.length && b.x < d.right + scale * 0.55;
+				if (vertical > 0.3 && (covered || (justAfter && !inside.length))) inside.push(glyph);
+				else right.push(glyph);
+			}
+			if (!inside.length) continue;
+			return { kind: "sqrt", left, inside, above: [], below: [], right };
+		}
+
+		// Sums and integrals carry their limits above and below the sign. An
+		// integral is written tall and thin and its limits drift to the right,
+		// so its window reaches a little further than the sum's.
+		const reach = dominant.value === "int" ? scale * 0.9 : scale * 0.7;
+		const above: PlacedGlyph[] = [];
+		const below: PlacedGlyph[] = [];
+		const right: PlacedGlyph[] = [];
+		for (const glyph of rest) {
+			const b = glyph.bounds;
+			const c = centre(b);
+			const inWindow = c.x > d.x - scale * 0.5 && c.x < d.right + reach;
+			if (inWindow && b.bottom < d.y + d.h * 0.2) above.push(glyph);
+			else if (inWindow && b.y > d.bottom - d.h * 0.2) below.push(glyph);
+			else right.push(glyph);
+		}
+		if (!above.length && !below.length) continue;
+		return { kind: dominant.value === "int" ? "int" : "sum", left, inside: [], above, below, right };
+	}
+	return null;
+}
+
+/** Re-parses one region, so a root can hold a fraction and a limit a sum. */
+function parseRegion(glyphs: PlacedGlyph[], depth: number): ParsedExpression {
+	if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
+	return parseExpression(glyphs.flatMap(glyph => glyph.strokes), depth + 1);
+}
+
+function buildDominant(split: DominantSplit, depth: number): ParsedExpression {
+	const left = parseRegion(split.left, depth);
+	const right = parseRegion(split.right, depth);
+	let middle: ParsedExpression;
+	if (split.kind === "sqrt") {
+		const inside = parseRegion(split.inside, depth);
+		middle = {
+			source: `\\sqrt{${inside.source || "?"}}`,
+			tokens: inside.tokens,
+			confidence: (inside.confidence || 0.35) * 0.92 + 0.06,
+			structured: true
+		};
+	} else {
+		const above = parseRegion(split.above, depth);
+		const below = parseRegion(split.below, depth);
+		const command = split.kind === "sum" ? "\\sum" : "\\int";
+		let source = command;
+		if (below.source) source += `_{${below.source}}`;
+		if (above.source) source += `^{${above.source}}`;
+		const parts = [above, below].filter(part => part.source);
+		middle = {
+			source,
+			tokens: [...below.tokens, ...above.tokens],
+			confidence: (parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length)) * 0.9 + 0.08,
+			structured: true
+		};
+	}
+	return combine([left, middle, right]);
+}
+
 function parseExpression(strokes: InkMathStroke[], depth = 0): ParsedExpression {
 	if (!strokes.length) return { source: "", tokens: [], confidence: 0, structured: false };
 	if (depth < 3) {
@@ -514,7 +682,12 @@ function parseExpression(strokes: InkMathStroke[], depth = 0): ParsedExpression 
 			return combine([left, middle, right]);
 		}
 	}
-	return serializeGlyphs(groupGlyphs(strokes).map(classifyGlyph));
+	const glyphs: PlacedGlyph[] = groupGlyphs(strokes).map(group => ({ ...classifyGlyph(group), strokes: group.strokes }));
+	if (depth < 3) {
+		const dominant = findDominant(glyphs);
+		if (dominant) return buildDominant(dominant, depth);
+	}
+	return serializeGlyphs(glyphs);
 }
 
 /** Recognises the common notation used in school and university notes. */

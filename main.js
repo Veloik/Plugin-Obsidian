@@ -23923,6 +23923,10 @@ function lineIntersection(a4, b3) {
   if (!p4 || !p22 || !q3 || !q22) return false;
   const cross = (u4, v4, w3) => (v4.x - u4.x) * (w3.y - u4.y) - (v4.y - u4.y) * (w3.x - u4.x);
   const d12 = cross(p4, p22, q3), d22 = cross(p4, p22, q22), d3 = cross(q3, q22, p4), d4 = cross(q3, q22, p22);
+  const eps = 1e-6;
+  if (Math.abs(d12) < eps && Math.abs(d22) < eps && Math.abs(d3) < eps && Math.abs(d4) < eps) {
+    return overlap(a4.bounds.x, a4.bounds.right, b3.bounds.x, b3.bounds.right) >= 0 && overlap(a4.bounds.y, a4.bounds.bottom, b3.bounds.y, b3.bounds.bottom) >= 0 && minStrokeDistance([a4.stroke], [b3.stroke]) < Math.max(a4.bounds.h, a4.bounds.w) * 0.35;
+  }
   return d12 * d22 <= 0 && d3 * d4 <= 0;
 }
 function hasNonBarInk(strokes) {
@@ -24135,6 +24139,29 @@ function maskDistance(a4, b3) {
   const density = Math.abs(a4.density - b3.density) * 0.45;
   return spatial + aspect + density;
 }
+function looksLikeRadical(points, b3) {
+  if (points.length < 8 || b3.h < 8 || b3.w < 8) return false;
+  let vertex = 0;
+  for (let i5 = 1; i5 < points.length; i5++) if (points[i5].y > points[vertex].y) vertex = i5;
+  const position = vertex / (points.length - 1);
+  if (position < 0.08 || position > 0.75) return false;
+  if (points[vertex].y < b3.y + b3.h * 0.6) return false;
+  let peak = vertex;
+  for (let i5 = vertex; i5 < points.length; i5++) if (points[i5].y < points[peak].y) peak = i5;
+  if (peak <= vertex || points[peak].y > b3.y + b3.h * 0.35) return false;
+  const last = points[points.length - 1];
+  const tailWidth = last.x - points[peak].x;
+  const tailDrop = Math.abs(last.y - points[peak].y);
+  return tailWidth > b3.w * 0.28 && tailDrop < b3.h * 0.3 && last.x > b3.right - b3.w * 0.15;
+}
+function looksLikeIntegral(info2, points, b3) {
+  if (points.length < 6) return false;
+  if (b3.h < b3.w * 1.9 || b3.w < 4) return false;
+  if (info2.straightness > 0.82) return false;
+  const first = points[0], last = points[points.length - 1];
+  if (first.y > b3.y + b3.h * 0.28 || last.y < b3.bottom - b3.h * 0.28) return false;
+  return first.x > last.x + b3.w * 0.3;
+}
 function hardGeometry(group) {
   const infos = group.strokes.map(strokeInfo);
   const b3 = group.bounds;
@@ -24156,6 +24183,8 @@ function hardGeometry(group) {
     const info2 = infos[0];
     const first = info2.stroke.points[0], last = info2.stroke.points[info2.stroke.points.length - 1];
     const points = info2.stroke.points;
+    if (looksLikeRadical(points, b3)) return { value: "sqrt", alternatives: ["sqrt", "v", "r"], confidence: 0.9 };
+    if (looksLikeIntegral(info2, points, b3)) return { value: "int", alternatives: ["int", "j", "f"], confidence: 0.86 };
     if (points.length >= 5 && first && last) {
       const earlyEnd = Math.max(1, points.length - 2);
       let maxXIndex = 0;
@@ -24239,6 +24268,80 @@ function combine(parts) {
     structured: useful.some((part) => part.structured)
   };
 }
+var DOMINANT_VALUES = /* @__PURE__ */ new Set(["sqrt", "sum", "int"]);
+function findDominant(glyphs) {
+  for (let index2 = 0; index2 < glyphs.length; index2++) {
+    const dominant = glyphs[index2];
+    if (!DOMINANT_VALUES.has(dominant.value) || dominant.confidence < 0.45) continue;
+    const d3 = dominant.bounds;
+    const scale = Math.max(10, d3.h);
+    const others = glyphs.filter((_4, i5) => i5 !== index2);
+    const left = others.filter((glyph) => centre(glyph.bounds).x < centre(d3).x && glyph.bounds.right <= d3.x + scale * 0.2);
+    const rest = others.filter((glyph) => !left.includes(glyph));
+    if (dominant.value === "sqrt") {
+      const inside = [];
+      const right2 = [];
+      for (const glyph of rest) {
+        const b3 = glyph.bounds;
+        const vertical = overlap(b3.y, b3.bottom, d3.y, d3.bottom) / Math.max(1, Math.min(b3.h, d3.h));
+        const covered = b3.x < d3.right;
+        const justAfter = !right2.length && b3.x < d3.right + scale * 0.55;
+        if (vertical > 0.3 && (covered || justAfter && !inside.length)) inside.push(glyph);
+        else right2.push(glyph);
+      }
+      if (!inside.length) continue;
+      return { kind: "sqrt", left, inside, above: [], below: [], right: right2 };
+    }
+    const reach = dominant.value === "int" ? scale * 0.9 : scale * 0.7;
+    const above = [];
+    const below = [];
+    const right = [];
+    for (const glyph of rest) {
+      const b3 = glyph.bounds;
+      const c5 = centre(b3);
+      const inWindow = c5.x > d3.x - scale * 0.5 && c5.x < d3.right + reach;
+      if (inWindow && b3.bottom < d3.y + d3.h * 0.2) above.push(glyph);
+      else if (inWindow && b3.y > d3.bottom - d3.h * 0.2) below.push(glyph);
+      else right.push(glyph);
+    }
+    if (!above.length && !below.length) continue;
+    return { kind: dominant.value === "int" ? "int" : "sum", left, inside: [], above, below, right };
+  }
+  return null;
+}
+function parseRegion(glyphs, depth) {
+  if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
+  return parseExpression(glyphs.flatMap((glyph) => glyph.strokes), depth + 1);
+}
+function buildDominant(split, depth) {
+  const left = parseRegion(split.left, depth);
+  const right = parseRegion(split.right, depth);
+  let middle;
+  if (split.kind === "sqrt") {
+    const inside = parseRegion(split.inside, depth);
+    middle = {
+      source: `\\sqrt{${inside.source || "?"}}`,
+      tokens: inside.tokens,
+      confidence: (inside.confidence || 0.35) * 0.92 + 0.06,
+      structured: true
+    };
+  } else {
+    const above = parseRegion(split.above, depth);
+    const below = parseRegion(split.below, depth);
+    const command = split.kind === "sum" ? "\\sum" : "\\int";
+    let source = command;
+    if (below.source) source += `_{${below.source}}`;
+    if (above.source) source += `^{${above.source}}`;
+    const parts = [above, below].filter((part) => part.source);
+    middle = {
+      source,
+      tokens: [...below.tokens, ...above.tokens],
+      confidence: parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length) * 0.9 + 0.08,
+      structured: true
+    };
+  }
+  return combine([left, middle, right]);
+}
 function parseExpression(strokes, depth = 0) {
   if (!strokes.length) return { source: "", tokens: [], confidence: 0, structured: false };
   if (depth < 3) {
@@ -24257,7 +24360,12 @@ function parseExpression(strokes, depth = 0) {
       return combine([left, middle, right]);
     }
   }
-  return serializeGlyphs(groupGlyphs(strokes).map(classifyGlyph));
+  const glyphs = groupGlyphs(strokes).map((group) => ({ ...classifyGlyph(group), strokes: group.strokes }));
+  if (depth < 3) {
+    const dominant = findDominant(glyphs);
+    if (dominant) return buildDominant(dominant, depth);
+  }
+  return serializeGlyphs(glyphs);
 }
 function recognizeInkFormula(strokes) {
   const clean = strokes.map((stroke) => ({ ...stroke, points: stroke.points.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y)) })).filter((stroke) => stroke.points.length > 0);
@@ -84008,7 +84116,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.2.1" : "desconocida";
+var NOTELENS_BUILD = true ? "2.3.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

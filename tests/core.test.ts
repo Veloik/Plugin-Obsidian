@@ -96,3 +96,38 @@ test("translation falls back to Spanish and fills placeholders", () => {
 	assert.equal(tr("Mensaje que no existe en el catálogo"), "Mensaje que no existe en el catálogo");
 	setLocale("es");
 });
+
+test("a radical owns what is written under it", () => {
+	const poly = (pts: [number, number][], steps = 6) => {
+		const points: { x: number; y: number }[] = [];
+		for (let i = 0; i < pts.length - 1; i++) {
+			const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+			for (let s = 0; s <= steps; s++) points.push({ x: x1 + (x2 - x1) * s / steps, y: y1 + (y2 - y1) * s / steps });
+		}
+		return { points };
+	};
+	const line = (x1: number, y1: number, x2: number, y2: number) => poly([[x1, y1], [x2, y2]], 8);
+	const radical = poly([[10, 30], [17, 48], [26, 6], [78, 6]]);
+
+	// A plus sign under the vinculum: hard geometry reads both without a canvas.
+	const inside = recognizeInkFormula([radical, line(36, 26, 60, 26), line(48, 14, 48, 38)]);
+	assert.equal(inside.source, "\\sqrt{+}");
+	assert.ok(inside.confidence > 0.5);
+
+	// On its own it stays a symbol: an empty root would be worse.
+	assert.equal(recognizeInkFormula([radical]).source, "sqrt");
+});
+
+test("two marks on the same line are not one glyph", () => {
+	const line = (x1: number, y1: number, x2: number, y2: number) => ({
+		points: Array.from({ length: 9 }, (_, index) => ({
+			x: x1 + (x2 - x1) * index / 8,
+			y: y1 + (y2 - y1) * index / 8
+		}))
+	});
+	// Collinear segments make every cross product zero, so the classic sign test
+	// called them crossing however far apart they were, merging the limits of an
+	// integral into a single glyph.
+	const apart = recognizeInkFormula([line(44, -14, 44, -2), line(44, 56, 44, 70)]);
+	assert.equal(apart.tokens.length, 2);
+});
