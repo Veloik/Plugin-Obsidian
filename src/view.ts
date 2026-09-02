@@ -24,7 +24,7 @@ import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
-import { tr } from "./i18n";
+import { Locale, getLocale, tr } from "./i18n";
 
 export const VIEW_TYPE_ONENOTE = "onenote-canvas-view";
 
@@ -351,18 +351,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.applySettings();
 		this.plugin.openBoards.add(this);
 
-		createToolbar(this, this.workspaceEl);
-		createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
-		createSettingsPanel(this, this.workspaceEl);
-		createNavigationControls(this, this.workspaceEl);
-		if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
-		createBookmarksControl(this, this.workspaceEl);
-		createPagesControl(this, this.workspaceEl);
-		createFocusModeControl(this, this.workspaceEl);
-		this.calculator = createCalculatorPanel(this, this.workspaceEl);
-		this.recorder = createRecorderPanel(this, this.workspaceEl);
-		this.translator = createTranslatorPanel(this, this.workspaceEl);
-		this.navigator = createNavigatorPanel(this, this.workspaceEl);
+		this.buildChrome();
 		void loadMathJax();
 		void loadPrism().then(prism => {
 			this.prism = prism;
@@ -375,8 +364,6 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				}
 			}
 		}).catch(() => { /* highlighting is optional */ });
-		this.createMiniMap();
-		this.createRuler();
 		this.setupEvents();
 		this.registerDomEvent(document, "visibilitychange", () => {
 			if (document.visibilityState === "hidden") {
@@ -858,8 +845,59 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * Re-reads the settings on an open board, so changing them in the settings
 	 * tab takes effect without closing and reopening the whiteboard.
 	 */
+
+	/** Language the visible interface was built with, to notice a change. */
+	private chromeLocale: Locale = getLocale();
+
+	/**
+	 * Builds every control around the canvas. Kept apart from onOpen so that
+	 * changing the language can rebuild it without reopening the board.
+	 */
+	private buildChrome(): void {
+		createToolbar(this, this.workspaceEl);
+		createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
+		createSettingsPanel(this, this.workspaceEl);
+		createNavigationControls(this, this.workspaceEl);
+		if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
+		createBookmarksControl(this, this.workspaceEl);
+		createPagesControl(this, this.workspaceEl);
+		createFocusModeControl(this, this.workspaceEl);
+		this.calculator = createCalculatorPanel(this, this.workspaceEl);
+		this.recorder = createRecorderPanel(this, this.workspaceEl);
+		this.translator = createTranslatorPanel(this, this.workspaceEl);
+		this.navigator = createNavigatorPanel(this, this.workspaceEl);
+		this.createMiniMap();
+		this.createRuler();
+		this.chromeLocale = getLocale();
+	}
+
+	/**
+	 * Throws the controls away and builds them again in the current language.
+	 * The stage and the ink canvas are kept, so the drawing itself never moves.
+	 */
+	private rebuildChrome(): void {
+		this.assistant?.destroy();
+		this.assistant = null;
+		for (const child of Array.from(this.workspaceEl.children)) {
+			if (child.classList.contains("onenote-stage")) continue;
+			if (child.classList.contains("onenote-canvas")) continue;
+			child.remove();
+		}
+		this.buildChrome();
+		this.syncToolbar();
+		this.handleResize();
+		this.renderMiniMap();
+	}
+
 	refreshFromSettings(): void {
 		if (!this.workspaceEl) return;
+		// A language change rewrites every label, so the controls are rebuilt
+		// rather than patched one by one.
+		if (this.chromeLocale !== getLocale()) {
+			this.applySettings();
+			this.rebuildChrome();
+			return;
+		}
 		this.applySettings();
 		this.syncToolbar();
 		this.updateBackground();

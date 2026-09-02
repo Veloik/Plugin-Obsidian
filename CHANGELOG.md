@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.1
+
+### Fixed
+
+- Changing the language now reaches the board that is already open. The controls are built once when a board opens, so switching to English only relabelled the settings tab and left the toolbar, the tag chips and the panels in Spanish until the board was reopened. They are rebuilt in place instead, keeping the drawing untouched.
+
 ## 2.2.0
 
 ### Added

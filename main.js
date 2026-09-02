@@ -26133,6 +26133,9 @@ function resolveLocale(setting) {
 function setLocale(setting) {
   active = resolveLocale(setting);
 }
+function getLocale() {
+  return active;
+}
 function fill(text2, params) {
   if (!params) return text2;
   return text2.replace(
@@ -78431,6 +78434,13 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.rubberEl = null;
     this.rubberStart = null;
     this.isSelecting = false;
+    /** Tool defaults and behaviour switches from the plugin settings tab. */
+    /**
+     * Re-reads the settings on an open board, so changing them in the settings
+     * tab takes effect without closing and reopening the whiteboard.
+     */
+    /** Language the visible interface was built with, to notice a change. */
+    this.chromeLocale = getLocale();
     /**
      * On a narrow pane (phone, or a tablet split view) the floating panels
      * take the full width, so only one can be read at a time: opening one
@@ -78573,18 +78583,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.saver = new PersistenceManager(this.app, () => this.file);
     this.applySettings();
     this.plugin.openBoards.add(this);
-    createToolbar(this, this.workspaceEl);
-    createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
-    createSettingsPanel(this, this.workspaceEl);
-    createNavigationControls(this, this.workspaceEl);
-    if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
-    createBookmarksControl(this, this.workspaceEl);
-    createPagesControl(this, this.workspaceEl);
-    createFocusModeControl(this, this.workspaceEl);
-    this.calculator = createCalculatorPanel(this, this.workspaceEl);
-    this.recorder = createRecorderPanel(this, this.workspaceEl);
-    this.translator = createTranslatorPanel(this, this.workspaceEl);
-    this.navigator = createNavigatorPanel(this, this.workspaceEl);
+    this.buildChrome();
     void (0, import_obsidian12.loadMathJax)();
     void (0, import_obsidian12.loadPrism)().then((prism) => {
       this.prism = prism;
@@ -78598,8 +78597,6 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       }
     }).catch(() => {
     });
-    this.createMiniMap();
-    this.createRuler();
     this.setupEvents();
     this.registerDomEvent(document, "visibilitychange", () => {
       if (document.visibilityState === "hidden") {
@@ -79059,13 +79056,51 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.renderMiniMap();
     this.syncToolbar();
   }
-  /** Tool defaults and behaviour switches from the plugin settings tab. */
   /**
-   * Re-reads the settings on an open board, so changing them in the settings
-   * tab takes effect without closing and reopening the whiteboard.
+   * Builds every control around the canvas. Kept apart from onOpen so that
+   * changing the language can rebuild it without reopening the board.
    */
+  buildChrome() {
+    createToolbar(this, this.workspaceEl);
+    createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
+    createSettingsPanel(this, this.workspaceEl);
+    createNavigationControls(this, this.workspaceEl);
+    if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
+    createBookmarksControl(this, this.workspaceEl);
+    createPagesControl(this, this.workspaceEl);
+    createFocusModeControl(this, this.workspaceEl);
+    this.calculator = createCalculatorPanel(this, this.workspaceEl);
+    this.recorder = createRecorderPanel(this, this.workspaceEl);
+    this.translator = createTranslatorPanel(this, this.workspaceEl);
+    this.navigator = createNavigatorPanel(this, this.workspaceEl);
+    this.createMiniMap();
+    this.createRuler();
+    this.chromeLocale = getLocale();
+  }
+  /**
+   * Throws the controls away and builds them again in the current language.
+   * The stage and the ink canvas are kept, so the drawing itself never moves.
+   */
+  rebuildChrome() {
+    this.assistant?.destroy();
+    this.assistant = null;
+    for (const child of Array.from(this.workspaceEl.children)) {
+      if (child.classList.contains("onenote-stage")) continue;
+      if (child.classList.contains("onenote-canvas")) continue;
+      child.remove();
+    }
+    this.buildChrome();
+    this.syncToolbar();
+    this.handleResize();
+    this.renderMiniMap();
+  }
   refreshFromSettings() {
     if (!this.workspaceEl) return;
+    if (this.chromeLocale !== getLocale()) {
+      this.applySettings();
+      this.rebuildChrome();
+      return;
+    }
     this.applySettings();
     this.syncToolbar();
     this.updateBackground();
@@ -83973,7 +84008,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.2.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.2.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
