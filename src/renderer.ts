@@ -1,8 +1,12 @@
-import { Shape, Stroke, StrokePoint, ViewTransform } from "./types";
+import { PenStyle, Shape, Stroke, StrokePoint, ViewTransform } from "./types";
+
+const nibOf = (stroke: Stroke): PenStyle => stroke.type === "highlighter" ? "marker" : (stroke.style ?? "ballpoint");
+/** Deterministic pseudo-random in [-0.5, 0.5) so pencil grain never flickers between redraws. */
+const grain = (i: number, k: number): number => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v) - 0.5; };
 
 /** Alpha channel of an rgba() color; hex and rgb() count as opaque. */
 function colorAlpha(color: string): number {
-	const m = /rgba(s*[d.]+s*,s*[d.]+s*,s*[d.]+s*,s*([d.]+)s*)/i.exec(color);
+	const m = /rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/i.exec(color);
 	if (!m) return 1;
 	const alpha = parseFloat(m[1]);
 	return Number.isFinite(alpha) ? Math.min(Math.max(alpha, 0), 1) : 1;
@@ -10,7 +14,7 @@ function colorAlpha(color: string): number {
 
 /** Same color with the alpha channel removed. */
 function opaqueColor(color: string): string {
-	const m = /rgba?(([^)]+))/i.exec(color);
+	const m = /rgba?\(([^)]+)\)/i.exec(color);
 	if (!m) return color;
 	const [r, g, b] = m[1].split(",").map(s => s.trim());
 	return `rgb(${r}, ${g}, ${b})`;
@@ -85,30 +89,82 @@ export class CanvasRenderer {
 	 * of the whole stroke (the highlighter ignores pressure altogether).
 	 */
 	private usesWholePath(stroke: Stroke): boolean {
-		return stroke.type === "highlighter" || colorAlpha(stroke.color) < 1;
+		return stroke.type === "highlighter" || colorAlpha(stroke.color) < 1 || nibOf(stroke) === "pencil";
 	}
 
 	private drawWholeStroke(stroke: Stroke): void {
+		if (nibOf(stroke) === "pencil" && stroke.type !== "highlighter") {
+			this.drawPencil(stroke);
+			return;
+		}
 		const pts = stroke.points;
 		let pressure = 0;
 		for (const p of pts) pressure += p.p;
 		pressure /= pts.length;
 
 		this.ctx.save();
-		this.configureStyle(stroke, pressure);
+		this.configureStyle(stroke, this.nibWidth(stroke, pressure, pts, -1));
 		this.ctx.globalAlpha = colorAlpha(stroke.color);
 		this.ctx.strokeStyle = opaqueColor(stroke.color);
-		this.ctx.beginPath();
-		this.ctx.moveTo(pts[0].x, pts[0].y);
-		for (let i = 0; i < pts.length - 1; i++) {
-			const p0 = pts[i];
-			const p1 = pts[i + 1];
-			this.ctx.quadraticCurveTo(p0.x, p0.y, (p0.x + p1.x) / 2, (p0.y + p1.y) / 2);
-		}
-		const last = pts[pts.length - 1];
-		this.ctx.lineTo(last.x, last.y);
+		this.tracePath(pts, 0, 0, 0);
 		this.ctx.stroke();
 		this.ctx.restore();
+	}
+
+	/**
+	 * Graphite look: three translucent passes of slightly different width,
+	 * each nudged sideways by a deterministic grain, so the line reads as
+	 * soft pencil instead of flat ink. Never flickers: the grain is a pure
+	 * function of the point index.
+	 */
+	private drawPencil(stroke: Stroke): void {
+		const pts = stroke.points;
+		const alpha = colorAlpha(stroke.color);
+		const color = opaqueColor(stroke.color);
+		let pressure = 0;
+		for (const p of pts) pressure += p.p;
+		pressure /= pts.length;
+		const w = stroke.width * (0.55 + 0.6 * pressure);
+		const passes: [number, number, number, number][] = [
+			[0.85, 0.5, 0, 0],
+			[0.45, 0.42, 0.32, 1],
+			[0.3, 0.36, -0.28, 2]
+		];
+		this.ctx.save();
+		this.ctx.lineJoin = "round";
+		this.ctx.lineCap = "round";
+		this.ctx.strokeStyle = color;
+		for (const [widthFactor, alphaFactor, offset, seed] of passes) {
+			this.ctx.globalAlpha = alpha * alphaFactor;
+			this.ctx.lineWidth = Math.max(0.6, w * widthFactor);
+			this.tracePath(pts, offset * w, w * 0.35, seed);
+			this.ctx.stroke();
+		}
+		this.ctx.restore();
+	}
+
+	/** Smoothed path through the points, optionally offset sideways and grained. */
+	private tracePath(pts: StrokePoint[], offset: number, jitter: number, seed: number): void {
+		const at = (i: number) => {
+			const p = pts[i];
+			if (!offset && !jitter) return p;
+			const prev = pts[Math.max(0, i - 1)];
+			const next = pts[Math.min(pts.length - 1, i + 1)];
+			const dx = next.x - prev.x, dy = next.y - prev.y;
+			const len = Math.hypot(dx, dy) || 1;
+			const nx = -dy / len, ny = dx / len;
+			const shift = offset + jitter * grain(i, seed);
+			return { x: p.x + nx * shift + jitter * 0.5 * grain(i, seed + 7), y: p.y + ny * shift, p: p.p };
+		};
+		this.ctx.beginPath();
+		let cur = at(0);
+		this.ctx.moveTo(cur.x, cur.y);
+		for (let i = 0; i < pts.length - 1; i++) {
+			const nxt = at(i + 1);
+			this.ctx.quadraticCurveTo(cur.x, cur.y, (cur.x + nxt.x) / 2, (cur.y + nxt.y) / 2);
+			cur = nxt;
+		}
+		this.ctx.lineTo(cur.x, cur.y);
 	}
 
 	/**
@@ -147,6 +203,12 @@ export class CanvasRenderer {
 	private drawShape(shape: Shape): void {
 		const { x, y, w, h } = shape;
 		this.ctx.save();
+		if (shape.rotation) {
+			const cx = x + w / 2, cy = y + h / 2;
+			this.ctx.translate(cx, cy);
+			this.ctx.rotate(shape.rotation * Math.PI / 180);
+			this.ctx.translate(-cx, -cy);
+		}
 		this.ctx.globalCompositeOperation = "source-over";
 		this.ctx.strokeStyle = shape.color;
 		this.ctx.lineWidth = shape.width;
@@ -241,30 +303,80 @@ export class CanvasRenderer {
 
 	private drawDot(stroke: Stroke, p: StrokePoint): void {
 		this.ctx.save();
-		this.configureStyle(stroke, p.p);
+		this.configureStyle(stroke, this.nibWidth(stroke, p.p, [p], 0));
+		this.ctx.globalAlpha = colorAlpha(stroke.color);
 		this.ctx.beginPath();
 		this.ctx.arc(p.x, p.y, this.ctx.lineWidth / 2, 0, Math.PI * 2);
-		this.ctx.fillStyle = stroke.color;
+		this.ctx.fillStyle = opaqueColor(stroke.color);
 		this.ctx.fill();
 		this.ctx.restore();
 	}
 
-	private configureStyle(stroke: Stroke, pressure: number): void {
+	/**
+	 * Line width for one segment (or the whole stroke when i is -1):
+	 * - ballpoint: pressure scales 35%..100%;
+	 * - pencil: soft, slightly thinner than the nib;
+	 * - fountain: slow strokes swell, fast ones thin out, like a real nib;
+	 * - marker: constant width, ignores pressure;
+	 * - brush: pressure dominates and the ends taper.
+	 */
+	private nibWidth(stroke: Stroke, pressure: number, pts: StrokePoint[], i: number): number {
+		const w = stroke.width;
+		if (stroke.type === "highlighter") return w;
+		switch (nibOf(stroke)) {
+			case "marker":
+				return w * 1.5;
+			case "pencil":
+				return w * (0.55 + 0.6 * pressure);
+			case "fountain": {
+				// A broad nib held at 45°: strokes drawn along the nib are hairlines,
+				// strokes across it are full width. Speed thins the line a little too.
+				let angleFactor = 1, speed = 1;
+				if (i >= 0 && pts.length > 1) {
+					const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+					const dx = b.x - a.x, dy = b.y - a.y;
+					const dist = Math.hypot(dx, dy) / 2;
+					if (dist > 0.01) {
+						const nib = -Math.PI / 4;
+						angleFactor = 0.3 + 0.7 * Math.abs(Math.sin(Math.atan2(dy, dx) - nib));
+					}
+					speed = Math.min(1.15, Math.max(0.6, 1.15 - dist / (w * 8 + 12)));
+				}
+				return Math.max(0.6, w * (0.6 + 0.8 * pressure) * angleFactor * speed);
+			}
+			case "brush": {
+				// Pressure swells the hair; both ends taper over the first and last points,
+				// and quick flicks come out thinner than slow, loaded strokes.
+				let taper = 1, speed = 1;
+				if (i >= 0 && pts.length > 2) {
+					const span = Math.max(3, Math.min(10, Math.round(pts.length * 0.18)));
+					const fromEnd = Math.min(i, pts.length - 2 - i);
+					taper = Math.min(1, (fromEnd + 1) / span);
+					const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+					const dist = Math.hypot(b.x - a.x, b.y - a.y) / 2;
+					speed = Math.min(1.25, Math.max(0.55, 1.25 - dist / (w * 6 + 10)));
+				}
+				return Math.max(0.5, w * (0.25 + 1.7 * pressure) * (0.15 + 0.85 * Math.sqrt(taper)) * speed);
+			}
+			default:
+				return w * (0.35 + 0.65 * pressure);
+		}
+	}
+
+	private configureStyle(stroke: Stroke, width: number): void {
 		this.ctx.lineJoin = "round";
 		this.ctx.strokeStyle = stroke.color;
+		this.ctx.globalCompositeOperation = "source-over";
 		if (stroke.type === "highlighter") {
 			// A real marker: flat ends and constant width. It is painted under
 			// the pen ink (see renderAll), so normal blending keeps every ink
 			// color readable on light and dark pages alike.
-			this.ctx.globalCompositeOperation = "source-over";
 			this.ctx.lineCap = "butt";
 			this.ctx.lineWidth = stroke.width;
 			return;
 		}
-		this.ctx.globalCompositeOperation = "source-over";
 		this.ctx.lineCap = "round";
-		// Pressure maps to 35%..100% of the configured width.
-		this.ctx.lineWidth = stroke.width * (0.35 + 0.65 * pressure);
+		this.ctx.lineWidth = width;
 	}
 
 	/**
@@ -282,7 +394,7 @@ export class CanvasRenderer {
 		const endY = (p0.y + p1.y) / 2;
 
 		this.ctx.save();
-		this.configureStyle(stroke, (p0.p + p1.p) / 2);
+		this.configureStyle(stroke, this.nibWidth(stroke, (p0.p + p1.p) / 2, pts, i));
 		this.ctx.beginPath();
 		this.ctx.moveTo(startX, startY);
 		this.ctx.quadraticCurveTo(p0.x, p0.y, endX, endY);

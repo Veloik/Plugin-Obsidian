@@ -998,6 +998,87 @@
   color: #38bdf8;
 }
 
+.notelens-settings-margin {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 11px;
+  padding: 9px 1px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  cursor: pointer;
+}
+
+.notelens-settings-margin-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #38bdf8;
+}
+
+.notelens-settings-margin-icon .svg-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.notelens-settings-margin-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.notelens-settings-margin-title {
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.notelens-settings-margin-hint {
+  color: #718096;
+  font-size: 10px;
+}
+
+.notelens-settings-margin-toggle {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  appearance: none;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 10px;
+  background: rgba(71, 85, 105, 0.58);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.notelens-settings-margin-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.38);
+  transition: transform 0.15s ease;
+}
+
+.notelens-settings-margin-toggle:checked {
+  border-color: #38bdf8;
+  background: #0f6cbd;
+}
+
+.notelens-settings-margin-toggle:checked::after {
+  transform: translateX(14px);
+}
+
+.notelens-settings-margin-toggle:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
 .notelens-paper-dot {
   width: 24px;
   height: 24px;
@@ -1484,7 +1565,7 @@
 
 .notelens-search {
   position: absolute;
-  top: 116px;
+  top: 162px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1595,6 +1676,7 @@
 .notelens-tag-summary-filters { display: flex; flex-wrap: wrap; gap: 4px; }
 .notelens-tag-summary-filters .onenote-tag-chip { padding: 3px 7px; font-size: 11px; }
 .notelens-tag-summary-list { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
+.notelens-tag-summary > .notelens-panel-search { margin: 0; }
 .notelens-tag-summary-item {
   display: flex;
   align-items: flex-start;
@@ -1613,10 +1695,12 @@
 .notelens-tag-summary-body { min-width: 0; }
 .notelens-tag-summary-kind { color: var(--tag-color, #38bdf8); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .notelens-tag-summary-text { font-size: 12px; line-height: 1.4; color: #e2e8f0; overflow-wrap: anywhere; }
+.notelens-tag-summary-note { margin-top: 2px; color: #94a3b8; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
 
 /* Math palette in the floating format bar */
 .notelens-format-bar.is-math { flex-wrap: wrap; max-width: 620px; }
-.notelens-math-palette { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.notelens-math-palette { order: 10; display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.notelens-format-bar.is-math .notelens-format-close { margin-left: auto; }
 .notelens-math-key {
   min-width: 30px;
   height: 26px;
@@ -1657,7 +1741,24 @@
 .notelens-bookmarks-header-buttons { display: flex; align-items: center; gap: 2px; }
 
 /* Close buttons on the ruler, the format bar and the selection frame */
-.notelens-ruler-close { position: absolute; top: 4px; right: 34px; z-index: 3; }
+.notelens-ruler-close {
+  position: static;
+  display: grid !important;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 5px;
+  background: rgba(7, 20, 32, 0.82);
+  color: #f8fafc;
+  box-shadow: none;
+  opacity: 1 !important;
+  pointer-events: auto;
+  z-index: 3;
+}
+.notelens-ruler-close:hover { border-color: #fca5a5; background: #b4232f; color: #ffffff; }
+.notelens-ruler-close .svg-icon { width: 13px; height: 13px; stroke: currentColor; }
 .notelens-format-close { margin-left: 2px; }
 .notelens-selection-close {
   position: absolute;
@@ -1995,7 +2096,7 @@
   position: absolute;
   top: 64px;
   left: 14px;
-  width: 300px;
+  width: 340px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2035,6 +2136,7 @@
   background: rgba(255, 255, 255, 0.06);
   color: #f1f5f9;
   font-size: 12px;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: none;
 }
@@ -2149,10 +2251,10 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
-  background: rgba(214, 51, 108, 0.64);
-  box-shadow: 1px 0 0 rgba(214, 51, 108, 0.14);
+  background: rgba(214, 51, 108, 0.58);
+  box-shadow: 3px 0 0 rgba(214, 51, 108, 0.08);
   pointer-events: none;
   z-index: 4;
 }
@@ -2199,14 +2301,20 @@
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cg transform='rotate(-35 18 18)'%3E%3Crect x='11' y='3' width='14' height='20' rx='1.5' fill='%23ffd335' stroke='%231a1a1a' stroke-width='1.5'/%3E%3Cpath d='M11 22h14l-2.5 6h-9z' fill='%23ffe779' stroke='%231a1a1a' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M8 30h20' stroke='%23ffd335' stroke-width='4' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 18 30, crosshair;
 }
 
-/* Eraser: a plain ring, like the eraser reticle in most drawing apps. */
+/* The DOM preview below shows the exact erasing radius and uses the standard tool icon. */
 .onenote-workspace[data-tool="eraser"] {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 26 26'%3E%3Ccircle cx='13' cy='13' r='9.5' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='13' cy='13' r='9.5' fill='none' stroke='%23202020' stroke-width='1.4'/%3E%3Ccircle cx='13' cy='13' r='1.6' fill='%23202020' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E") 13 13, cell;
+  cursor: none;
 }
 
 .onenote-workspace[data-tool="text"] {
-  cursor: text;
+  cursor: none;
 }
+
+.onenote-workspace[data-tool="eraser"] button,
+.onenote-workspace[data-tool="text"] button { cursor: pointer; }
+.onenote-workspace[data-tool="text"] input,
+.onenote-workspace[data-tool="text"] textarea,
+.onenote-workspace[data-tool="text"] [contenteditable="true"] { cursor: text; }
 
 .onenote-workspace[data-tool="place_badge"] {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M15 3l3.7 7.5 8.3 1.2-6 5.8 1.4 8.2-7.4-3.9-7.4 3.9 1.4-8.2-6-5.8 8.3-1.2z' fill='%23ffd335' stroke='%23202020' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 15 15, copy;
@@ -2687,35 +2795,104 @@
   box-shadow: 0 0 0 2px rgba(113, 87, 15, 0.16);
 }
 
-.notelens-text-placement-hint {
+.notelens-text-placement-hint,
+.notelens-eraser-pointer {
   position: absolute;
-  display: flex;
-  align-items: flex-end;
-  gap: 7px;
-  width: 180px;
-  height: 30px;
-  transform: translate(0, -22px);
-  color: rgba(140, 200, 255, 0.82);
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 20px;
-  font-weight: 700;
+  width: 0;
+  height: 0;
   pointer-events: none;
-  z-index: 20;
+  z-index: 1200;
 }
 
-.notelens-text-placement-line {
-  flex: 1;
-  height: 1px;
-  margin-bottom: 4px;
-  background: rgba(140, 200, 255, 0.68);
-  box-shadow: 0 0 0 1px rgba(15, 108, 189, 0.14);
+.notelens-text-placement-caret {
+  position: absolute;
+  left: -1px;
+  top: -12px;
+  width: 2px;
+  height: 24px;
+  border-radius: 1px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #0f6cbd, 0 1px 5px rgba(0, 0, 0, 0.42);
 }
+
+.notelens-text-placement-caret::before,
+.notelens-text-placement-caret::after {
+  position: absolute;
+  left: -3px;
+  width: 8px;
+  height: 1px;
+  border-radius: 1px;
+  background: #0f6cbd;
+  content: "";
+}
+.notelens-text-placement-caret::before { top: 0; }
+.notelens-text-placement-caret::after { bottom: 0; }
+
+.notelens-text-placement-tool {
+  position: absolute;
+  left: 7px;
+  top: -21px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+  background: #0f6cbd;
+  color: #ffffff;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.38);
+}
+.notelens-text-placement-tool .svg-icon { width: 11px; height: 11px; stroke-width: 2.4; }
+
+.notelens-eraser-pointer-area {
+  position: absolute;
+  left: calc(var(--eraser-diameter, 20px) / -2);
+  top: calc(var(--eraser-diameter, 20px) / -2);
+  width: var(--eraser-diameter, 20px);
+  height: var(--eraser-diameter, 20px);
+  border: 1.5px solid rgba(15, 108, 189, 0.92);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.72), 0 1px 5px rgba(0, 0, 0, 0.32);
+  transition: background 80ms ease, border-color 80ms ease;
+}
+.notelens-eraser-pointer[data-mode="stroke"] .notelens-eraser-pointer-area { border-style: dashed; }
+.notelens-eraser-pointer.is-active .notelens-eraser-pointer-area {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+.notelens-eraser-pointer-tool {
+  position: absolute;
+  left: calc(var(--eraser-diameter, 20px) / 2 + 5px);
+  top: calc(var(--eraser-diameter, 20px) / -2 - 2px);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.78);
+  border-radius: 5px;
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.38);
+}
+.notelens-eraser-pointer-tool::after {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 7px;
+  height: 3px;
+  border-radius: 1px;
+  background: #e58aa8;
+  content: "";
+}
+.notelens-eraser-pointer-tool .svg-icon { width: 15px; height: 15px; stroke-width: 2; }
 
 /* Ink tools deliberately draw above objects; their interactive surfaces yield. */
 .onenote-workspace[data-pass-ink="true"] .notelens-embed-body,
 .onenote-workspace[data-pass-ink="true"] .notelens-loose-image img,
 .onenote-workspace[data-pass-ink="true"] .onenote-textbox,
-.onenote-workspace[data-pass-ink="true"] .notelens-table {
+.onenote-workspace[data-pass-ink="true"] .notelens-table,
+.onenote-workspace[data-pass-ink="true"] .onenote-placed-badge {
   pointer-events: none;
 }
 
@@ -2791,10 +2968,7 @@
   }
 }
 
-.onenote-margin-line {
-  width: 2px;
-  background: rgba(214, 51, 108, 0.64);
-}
+.onenote-margin-line { background: rgba(214, 51, 108, 0.58); }
 
 /* Working aids float over the canvas while the document remains unobstructed. */
 .notelens-smart-ruler {
@@ -2846,9 +3020,13 @@
 
 .notelens-ruler-label {
   position: absolute;
-  left: 9px;
+  left: 50%;
   bottom: 5px;
-  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transform: translateX(-50%);
+  z-index: 4;
 }
 
 .notelens-ruler-mode {
@@ -2966,8 +3144,10 @@
   position: absolute;
   bottom: 44px;
   left: 0;
-  width: 244px;
-  max-height: 260px;
+  display: flex;
+  width: 280px;
+  max-height: min(360px, calc(100vh - 90px));
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 7px;
@@ -2987,7 +3167,64 @@
   font-weight: 700;
 }
 
-.notelens-bookmarks-list { max-height: 218px; overflow: auto; padding: 5px; }
+.notelens-bookmarks-list { min-height: 0; flex: 1 1 auto; overflow: auto; padding: 5px; }
+
+.notelens-panel-search {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 32px;
+  margin: 8px 8px 3px;
+  padding: 0 5px 0 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 6px;
+  background: rgba(8, 13, 22, 0.7);
+  color: #94a3b8;
+}
+.notelens-panel-search:focus-within {
+  border-color: rgba(56, 189, 248, 0.72);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+.notelens-panel-search-icon { display: grid; place-items: center; flex: 0 0 auto; }
+.notelens-panel-search-icon .svg-icon { width: 14px; height: 14px; }
+.notelens-panel-search-input {
+  min-width: 0;
+  height: 30px;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f1f5f9;
+  font-size: 12px;
+  box-shadow: none;
+}
+.notelens-panel-search-input::-webkit-search-cancel-button { display: none; }
+.notelens-panel-search-input::placeholder { color: #748298; }
+.notelens-panel-search-count {
+  flex: 0 0 auto;
+  color: #8291a6;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.notelens-panel-search-clear {
+  display: grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #9aa8ba;
+  box-shadow: none;
+  cursor: pointer;
+}
+.notelens-panel-search-clear:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.notelens-panel-search-clear .svg-icon { width: 13px; height: 13px; }
 
 .notelens-bookmarks-empty {
   padding: 11px 8px;
@@ -2996,10 +3233,39 @@
 }
 
 .notelens-bookmark-item { display: flex; align-items: center; gap: 3px; }
+.notelens-bookmark-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-right: 7px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 700;
+}
+.notelens-bookmark-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notelens-bookmark-rename {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid rgba(56, 189, 248, 0.7);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 13px;
+  outline: none;
+}
+.notelens-bookmark-item.is-renaming .notelens-table-control { display: none; }
 
 .notelens-bookmark-go {
   min-width: 0;
   flex: 1;
+  display: flex;
+  align-items: center;
   overflow: hidden;
   padding: 7px 8px;
   border: 0;
@@ -3318,35 +3584,1774 @@
 .notelens-insert-dock { left: 14px; }
 .notelens-document-dock { right: 58px; }
 
-/* Below ~1540px the three docks no longer fit side by side. */
+/* ==========================================================================
+   PEN NIBS (options panel)
+   ========================================================================== */
+.notelens-pen-preview {
+  display: grid;
+  place-items: center;
+  height: 46px;
+  margin: 2px 0 6px;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.09) 1px, transparent 1.4px) 0 0 / 14px 14px,
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.notelens-pen-preview { position: relative; }
+.notelens-pen-preview canvas.onenote-canvas { position: static; display: block; inset: auto; width: 264px !important; height: 46px !important; }
+.notelens-nib-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+.notelens-nib {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1d5db;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+.notelens-nib .notelens-mode-icon { display: grid; place-items: center; }
+.notelens-nib .svg-icon { width: 17px; height: 17px; }
+.notelens-nib:hover { background: rgba(255, 255, 255, 0.09); transform: translateY(-1px); }
+.notelens-nib.active {
+  border-color: var(--tool-accent, #0f6cbd);
+  background: var(--tool-accent-soft, rgba(15, 108, 189, 0.16));
+  color: #ffffff;
+}
+.notelens-nib-hint { min-height: 28px; margin-top: 4px; }
+
+/* ==========================================================================
+   CALCULATOR — white Casio look
+   ========================================================================== */
+.notelens-calculator {
+  background: linear-gradient(180deg, #fbfbfd 0%, #eceef2 100%);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 18px;
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.45),
+    0 2px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -2px 0 rgba(15, 23, 42, 0.06) inset;
+  color: #1e293b;
+  padding: 12px 14px 14px;
+  gap: 9px;
+}
+.notelens-calculator-header { color: #334155; }
+.notelens-calculator-icon { color: #0f6cbd; }
+.notelens-calculator-title {
+  color: #475569;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.notelens-calculator-header .notelens-calculator-unit,
+.notelens-calculator-unit {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+.notelens-calculator-unit.active { background: #1e3a5f; border-color: #1e3a5f; color: #ffffff; }
+.notelens-calculator-header .notelens-embed-close {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  color: #475569;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+}
+.notelens-calculator-header .notelens-embed-close:hover { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+
+/* LCD */
+.notelens-calculator-display {
+  background: linear-gradient(180deg, #c9d3bd 0%, #d6dfca 55%, #cbd4bf 100%);
+  border: 1px solid rgba(15, 23, 42, 0.35);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 3px 8px rgba(15, 23, 42, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.8);
+  padding: 8px 10px 7px;
+}
+.notelens-calculator-input {
+  background: transparent;
+  border: none;
+  color: #1a2416;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+.notelens-calculator-input::placeholder { color: rgba(26, 36, 22, 0.45); }
+.notelens-calculator-output {
+  color: #121a10;
+  font-family: var(--font-monospace);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 1px rgba(18, 26, 16, 0.4);
+}
+.notelens-calculator-output.is-error { color: #7f1d1d; }
+.notelens-calculator-alt { color: rgba(26, 36, 22, 0.7); }
+
+/* memory, variables, history */
+.notelens-calculator-memory-label { color: #64748b; }
+.notelens-calculator-var {
+  border: 1px solid rgba(15, 108, 189, 0.35);
+  background: rgba(15, 108, 189, 0.08);
+  color: #1e3a5f;
+}
+.notelens-calculator-var.muted { border-color: rgba(15, 23, 42, 0.16); background: transparent; color: #64748b; }
+.notelens-calculator-history {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.notelens-calculator-empty { color: #64748b; }
+.notelens-calculator-entry:hover { background: rgba(15, 108, 189, 0.08); }
+.notelens-calculator-entry-expr { color: #334155; }
+.notelens-calculator-entry-result { color: #0f6cbd; }
+.notelens-calculator-history .notelens-table-control { color: #475569; }
+.notelens-calculator-tabs {
+  padding: 3px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.08);
+}
+.notelens-calculator-tab {
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+}
+.notelens-calculator-tab.active { background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18); }
+
+/* keys: white number caps, slate function caps, orange clear keys */
+.notelens-calculator-keys { gap: 6px; }
+.notelens-calculator-key {
+  height: 36px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-bottom-width: 3px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #ffffff, #f1f3f6);
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  transition: transform 60ms ease, filter 60ms ease;
+}
+.notelens-calculator-key:hover { background: linear-gradient(180deg, #ffffff, #e8ecf2); }
+.notelens-calculator-key:active { transform: translateY(2px); border-bottom-width: 1px; }
+.notelens-calculator-key.fn {
+  background: linear-gradient(180deg, #475569, #334155);
+  border-color: #1e293b;
+  color: #f8fafc;
+  font-size: 12px;
+}
+.notelens-calculator-key.fn:hover { background: linear-gradient(180deg, #526075, #3b4a5f); }
+.notelens-calculator-key.op {
+  background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+  border-color: rgba(15, 23, 42, 0.22);
+  color: #0f172a;
+  font-size: 17px;
+}
+.notelens-calculator-key.muted {
+  background: linear-gradient(180deg, #fb923c, #ea580c);
+  border-color: #c2410c;
+  color: #ffffff;
+}
+.notelens-calculator-key.muted.small {
+  background: linear-gradient(180deg, #ffffff, #eef1f5);
+  border-color: rgba(15, 23, 42, 0.18);
+  color: #334155;
+  border-bottom-width: 2px;
+}
+.notelens-calculator-key.equals {
+  background: linear-gradient(180deg, #1d4ed8, #1e40af);
+  border-color: #1e3a8a;
+  color: #ffffff;
+  font-size: 19px;
+}
+.notelens-calculator-key.insert {
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  border-color: #15803d;
+  color: #ffffff;
+  font-size: 12px;
+}
+.notelens-calculator-help { color: #64748b; }
+.notelens-calculator.is-dragging { opacity: 0.96; }
+
+/* ==========================================================================
+   EMBEDS: a close control nobody can miss (PDF window, video, audio)
+   ========================================================================== */
+.notelens-embed > .notelens-embed-header .notelens-embed-close {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  margin-left: 4px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  color: #fecaca;
+}
+.notelens-embed > .notelens-embed-header .notelens-embed-close:hover { background: rgba(239, 68, 68, 0.45); color: #ffffff; }
+.notelens-embed > .notelens-embed-header .notelens-embed-close .svg-icon { width: 15px; height: 15px; }
+.notelens-embed-header { min-height: 34px; }
+/* PDF pages pasted on the canvas: the delete control stays visible, not hover-only. */
+.notelens-stack-controls { opacity: 1 !important; }
+.notelens-stack-controls .notelens-embed-close {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  color: #fecaca;
+}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT
+   Wide: three docks on one row. Desktop: docks on two rows. Tablet: tool
+   ribbon on top, insert row under it, document tools as a bottom bar and
+   every floating panel becomes a bottom sheet. Phone: docks scroll sideways.
+   ========================================================================== */
+.onenote-quick-tags,
+.onenote-ribbon-dock,
+.notelens-search { width: max-content; }
+.onenote-tag-chip { white-space: nowrap; }
+.onenote-ribbon-dock,
+.notelens-insert-dock,
+.notelens-document-dock,
+.onenote-quick-tags,
+.notelens-pen-panel { transition: top 180ms ease, bottom 180ms ease, left 180ms ease, right 180ms ease; }
+
+/* Desktop below ~1540px: the insert and document docks drop to a second row. */
 @container workspace (max-width: 1540px) {
   .notelens-insert-dock { top: 64px; }
   .notelens-document-dock { top: 64px; right: 14px; }
   .onenote-quick-tags { top: 116px; }
   .notelens-pen-panel { top: 158px; }
+  .notelens-calculator,
+  .notelens-translator,
+  .notelens-recorder,
+  .notelens-navigator,
+  .notelens-tag-summary { top: 160px; }
+  .notelens-search { top: 162px; }
 }
 
-@container workspace (max-width: 700px) {
-  .notelens-calculator { left: 12px; right: 12px; width: auto; top: 160px; }
-  .notelens-recorder { left: 12px; right: 12px; width: auto; top: 160px; }
-  .notelens-translator { left: 12px; right: 12px; width: auto; top: 160px; }
-  .notelens-navigator { left: 12px; right: 12px; width: auto; top: 160px; }
-  .notelens-shortcuts-body { grid-template-columns: 1fr; }
-  .notelens-search { top: 210px; }
+/* Tablet (≤1100px): document tools move to a bottom bar, panels become sheets. */
+@container workspace (max-width: 1100px) {
   .onenote-tag-chip > span:not(.onenote-tag-icon) { display: none; }
   .onenote-tag-chip { padding: 5px 7px; }
+  .notelens-insert-dock { top: 64px; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); overflow-x: auto; scrollbar-width: none; }
+  .notelens-insert-dock::-webkit-scrollbar { display: none; }
+  .notelens-document-dock {
+    top: auto;
+    bottom: 66px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 24px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 14px;
+  }
+  .notelens-document-dock::-webkit-scrollbar { display: none; }
+  .notelens-minimap { bottom: 122px; }
+  .notelens-shortcuts { bottom: 122px; }
+  .notelens-calculator,
+  .notelens-translator,
+  .notelens-recorder,
+  .notelens-navigator,
+  .notelens-tag-summary {
+    top: auto !important;
+    bottom: 122px;
+    left: 50% !important;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(520px, calc(100% - 24px));
+    max-height: calc(100% - 320px);
+    overflow-y: auto;
+    border-radius: 18px;
+    padding-top: 18px;
+  }
+  .notelens-calculator::before,
+  .notelens-translator::before,
+  .notelens-recorder::before,
+  .notelens-navigator::before,
+  .notelens-tag-summary::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(148, 163, 184, 0.45);
+    transform: translateX(-50%);
+  }
+  .notelens-calculator::before { background: rgba(15, 23, 42, 0.22); }
+  .notelens-search { top: 162px; }
+}
+
+/* Phone (≤700px): docks span the width and scroll; compact navigation. */
+@container workspace (max-width: 700px) {
+  .onenote-ribbon-dock,
   .notelens-insert-dock,
   .notelens-document-dock {
     left: 12px;
     right: 12px;
+    transform: none;
+    width: auto;
     max-width: none;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .notelens-insert-dock { top: 62px; }
-  .notelens-document-dock { top: 112px; }
+  .onenote-ribbon-dock::-webkit-scrollbar,
   .notelens-insert-dock::-webkit-scrollbar,
   .notelens-document-dock::-webkit-scrollbar { display: none; }
-  .onenote-quick-tags { top: 164px; }
-  .notelens-pen-panel { top: 206px; }
+  .onenote-ribbon-dock { top: 12px; }
+  .notelens-insert-dock { top: 62px; }
+  .notelens-document-dock { bottom: 64px; }
+  .onenote-quick-tags { top: 112px; }
+  .notelens-pen-panel { top: 154px; width: calc(100% - 24px); left: 12px; transform: none; }
+  .notelens-focus-toggle { top: auto; bottom: 14px; right: 14px; }
+  .notelens-navigation-controls { right: 58px; }
+  .notelens-nav-reset,
+  .notelens-nav-fullscreen { display: none; }
+  .notelens-calculator,
+  .notelens-translator,
+  .notelens-recorder,
+  .notelens-navigator,
+  .notelens-tag-summary { bottom: 118px; width: calc(100% - 24px); max-height: calc(100% - 290px); }
+  .notelens-shortcuts-body { grid-template-columns: 1fr; }
+  .notelens-search { top: 158px; left: 12px; right: 12px; transform: none; width: auto; }
+}
+
+/* ==========================================================================
+   SELECTION ROTATION
+   ========================================================================== */
+.notelens-selection-rotate {
+  position: absolute;
+  left: 50%;
+  top: -30px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #a78bfa;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.38);
+  cursor: grab;
+  pointer-events: auto;
+}
+.notelens-selection-rotate::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1.5px;
+  height: 14px;
+  margin-left: -0.75px;
+  background: rgba(167, 139, 250, 0.7);
+}
+.notelens-selection-rotate:active { cursor: grabbing; }
+.notelens-rotation-badge {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(167, 139, 250, 0.6);
+  color: #ede9fe;
+  font-family: var(--font-monospace);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 20;
+}
+.onenote-selection-box .notelens-selection-bar { transform: translateY(-2px); }
+
+/* ==========================================================================
+   TABLE RENAME
+   ========================================================================== */
+.notelens-table-title { cursor: text; }
+.notelens-table-rename {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid rgba(56, 189, 248, 0.7);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+}
+
+/* ==========================================================================
+   QUICK TAGS: every chip has its own personality on hover
+   ========================================================================== */
+.onenote-tag-chip .onenote-tag-icon svg { transition: transform 160ms ease, filter 160ms ease; }
+.onenote-tag-chip:hover {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--tag-color, #0f6cbd) 26%, transparent);
+  border-color: color-mix(in srgb, var(--tag-color, #0f6cbd) 75%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tag-color, #0f6cbd) 30%, transparent), 0 6px 16px color-mix(in srgb, var(--tag-color, #0f6cbd) 22%, transparent);
+}
+.onenote-tag-chip:hover > span:not(.onenote-tag-icon) { color: color-mix(in srgb, var(--tag-color, #ffffff) 55%, #ffffff); }
+@keyframes nl-tag-star { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(72deg) scale(1.35); } 100% { transform: rotate(144deg) scale(1.15); } }
+@keyframes nl-tag-bounce { 0% { transform: translateY(0); } 35% { transform: translateY(-4px) scale(1.15); } 70% { transform: translateY(1px); } 100% { transform: translateY(0) scale(1.1); } }
+@keyframes nl-tag-glow { 0% { filter: drop-shadow(0 0 0 transparent); transform: scale(1); } 50% { filter: drop-shadow(0 0 7px var(--tag-color)); transform: scale(1.25); } 100% { filter: drop-shadow(0 0 4px var(--tag-color)); transform: scale(1.15); } }
+@keyframes nl-tag-tick { 0% { transform: scale(1); } 40% { transform: scale(0.75) rotate(-8deg); } 75% { transform: scale(1.3) rotate(4deg); } 100% { transform: scale(1.15); } }
+@keyframes nl-tag-wiggle { 0% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 50% { transform: rotate(10deg); } 75% { transform: rotate(-6deg); } 100% { transform: rotate(0) scale(1.1); } }
+.onenote-tag-chip[data-tag="tag_star"]:hover .onenote-tag-icon svg { animation: nl-tag-star 480ms ease forwards; fill: color-mix(in srgb, var(--tag-color) 70%, transparent); }
+.onenote-tag-chip[data-tag="tag_question"]:hover .onenote-tag-icon svg { animation: nl-tag-bounce 520ms ease forwards; }
+.onenote-tag-chip[data-tag="tag_idea"]:hover .onenote-tag-icon svg { animation: nl-tag-glow 600ms ease forwards; }
+.onenote-tag-chip[data-tag="tag_todo"]:hover .onenote-tag-icon svg { animation: nl-tag-tick 420ms ease forwards; }
+.onenote-tag-chip[data-tag="tag_hover"]:hover .onenote-tag-icon svg { animation: nl-tag-wiggle 520ms ease forwards; }
+.onenote-tag-chip[data-tag="tag_star"]:hover { border-style: solid; }
+.onenote-tag-chip[data-tag="tag_question"]:hover { border-style: dashed; }
+.onenote-tag-chip[data-tag="tag_idea"]:hover { background: radial-gradient(circle at 20% 50%, color-mix(in srgb, var(--tag-color) 45%, transparent), color-mix(in srgb, var(--tag-color) 14%, transparent)); }
+.onenote-tag-chip[data-tag="tag_todo"]:hover { border-radius: 4px; }
+.onenote-tag-chip[data-tag="tag_hover"]:hover { border-radius: 14px 14px 14px 4px; }
+
+/* Selection chrome flips below the frame when the docks would hide it. */
+.onenote-selection-box.is-below .notelens-selection-bar { top: auto; bottom: -44px; transform: none; }
+.onenote-selection-box.is-below .notelens-selection-rotate { top: auto; bottom: -30px; }
+.onenote-selection-box.is-below .notelens-selection-rotate::before { top: auto; bottom: 100%; }
+
+/* ==========================================================================
+   FLOATING NOTE EDITOR (written or drawn)
+   ========================================================================== */
+.modal.notelens-hover-note-modal {
+  box-sizing: border-box;
+  width: min(640px, calc(100vw - 24px)) !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+}
+.notelens-hover-note-modal .modal-content {
+  min-width: 0;
+  max-width: 100%;
+  max-height: calc(100vh - 56px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.notelens-hover-note {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  max-height: calc(100vh - 56px);
+  overflow: hidden;
+}
+.notelens-hover-note *, .notelens-hover-note *::before, .notelens-hover-note *::after { box-sizing: border-box; }
+.notelens-hover-note h3 { margin: 0 0 12px; font-size: 17px; letter-spacing: 0; }
+.notelens-hover-note-title-field { display: grid; gap: 5px; margin-bottom: 12px; color: var(--text-muted, #94a3b8); font-size: 11px; font-weight: 650; }
+.notelens-hover-note-title-input {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 6px;
+  background: var(--background-primary, #111827);
+  color: var(--text-normal, #f8fafc);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.notelens-hover-note-title-input:focus { border-color: #0f6cbd; box-shadow: 0 0 0 2px rgba(15, 108, 189, 0.2); }
+.notelens-hover-note-tabs { display: flex; gap: 3px; margin: 4px 0 10px; padding: 3px; border-radius: 7px; background: rgba(127, 127, 127, 0.09); }
+.notelens-hover-note-tab {
+  display: flex; align-items: center; gap: 6px;
+  flex: 1; justify-content: center; padding: 6px 14px; border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent; color: var(--text-muted, #cbd5e1); font-size: 13px; cursor: pointer;
+}
+.notelens-hover-note-tab .svg-icon { width: 15px; height: 15px; }
+.notelens-hover-note-tab.active { background: var(--background-primary-alt, #20242d); border-color: rgba(15, 108, 189, 0.62); color: var(--text-normal, #fff); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.24); }
+.notelens-hover-note-pane { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+.notelens-task-checklist-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 1px 0 7px; }
+.notelens-task-checklist-heading { display: grid; gap: 1px; min-width: 0; color: var(--text-normal, #f8fafc); font-size: 12px; font-weight: 700; }
+.notelens-task-checklist-progress { color: var(--text-muted, #94a3b8); font-size: 10px; font-weight: 500; }
+.notelens-task-checklist-add { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; min-height: 30px; padding: 4px 9px; border: 1px solid rgba(34, 197, 94, 0.46); border-radius: 5px; background: rgba(34, 197, 94, 0.1); color: #86efac; font-size: 11px; font-weight: 650; cursor: pointer; }
+.notelens-task-checklist-add:hover { border-color: #4ade80; background: rgba(34, 197, 94, 0.18); color: #dcfce7; }
+.notelens-task-checklist-add .svg-icon { width: 14px; height: 14px; }
+.notelens-task-checklist { display: grid; max-height: min(210px, 32vh); overflow-y: auto; border-top: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.notelens-task-checklist-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 28px 28px; align-items: center; gap: 7px; min-height: 40px; padding: 4px 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.065); }
+.notelens-task-checklist-row:last-child { border-bottom: 0; }
+.notelens-task-checklist-box { width: 17px; height: 17px; margin: 0; accent-color: #22c55e; cursor: pointer; }
+.notelens-task-checklist-input { width: 100%; min-width: 0; height: 31px; padding: 4px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--text-normal, #f8fafc); font-size: 13px; letter-spacing: 0; }
+.notelens-task-checklist-input:hover { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.035); }
+.notelens-task-checklist-input:focus { border-color: rgba(34, 197, 94, 0.7); background: var(--background-primary, #111827); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.13); }
+.notelens-task-checklist-row.is-done .notelens-task-checklist-input { color: var(--text-muted, #94a3b8); text-decoration: line-through; }
+.notelens-task-checklist-remove { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #718096; cursor: pointer; }
+.notelens-task-checklist-remove:hover { background: rgba(239, 68, 68, 0.14); color: #fca5a5; }
+.notelens-task-checklist-remove .svg-icon { width: 13px; height: 13px; }
+.notelens-task-description-label { margin: 10px 0 5px; color: var(--text-muted, #94a3b8); font-size: 11px; font-weight: 650; }
+.notelens-prompt-textarea.notelens-task-description { min-height: 74px; max-height: 130px; }
+.notelens-hover-note-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.notelens-hover-note-tools .onenote-divider { width: 1px; height: 18px; background: rgba(255, 255, 255, 0.14); margin: 0 4px; }
+.notelens-hover-note-swatch { width: 21px; height: 21px; padding: 0; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42); }
+.notelens-hover-note-swatch.active { border-color: #0f6cbd; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.76); }
+.notelens-hover-note-width, .notelens-hover-note-tool {
+  display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 5px; background: rgba(255, 255, 255, 0.05); color: #e2e8f0; cursor: pointer;
+}
+.notelens-hover-note-width div { border-radius: 50%; background: #e2e8f0; }
+.notelens-hover-note-width.active, .notelens-hover-note-tool.active, .notelens-hover-note-tool:hover { border-color: #0f6cbd; background: rgba(15, 108, 189, 0.2); color: #ffffff; }
+.notelens-hover-note-tool:disabled { opacity: 0.32; cursor: default; }
+.notelens-hover-note-upload { margin-left: auto; }
+.notelens-hover-note-file { display: none; }
+.notelens-hover-note-board { position: relative; width: min(100%, 560px); max-width: 100%; aspect-ratio: 7 / 4; margin-inline: auto; border-radius: 7px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.18);
+  background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.14) 1px, transparent 1.4px) 0 0 / 18px 18px, #0b1020; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04); }
+.notelens-hover-note-board.is-dragover { border-color: #38bdf8; box-shadow: inset 0 0 0 2px rgba(56, 189, 248, 0.3); }
+.notelens-hover-note-board canvas { display: block; width: 100%; max-width: 100%; height: auto; cursor: crosshair; touch-action: none; outline: none; }
+.notelens-hover-note-board[data-board-tool="select"] canvas { cursor: default; }
+.notelens-hover-note-board[data-board-tool="select"].has-image-selection canvas { cursor: move; }
+.notelens-hover-note-hint { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(226, 232, 240, 0.45); font-size: 13px; pointer-events: none; }
+.notelens-hover-note-hint.hidden-hint { display: none; }
+.notelens-hover-note-images { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.notelens-hover-note-images-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; color: #cbd5e1; font-size: 11px; }
+.notelens-hover-note-images-heading span:last-child { color: #7f8ea3; }
+.notelens-hover-note-images-list { display: flex; gap: 6px; overflow-x: auto; padding: 1px 1px 4px; }
+.notelens-hover-note-image-chip { display: flex; align-items: center; flex: 0 0 auto; max-width: 180px; height: 34px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; background: rgba(255, 255, 255, 0.04); color: #cbd5e1; font-size: 11px; overflow: hidden; }
+.notelens-hover-note-image-chip.active { border-color: #38bdf8; background: rgba(15, 108, 189, 0.17); color: #ffffff; }
+.notelens-hover-note-image-pick { display: flex; align-items: center; min-width: 0; gap: 6px; height: 100%; padding: 3px 6px 3px 3px; border: 0; border-radius: 0; background: transparent; color: inherit; box-shadow: none; }
+.notelens-hover-note-image-pick img { flex: 0 0 auto; width: 27px; height: 27px; border-radius: 3px; object-fit: cover; }
+.notelens-hover-note-image-pick span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notelens-hover-note-image-remove { display: grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; margin-right: 3px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: #94a3b8; box-shadow: none; }
+.notelens-hover-note-image-remove:hover { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.notelens-hover-note-image-remove .svg-icon { width: 13px; height: 13px; }
+.notelens-hover-note-footer { display: flex; align-items: center; flex: 0 0 auto; width: 100%; min-width: 0; gap: 8px; margin-top: 12px; }
+.notelens-hover-note-footer > button { flex: 0 0 auto; }
+.notelens-hover-note-help { flex: 1 1 auto; min-width: 0; color: var(--text-muted, #94a3b8); font-size: 12px; overflow-wrap: anywhere; }
+
+@media (max-width: 680px) {
+  .modal.notelens-hover-note-modal { width: calc(100vw - 16px) !important; max-width: calc(100vw - 16px) !important; }
+  .notelens-hover-note { width: 100%; }
+  .notelens-hover-note-tools .onenote-divider { display: none; }
+  .notelens-hover-note-upload { margin-left: 0; }
+  .notelens-hover-note-images-heading span:last-child { display: none; }
+  .notelens-hover-note-footer { align-items: stretch; flex-wrap: wrap; }
+  .notelens-hover-note-help { flex-basis: 100%; }
+}
+
+/* ==========================================================================
+   PLACED TAGS: each type has its own hover
+   ========================================================================== */
+.onenote-placed-badge { transition: box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, filter 160ms ease; }
+.onenote-placed-badge .onenote-tag-icon svg { transition: transform 160ms ease, filter 160ms ease; }
+.onenote-badge-sketch-mark { display: inline-flex; color: var(--tag-color); opacity: 0.8; }
+.onenote-badge-sketch-mark .svg-icon { width: 12px; height: 12px; }
+.onenote-badge-label { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.onenote-badge-progress { flex: 0 0 auto; min-width: 29px; padding: 1px 5px; border: 1px solid color-mix(in srgb, var(--tag-color) 45%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--tag-color) 12%, transparent); color: color-mix(in srgb, var(--tag-color) 62%, #ffffff); font-size: 9px; font-weight: 800; line-height: 14px; text-align: center; }
+.onenote-placed-badge:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 3px color-mix(in srgb, var(--tag-color) 28%, transparent);
+  background: color-mix(in srgb, var(--tag-color) 18%, rgba(18, 22, 34, 0.95));
+}
+.onenote-placed-badge[data-tag="tag_star"]:hover { border-color: #fde047; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(250, 204, 21, 0.55); }
+.onenote-placed-badge[data-tag="tag_star"]:hover .onenote-tag-icon svg { animation: nl-tag-star 480ms ease forwards; fill: rgba(250, 204, 21, 0.75); }
+.onenote-placed-badge[data-tag="tag_question"]:hover { border-style: dashed; }
+.onenote-placed-badge[data-tag="tag_question"]:hover .onenote-tag-icon svg { animation: nl-tag-bounce 520ms ease forwards; }
+.onenote-placed-badge[data-tag="tag_idea"]:hover { background: radial-gradient(circle at 12% 50%, rgba(250, 204, 21, 0.45), rgba(18, 22, 34, 0.95) 70%); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 22px rgba(250, 204, 21, 0.5); }
+.onenote-placed-badge[data-tag="tag_idea"]:hover .onenote-tag-icon svg { animation: nl-tag-glow 600ms ease forwards; }
+.onenote-placed-badge[data-tag="tag_todo"]:hover { border-radius: 6px; }
+.onenote-placed-badge[data-tag="tag_todo"]:hover .onenote-tag-icon svg { animation: nl-tag-tick 420ms ease forwards; }
+.onenote-placed-badge[data-tag="tag_todo"].is-done:hover { border-style: solid; opacity: 0.9; }
+.onenote-placed-badge[data-tag="tag_hover"]:hover { border-radius: 16px 16px 16px 4px; }
+.onenote-placed-badge[data-tag="tag_hover"]:hover .onenote-tag-icon svg { animation: nl-tag-wiggle 520ms ease forwards; }
+
+/* Hover card, themed by tag */
+.onenote-top-tooltip {
+  border-color: var(--tag-color, #38bdf8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px color-mix(in srgb, var(--tag-color, #38bdf8) 35%, transparent);
+  padding: 8px 12px 9px;
+  text-align: left;
+  animation: nl-card-in 160ms ease;
+}
+@keyframes nl-card-in { from { opacity: 0; transform: translate(-50%, calc(-100% + 6px)); } to { opacity: 1; transform: translate(-50%, -100%); } }
+.onenote-top-tooltip::after { border-top-color: var(--tag-color, #38bdf8); }
+.onenote-top-tooltip-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; color: var(--tag-color, #38bdf8); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.onenote-top-tooltip-progress { margin-left: auto; padding-left: 10px; color: #bbf7d0; font-variant-numeric: tabular-nums; }
+.onenote-top-tooltip-icon { display: inline-flex; }
+.onenote-top-tooltip-icon .svg-icon { width: 14px; height: 14px; }
+.onenote-top-tooltip-body { white-space: pre-wrap; }
+.onenote-top-tooltip-note-title { max-width: 390px; margin: 1px 0 6px; color: #f8fafc; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.onenote-top-tooltip-checklist { display: grid; gap: 3px; min-width: min(300px, calc(100vw - 72px)); max-width: 390px; margin: 3px 0 7px; }
+.onenote-top-tooltip-checklist-item { display: grid; grid-template-columns: 16px minmax(0, 1fr); align-items: start; gap: 6px; color: #e2e8f0; font-size: 12px; font-weight: 500; line-height: 1.35; }
+.onenote-top-tooltip-checklist-item .svg-icon { width: 14px; height: 14px; margin-top: 1px; color: #4ade80; }
+.onenote-top-tooltip-checklist-item.is-done { color: #94a3b8; text-decoration: line-through; }
+.onenote-top-tooltip-hint { color: #94a3b8; font-size: 12px; font-weight: 400; }
+.onenote-top-tooltip-hint + .onenote-top-tooltip-hint { margin-top: 3px; }
+.onenote-top-tooltip-sketch { position: relative; display: block; width: 320px; max-width: 100%; aspect-ratio: 7 / 4; overflow: hidden; border-radius: 6px; margin: 2px 0 7px; background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.12) 1px, transparent 1.3px) 0 0 / 10px 10px, #0b1020; border: 1px solid rgba(255, 255, 255, 0.12); }
+.onenote-top-tooltip-sketch img { position: absolute; display: block; margin: 0; border: 0; border-radius: 0; }
+.onenote-top-tooltip-pinned-image { object-fit: contain; z-index: 1; }
+.onenote-top-tooltip-drawing { inset: 0; width: 100%; height: 100%; z-index: 2; object-fit: fill; pointer-events: none; }
+.onenote-top-tooltip[data-tag="tag_star"] { background: linear-gradient(180deg, #1c1a12, #12151f); }
+.onenote-top-tooltip[data-tag="tag_question"] { border-style: dashed; background: linear-gradient(180deg, #1a1426, #12151f); }
+.onenote-top-tooltip[data-tag="tag_idea"] { background: linear-gradient(180deg, #2a2410, #12151f); border-width: 2px; }
+.onenote-top-tooltip[data-tag="tag_idea"] .onenote-top-tooltip-icon { filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8)); }
+.onenote-top-tooltip[data-tag="tag_todo"] { border-radius: 6px; background: linear-gradient(180deg, #0f2318, #12151f); }
+.onenote-top-tooltip[data-tag="tag_todo"].is-done .onenote-top-tooltip-body { text-decoration: line-through; opacity: 0.7; }
+.onenote-top-tooltip[data-tag="tag_hover"] { border-radius: 14px 14px 14px 4px; background: linear-gradient(180deg, #0f1f2c, #12151f); }
+
+/* Calculator: fraction key */
+.notelens-calculator-key.fraction { font-size: 13px; font-style: italic; }
+
+/* Hover card sizes to its content (the DOM layer has no width of its own) and can sit below the badge. */
+.onenote-top-tooltip { width: max-content; max-width: 440px; }
+.onenote-top-tooltip.is-below { transform: translate(-50%, 0); animation-name: nl-card-in-below; }
+@keyframes nl-card-in-below { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.onenote-top-tooltip.is-below::after { bottom: auto; top: -6px; border-right: none; border-bottom: none; border-left: 1.5px solid var(--tag-color, #38bdf8); border-top: 1.5px solid var(--tag-color, #38bdf8); }
+.onenote-top-tooltip[data-tag="tag_star"]::after { background: #1c1a12; }
+.onenote-top-tooltip[data-tag="tag_question"]::after { background: #1a1426; }
+.onenote-top-tooltip[data-tag="tag_idea"]::after { background: #2a2410; }
+.onenote-top-tooltip[data-tag="tag_todo"]::after { background: #0f2318; }
+.onenote-top-tooltip[data-tag="tag_hover"]::after { background: #0f1f2c; }
+.onenote-top-tooltip:not(.is-below)[data-tag]::after { background: #12151f; }
+
+/* ===========================================================================
+   NOTEBOOK PAGES
+   ========================================================================== */
+.notelens-pages-dock {
+  position: absolute;
+  left: 102px;
+  bottom: 14px;
+  z-index: 1000;
+}
+.notelens-pages-toggle { position: relative; }
+.notelens-pages-count {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border: 2px solid #141b27;
+  border-radius: 9px;
+  background: #0f6cbd;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.notelens-pages-panel { width: 300px; max-height: min(460px, calc(100vh - 120px)); }
+.notelens-pages-list { max-height: none; }
+.notelens-bookmark-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.notelens-bookmark-page,
+.notelens-tag-summary-page {
+  max-width: 100%;
+  overflow: hidden;
+  color: #8fa1b8;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notelens-page-item {
+  min-height: 48px;
+  margin-bottom: 3px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.notelens-page-item.active {
+  border-color: rgba(56, 189, 248, 0.44);
+  background: rgba(15, 108, 189, 0.13);
+}
+.notelens-page-thumbnail {
+  display: grid;
+  place-items: center;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 34px;
+  margin-right: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  border-radius: 3px;
+  background: #f8fafc;
+  color: #334155;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+  font-size: 10px;
+  font-weight: 800;
+}
+.notelens-page-item.active .notelens-page-thumbnail {
+  border-color: #7dd3fc;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.18);
+}
+.notelens-page-remove.is-disabled { opacity: 0.28; cursor: not-allowed; }
+.onenote-workspace.is-focus-mode .notelens-pages-dock { opacity: 0; pointer-events: none; }
+
+.notelens-tag-summary-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.notelens-tag-summary-page {
+  flex: 0 1 auto;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.12);
+  text-transform: none;
+}
+
+/* Embedded objects keep a fixed, unmistakable close control. */
+.notelens-object-close {
+  position: relative;
+  z-index: 4;
+  display: grid !important;
+  place-items: center;
+  visibility: visible !important;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  opacity: 1 !important;
+  border: 1px solid rgba(248, 113, 113, 0.48);
+  border-radius: 7px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.34);
+}
+.notelens-object-close .svg-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  pointer-events: none;
+}
+.notelens-link-head > .notelens-attachment-details { min-width: 0; flex: 1; }
+.notelens-object-close:hover { border-color: #fecaca; background: #b4232f; color: #ffffff; }
+
+/* Loose images and PDF pages place the X inside the object, where it cannot
+   disappear outside the canvas or underneath selection chrome. */
+.notelens-stack-controls {
+  top: 8px;
+  right: 8px;
+  display: flex !important;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 1 !important;
+}
+.notelens-attachment-card > .notelens-object-close {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+}
+
+.notelens-embed,
+.notelens-attachment-card,
+.notelens-pdf-stack,
+.notelens-loose-image,
+.notelens-table,
+.onenote-textbox {
+  transform-origin: center center;
+}
+
+@container workspace (max-width: 1100px) {
+  .notelens-bookmarks-panel,
+  .notelens-pages-panel { bottom: 110px; }
+}
+
+@container workspace (max-width: 700px) {
+  .notelens-pages-dock { left: 102px; }
+  .notelens-pages-panel { width: min(286px, calc(100vw - 24px)); }
+}
+
+/* ==========================================================================
+   TASK CARDS: tick one step, or the whole list, straight from the board
+   ========================================================================== */
+.onenote-top-tooltip.is-interactive { pointer-events: auto; }
+.onenote-top-tooltip-checklist-item {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.onenote-top-tooltip.is-interactive .onenote-top-tooltip-checklist-item:hover {
+  border-color: color-mix(in srgb, var(--tag-color, #4ade80) 55%, transparent);
+  background: color-mix(in srgb, var(--tag-color, #4ade80) 16%, transparent);
+  color: #ffffff;
+}
+.onenote-top-tooltip-checklist-item:hover .svg-icon { transform: scale(1.15); }
+.onenote-top-tooltip-bulk {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 2px 0 6px;
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--tag-color, #4ade80) 45%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tag-color, #4ade80) 12%, transparent);
+  color: #e2e8f0;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.onenote-top-tooltip-bulk:hover { background: color-mix(in srgb, var(--tag-color, #4ade80) 26%, transparent); color: #ffffff; }
+.onenote-top-tooltip-bulk .svg-icon { width: 14px; height: 14px; }
+
+/* ==========================================================================
+   PAGE STYLE GRID + MARGIN SWITCH
+   Four options in an even 2x2 block: "Rayas" no longer sits alone on a row.
+   ========================================================================== */
+.notelens-settings-row-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.notelens-settings-row-grid .notelens-settings-choice {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* The switch is ours end to end, so no Obsidian theme can restyle it. */
+button.notelens-settings-margin-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 11px;
+  background: rgba(71, 85, 105, 0.58);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+button.notelens-settings-margin-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: #f8fafc;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+button.notelens-settings-margin-toggle:hover { border-color: rgba(148, 163, 184, 0.85); }
+button.notelens-settings-margin-toggle.is-on { border-color: #38bdf8; background: #0f6cbd; }
+button.notelens-settings-margin-toggle.is-on::after { transform: translateX(16px); }
+button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; }
+
+/* ==========================================================================
+   HANDWRITTEN TASK STEPS
+   ========================================================================== */
+.notelens-task-checklist-row.is-drawn { align-items: center; }
+.notelens-task-checklist-pad {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  background: repeating-linear-gradient(180deg, transparent 0 33px, rgba(148, 163, 184, 0.18) 33px 34px), rgba(15, 23, 42, 0.55);
+  overflow: hidden;
+}
+.notelens-task-checklist-pad canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+.notelens-task-checklist-pad-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(226, 232, 240, 0.42);
+  font-size: 12px;
+  pointer-events: none;
+}
+.notelens-task-checklist-pad-hint.hidden-hint { display: none; }
+.notelens-task-checklist-pad-clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  cursor: pointer;
+}
+.notelens-task-checklist-pad-clear:hover { border-color: #f87171; color: #fecaca; }
+.notelens-task-checklist-pad-clear .svg-icon { width: 13px; height: 13px; }
+.notelens-task-checklist-mode {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  cursor: pointer;
+}
+.notelens-task-checklist-mode:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.18); color: #ffffff; }
+.notelens-task-checklist-mode .svg-icon { width: 14px; height: 14px; }
+.onenote-top-tooltip-step-sketch {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.5);
+}
+.onenote-top-tooltip-checklist-item.is-done .onenote-top-tooltip-step-sketch { opacity: 0.5; }
+
+/* ==========================================================================
+   ONE CURSOR PER TAG
+   ========================================================================== */
+.onenote-workspace[data-tool="place_badge"][data-badge-tag="tag_star"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cfilter id='d' x='-30%25' y='-30%25' width='170%25' height='170%25'%3E%3CfeDropShadow dx='1' dy='1.6' stdDeviation='1' flood-color='%23000000' flood-opacity='.55'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Cpath d='M14 3l3.4 6.9 7.6 1.1-5.5 5.4 1.3 7.6-6.8-3.6-6.8 3.6 1.3-7.6L3 11l7.6-1.1z' fill='%23facc15' stroke='%23020617' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='26' r='6.6' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7'/%3E%3Cpath d='M26 22.8v6.4M22.8 26h6.4' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 16 16, copy;
+}
+.onenote-workspace[data-tool="place_badge"][data-badge-tag="tag_question"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cfilter id='d' x='-30%25' y='-30%25' width='170%25' height='170%25'%3E%3CfeDropShadow dx='1' dy='1.6' stdDeviation='1' flood-color='%23000000' flood-opacity='.55'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Ccircle cx='14' cy='13.5' r='10.5' fill='%23a855f7' stroke='%23020617' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M10.9 10.4a3.2 3.2 0 1 1 3.6 4.4v1.7' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round'/%3E%3Ccircle cx='14.4' cy='19.4' r='1.4' fill='%23ffffff'/%3E%3Ccircle cx='26' cy='26' r='6.6' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7'/%3E%3Cpath d='M26 22.8v6.4M22.8 26h6.4' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 16 16, copy;
+}
+.onenote-workspace[data-tool="place_badge"][data-badge-tag="tag_idea"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cfilter id='d' x='-30%25' y='-30%25' width='170%25' height='170%25'%3E%3CfeDropShadow dx='1' dy='1.6' stdDeviation='1' flood-color='%23000000' flood-opacity='.55'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Cpath d='M14 3.2a7.4 7.4 0 0 1 4.6 13.2c-.8.7-1.2 1.4-1.3 2.3h-6.6c-.1-.9-.5-1.6-1.3-2.3A7.4 7.4 0 0 1 14 3.2z' fill='%23facc15' stroke='%23020617' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M11.1 21.4h5.8M11.9 24.1h4.2' stroke='%23020617' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='26' r='6.6' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7'/%3E%3Cpath d='M26 22.8v6.4M22.8 26h6.4' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 16 16, copy;
+}
+.onenote-workspace[data-tool="place_badge"][data-badge-tag="tag_todo"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cfilter id='d' x='-30%25' y='-30%25' width='170%25' height='170%25'%3E%3CfeDropShadow dx='1' dy='1.6' stdDeviation='1' flood-color='%23000000' flood-opacity='.55'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Crect x='3.6' y='3.6' width='20.6' height='20.6' rx='4.4' fill='%2322c55e' stroke='%23020617' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M8.6 14.2l3.8 3.8 7-7.4' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='26' cy='26' r='6.6' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7'/%3E%3Cpath d='M26 22.8v6.4M22.8 26h6.4' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 16 16, copy;
+}
+.onenote-workspace[data-tool="place_badge"][data-badge-tag="tag_hover"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cfilter id='d' x='-30%25' y='-30%25' width='170%25' height='170%25'%3E%3CfeDropShadow dx='1' dy='1.6' stdDeviation='1' flood-color='%23000000' flood-opacity='.55'/%3E%3C/filter%3E%3Cg filter='url(%23d)'%3E%3Cpath d='M4 6.4a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v8.4a3 3 0 0 1-3 3h-7.4L9 22.6v-4.8H7a3 3 0 0 1-3-3z' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7' stroke-linejoin='round' stroke-linecap='round'/%3E%3Cpath d='M8.6 8.8h10.8M8.6 12.6h7.4' stroke='%23052235' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='26' cy='26' r='6.6' fill='%2338bdf8' stroke='%23020617' stroke-width='1.7'/%3E%3Cpath d='M26 22.8v6.4M22.8 26h6.4' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 16 16, copy;
+}
+
+/* ==========================================================================
+   PAGE FILTER (tags and bookmarks)
+   ========================================================================== */
+.notelens-panel-page-filter { display: flex; align-items: center; margin: 6px 0 2px; }
+.notelens-panel-page-filter.hidden { display: none; }
+.notelens-panel-page-select {
+  width: 100%;
+  height: 28px;
+  padding: 0 26px 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #dbeafe;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.notelens-panel-page-select:hover { border-color: rgba(56, 189, 248, 0.6); }
+.notelens-panel-page-select:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 1px; }
+
+/* ==========================================================================
+   STICKY NOTES: real paper, not a coloured rectangle
+   A soft grain, a shadow that hangs from the bottom, and a corner that curls
+   away from the board. Colours come from --sticky-color set at render time.
+   ========================================================================== */
+.notelens-sticky-note {
+  --sticky-color: #fff2a8;
+  --sticky-shade: rgba(0, 0, 0, 0.14);
+  --sticky-deep: rgba(0, 0, 0, 0.3);
+  --sticky-fold: 30px;
+  position: absolute;
+  min-width: 180px;
+  min-height: 116px;
+  padding: 15px 16px 20px;
+  border: 0;
+  border-radius: 2px 2px 3px 3px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(160deg, var(--sticky-color), var(--sticky-shade) 140%);
+  background-color: var(--sticky-color);
+  box-shadow:
+    0 1px 1px rgba(15, 23, 42, 0.16),
+    0 10px 18px -8px rgba(15, 23, 42, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  line-height: 1.45;
+  transition: box-shadow 140ms ease, filter 140ms ease;
+}
+
+/* The curled corner: a small triangle in a deeper shade of the paper. */
+.notelens-sticky-note::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--sticky-fold);
+  height: var(--sticky-fold);
+  background: linear-gradient(315deg, var(--sticky-deep) 0%, var(--sticky-shade) 62%, rgba(255, 255, 255, 0.72) 100%);
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  filter: drop-shadow(-2px -2px 2px rgba(15, 23, 42, 0.32));
+  pointer-events: none;
+}
+
+/* A faint ruled grain, like paper fibre. */
+.notelens-sticky-note::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(120, 95, 30, 0.05) 0 1px, transparent 1px 26px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.notelens-sticky-note:hover {
+  box-shadow:
+    0 2px 2px rgba(15, 23, 42, 0.18),
+    0 16px 26px -10px rgba(15, 23, 42, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  filter: brightness(1.02);
+}
+
+.notelens-sticky-note:focus,
+.notelens-sticky-note.is-editing {
+  border: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(160deg, var(--sticky-color), var(--sticky-shade) 140%);
+  box-shadow:
+    0 0 0 2px rgba(15, 108, 189, 0.5),
+    0 14px 24px -10px rgba(15, 23, 42, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Selected notes keep the paper look; the marching border comes from the frame. */
+.notelens-sticky-note.notelens-selected { filter: brightness(1.03); }
+
+/* ==========================================================================
+   HANDWRITTEN STEP: the image keeps its own proportions, so the card fits it
+   ========================================================================== */
+.onenote-top-tooltip-step-sketch {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 300px;
+  max-height: 44px;
+  border-radius: 4px;
+  background: transparent;
+}
+
+/* ==========================================================================
+   ASSISTANT PET: a pixel cat that opens the local-model chat
+   ========================================================================== */
+.notelens-pet {
+  position: absolute;
+  right: 18px;
+  bottom: 112px;
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: end center;
+  cursor: pointer;
+  z-index: 1001;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+  animation: nl-pet-breathe 4.5s ease-in-out infinite;
+}
+@keyframes nl-pet-breathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.02); } }
+.notelens-pet:hover { animation-duration: 2.2s; }
+.notelens-pet.is-open { filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.55)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5)); }
+.notelens-pet-sprite {
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.notelens-pet[data-mood="thinking"] { animation: nl-pet-think 1.1s ease-in-out infinite; }
+@keyframes nl-pet-think { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+.notelens-pet[data-mood="sleeping"] { animation: nl-pet-sleep 6s ease-in-out infinite; opacity: 0.85; }
+@keyframes nl-pet-sleep { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+.notelens-pet-bubble {
+  position: absolute;
+  right: 84px;
+  bottom: 34px;
+  max-width: 190px;
+  padding: 7px 11px;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 12px 12px 3px 12px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.notelens-pet-bubble.hidden { display: none; }
+
+.notelens-assistant {
+  position: absolute;
+  right: 18px;
+  bottom: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 360px;
+  max-height: min(560px, calc(100% - 240px));
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  background: rgba(20, 24, 33, 0.985);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  font-size: 13px;
+  z-index: 1002;
+}
+.notelens-assistant.hidden { display: none; }
+.notelens-assistant-header { display: flex; align-items: center; gap: 8px; }
+.notelens-assistant-icon { display: grid; place-items: center; color: #fb923c; }
+.notelens-assistant-title { flex: 1; font-weight: 700; font-size: 12px; letter-spacing: 0.02em; }
+.notelens-assistant-model {
+  max-width: 130px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbeafe;
+  font-size: 11px;
+  cursor: pointer;
+}
+.notelens-assistant-status { min-height: 15px; color: #94a3b8; font-size: 11px; line-height: 1.35; }
+.notelens-assistant-status.is-error { color: #fca5a5; }
+.notelens-assistant-status.is-ok { color: #86efac; }
+.notelens-assistant-log {
+  flex: 1;
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(9, 12, 20, 0.6);
+}
+.notelens-assistant-empty { color: #94a3b8; font-size: 12px; line-height: 1.45; }
+.notelens-assistant-examples { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.notelens-assistant-example {
+  padding: 4px 9px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.1);
+  color: #bae6fd;
+  font-size: 11px;
+  cursor: pointer;
+}
+.notelens-assistant-example:hover { background: rgba(56, 189, 248, 0.24); color: #ffffff; }
+.notelens-assistant-msg {
+  max-width: 92%;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.notelens-assistant-msg.is-user { align-self: flex-end; background: rgba(15, 108, 189, 0.4); border: 1px solid rgba(140, 200, 255, 0.35); }
+.notelens-assistant-msg.is-assistant { align-self: flex-start; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); }
+.notelens-assistant-msg.is-pending { color: #94a3b8; font-style: italic; }
+.notelens-assistant-msg-actions { display: flex; gap: 6px; margin-top: 6px; }
+.notelens-assistant-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 11px;
+  cursor: pointer;
+}
+.notelens-assistant-action:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.18); color: #ffffff; }
+.notelens-assistant-action .svg-icon { width: 12px; height: 12px; }
+.notelens-assistant-context { display: flex; align-items: center; gap: 7px; color: #94a3b8; font-size: 11.5px; cursor: pointer; }
+.notelens-assistant-composer { display: flex; align-items: flex-end; gap: 7px; }
+.notelens-assistant-input {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(9, 12, 20, 0.7);
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 12.5px;
+  resize: vertical;
+}
+.notelens-assistant-input:focus { border-color: rgba(56, 189, 248, 0.7); outline: none; }
+.notelens-assistant-send {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-radius: 9px;
+  background: rgba(15, 108, 189, 0.45);
+  color: #f8fafc;
+  cursor: pointer;
+}
+.notelens-assistant-send:hover { background: rgba(15, 108, 189, 0.75); }
+.onenote-workspace.is-focus-mode .notelens-pet,
+.onenote-workspace.is-focus-mode .notelens-assistant { opacity: 0; pointer-events: none; }
+
+@container workspace (max-width: 700px) {
+  .notelens-pet { right: 12px; bottom: 128px; width: 62px; height: 62px; }
+  .notelens-assistant { right: 12px; left: 12px; width: auto; bottom: 196px; }
+}
+
+/* Assistant: name field, avatar, mode switch and the little sketch board. */
+.notelens-assistant-avatar { width: 26px; height: 26px; image-rendering: pixelated; }
+.notelens-assistant-name {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #f1f5f9;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.notelens-assistant-name:hover { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.05); }
+.notelens-assistant-name:focus { border-color: rgba(56, 189, 248, 0.7); background: rgba(9, 12, 20, 0.7); outline: none; }
+.notelens-assistant-modes { display: flex; gap: 6px; }
+.notelens-assistant-mode {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.notelens-assistant-mode .svg-icon { width: 13px; height: 13px; }
+.notelens-assistant-mode.active { border-color: rgba(56, 189, 248, 0.65); background: rgba(56, 189, 248, 0.18); color: #ffffff; }
+.notelens-assistant-sketch {
+  position: relative;
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.notelens-assistant-sketch canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+.notelens-assistant-sketch-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(15, 23, 42, 0.42);
+  font-size: 12px;
+  pointer-events: none;
+}
+.notelens-assistant-sketch-hint.hidden-hint { display: none; }
+.notelens-assistant-sketch-clear {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #334155;
+  cursor: pointer;
+}
+.notelens-assistant-sketch-clear:hover { border-color: #ef4444; color: #b91c1c; }
+.notelens-assistant-sketch-clear .svg-icon { width: 13px; height: 13px; }
+.notelens-assistant-msg-image {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  background: #ffffff;
+}
+
+/* Paper realism pass: thickness at the edges, a shadow that hangs from the
+   bottom, and the fold casting onto the note instead of floating over it. */
+.notelens-sticky-note {
+  --sticky-fold: 32px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -1px 0 rgba(15, 23, 42, 0.1) inset,
+    0 1px 1px rgba(15, 23, 42, 0.14),
+    0 6px 8px -6px rgba(15, 23, 42, 0.45),
+    0 16px 26px -14px rgba(15, 23, 42, 0.62);
+}
+.notelens-sticky-note::before {
+  background-image:
+    repeating-linear-gradient(0deg, rgba(120, 95, 30, 0.045) 0 1px, transparent 1px 26px),
+    radial-gradient(120% 60% at 50% 100%, rgba(15, 23, 42, 0.1), transparent 70%);
+  opacity: 0.7;
+}
+.notelens-sticky-note::after {
+  background: linear-gradient(315deg, var(--sticky-deep) 0%, var(--sticky-shade) 58%, rgba(255, 255, 255, 0.8) 100%);
+  filter: drop-shadow(-3px -3px 3px rgba(15, 23, 42, 0.34));
+}
+
+/* Belt and braces: a handwritten step stays inside its row. */
+.onenote-top-tooltip-checklist-item { overflow: hidden; min-width: 0; }
+.onenote-top-tooltip-checklist { max-width: 340px; }
+
+/* Handwritten steps show at the size they were written; the card widens for them. */
+.onenote-top-tooltip:has(.onenote-top-tooltip-step-sketch) { max-width: 520px; }
+.onenote-top-tooltip:has(.onenote-top-tooltip-step-sketch) .onenote-top-tooltip-checklist { max-width: 470px; }
+.onenote-top-tooltip-step-sketch { image-rendering: auto; }
+
+/* ==========================================================================
+   THE PET CAN LIVE ANYWHERE ON THE BOARD
+   ========================================================================== */
+.notelens-pet { touch-action: none; }
+.notelens-pet.is-dragging { cursor: grabbing; animation: none; filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.6)); }
+.notelens-assistant-server {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid rgba(74, 222, 128, 0.45);
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.14);
+  color: #dcfce7;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notelens-assistant-server:hover { background: rgba(34, 197, 94, 0.3); color: #ffffff; }
+.notelens-assistant-server[disabled] { opacity: 0.6; cursor: default; }
+.notelens-assistant-server .svg-icon { width: 13px; height: 13px; }
+.notelens-assistant-server.hidden { display: none; }
+
+/* When the cat has been dragged somewhere the chat opens near the board centre
+   instead of hanging off the corner it no longer occupies. */
+.notelens-assistant.is-anchored { right: 18px; bottom: 18px; }
+
+/* The assistant's name is fixed, so it reads as a label, not a field. */
+span.notelens-assistant-name {
+  flex: 1;
+  min-width: 0;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* The chat is positioned beside the cat, so it needs no corner defaults. */
+.notelens-assistant { right: auto; bottom: auto; }
+.notelens-assistant::after {
+  content: "";
+  position: absolute;
+  top: var(--arrow-top, 50%);
+  left: -7px;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  transform: rotate(45deg);
+  background: rgba(20, 24, 33, 0.985);
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+.notelens-assistant.points-left::after { left: auto; right: -7px; border-left: 0; border-bottom: 0; border-right: 1px solid rgba(255, 255, 255, 0.16); border-top: 1px solid rgba(255, 255, 255, 0.16); }
+
+/* Leen's chat: the close control reads as a button, like the other panels. */
+.notelens-assistant-header .notelens-embed-close {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #e2e8f0;
+}
+.notelens-assistant-header .notelens-embed-close:hover {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: rgba(239, 68, 68, 0.28);
+  color: #ffffff;
+}
+.notelens-assistant-header .notelens-embed-close .svg-icon { width: 14px; height: 14px; }
+
+/* Leen sits above the floating panels: the calculator, the translator and the
+   rest are tools he should never disappear behind. */
+.notelens-pet { z-index: 1004; }
+.notelens-assistant { z-index: 1005; }
+
+/* The pet's size follows the setting; the drag maths uses its real box. */
+.notelens-pet { width: calc(78px * var(--pet-scale, 1)); height: calc(78px * var(--pet-scale, 1)); }
+
+/* The close button never shrinks away, whatever the header holds. */
+.notelens-assistant-header { min-height: 30px; }
+.notelens-assistant-header .notelens-assistant-close {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+.notelens-assistant-header .notelens-assistant-close:hover {
+  border-color: rgba(248, 113, 113, 0.8);
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+}
+.notelens-assistant-header .notelens-assistant-close .svg-icon { width: 15px; height: 15px; }
+.notelens-assistant-model { flex: 0 1 auto; min-width: 0; }
+
+/* Asking something about a drawing is a choice, not a canned sentence. */
+.notelens-assistant-requests { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.notelens-assistant-requests-label { color: #94a3b8; font-size: 11px; }
+.notelens-assistant-request {
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 11px;
+  cursor: pointer;
+}
+.notelens-assistant-request:hover { border-color: rgba(56, 189, 248, 0.6); color: #ffffff; }
+.notelens-assistant-request.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.28); color: #ffffff; }
+
+/* A way into the plugin's real settings from the board. */
+.notelens-settings-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin: 4px 0 2px;
+  padding: 7px 9px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.1);
+  color: #bae6fd;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.notelens-settings-link:hover { background: rgba(56, 189, 248, 0.24); color: #ffffff; }
+.notelens-settings-link .svg-icon { width: 14px; height: 14px; }
+.notelens-build-stamp { margin-bottom: 10px; opacity: 0.75; }
+
+/* A close button that reads even without an icon font. */
+.notelens-assistant-close.is-glyph { font-size: 17px; line-height: 1; font-weight: 700; }
+/* The settings shortcut never spills out of the narrow board panel. */
+.notelens-settings-link { justify-content: center; white-space: nowrap; }
+
+/* The chat's close control is a glyph, sized so it reads at a glance. */
+.notelens-assistant-close.is-glyph {
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Choosing which multimodal model to download. */
+.notelens-assistant-chooser { display: flex; flex-direction: column; gap: 5px; }
+.notelens-assistant-chooser.hidden { display: none; }
+.notelens-assistant-chooser-select,
+.notelens-assistant-chooser-custom {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  background: rgba(9, 12, 20, 0.7);
+  color: #dbeafe;
+  font-size: 11.5px;
+}
+.notelens-assistant-chooser-select:focus,
+.notelens-assistant-chooser-custom:focus { border-color: rgba(56, 189, 248, 0.7); outline: none; }
+
+/* Grouped symbol palette for the formula editor. */
+.notelens-math-groups { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding-bottom: 4px; }
+.notelens-math-group {
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.notelens-math-group:hover { border-color: rgba(167, 139, 250, 0.6); color: #ffffff; }
+.notelens-math-group.active { border-color: #a78bfa; background: rgba(167, 139, 250, 0.28); color: #ffffff; }
+.notelens-math-keys { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; }
+.notelens-format-bar.is-math { max-width: 660px; }
+
+/* Glyph close buttons read the same as the icon ones. */
+.notelens-embed-close.is-glyph { font-size: 14px; line-height: 1; font-weight: 700; }
+.notelens-format-close.is-glyph { min-width: 22px; }
+
+/* ==========================================================================
+   BOARD → FORMULA (local OCR, no assistant involved)
+   ========================================================================== */
+.notelens-ocr-formula {
+  position: absolute;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(520px, calc(100% - 32px));
+  padding: 12px;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  border-radius: 14px;
+  background: rgba(20, 24, 33, 0.985);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55);
+  color: #e5e7eb;
+  z-index: 1003;
+}
+.notelens-ocr-formula.is-picking { opacity: 0.25; pointer-events: none; }
+.notelens-ocr-formula-header { display: flex; align-items: center; gap: 8px; }
+.notelens-ocr-formula-icon { display: grid; place-items: center; color: #c4b5fd; }
+.notelens-ocr-formula-title { flex: 1; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.notelens-ocr-formula-status { min-height: 15px; color: #94a3b8; font-size: 11.5px; line-height: 1.35; }
+.notelens-ocr-formula-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(9, 12, 20, 0.7);
+  color: #f1f5f9;
+  font-family: var(--font-monospace);
+  font-size: 13px;
+  resize: vertical;
+}
+.notelens-ocr-formula-input:focus { border-color: rgba(167, 139, 250, 0.7); outline: none; }
+.notelens-ocr-formula-preview {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(167, 139, 250, 0.08);
+  overflow-x: auto;
+}
+.notelens-ocr-formula-actions { display: flex; gap: 7px; }
+.notelens-ocr-formula-btn {
+  flex: 1;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 12px;
+  cursor: pointer;
+}
+.notelens-ocr-formula-btn:hover { border-color: rgba(167, 139, 250, 0.7); color: #ffffff; }
+.notelens-ocr-formula-btn.is-primary { background: rgba(124, 58, 237, 0.45); border-color: rgba(167, 139, 250, 0.7); font-weight: 600; }
+.notelens-ocr-formula-btn.is-primary:hover { background: rgba(124, 58, 237, 0.7); }
+
+/* ==========================================================================
+   INK EQUATION: write it by hand, watch it become a formula
+   ========================================================================== */
+.notelens-ink-equation-modal { max-width: 700px; }
+.notelens-ink-equation { display: flex; flex-direction: column; gap: 10px; }
+.notelens-ink-preview {
+  display: grid;
+  place-items: center;
+  min-height: 82px;
+  padding: 10px 14px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  background: var(--background-primary, #ffffff);
+  color: var(--text-normal, #1a1a1a);
+  font-size: 22px;
+  overflow-x: auto;
+}
+.notelens-ink-placeholder { color: var(--text-faint, #94a3b8); font-size: 14px; }
+.notelens-ink-board {
+  position: relative;
+  border: 1px solid rgba(120, 95, 30, 0.35);
+  border-radius: 8px;
+  overflow: hidden;
+  /* Ruled paper, like the pad OneNote gives you. */
+  background:
+    repeating-linear-gradient(0deg, rgba(120, 95, 30, 0.12) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, rgba(120, 95, 30, 0.08) 0 1px, transparent 1px 26px),
+    #fdf6d8;
+}
+.notelens-ink-board canvas { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+.notelens-ink-board canvas.is-erasing { cursor: cell; }
+.notelens-ink-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(90, 70, 20, 0.45);
+  font-size: 13px;
+  pointer-events: none;
+}
+.notelens-ink-hint.hidden-hint { display: none; }
+.notelens-ink-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.notelens-ink-tool {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted, #cbd5e1);
+  font-size: 12px;
+  cursor: pointer;
+}
+.notelens-ink-tool .svg-icon { width: 15px; height: 15px; }
+.notelens-ink-tool:hover { border-color: rgba(56, 189, 248, 0.6); color: var(--text-normal, #fff); }
+.notelens-ink-tool.active { border-color: #38bdf8; background: rgba(56, 189, 248, 0.18); color: var(--text-normal, #fff); }
+.notelens-ink-source-row { display: flex; align-items: center; gap: 8px; }
+.notelens-ink-source-label { color: var(--text-muted, #94a3b8); font-size: 11px; font-weight: 650; }
+.notelens-ink-source {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 7px;
+  background: var(--background-primary, rgba(9, 12, 20, 0.7));
+  color: var(--text-normal, #f1f5f9);
+  font-family: var(--font-monospace);
+  font-size: 13px;
+}
+.notelens-ink-status { min-height: 15px; color: var(--text-muted, #94a3b8); font-size: 11.5px; }
+.notelens-ink-footer { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Local-first assistant: useful board commands are the default surface. */
+.notelens-assistant-model.hidden { display: none; }
+.notelens-assistant-instant { display: flex; flex-direction: column; gap: 7px; }
+.notelens-assistant-instant-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  color: #f1f5f9;
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.notelens-assistant-scope { color: #94a3b8; font-size: 10.5px; font-weight: 400; }
+.notelens-assistant-instant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.notelens-assistant-instant-tool {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #dbe4f0;
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.notelens-assistant-instant-tool:hover {
+  border-color: rgba(45, 212, 191, 0.65);
+  background: rgba(13, 148, 136, 0.16);
+  color: #ffffff;
+}
+.notelens-assistant-instant-icon { display: grid; flex: 0 0 auto; color: #5eead4; }
+.notelens-assistant-instant-icon .svg-icon { width: 14px; height: 14px; }
+.notelens-assistant-modes { flex-wrap: wrap; }
+.notelens-assistant[data-mode="tools"] .notelens-assistant-log { min-height: 76px; max-height: 145px; }
+.notelens-assistant { overflow-y: auto; overscroll-behavior: contain; }
+
+/* Equation recognition controls: compact structures and explicit uncertainty. */
+.notelens-ink-structures,
+.notelens-ink-candidates {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.notelens-ink-structures-label,
+.notelens-ink-candidates-label {
+  margin-right: 2px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+.notelens-ink-structure {
+  min-width: 34px;
+  height: 27px;
+  padding: 0 8px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.16));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--background-primary, #202020) 82%, #14b8a6 18%);
+  color: var(--text-normal, #f8fafc);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+.notelens-ink-structure:hover { border-color: #2dd4bf; background: rgba(13, 148, 136, 0.2); }
+.notelens-ink-candidates.hidden { display: none; }
+.notelens-ink-candidate {
+  min-width: 43px;
+  height: 27px;
+  padding: 0 5px;
+  border: 1px solid rgba(245, 158, 11, 0.52);
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--text-normal, #f8fafc);
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}
+
+@media (max-height: 760px) {
+	.notelens-ink-equation-modal { max-height: calc(100vh - 30px); overflow-y: auto; }
+	.notelens-ink-preview { min-height: 58px; }
+	.notelens-ink-board { max-height: 220px; overflow-y: auto; }
 }

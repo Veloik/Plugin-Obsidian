@@ -547,7 +547,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		const decimal = formatNumber(result.value) + (result.unit ? ` ${result.unit}` : "");
 		const fraction = result.unit ? null : asFraction(result.value);
 		// Fractions in, fractions out: 2/3 + 1/6 shows 5/6 first and 0.8333… underneath.
-		const wantsFraction = fraction && (fractionMode || (/\d\s*\/\s*\d/.test(input.value) && !/\d\.\d/.test(input.value)));
+		const wantsFraction = fraction && (fractionMode || (/[\d)]\s*\/\s*[\d(]/.test(input.value) && !/\d\.\d/.test(input.value)));
 		if (wantsFraction && fraction) {
 			const f = formatFraction(fraction);
 			output.setText(f.plain + (f.mixed ? `  (${f.mixed})` : ""));
@@ -584,6 +584,28 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		input.setSelectionRange(caret, caret);
 		input.focus();
 		preview();
+	};
+
+	/**
+	 * Fraction key. With "2" just typed it becomes "(2)/()" and the caret waits
+	 * in the denominator; with nothing before the caret it inserts "()/()".
+	 */
+	const insertFraction = () => {
+		const start = input.selectionStart ?? input.value.length;
+		const before = input.value.slice(0, start);
+		const after = input.value.slice(input.selectionEnd ?? start);
+		const m = /(\d+(?:\.\d+)?|[a-zA-Z_]\w*|\([^()]*\))\s*$/.exec(before);
+		if (m) {
+			const head = before.slice(0, m.index);
+			const numerator = m[1].startsWith("(") ? m[1] : `(${m[1]})`;
+			input.value = `${head}${numerator}/()${after}`;
+			const caret = head.length + numerator.length + 2;
+			input.setSelectionRange(caret, caret);
+			input.focus();
+			preview();
+			return;
+		}
+		insertText("()/()");
 	};
 
 	const currentValue = (): number => {
@@ -648,7 +670,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 			const result = evaluateFull(src, env);
 			env.ans = result.value;
 			const fraction = result.unit ? null : asFraction(result.value);
-			const useFraction = fraction && (fractionMode || (/\d\s*\/\s*\d/.test(src) && !/\d\.\d/.test(src)));
+			const useFraction = fraction && (fractionMode || (/[\d)]\s*\/\s*[\d(]/.test(src) && !/\d\.\d/.test(src)));
 			const text = useFraction && fraction ? formatFraction(fraction).plain : formatNumber(result.value) + (result.unit ? ` ${result.unit}` : "");
 			history.push({ expression: src, result: text });
 			if (history.length > 60) history.shift();
@@ -664,6 +686,14 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 
 	input.addEventListener("input", preview);
 	input.addEventListener("keydown", (e) => {
+		if (e.key === "Tab" && !e.shiftKey) {
+			// Inside a fraction template, Tab moves to the next empty () slot.
+			const from = input.selectionStart ?? 0;
+			const next = input.value.indexOf("()", from);
+			if (next >= 0) { e.preventDefault(); input.setSelectionRange(next + 1, next + 1); return; }
+			const close = input.value.indexOf(")", from);
+			if (close >= 0) { e.preventDefault(); input.setSelectionRange(close + 1, close + 1); return; }
+		}
 		if (e.key === "Enter") { e.preventDefault(); commit(); }
 		else if (e.key === "Escape") { e.preventDefault(); toggle(); }
 		else if (e.key === "ArrowUp" && history.length) { e.preventDefault(); input.value = history[history.length - 1].expression; preview(); }
@@ -679,7 +709,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 			{ label: "x²", insert: "^2", cls: "fn" }, { label: "xʸ", insert: "^", cls: "fn" }, { label: "n!", insert: "!", cls: "fn" }, { label: "4", insert: "4" }, { label: "5", insert: "5" }, { label: "6", insert: "6" },
 			{ label: "π", insert: "pi", cls: "fn" }, { label: "e", insert: "e", cls: "fn" }, { label: "ans", insert: "ans", cls: "fn" }, { label: "1", insert: "1" }, { label: "2", insert: "2" }, { label: "3", insert: "3" },
 			{ label: "÷", insert: "/", cls: "op" }, { label: "×", insert: "*", cls: "op" }, { label: "−", insert: "-", cls: "op" }, { label: "0", insert: "0" }, { label: ".", insert: "." }, { label: "+", insert: "+", cls: "op" },
-			{ label: "C", action: () => { input.value = ""; preview(); input.focus(); }, cls: "muted", title: "Limpiar" }, { label: "%", insert: "%", cls: "op", title: "Porcentaje: 200 + 15%, 30% * 80" }, { label: "exp", insert: "exp()", cls: "fn" }, { label: "=", action: commit, cls: "equals" }, { label: "Insertar", action: () => { commit(); const last = history[history.length - 1]; if (last) host.insertCalculation(last.expression, last.result); }, cls: "insert wide", title: "Calcular e insertar en la pizarra" }
+			{ label: "C", action: () => { input.value = ""; preview(); input.focus(); }, cls: "muted", title: "Limpiar" }, { label: "%", insert: "%", cls: "op", title: "Porcentaje: 200 + 15%, 30% * 80" }, { label: "a/b", action: () => insertFraction(), cls: "fn fraction", title: "Fracción: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el botón a/b de arriba fuerza el resultado en fracción" }, { label: "exp", insert: "exp()", cls: "fn" }, { label: "=", action: commit, cls: "equals" }, { label: "Insertar", action: () => { commit(); const last = history[history.length - 1]; if (last) host.insertCalculation(last.expression, last.result); }, cls: "insert", title: "Calcular e insertar en la pizarra" }
 		],
 		"Avanzada": [
 			{ label: "sin⁻¹", insert: "asin()", cls: "fn" }, { label: "cos⁻¹", insert: "acos()", cls: "fn" }, { label: "tan⁻¹", insert: "atan()", cls: "fn" }, { label: "sinh", insert: "sinh()", cls: "fn" }, { label: "cosh", insert: "cosh()", cls: "fn" }, { label: "tanh", insert: "tanh()", cls: "fn" },

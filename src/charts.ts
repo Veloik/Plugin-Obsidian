@@ -367,7 +367,7 @@ export class ChartEditorModal extends Modal {
 		this.spec = { ...DEFAULT_CHART, ...initial };
 	}
 
-	onOpen(): void {
+	override onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("notelens-chart-editor");
@@ -426,7 +426,7 @@ export class ChartEditorModal extends Modal {
 		redraw();
 	}
 
-	onClose(): void {
+	override onClose(): void {
 		this.contentEl.empty();
 	}
 }
@@ -450,6 +450,7 @@ export function mountChartFrame(host: ChartHost, layer: HTMLElement, embed: Embe
 	frame.style.top = `${embed.y}px`;
 	frame.style.width = `${embed.w}px`;
 	frame.style.height = `${embed.h}px`;
+	frame.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
 
 	const header = frame.createDiv({ cls: "notelens-embed-header" });
 	setIcon(header.createSpan({ cls: "notelens-embed-icon" }), spec.type === "function" ? "function-square" : spec.type === "pie" ? "pie-chart" : spec.type === "line" || spec.type === "area" ? "line-chart" : "bar-chart-3");
@@ -458,9 +459,11 @@ export function mountChartFrame(host: ChartHost, layer: HTMLElement, embed: Embe
 	setIcon(edit, "pencil");
 	edit.title = "Editar datos del gráfico";
 	edit.onclick = (e) => { e.stopPropagation(); host.editChart(embed); };
-	const remove = header.createEl("button", { cls: "notelens-embed-close" });
+	const remove = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
 	remove.title = "Eliminar gráfico";
+	remove.setAttr("aria-label", "Eliminar gráfico");
+	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); frame.remove(); host.onEmbedDeleted(embed); };
 
 	const body = frame.createDiv({ cls: "notelens-embed-body notelens-chart-body" });

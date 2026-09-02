@@ -1,4 +1,5 @@
 import { Notice, requestUrl, setIcon } from "obsidian";
+import { LocalModelClient } from "./assistant";
 import { makeDraggable, shieldPanel } from "./panels";
 
 interface Language {
@@ -65,12 +66,38 @@ export async function translateText(source: string, from: string, to: string): P
 	const translated: string[] = [];
 	for (const chunk of chunks) {
 		const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${encodeURIComponent(`${from}|${to}`)}&mt=1`;
-		const response = await requestUrl({ url, method: "GET" });
-		const data = response.json as { responseStatus?: number; responseDetails?: string; responseData?: { translatedText?: string } };
-		const result = data?.responseData?.translatedText;
-		if (response.status >= 400 || data?.responseStatus && data.responseStatus !== 200 || typeof result !== "string") {
-			throw new Error(data?.responseDetails || "El servicio de traducción no devolvió un resultado válido.");
+		// throw:false so the service's own explanation reaches the user instead of
+		// a bare HTTP error: its quota and language messages are the useful part.
+		const response = await requestUrl({ url, method: "GET", throw: false });
+		const data = response.json as {
+			responseStatus?: number | string;
+			responseDetails?: string;
+			responseData?: { translatedText?: string };
+			matches?: { translation?: string; quality?: number | string }[];
+		};
+		const status = Number(data?.responseStatus ?? response.status);
+		const details = (data?.responseDetails || "").trim();
+		if (response.status >= 400 || (Number.isFinite(status) && status !== 200)) {
+			if (/QUOTA|ALL AVAILABLE FREE TRANSLATIONS/i.test(details)) {
+				throw new Error("El servicio gratuito de traducción ha agotado su cuota diaria para esta red. Vuelve a intentarlo mañana.");
+			}
+			if (/DISTINCT LANGUAGES/i.test(details)) {
+				throw new Error("Elige dos idiomas distintos para traducir.");
+			}
+			if (/INVALID LANGUAGE|NOT SUPPORTED/i.test(details)) {
+				throw new Error(`El servicio no admite la combinación ${from} → ${to}.`);
+			}
+			throw new Error(details || `El servicio de traducción respondió ${response.status}.`);
 		}
+		let result = typeof data?.responseData?.translatedText === "string" ? data.responseData.translatedText : "";
+		if (!result.trim()) {
+			// It sometimes answers with an empty string but a usable match.
+			const best = (data?.matches ?? [])
+				.filter(match => typeof match.translation === "string" && match.translation.trim())
+				.sort((a, b) => Number(b.quality ?? 0) - Number(a.quality ?? 0))[0];
+			result = best?.translation ?? "";
+		}
+		if (!result.trim()) throw new Error("El servicio no ha devuelto ninguna traducción para este texto.");
 		translated.push(decodeEntities(result));
 	}
 	return translated.join("");
@@ -84,7 +111,19 @@ export interface TranslationSource {
 	count: number;
 }
 
+/** Human names for the prompt, so the model knows what it is translating. */
+const LANGUAGE_NAMES: Record<string, string> = {
+	es: "español", en: "inglés", fr: "francés", de: "alemán", it: "italiano", pt: "portugués", ca: "catalán",
+	eu: "euskera", gl: "gallego", nl: "neerlandés", pl: "polaco", ru: "ruso", uk: "ucraniano", ar: "árabe",
+	"zh-CN": "chino simplificado", ja: "japonés", ko: "coreano"
+};
+
 export interface TranslatorHost {
+	/** Local model settings, so translating can run on this computer. */
+	aiBaseUrl: string;
+	aiModel: string;
+	/** When true the web service is never used, so nothing depends on a quota. */
+	translationLocalOnly: boolean;
 	translateFrom: string;
 	translateTo: string;
 	setTranslateLanguages(from: string, to: string): void;
@@ -172,14 +211,40 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 		translateBtn.disabled = true;
 		status.setText("Traduciendo…");
 		try {
-			const translated = await translateText(source.value, fromSelect.value, toSelect.value);
+			// A model on this computer first: free, offline and with no daily cap.
+			let translated: string | null = null;
+			let engine = "";
+			try {
+				const client = new LocalModelClient(host as never);
+				status.setText("Traduciendo con tu modelo local…");
+				translated = await client.translate(
+					source.value,
+					LANGUAGE_NAMES[fromSelect.value] ?? fromSelect.value,
+					LANGUAGE_NAMES[toSelect.value] ?? toSelect.value
+				);
+				if (translated) engine = "modelo local";
+			} catch { /* no local model: use the web service */ }
+			if (!translated && host.translationLocalOnly) {
+				throw new Error("No hay ningún modelo local disponible y has pedido traducir solo en local. Descarga uno o desactiva esa opción en los ajustes.");
+			}
+			if (!translated) {
+				status.setText("Traduciendo con el servicio gratuito…");
+				translated = await translateText(source.value, fromSelect.value, toSelect.value);
+				engine = "servicio web";
+			}
 			if (id !== running) return;
 			result.value = translated;
-			status.setText(current.kind === "selection" ? (current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados.` : "Traducido el cuadro seleccionado.") : current.kind === "editor" ? "Traducido el cuadro que estás editando." : "");
+			const targetStatus = current.kind === "selection"
+				? (current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados` : "Traducido el cuadro seleccionado")
+				: current.kind === "editor" ? "Traducido el cuadro que estás editando" : "Traducción lista";
+			status.setText(`${targetStatus} · ${engine}.`);
 		} catch (error) {
 			if (id !== running) return;
 			console.error("NoteLens: translation failed", error);
-			status.setText("No se pudo traducir. Comprueba la conexión e inténtalo de nuevo.");
+			// The service explains itself (quota, unsupported pair); show that
+			// rather than a generic line the user cannot act on.
+			const reason = error instanceof Error ? error.message.trim() : "";
+			status.setText(reason || "No se pudo traducir. Comprueba la conexión e inténtalo de nuevo.");
 		} finally {
 			if (id === running) translateBtn.disabled = false;
 			refreshButtons();

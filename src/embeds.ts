@@ -1,5 +1,6 @@
-import { App, FuzzySuggestModal, Menu, Modal, Notice, Setting, TFile, setIcon, normalizePath } from "obsidian";
+import { App, FuzzySuggestModal, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfWorkerSource from "pdfjs-dist/build/pdf.worker.min.mjs?raw";
 import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
 import { VIDEO_EXTENSIONS, clamp, toRemoteVideoEmbed } from "./tools";
@@ -57,26 +58,33 @@ const KIND_ICONS: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// pdf.js worker: served from the plugin folder inside the vault.
-// The file is copied there by esbuild.config.mjs during `npm run build`.
+// The worker is embedded in main.js so Obsidian and BRAT only need the three
+// standard plugin files. PDF parsing still happens away from the UI thread.
 // ---------------------------------------------------------------------------
 let workerConfigured = false;
-function ensurePdfWorker(host: EmbedHost): void {
+let workerUrl: string | null = null;
+function ensurePdfWorker(): void {
 	if (workerConfigured) return;
 	workerConfigured = true;
 	try {
-		const workerPath = normalizePath(`${host.pluginDir}/pdf.worker.min.js`);
-		(pdfjsLib.GlobalWorkerOptions as any).workerSrc =
-			(host.app.vault.adapter as any).getResourcePath(workerPath);
+		workerUrl = URL.createObjectURL(new Blob([pdfWorkerSource], { type: "text/javascript" }));
+		(pdfjsLib.GlobalWorkerOptions as any).workerSrc = workerUrl;
 	} catch (e) {
-		console.warn("NoteLens: pdf.js worker unavailable, falling back to main thread", e);
+		workerConfigured = false;
+		console.warn("NoteLens: pdf.js worker unavailable", e);
 	}
+}
+
+export function disposePdfWorker(): void {
+	if (workerUrl) URL.revokeObjectURL(workerUrl);
+	workerUrl = null;
+	workerConfigured = false;
 }
 
 async function loadPdf(host: EmbedHost, src: string): Promise<any | null> {
 	const file = host.app.vault.getAbstractFileByPath(src);
 	if (!(file instanceof TFile)) return null;
-	ensurePdfWorker(host);
+	ensurePdfWorker();
 	try {
 		const buf = await host.app.vault.readBinary(file);
 		return await pdfjsLib.getDocument({ data: buf }).promise;
@@ -116,6 +124,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	frame.setAttr("data-id", embed.id);
 	frame.style.left = `${embed.x}px`;
 	frame.style.top = `${embed.y}px`;
+	if (embed.rotation) frame.style.transform = `rotate(${embed.rotation}deg)`;
 	frame.style.width = `${embed.w}px`;
 	frame.style.height = `${embed.h}px`;
 
@@ -154,9 +163,11 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 		};
 	}
 
-	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
+	const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(closeBtn, "x");
-	closeBtn.title = "Eliminar";
+	closeBtn.title = "Cerrar y quitar de la pizarra";
+	closeBtn.setAttr("aria-label", "Cerrar y quitar de la pizarra");
+	closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	closeBtn.onclick = (e) => {
 		e.stopPropagation();
 		frame.remove();
@@ -273,6 +284,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	card.setAttr("data-kind", embed.kind);
 	card.style.left = `${embed.x}px`;
 	card.style.top = `${embed.y}px`;
+	if (embed.rotation) card.style.transform = `rotate(${embed.rotation}deg)`;
 	card.style.width = `${embed.w || 320}px`;
 
 	const head = card.createDiv({ cls: "notelens-link-head" });
@@ -288,9 +300,11 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	setIcon(open, "external-link");
 	open.title = embed.kind === "board" ? "Abrir la pizarra (Ctrl: en pestaña nueva)" : "Abrir la nota (Ctrl: en pestaña nueva)";
 	open.onclick = (e) => { e.stopPropagation(); host.openLink(embed.src, e.ctrlKey || e.metaKey); };
-	const remove = head.createEl("button", { cls: "notelens-embed-close" });
+	const remove = head.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
 	remove.title = "Quitar el enlace de la pizarra";
+	remove.setAttr("aria-label", "Quitar el enlace de la pizarra");
+	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); card.remove(); host.onEmbedDeleted(embed); };
 
 	const preview = card.createDiv({ cls: "notelens-link-preview" });
@@ -319,6 +333,7 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	card.setAttr("data-id", embed.id);
 	card.style.left = `${embed.x}px`;
 	card.style.top = `${embed.y}px`;
+	if (embed.rotation) card.style.transform = `rotate(${embed.rotation}deg)`;
 	card.style.width = `${embed.w || 360}px`;
 
 	const icon = card.createDiv({ cls: "notelens-attachment-icon" });
@@ -336,9 +351,11 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 		host.openVaultFile(embed.src);
 	};
 
-	const remove = card.createEl("button", { cls: "notelens-embed-close" });
+	const remove = card.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
-	remove.title = "Eliminar";
+	remove.title = "Quitar archivo de la pizarra";
+	remove.setAttr("aria-label", "Quitar archivo de la pizarra");
+	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => {
 		e.stopPropagation();
 		card.remove();
@@ -365,6 +382,8 @@ async function mountPdfViewer(host: EmbedHost, header: HTMLElement, body: HTMLEl
 
 	// Header page navigation
 	const nav = header.createDiv({ cls: "notelens-pdf-nav" });
+	const closeControl = header.querySelector(".notelens-embed-close");
+	if (closeControl) header.insertBefore(nav, closeControl);
 	const prevBtn = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
 	setIcon(prevBtn, "chevron-left");
 	const pageLabel = nav.createSpan({ cls: "notelens-pdf-page" });
@@ -421,13 +440,16 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	stack.setAttr("data-id", embed.id);
 	stack.style.left = `${embed.x}px`;
 	stack.style.top = `${embed.y}px`;
+	if (embed.rotation) stack.style.transform = `rotate(${embed.rotation}deg)`;
 	stack.style.width = `${embed.w}px`;
 
-	// Hover controls (drag with select tool, delete via context menu)
+	// The close control stays visible so loose pages behave like every other object.
 	const controls = stack.createDiv({ cls: "notelens-stack-controls" });
-	const delBtn = controls.createEl("button", { cls: "notelens-embed-close" });
-	setIcon(delBtn, "trash-2");
-	delBtn.title = "Eliminar documento";
+	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
+	setIcon(delBtn, "x");
+	delBtn.title = "Quitar documento de la pizarra";
+	delBtn.setAttr("aria-label", "Quitar documento de la pizarra");
+	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {
 		e.stopPropagation();
 		stack.remove();
@@ -522,6 +544,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 	wrap.style.left = `${embed.x}px`;
 	wrap.style.top = `${embed.y}px`;
 	wrap.style.width = `${embed.w}px`;
+	wrap.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
 
 	const file = host.app.vault.getAbstractFileByPath(embed.src);
 	if (file instanceof TFile) {
@@ -532,11 +555,13 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 		wrap.createDiv({ cls: "notelens-embed-missing", text: `Imagen no encontrada: ${embed.src}` });
 	}
 
-	// Hover delete control
+	// Permanent close control, matching framed files and charts.
 	const controls = wrap.createDiv({ cls: "notelens-stack-controls" });
-	const delBtn = controls.createEl("button", { cls: "notelens-embed-close" });
-	setIcon(delBtn, "trash-2");
-	delBtn.title = "Eliminar imagen";
+	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
+	setIcon(delBtn, "x");
+	delBtn.title = "Quitar imagen de la pizarra";
+	delBtn.setAttr("aria-label", "Quitar imagen de la pizarra");
+	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {
 		e.stopPropagation();
 		wrap.remove();
@@ -730,7 +755,7 @@ export class PdfModeModal extends Modal {
 		super(app);
 	}
 
-	onOpen(): void {
+	override onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h3", { text: "¿Cómo insertar el PDF?" });
@@ -767,7 +792,7 @@ export class VideoInsertModal extends Modal {
 		super(app);
 	}
 
-	onOpen(): void {
+	override onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl("h3", { text: "Insertar vídeo" });

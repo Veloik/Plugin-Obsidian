@@ -6,7 +6,7 @@
  */
 
 export function looksLikeLatex(src: string): boolean {
-	return /\\[a-zA-Z]+|\\\\|\\[{}()[\]]/.test(src);
+	return /\\[a-zA-Z]+|\\\\|\\[{}()[\]]|[_^]\s*\{/.test(src);
 }
 
 const GREEK = ["alpha", "beta", "gamma", "delta", "epsilon", "varepsilon", "zeta", "eta", "theta", "vartheta", "iota", "kappa", "lambda", "mu", "nu", "xi", "pi", "rho", "sigma", "tau", "upsilon", "phi", "varphi", "chi", "psi", "omega",

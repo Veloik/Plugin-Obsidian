@@ -1,0 +1,6 @@
+# Ship the plugin artifacts with LF so the CI byte-comparison holds on any OS.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.mp4 binary

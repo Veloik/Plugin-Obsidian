@@ -1,10 +1,10 @@
 {
   "id": "notelens",
   "name": "NoteLens",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "minAppVersion": "1.0.0",
   "description": "NoteLens: Pizarra infinita profesional para Obsidian con soporte para lápiz óptico, etiquetas inteligentes, PDFs y vídeos interactivos.",
   "author": "JotaTito",
-  "authorUrl": "https://github.com",
+  "authorUrl": "https://github.com/Veloik",
   "isDesktopOnly": false
 }

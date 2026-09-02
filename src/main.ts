@@ -1,12 +1,17 @@
-import { Plugin, TFile } from "obsidian";
-import { OneNoteCanvasView, VIEW_TYPE_ONENOTE } from "./view";
+import { VISION_CATALOGUE, parseAssistantActions, rankModels, recommendedVisionModel, visionOptionsFor } from "./assistant";
+import { Plugin } from "obsidian";
+import { OneNoteCanvasView, VIEW_TYPE_ONENOTE, tidyFormulaText } from "./view";
+import { disposePdfWorker } from "./embeds";
+import { recognizeFormula } from "./ocr";
+import { formulaCandidateScore, recognizeInkFormula } from "./ink-math";
+import { runLocalStudyTool } from "./local-intelligence";
 import { DocumentDefaults, createEmptyDocument } from "./types";
 import { DEFAULT_SETTINGS, NoteLensSettingTab, NoteLensSettings, normalizeSettings } from "./settings";
 
 export default class OneNotePlugin extends Plugin {
-	settings: NoteLensSettings = { ...DEFAULT_SETTINGS };
+	override settings: NoteLensSettings = { ...DEFAULT_SETTINGS };
 
-	async onload(): Promise<void> {
+	override async onload(): Promise<void> {
 		this.settings = normalizeSettings(await this.loadData());
 		this.addSettingTab(new NoteLensSettingTab(this.app, this));
 
@@ -28,14 +33,33 @@ export default class OneNotePlugin extends Plugin {
 		});
 	}
 
+	override onunload(): void {
+		disposePdfWorker();
+	}
+
+	/** Boards currently on screen, kept by the views themselves. */
+	readonly openBoards = new Set<OneNoteCanvasView>();
+
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		// Apply them to the boards that are already open, instead of waiting for
+		// the user to close and reopen every one of them. Never let a workspace
+		// quirk stop the settings from being saved.
+		// Every open board registers itself, so this never depends on leaf types
+		// or on instanceof surviving a plugin reload.
+		for (const board of [...this.openBoards]) {
+			try {
+				board.refreshFromSettings();
+			} catch (error) {
+				console.warn("NoteLens: no he podido refrescar una pizarra", error);
+			}
+		}
 	}
 
 	/** What a brand-new board looks like, taken from the settings tab. */
 	documentDefaults(): DocumentDefaults {
 		const s = this.settings;
-		return { background: s.defaultBackground, backgroundColor: s.defaultPageColor, lineColor: s.defaultLineColor, gridSize: s.defaultGridSize };
+		return { background: s.defaultBackground, marginEnabled: s.defaultMargin, backgroundColor: s.defaultPageColor, lineColor: s.defaultLineColor, gridSize: s.defaultGridSize };
 	}
 
 	async createNewOneNoteFile(): Promise<void> {
@@ -51,3 +75,9 @@ export default class OneNotePlugin extends Plugin {
 		await leaf.openFile(file);
 	}
 }
+
+// Exposed for the dev harness so the ranking helpers can be tested directly.
+export const __assistantTest = {
+	rankModels, recommendedVisionModel, parseAssistantActions, visionOptionsFor, VISION_CATALOGUE,
+	tidyFormulaText, recognizeFormula, recognizeInkFormula, formulaCandidateScore, runLocalStudyTool
+};

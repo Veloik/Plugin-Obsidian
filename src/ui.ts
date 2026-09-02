@@ -1,5 +1,6 @@
 import { setIcon } from "obsidian";
-import { BackgroundPattern, CanvasFont, GridSize, ShapeKind, ViewportBookmark } from "./types";
+import { BackgroundPattern, CanvasFont, DocumentPage, GridSize, ShapeKind, ViewportBookmark, PenStyle, Stroke } from "./types";
+import { CanvasRenderer } from "./renderer";
 
 export type ToolId = "select" | "pen" | "highlighter" | "eraser" | "text" | "shape" | "place_badge";
 /** "stroke" removes whole strokes; "partial" cuts only what the eraser touches. */
@@ -22,6 +23,14 @@ export const QUICK_TAGS: QuickTag[] = [
 	{ id: "tag_hover", label: "Nota flotante", icon: "message-square", color: "#38bdf8" }
 ];
 
+const TAG_HINTS: Record<string, string> = {
+	tag_star: "Importante: márcalo para encontrarlo al repasar",
+	tag_question: "Duda: algo que preguntar o aclarar",
+	tag_idea: "Idea clave: el concepto que hay que recordar",
+	tag_todo: "Tarea: pendiente con casilla; clic para completarla",
+	tag_hover: "Nota flotante: un aviso que aparece al pasar el ratón"
+};
+
 export function quickTagById(id: string): QuickTag {
 	return QUICK_TAGS.find(t => t.id === id) ?? QUICK_TAGS[0];
 }
@@ -38,6 +47,16 @@ export const HIGHLIGHTER_COLORS = [
 ];
 
 const WIDTH_PRESETS = [1, 2, 3.5, 5, 8, 12, 18];
+
+/** Pen nibs: icon shown on the ribbon, label and a one-line description for the panel. */
+export const PEN_STYLES: { id: PenStyle; icon: string; label: string; hint: string }[] = [
+	{ id: "ballpoint", icon: "pen", label: "Bolígrafo", hint: "Trazo limpio y uniforme; la presión lo afina un poco." },
+	{ id: "pencil", icon: "pencil", label: "Lápiz", hint: "Grafito suave con grano, ideal para bocetos y apuntes rápidos." },
+	{ id: "fountain", icon: "feather", label: "Pluma", hint: "Engorda cuando vas despacio y se afina al correr, como una plumilla." },
+	{ id: "marker", icon: "pen-line", label: "Rotulador", hint: "Punta de fieltro: grosor constante, sin importar la presión." },
+	{ id: "brush", icon: "brush", label: "Pincel", hint: "La presión manda y los extremos se afinan; con ratón queda caligráfico." }
+];
+export const penStyleById = (id: PenStyle) => PEN_STYLES.find(p => p.id === id) ?? PEN_STYLES[0];
 const HIGHLIGHTER_WIDTHS = [12, 18, 24, 32, 40];
 const ERASER_SIZES: { label: string; value: number }[] = [
 	{ label: "S", value: 6 },
@@ -58,8 +77,7 @@ const BG_OPTIONS: { id: BackgroundPattern; label: string; icon: string }[] = [
 	{ id: "blank", label: "Liso", icon: "square" },
 	{ id: "dots", label: "Puntos", icon: "grip" },
 	{ id: "grid", label: "Rejilla", icon: "layout-grid" },
-	{ id: "lines", label: "Rayas", icon: "align-justify" },
-	{ id: "margin", label: "Con margen", icon: "separator-vertical" }
+	{ id: "lines", label: "Rayas", icon: "align-justify" }
 ];
 
 const LINE_COLORS = [
@@ -86,6 +104,7 @@ export interface ToolbarHost {
 	highlighterColor: string;
 	strokeWidth: number;
 	strokeIntensity: number;
+	penStyle: PenStyle;
 	highlighterColorHex: string;
 	highlighterWidth: number;
 	highlighterIntensity: number;
@@ -100,6 +119,7 @@ export interface ToolbarHost {
 	shapeFillOpacity: number;
 	shapeFillEnabled: boolean;
 	background: BackgroundPattern;
+	marginEnabled: boolean;
 	backgroundColor: string;
 	lineColor: string;
 	gridSize: GridSize;
@@ -108,6 +128,7 @@ export interface ToolbarHost {
 	setPenColor(hex: string): void;
 	setHighlighterColor(hex: string): void;
 	setStrokeWidth(w: number): void;
+	setPenStyle(style: PenStyle): void;
 	setStrokeIntensity(v: number): void;
 	setEraserSize(v: number): void;
 	setEraserMode(mode: EraserMode): void;
@@ -122,6 +143,9 @@ export interface ToolbarHost {
 	setShapeFillOpacity(opacity: number): void;
 	setShapeFillEnabled(enabled: boolean): void;
 	setBackground(p: BackgroundPattern): void;
+	setMarginEnabled(enabled: boolean): void;
+	/** Opens NoteLens's own tab in Obsidian's settings window. */
+	openPluginSettings(): void;
 	setBackgroundColor(hex: string): void;
 	setLineColor(hex: string): void;
 	setGridSize(size: GridSize): void;
@@ -150,7 +174,15 @@ export interface ToolbarHost {
 	addViewportBookmark(): void;
 	getViewportBookmarks(): ViewportBookmark[];
 	goToViewportBookmark(id: string): void;
+	renameViewportBookmark(id: string, label: string): void;
 	deleteViewportBookmark(id: string): void;
+	getDocumentPages(): DocumentPage[];
+	getActivePageId(): string;
+	getPageTitle(id?: string): string;
+	addDocumentPage(): void;
+	goToDocumentPage(id: string): void;
+	renameDocumentPage(id: string, title: string): void;
+	deleteDocumentPage(id: string): void;
 	toggleA4Guides(): void;
 	getA4GuidesEnabled(): boolean;
 	exportA4Pdf(): void;
@@ -175,6 +207,72 @@ function shield(el: HTMLElement): void {
 	el.addEventListener("pointerdown", (e) => e.stopPropagation());
 	el.addEventListener("pointerup", (e) => e.stopPropagation());
 	el.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+}
+
+/** Accent-insensitive text used by the large-document navigator panels. */
+export function normalizePanelSearch(value: string): string {
+	return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase().trim();
+}
+
+export function matchesPanelSearch(query: string, ...values: Array<string | number | undefined>): boolean {
+	const needle = normalizePanelSearch(query);
+	if (!needle) return true;
+	const haystack = normalizePanelSearch(values.filter(value => value !== undefined).join(" "));
+	return needle.split(/\s+/).every(term => haystack.includes(term));
+}
+
+/** Shared compact search field for pages, bookmarks and the tag summary. */
+export function createPanelSearch(
+	parent: HTMLElement,
+	placeholder: string,
+	initialValue: string,
+	onChange: (query: string) => void
+): { input: HTMLInputElement; clear: () => void; setCount: (visible: number, total: number) => void } {
+	const row = parent.createDiv({ cls: "notelens-panel-search" });
+	row.setAttr("role", "search");
+	setIcon(row.createSpan({ cls: "notelens-panel-search-icon" }), "search");
+	const input = row.createEl("input", { cls: "notelens-panel-search-input", type: "search" });
+	input.placeholder = placeholder;
+	input.value = initialValue;
+	input.setAttr("aria-label", placeholder.replace("…", ""));
+	input.setAttr("autocomplete", "off");
+	input.setAttr("spellcheck", "false");
+	const count = row.createSpan({ cls: "notelens-panel-search-count" });
+	count.setAttr("aria-live", "polite");
+	const clearButton = row.createEl("button", { cls: "notelens-panel-search-clear" });
+	setIcon(clearButton, "x");
+	clearButton.title = "Limpiar búsqueda";
+	clearButton.setAttr("aria-label", "Limpiar búsqueda");
+
+	const notify = () => {
+		clearButton.toggleClass("hidden", !input.value);
+		onChange(input.value);
+	};
+	const clear = () => {
+		if (!input.value) return;
+		input.value = "";
+		notify();
+		input.focus();
+	};
+	input.addEventListener("input", notify);
+	input.addEventListener("keydown", event => {
+		if (event.key !== "Escape") return;
+		event.preventDefault();
+		event.stopPropagation();
+		if (input.value) clear(); else input.blur();
+	});
+	clearButton.addEventListener("pointerdown", event => event.preventDefault());
+	clearButton.onclick = clear;
+	clearButton.toggleClass("hidden", !input.value);
+
+	return {
+		input,
+		clear,
+		setCount: (visible, total) => {
+			count.setText(normalizePanelSearch(input.value) ? `${visible}/${total}` : String(total));
+			count.title = `${visible} de ${total} elementos visibles`;
+		}
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -221,9 +319,9 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 			host.setTool(t.id);
 			refreshActive();
 			if (TOOLS_WITH_PANEL.includes(t.id)) {
+				// Selecting a tool leaves the canvas clear; pressing it again shows its options.
 				if (reopening) { if (wasOpen) closePanel(); else openPanel(); }
-				else if (t.id === "select") closePanel();
-				else openPanel();
+				else closePanel();
 			} else {
 				closePanel();
 			}
@@ -235,6 +333,14 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		bar.setAttr("data-active-tool", host.currentTool);
 		for (const [id, btn] of toolButtons) {
 			btn.toggleClass("active", id === host.currentTool);
+		}
+		const penBtn = toolButtons.get("pen");
+		if (penBtn && penBtn.getAttr("data-nib") !== host.penStyle) {
+			const nib = penStyleById(host.penStyle);
+			penBtn.empty();
+			setIcon(penBtn, nib.icon);
+			penBtn.setAttr("data-nib", nib.id);
+			penBtn.title = `${nib.label} (P) — opciones al pulsar de nuevo`;
 		}
 	}
 	refreshActive();
@@ -277,7 +383,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const videoBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(videoBtn, "play-circle");
-	videoBtn.title = "Insertar vídeo (YouTube o archivo local)";
+	videoBtn.title = "Insertar vídeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom… o un archivo de vídeo local";
 	videoBtn.onclick = () => host.insertVideo();
 
 	const imageBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
@@ -322,7 +428,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const mathBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(mathBtn, "sigma");
-	mathBtn.title = "Insertar fórmula (LaTeX). También puedes escribir $x^2$ dentro de cualquier texto";
+	mathBtn.title = "Insertar ecuación: escríbela a mano y se convierte sola, o teclea la notación. También vale $x^2$ dentro de cualquier texto";
 	mathBtn.onclick = () => host.insertMathBlock();
 
 	const recorderBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
@@ -455,9 +561,9 @@ function createShortcutsPanel(container: HTMLElement): { toggle: () => void; isO
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	const groups: [string, [string, string][]][] = [
-		["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["P", "Lápiz"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
-		["Edición", [["Ctrl+Z / Ctrl+Y", "Deshacer / rehacer"], ["Ctrl+A", "Seleccionar todo"], ["Ctrl+D", "Duplicar selección"], ["Supr", "Borrar selección"], ["Flechas", "Mover selección (Shift: ×10)"], ["Ctrl+F", "Buscar en la pizarra"]]],
-		["Dibujo y texto", [["Shift + lápiz", "Línea recta"], ["Doble clic", "Nuevo cuadro de texto"], ["Tab", "Indentar en el editor"], ["Ctrl+Enter / Esc", "Terminar de editar"], ["$…$", "Fórmula LaTeX en un texto"], ["```lang", "Convertir en bloque de código"]]],
+		["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["P", "Lápiz (pulsa de nuevo: bolígrafo, lápiz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
+		["Edición", [["Ctrl+Z / Ctrl+Y", "Deshacer / rehacer"], ["Ctrl+A", "Seleccionar todo"], ["Ctrl+D", "Duplicar selección"], ["Ctrl+C / X / V", "Copiar, cortar y pegar"], ["Supr", "Borrar selección"], ["Flechas", "Mover selección (Shift: ×10)"], ["Ctrl+F", "Buscar en la pizarra"]]],
+		["Dibujo y texto", [["Shift + lápiz", "Línea recta"], ["Doble clic", "Nuevo cuadro de texto"], ["Doble clic en objeto", "Editar tabla, fórmula o gráfico"], ["Asa circular", "Girar la selección (Shift: 15°)"], ["Tab", "Indentar en el editor"], ["Ctrl+Enter / Esc", "Terminar de editar"], ["$…$", "Fórmula LaTeX en un texto"], ["```lang", "Convertir en bloque de código"]]],
 		["Vista", [["Rueda", "Desplazar (Shift: horizontal)"], ["Ctrl + rueda", "Zoom"], ["Alt + arrastrar", "Mover la página"], ["Esc", "Cerrar paneles"]]]
 	];
 	const body = panel.createDiv({ cls: "notelens-shortcuts-body" });
@@ -490,36 +596,130 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 	const add = headerButtons.createEl("button", { cls: "notelens-table-control" });
 	setIcon(add, "plus");
 	add.title = "Guardar posición actual";
-	add.onclick = () => host.addViewportBookmark();
+	let clearSearch = () => {};
+	add.onclick = () => { clearSearch(); host.addViewportBookmark(); };
 	const closeBookmarks = headerButtons.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBookmarks, "x");
 	closeBookmarks.title = "Cerrar";
 	closeBookmarks.onclick = () => panel.addClass("hidden");
+	let searchQuery = "";
+	let refresh: (renameId?: string) => void = () => {};
+	const search = createPanelSearch(panel, "Buscar marcadores…", searchQuery, query => {
+		searchQuery = query;
+		refresh();
+	});
+	clearSearch = search.clear;
+	// Page filter: "todas" by default, or just one page of the notebook.
+	let pageFilter: string | null = null;
+	const pageFilterRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
+	const pageFilterSelect = pageFilterRow.createEl("select", { cls: "notelens-panel-page-select" });
+	pageFilterSelect.title = "Mostrar solo los marcadores de una página";
+	pageFilterSelect.onchange = () => {
+		pageFilter = pageFilterSelect.value === "__all__" ? null : pageFilterSelect.value;
+		refresh();
+	};
+	const renderPageFilter = () => {
+		const pages = host.getDocumentPages();
+		pageFilterRow.toggleClass("hidden", pages.length < 2);
+		if (pages.length < 2) { pageFilter = null; return; }
+		if (pageFilter && !pages.some(page => page.id === pageFilter)) pageFilter = null;
+		pageFilterSelect.empty();
+		pageFilterSelect.createEl("option", { value: "__all__", text: `Todas las páginas (${pages.length})` });
+		for (const page of pages) {
+			const counted = host.getViewportBookmarks().filter(b => (b.pageId ?? host.getActivePageId()) === page.id).length;
+			pageFilterSelect.createEl("option", { value: page.id, text: `${host.getPageTitle(page.id)} (${counted})` });
+		}
+		pageFilterSelect.value = pageFilter ?? "__all__";
+	};
 	const list = panel.createDiv({ cls: "notelens-bookmarks-list" });
+	let cancelActiveRename: (() => void) | null = null;
 
-	const refresh = () => {
+	/** Turns a bookmark row into an inline name editor; Enter saves, Esc cancels. */
+	const startRename = (item: HTMLElement, go: HTMLElement, bookmark: ViewportBookmark) => {
+		const input = item.createEl("input", { cls: "notelens-bookmark-rename", type: "text", value: bookmark.label });
+		item.addClass("is-renaming");
+		go.hide();
+		item.insertBefore(input, go);
+		let done = false;
+		const finish = (commit: boolean) => {
+			if (done) return;
+			done = true;
+			cancelActiveRename = null;
+			const label = input.value.trim();
+			input.remove();
+			item.removeClass("is-renaming");
+			go.show();
+			if (commit && label && label !== bookmark.label) host.renameViewportBookmark(bookmark.id, label);
+		};
+		input.addEventListener("keydown", (event) => {
+			if (event.key === "Enter") { event.preventDefault(); finish(true); }
+			else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(false); }
+			else event.stopPropagation();
+		});
+		input.addEventListener("blur", () => finish(true));
+		input.addEventListener("pointerdown", (event) => event.stopPropagation());
+		input.focus();
+		input.select();
+		cancelActiveRename = () => finish(false);
+	};
+
+	refresh = (renameId?: string) => {
+		cancelActiveRename?.();
+		if (renameId) (container as any).__closePages?.();
 		list.empty();
-		const bookmarks = host.getViewportBookmarks();
-		if (bookmarks.length === 0) {
-			list.createDiv({ cls: "notelens-bookmarks-empty", text: "Sin marcadores" });
+		renderPageFilter();
+		const allBookmarks = host.getViewportBookmarks();
+		const bookmarks = allBookmarks
+			.map((bookmark, index) => ({ bookmark, index }))
+			.filter(({ bookmark }) => pageFilter === null || (bookmark.pageId ?? host.getActivePageId()) === pageFilter)
+			.filter(({ bookmark, index }) => matchesPanelSearch(searchQuery, bookmark.label, host.getPageTitle(bookmark.pageId), index + 1));
+		search.setCount(bookmarks.length, allBookmarks.length);
+		if (allBookmarks.length === 0) {
+			list.createDiv({ cls: "notelens-bookmarks-empty", text: "Sin marcadores. Pulsa + para guardar la vista actual." });
 			return;
 		}
-		for (const bookmark of bookmarks) {
+		if (bookmarks.length === 0) {
+			list.createDiv({
+				cls: "notelens-bookmarks-empty",
+				text: pageFilter && !searchQuery
+					? `Sin marcadores en ${host.getPageTitle(pageFilter)}.`
+					: "No hay marcadores que coincidan con la búsqueda."
+			});
+			return;
+		}
+		bookmarks.forEach(({ bookmark, index }) => {
 			const item = list.createDiv({ cls: "notelens-bookmark-item" });
-			const go = item.createEl("button", { cls: "notelens-bookmark-go", text: bookmark.label });
-			go.title = `Ir a ${bookmark.label}`;
+			const go = item.createEl("button", { cls: "notelens-bookmark-go" });
+			go.createSpan({ cls: "notelens-bookmark-index", text: `${index + 1}` });
+			const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
+			copy.createSpan({ cls: "notelens-bookmark-label", text: bookmark.label });
+			if (host.getDocumentPages().length > 1) copy.createSpan({ cls: "notelens-bookmark-page", text: host.getPageTitle(bookmark.pageId) });
+			go.title = `Ir a ${bookmark.label} (doble clic para renombrar)`;
 			go.onclick = () => {
 				host.goToViewportBookmark(bookmark.id);
 				panel.addClass("hidden");
 			};
+			go.ondblclick = (event) => { event.preventDefault(); startRename(item, go, bookmark); };
+			const rename = item.createEl("button", { cls: "notelens-table-control" });
+			setIcon(rename, "pencil");
+			rename.title = "Renombrar marcador";
+			rename.onclick = () => startRename(item, go, bookmark);
 			const remove = item.createEl("button", { cls: "notelens-table-control" });
 			setIcon(remove, "x");
 			remove.title = "Eliminar marcador";
 			remove.onclick = () => host.deleteViewportBookmark(bookmark.id);
-		}
+			if (renameId === bookmark.id) {
+				panel.removeClass("hidden");
+				startRename(item, go, bookmark);
+			}
+		});
 	};
 
-	toggle.onclick = () => panel.toggleClass("hidden", !panel.hasClass("hidden"));
+	toggle.onclick = () => {
+		const opening = panel.hasClass("hidden");
+		if (opening) (container as any).__closePages?.();
+		panel.toggleClass("hidden", !opening);
+	};
 	// Capture phase: sibling docks stop pointerdown propagation, so a bubbling
 	// listener never saw those clicks and two panels could overlap.
 	container.addEventListener("pointerdown", (event) => {
@@ -528,6 +728,123 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 		}
 	}, { capture: true });
 	(container as any).__refreshBookmarks = refresh;
+	(container as any).__closeBookmarks = () => panel.addClass("hidden");
+	refresh();
+}
+
+/** Notebook page switcher. Every page is an independent infinite canvas. */
+export function createPagesControl(host: ToolbarHost, container: HTMLElement): void {
+	const dock = container.createDiv({ cls: "notelens-pages-dock" });
+	shield(dock);
+	const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle notelens-pages-toggle" });
+	setIcon(toggle, "files");
+	toggle.title = "Páginas de la libreta";
+	const count = toggle.createSpan({ cls: "notelens-pages-count" });
+
+	const panel = dock.createDiv({ cls: "notelens-bookmarks-panel notelens-pages-panel hidden" });
+	const header = panel.createDiv({ cls: "notelens-bookmarks-header" });
+	header.createSpan({ text: "Páginas" });
+	const actions = header.createDiv({ cls: "notelens-bookmarks-header-buttons" });
+	const add = actions.createEl("button", { cls: "notelens-table-control" });
+	setIcon(add, "file-plus-2");
+	add.title = "Añadir página";
+	let clearSearch = () => {};
+	add.onclick = () => { clearSearch(); host.addDocumentPage(); };
+	const close = actions.createEl("button", { cls: "notelens-embed-close" });
+	setIcon(close, "x");
+	close.title = "Cerrar";
+	close.onclick = () => panel.addClass("hidden");
+	let searchQuery = "";
+	let refresh: (renameId?: string) => void = () => {};
+	const search = createPanelSearch(panel, "Buscar páginas…", searchQuery, query => {
+		searchQuery = query;
+		refresh();
+	});
+	clearSearch = search.clear;
+	const list = panel.createDiv({ cls: "notelens-bookmarks-list notelens-pages-list" });
+	let cancelActiveRename: (() => void) | null = null;
+
+	const startRename = (item: HTMLElement, go: HTMLElement, page: DocumentPage) => {
+		if (item.hasClass("is-renaming")) return;
+		const input = item.createEl("input", { cls: "notelens-bookmark-rename", type: "text", value: page.title });
+		item.addClass("is-renaming");
+		go.hide();
+		item.insertBefore(input, go);
+		let done = false;
+		const finish = (commit: boolean) => {
+			if (done) return;
+			done = true;
+			cancelActiveRename = null;
+			const title = input.value.trim();
+			input.remove();
+			item.removeClass("is-renaming");
+			go.show();
+			if (commit && title && title !== page.title) host.renameDocumentPage(page.id, title);
+		};
+		input.addEventListener("keydown", event => {
+			if (event.key === "Enter") { event.preventDefault(); finish(true); }
+			else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); finish(false); }
+			else event.stopPropagation();
+		});
+		input.addEventListener("blur", () => finish(true));
+		input.addEventListener("pointerdown", event => event.stopPropagation());
+		input.focus();
+		input.select();
+		cancelActiveRename = () => finish(false);
+	};
+
+	refresh = (renameId?: string) => {
+		cancelActiveRename?.();
+		if (renameId) (container as any).__closeBookmarks?.();
+		list.empty();
+		const pages = host.getDocumentPages();
+		const active = host.getActivePageId();
+		count.setText(String(Math.max(1, pages.findIndex(page => page.id === active) + 1)));
+		const visiblePages = pages
+			.map((page, index) => ({ page, index }))
+			.filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, `Página ${index + 1}`));
+		search.setCount(visiblePages.length, pages.length);
+		if (visiblePages.length === 0) {
+			list.createDiv({ cls: "notelens-bookmarks-empty", text: "No hay páginas que coincidan con la búsqueda." });
+			return;
+		}
+		for (const { page, index } of visiblePages) {
+			const item = list.createDiv({ cls: "notelens-bookmark-item notelens-page-item" });
+			item.toggleClass("active", page.id === active);
+			const go = item.createEl("button", { cls: "notelens-bookmark-go" });
+			go.createSpan({ cls: "notelens-page-thumbnail", text: String(index + 1) });
+			const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
+			copy.createSpan({ cls: "notelens-bookmark-label", text: page.title });
+			copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active ? "Página actual" : "Abrir página" });
+			go.title = `Ir a ${page.title}`;
+			go.onclick = () => host.goToDocumentPage(page.id);
+			go.ondblclick = event => { event.preventDefault(); startRename(item, go, page); };
+			const rename = item.createEl("button", { cls: "notelens-table-control" });
+			setIcon(rename, "pencil");
+			rename.title = "Renombrar página";
+			rename.onclick = () => startRename(item, go, page);
+			const remove = item.createEl("button", { cls: "notelens-table-control notelens-page-remove" });
+			setIcon(remove, "x");
+			remove.title = pages.length === 1 ? "Debe quedar al menos una página" : "Eliminar página";
+			remove.toggleClass("is-disabled", pages.length === 1);
+			remove.onclick = () => { if (pages.length > 1) host.deleteDocumentPage(page.id); };
+			if (renameId === page.id) {
+				panel.removeClass("hidden");
+				startRename(item, go, page);
+			}
+		}
+	};
+
+	toggle.onclick = () => {
+		const opening = panel.hasClass("hidden");
+		if (opening) (container as any).__closeBookmarks?.();
+		panel.toggleClass("hidden", !opening);
+	};
+	container.addEventListener("pointerdown", event => {
+		if (!panel.hasClass("hidden") && !panel.contains(event.target as Node) && !toggle.contains(event.target as Node)) panel.addClass("hidden");
+	}, { capture: true });
+	(container as any).__refreshPages = refresh;
+	(container as any).__closePages = () => panel.addClass("hidden");
 	refresh();
 }
 
@@ -589,6 +906,42 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	const penSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-pen" });
 
 	createPanelHeader(penSection, "pen-tool", "Bolígrafo");
+	const penHeading = penSection.querySelector(".notelens-tool-heading") as HTMLElement;
+	const penHeadingIcon = penSection.querySelector(".notelens-tool-panel-icon") as HTMLElement;
+
+	// Live sample of the current nib, colour and width.
+	const previewWrap = penSection.createDiv({ cls: "notelens-pen-preview" });
+	const previewRenderer = new CanvasRenderer(previewWrap);
+	const PREVIEW_W = 264, PREVIEW_H = 46;
+	const renderPreview = () => {
+		previewRenderer.resize(PREVIEW_W, PREVIEW_H);
+		const pts: Stroke["points"] = [];
+		const n = 46;
+		for (let i = 0; i <= n; i++) {
+			const t = i / n;
+			// Slower (denser) in the middle, faster at the ends, with a pressure swell.
+			const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+			const x = 14 + eased * (PREVIEW_W - 28);
+			const y = PREVIEW_H / 2 + Math.sin(t * Math.PI * 2) * 11;
+			pts.push({ x, y, p: 0.25 + 0.75 * Math.sin(t * Math.PI) });
+		}
+		const sample: Stroke = { id: "preview", type: "pen", color: host.strokeColor, width: Math.min(host.strokeWidth, 12), style: host.penStyle, points: pts };
+		previewRenderer.renderAll([sample], [], { x: 0, y: 0, scale: 1 });
+	};
+
+	penSection.createDiv({ cls: "notelens-panel-label", text: "Tipo de trazo" });
+	const nibRow = penSection.createDiv({ cls: "notelens-nib-grid" });
+	const nibButtons: [HTMLElement, PenStyle][] = [];
+	const nibHint = penSection.createDiv({ cls: "notelens-panel-hint notelens-nib-hint" });
+	for (const nib of PEN_STYLES) {
+		const b = nibRow.createEl("button", { cls: "notelens-nib" });
+		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
+		b.createSpan({ text: nib.label });
+		b.title = nib.hint;
+		b.onclick = () => { host.setPenStyle(nib.id); refresh(); };
+		nibButtons.push([b, nib.id]);
+	}
+
 	penSection.createDiv({ cls: "notelens-panel-label", text: "Punta" });
 	const widthRow = penSection.createDiv({ cls: "notelens-width-presets notelens-ink-widths" });
 	const widthDots: [HTMLElement, number][] = [];
@@ -615,6 +968,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	slider.oninput = () => {
 		host.setStrokeIntensity(parseFloat(slider.value));
 		penOpacityValue.setText(`${Math.round(host.strokeIntensity * 100)}%`);
+		renderPreview();
 	};
 
 	penSection.createDiv({ cls: "notelens-panel-label", text: "Colores recientes" });
@@ -833,6 +1187,13 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		slider.value = String(host.strokeIntensity);
 		penOpacityValue.setText(`${Math.round(host.strokeIntensity * 100)}%`);
 		colorInput.value = host.penColorHex;
+		const nib = penStyleById(host.penStyle);
+		penHeading.setText(nib.label);
+		penHeadingIcon.empty();
+		setIcon(penHeadingIcon, nib.icon);
+		nibHint.setText(nib.hint);
+		for (const [b, id] of nibButtons) b.toggleClass("active", id === host.penStyle);
+		if (!panel.hasClass("hidden")) renderPreview();
 		highlighterSlider.value = String(host.highlighterIntensity);
 		highlighterOpacityValue.setText(`${Math.round(host.highlighterIntensity * 100)}%`);
 		highlighterColorInput.value = host.highlighterColorHex;
@@ -866,6 +1227,8 @@ export function createQuickTagsBar(
 	};
 	for (const t of QUICK_TAGS) {
 		const chip = bar.createEl("button", { cls: "onenote-tag-chip" });
+		chip.setAttr("data-tag", t.id);
+		chip.title = TAG_HINTS[t.id] ?? t.label;
 		chip.style.setProperty("--tag-color", t.color);
 		const iconEl = chip.createSpan({ cls: "onenote-tag-icon" });
 		setIcon(iconEl, t.icon);
@@ -908,10 +1271,12 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 
 	// --- Pattern ---
 	panel.createDiv({ cls: "notelens-settings-label", text: "Estilo de página" });
-	const bgRow = panel.createDiv({ cls: "notelens-settings-row" });
+	const bgRow = panel.createDiv({ cls: "notelens-settings-row notelens-settings-row-grid" });
+	const activeBackground = host.background === "margin" ? "lines" : host.background;
+	const bgButtons: [HTMLElement, BackgroundPattern][] = [];
 	for (const opt of BG_OPTIONS) {
 		const b = bgRow.createEl("button", {
-			cls: `notelens-settings-choice ${host.background === opt.id ? "active" : ""}`
+			cls: `notelens-settings-choice ${activeBackground === opt.id ? "active" : ""}`
 		});
 		const iconEl = b.createSpan({ cls: "notelens-settings-choice-icon" });
 		setIcon(iconEl, opt.icon);
@@ -922,7 +1287,45 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 			bgRow.querySelectorAll(".notelens-settings-choice").forEach(c => c.removeClass("active"));
 			b.addClass("active");
 		};
+		bgButtons.push([b, opt.id]);
 	}
+
+	// The board panel only styles the page; everything else lives in the plugin's
+	// own settings tab, which is easy to miss.
+	const openSettings = panel.createEl("button", { cls: "notelens-settings-link" });
+	setIcon(openSettings.createSpan(), "settings-2");
+	openSettings.createSpan({ text: "Ajustes del plugin" });
+	openSettings.title = "Abre los ajustes de NoteLens en Obsidian";
+	openSettings.onclick = () => host.openPluginSettings();
+
+	const marginControl = panel.createEl("label", { cls: "notelens-settings-margin" });
+	const marginIcon = marginControl.createSpan({ cls: "notelens-settings-margin-icon" });
+	setIcon(marginIcon, "separator-vertical");
+	const marginCopy = marginControl.createSpan({ cls: "notelens-settings-margin-copy" });
+	marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: "Margen izquierdo" });
+	marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: "Independiente del estilo" });
+	// A button, not a checkbox: Obsidian themes restyle checkboxes and the
+	// switch came out looking broken in some of them.
+	const marginToggle = marginControl.createEl("button", { cls: "notelens-settings-margin-toggle" });
+	marginToggle.type = "button";
+	marginToggle.setAttr("role", "switch");
+	const syncMarginToggle = () => {
+		marginToggle.toggleClass("is-on", host.marginEnabled);
+		marginToggle.setAttr("aria-checked", host.marginEnabled ? "true" : "false");
+		marginToggle.title = host.marginEnabled ? "Ocultar el margen izquierdo" : "Mostrar el margen izquierdo";
+	};
+	marginToggle.setAttr("aria-label", "Mostrar margen izquierdo");
+	marginToggle.onclick = (event) => {
+		event.preventDefault();
+		host.setMarginEnabled(!host.marginEnabled);
+		syncMarginToggle();
+	};
+	syncMarginToggle();
+	(container as any).__refreshPaperSettings = () => {
+		const current = host.background === "margin" ? "lines" : host.background;
+		for (const [button, pattern] of bgButtons) button.toggleClass("active", pattern === current);
+		syncMarginToggle();
+	};
 
 	// --- Grid size ---
 	panel.createDiv({ cls: "notelens-settings-label", text: "Tamaño de cuadrícula" });

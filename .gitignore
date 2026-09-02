@@ -1,4 +1,11 @@
 node_modules/
 dev-harness/node_modules/
+/assets/
+/dist/
+/NoteLens-promo.mp4
+/notelens.dev.json
+/dev-harness/patches/
+/dev-harness/shots*/
+/dev-harness/video/
 *.log
 .DS_Store

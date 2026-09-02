@@ -11,9 +11,31 @@ NoteLens Obsidian Plugin
 */
 `;
 
-const prod = (process.argv[2] === "production");
+const prod = process.argv.includes("production");
+const deploy = process.argv.includes("--deploy");
+const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
 
-const vaultPluginDir = "C:\\Users\\jtiob\\Desktop\\Obsidian_Apuntes_Vault\\.obsidian\\plugins\\notelens";
+const rawPdfWorkerPlugin = {
+	name: "notelens-pdf-worker",
+	setup(build) {
+		build.onResolve({ filter: /^pdfjs-dist\/build\/pdf\.worker\.min\.mjs\?raw$/ }, () => ({
+			path: "pdf-worker-source",
+			namespace: "notelens-pdf-worker"
+		}));
+		build.onLoad({ filter: /.*/, namespace: "notelens-pdf-worker" }, async () => ({
+			contents: `export default ${JSON.stringify(await fs.promises.readFile(path.resolve("node_modules/pdfjs-dist/build/pdf.worker.min.mjs"), "utf8"))};`,
+			loader: "js"
+		}));
+	}
+};
+
+function configuredPluginDir() {
+	if (process.env.NOTELENS_PLUGIN_DIR?.trim()) return process.env.NOTELENS_PLUGIN_DIR.trim();
+	const localConfig = "notelens.dev.json";
+	if (!fs.existsSync(localConfig)) return "";
+	const value = JSON.parse(fs.readFileSync(localConfig, "utf8"));
+	return typeof value.pluginDir === "string" ? value.pluginDir.trim() : "";
+}
 
 const context = await esbuild.context({
 	banner: {
@@ -36,33 +58,35 @@ const context = await esbuild.context({
 		"@lezer/highlight",
 		"@lezer/lr",
 		...builtins],
+	define: {
+		// A version stamp is deterministic, so rebuilding a release produces the same bundle.
+		__NOTELENS_BUILD__: JSON.stringify(manifest.version)
+	},
 	format: "cjs",
 	target: "es2020",
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
+	plugins: [rawPdfWorkerPlugin],
 	outfile: "main.js",
 });
 
 if (prod) {
 	await context.rebuild();
-	console.log("⚡ Build completed successfully!");
+	await context.dispose();
+	console.log(`NoteLens ${manifest.version} built successfully.`);
 
-	// Copy to vault plugin directory if exists
-	if (fs.existsSync(vaultPluginDir)) {
-		fs.copyFileSync("main.js", path.join(vaultPluginDir, "main.js"));
-		fs.copyFileSync("manifest.json", path.join(vaultPluginDir, "manifest.json"));
-		fs.copyFileSync("styles.css", path.join(vaultPluginDir, "styles.css"));
-
-		// pdf.js worker: loaded at runtime from the plugin folder
-		const workerSrc = path.join("node_modules", "pdfjs-dist", "build", "pdf.worker.min.js");
-		if (fs.existsSync(workerSrc)) {
-			fs.copyFileSync(workerSrc, path.join(vaultPluginDir, "pdf.worker.min.js"));
-			console.log("✓ pdf.js worker deployed.");
+	if (deploy) {
+		const vaultPluginDir = configuredPluginDir();
+		if (!vaultPluginDir) {
+			throw new Error("Set NOTELENS_PLUGIN_DIR or create notelens.dev.json before running npm run deploy.");
 		}
-		console.log("✓ Deployed directly to Obsidian Vault!");
+		fs.mkdirSync(vaultPluginDir, { recursive: true });
+		for (const file of ["main.js", "manifest.json", "styles.css"]) {
+			fs.copyFileSync(file, path.join(vaultPluginDir, file));
+		}
+		console.log(`Deployed to ${vaultPluginDir}`);
 	}
-	process.exit(0);
 } else {
 	await context.watch();
 }

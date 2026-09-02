@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify tag and plugin version
+        run: node -e "const m=require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) throw new Error('Tag must equal manifest version: ' + m.version)"
+      - run: npm run release:check
+      - name: Publish standard Obsidian assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" main.js manifest.json styles.css --verify-tag --generate-notes --title "NoteLens $GITHUB_REF_NAME"

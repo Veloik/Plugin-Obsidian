@@ -24,7 +24,7 @@
   .modal-container { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: grid; place-items: center; z-index: 6000; }
   .modal { background: #262626; border-radius: 8px; padding: 16px; min-width: 380px; }
 </style>
-<link rel="stylesheet" href="file:///C:/Users/jtiob/Desktop/Nueva%20carpeta/NoteLens/styles.css">
+<link rel="stylesheet" href="../styles.css">
 </head>
 <body>
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -42,7 +42,7 @@
     throw new Error("harness: module not available: " + name);
   };
 </script>
-<script src="file:///C:/Users/jtiob/Desktop/Nueva%20carpeta/NoteLens/main.js"></script>
+<script src="../main.js"></script>
 <script>
 (async () => {
   const O = window.__obsidian;
@@ -77,6 +77,9 @@
   const leaf = { app, view: null };
   const view = factory(leaf);
   window.__view = view;
+  // Enough of the workspace API for the plugin to refresh open boards.
+  app.workspace.getLeavesOfType = (type) => (type === "notelens-canvas-view" || type === view.getViewType?.()) ? [{ view }] : [];
+  window.__assistantTest = window.module.exports.__assistantTest || null;
   document.body.appendChild(view.containerEl);
   await view.onOpen();
   await view.onLoadFile(file);

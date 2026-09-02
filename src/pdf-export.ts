@@ -105,11 +105,11 @@ function drawPaper(pdf: jsPDF, doc: OneNoteDocument): void {
 		pdf.setDrawColor(220, 225, 232);
 		pdf.setLineWidth(0.12);
 		for (let y = 26 * SCENE_TO_MM; y < A4_H_MM; y += 26 * SCENE_TO_MM) pdf.line(0, y, A4_W_MM, y);
-		if (doc.background === "margin") {
-			pdf.setDrawColor(214, 51, 108);
-			pdf.setLineWidth(0.36);
-			pdf.line(72 * SCENE_TO_MM, 0, 72 * SCENE_TO_MM, A4_H_MM);
-		}
+	}
+	if (doc.marginEnabled || doc.background === "margin") {
+		pdf.setDrawColor(214, 51, 108);
+		pdf.setLineWidth(0.36);
+		pdf.line(72 * SCENE_TO_MM, 0, 72 * SCENE_TO_MM, A4_H_MM);
 	}
 }
 
