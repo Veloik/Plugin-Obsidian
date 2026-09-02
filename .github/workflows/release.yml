@@ -18,7 +18,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Verify tag and plugin version
-        run: node -e "const m=require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) throw new Error('Tag must equal manifest version: ' + m.version)"
+        run: |
+          node -e "const m = require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) { throw new Error('The tag must match the manifest version, which is ' + m.version); }"
       - run: npm run release:check
       - name: Publish standard Obsidian assets
         env:
