@@ -1,6 +1,7 @@
 import { App, TFile, normalizePath } from "obsidian";
 import JSZip from "jszip";
 import { OneNoteDocument, migrateDocument } from "./types";
+import { tr } from "./i18n";
 
 const PACKAGE_FORMAT = "notelens-share";
 const PACKAGE_VERSION = 1;
@@ -95,7 +96,7 @@ export async function buildSharePackage(app: App, document: OneNoteDocument, tit
 	const manifest: SharePackage = {
 		format: PACKAGE_FORMAT,
 		packageVersion: PACKAGE_VERSION,
-		title: safeFileName(title, "Pizarra NoteLens"),
+		title: safeFileName(title, tr("Pizarra NoteLens")),
 		exportedAt: new Date().toISOString(),
 		document,
 		assets
@@ -116,7 +117,7 @@ function parsePackage(raw: unknown): SharePackage {
 	return {
 		format: PACKAGE_FORMAT,
 		packageVersion: PACKAGE_VERSION,
-		title: typeof value.title === "string" ? value.title : "Pizarra importada",
+		title: typeof value.title === "string" ? value.title : tr("Pizarra importada"),
 		exportedAt: typeof value.exportedAt === "string" ? value.exportedAt : "",
 		document: migrateDocument(value.document),
 		assets: Array.isArray(value.assets)

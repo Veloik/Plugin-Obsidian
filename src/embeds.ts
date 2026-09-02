@@ -138,7 +138,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	if (embed.kind !== "youtube" && embed.kind !== "web-video") {
 		const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
 		setIcon(openBtn, "external-link");
-		openBtn.title = "Abrir archivo original";
+		openBtn.title = tr("Abrir archivo original");
 		openBtn.onclick = (e) => {
 			e.stopPropagation();
 			host.openVaultFile(embed.src);
@@ -147,7 +147,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	if (embed.kind === "youtube" || embed.kind === "web-video") {
 		const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
 		setIcon(openBtn, "external-link");
-		openBtn.title = "Abrir publicaci\u00f3n original";
+		openBtn.title = tr("Abrir publicaci\\u00f3n original");
 		openBtn.onclick = (event) => {
 			event.stopPropagation();
 			host.openVaultFile(embed.originalUrl ?? embed.src);
@@ -157,7 +157,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	if (embed.kind === "video") {
 		const captionsBtn = header.createEl("button", { cls: "notelens-embed-open" });
 		setIcon(captionsBtn, "captions");
-		captionsBtn.title = embed.captionSrc ? "Cambiar subtítulos WebVTT" : "Añadir subtítulos WebVTT";
+		captionsBtn.title = embed.captionSrc ? tr("Cambiar subtítulos WebVTT") : tr("Añadir subtítulos WebVTT");
 		captionsBtn.onclick = (event) => {
 			event.stopPropagation();
 			void pickCaptionTrack(host, embed, body, captionsBtn);
@@ -166,7 +166,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(closeBtn, "x");
-	closeBtn.title = "Cerrar y quitar de la pizarra";
+	closeBtn.title = tr("Cerrar y quitar de la pizarra");
 	closeBtn.setAttr("aria-label", "Cerrar y quitar de la pizarra");
 	closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	closeBtn.onclick = (e) => {
@@ -253,7 +253,7 @@ async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement
 			embed.captionSrc = saved.path;
 			const video = body.querySelector("video");
 			if (video) attachCaptionToVideo(host, embed, video);
-			button.title = "Cambiar subtítulos WebVTT";
+			button.title = tr("Cambiar subtítulos WebVTT");
 			host.onEmbedChanged();
 			new Notice(tr("Subtítulos añadidos: {p0}", { p0: saved.name }));
 		} catch (error) {
@@ -295,15 +295,15 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	const name = file instanceof TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
 	details.createDiv({ cls: "notelens-attachment-title", text: name });
 	const folder = embed.src.includes("/") ? embed.src.slice(0, embed.src.lastIndexOf("/")) : "";
-	details.createDiv({ cls: "notelens-attachment-meta", text: (embed.kind === "board" ? "Pizarra" : "Nota") + (folder ? ` · ${folder}` : "") });
+	details.createDiv({ cls: "notelens-attachment-meta", text: (embed.kind === "board" ? "Pizarra" : "Nota") + (folder ? tr(" · {p0}", { p0: folder }) : "") });
 
 	const open = head.createEl("button", { cls: "notelens-attachment-open" });
 	setIcon(open, "external-link");
-	open.title = embed.kind === "board" ? "Abrir la pizarra (Ctrl: en pestaña nueva)" : "Abrir la nota (Ctrl: en pestaña nueva)";
+	open.title = embed.kind === "board" ? tr("Abrir la pizarra (Ctrl: en pestaña nueva)") : tr("Abrir la nota (Ctrl: en pestaña nueva)");
 	open.onclick = (e) => { e.stopPropagation(); host.openLink(embed.src, e.ctrlKey || e.metaKey); };
 	const remove = head.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
-	remove.title = "Quitar el enlace de la pizarra";
+	remove.title = tr("Quitar el enlace de la pizarra");
 	remove.setAttr("aria-label", "Quitar el enlace de la pizarra");
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); card.remove(); host.onEmbedDeleted(embed); };
@@ -315,7 +315,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	} else if (embed.kind === "note") {
 		void host.app.vault.cachedRead(file).then(content => {
 			const lines = content.replace(/^---[\s\S]*?---\s*/, "").split(/\r?\n/).map(l => l.replace(/^#+\s*/, "").replace(/[*_`>]/g, "").trim()).filter(Boolean);
-			preview.setText(lines.slice(0, 5).join("\n") || "Nota vacía");
+			preview.setText(lines.slice(0, 5).join("\n") || tr("Nota vacía"));
 		}).catch(() => preview.setText(""));
 	} else {
 		preview.setText(tr("Doble clic para ir a esta pizarra."));
@@ -346,7 +346,7 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 
 	const open = card.createEl("button", { cls: "notelens-attachment-open" });
 	setIcon(open, "external-link");
-	open.title = embed.kind === "epub" ? "Abrir EPUB" : "Abrir archivo";
+	open.title = embed.kind === "epub" ? tr("Abrir EPUB") : tr("Abrir archivo");
 	open.onclick = (e) => {
 		e.stopPropagation();
 		host.openVaultFile(embed.src);
@@ -354,7 +354,7 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 
 	const remove = card.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
-	remove.title = "Quitar archivo de la pizarra";
+	remove.title = tr("Quitar archivo de la pizarra");
 	remove.setAttr("aria-label", "Quitar archivo de la pizarra");
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => {
@@ -448,7 +448,7 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	const controls = stack.createDiv({ cls: "notelens-stack-controls" });
 	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(delBtn, "x");
-	delBtn.title = "Quitar documento de la pizarra";
+	delBtn.title = tr("Quitar documento de la pizarra");
 	delBtn.setAttr("aria-label", "Quitar documento de la pizarra");
 	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {
@@ -560,7 +560,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 	const controls = wrap.createDiv({ cls: "notelens-stack-controls" });
 	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(delBtn, "x");
-	delBtn.title = "Quitar imagen de la pizarra";
+	delBtn.title = tr("Quitar imagen de la pizarra");
 	delBtn.setAttr("aria-label", "Quitar imagen de la pizarra");
 	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {

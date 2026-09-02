@@ -455,14 +455,14 @@ export function mountChartFrame(host: ChartHost, layer: HTMLElement, embed: Embe
 
 	const header = frame.createDiv({ cls: "notelens-embed-header" });
 	setIcon(header.createSpan({ cls: "notelens-embed-icon" }), spec.type === "function" ? "function-square" : spec.type === "pie" ? "pie-chart" : spec.type === "line" || spec.type === "area" ? "line-chart" : "bar-chart-3");
-	header.createSpan({ cls: "notelens-embed-title", text: spec.title || CHART_TYPES.find(([id]) => id === spec.type)?.[1] || "Gráfico" });
+	header.createSpan({ cls: "notelens-embed-title", text: spec.title || CHART_TYPES.find(([id]) => id === spec.type)?.[1] || tr("Gráfico") });
 	const edit = header.createEl("button", { cls: "notelens-embed-open" });
 	setIcon(edit, "pencil");
-	edit.title = "Editar datos del gráfico";
+	edit.title = tr("Editar datos del gráfico");
 	edit.onclick = (e) => { e.stopPropagation(); host.editChart(embed); };
 	const remove = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
-	remove.title = "Eliminar gráfico";
+	remove.title = tr("Eliminar gráfico");
 	remove.setAttr("aria-label", "Eliminar gráfico");
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); frame.remove(); host.onEmbedDeleted(embed); };

@@ -585,7 +585,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		const label = this.rulerEl.createDiv({ cls: "notelens-ruler-label" });
 		const modeBtn = label.createEl("button", { cls: "notelens-ruler-mode" });
-		modeBtn.title = "Alternar regla y transportador";
+		modeBtn.title = tr("Alternar regla y transportador");
 		modeBtn.onclick = (event) => {
 			event.stopPropagation();
 			this.rulerState.mode = this.rulerState.mode === "ruler" ? "protractor" : "ruler";
@@ -595,12 +595,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		// clip-path, so a corner control can otherwise be visually clipped away.
 		const closeRuler = label.createEl("button", { cls: "notelens-embed-close notelens-ruler-close" });
 		setIcon(closeRuler, "x");
-		closeRuler.title = "Ocultar la regla";
+		closeRuler.title = tr("Ocultar la regla");
 		closeRuler.setAttr("aria-label", "Ocultar la regla");
 		closeRuler.addEventListener("pointerdown", (event) => event.stopPropagation());
 		closeRuler.onclick = (event) => { event.stopPropagation(); this.toggleRuler(); };
 		const rotate = this.rulerEl.createDiv({ cls: "notelens-ruler-rotate" });
-		rotate.title = "Girar regla";
+		rotate.title = tr("Girar regla");
 		rotate.addEventListener("pointerdown", (event) => this.startRulerRotate(event));
 		this.rulerEl.addEventListener("pointerdown", (event) => this.startRulerDrag(event));
 		this.renderRuler();
@@ -619,7 +619,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const mode = this.rulerEl.querySelector(".notelens-ruler-mode") as HTMLElement | null;
 		if (mode) {
 			const angle = ((Math.round(this.rulerState.angle) % 360) + 360) % 360;
-			mode.setText(isProtractor ? `Ángulos ${angle}°` : "Regla");
+			mode.setText(isProtractor ? tr("Ángulos {p0}°", { p0: angle }) : "Regla");
 			mode.setAttr("aria-label", mode.textContent || "Regla");
 		}
 	}
@@ -902,7 +902,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		header.createSpan({ cls: "notelens-minimap-title", text: tr("Mapa") });
 		const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 		setIcon(closeBtn, "x");
-		closeBtn.title = "Ocultar el mapa";
+		closeBtn.title = tr("Ocultar el mapa");
 		closeBtn.onclick = () => this.toggleMiniMap();
 		const canvas = wrap.createEl("canvas");
 		canvas.width = 400;
@@ -2045,7 +2045,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const screenTop = vt.y + (b.y - pad) * vt.scale;
 		if (screenTop < 170) box.addClass("is-below");
 		const resize = box.createDiv({ cls: "notelens-selection-resize" });
-		resize.title = "Redimensionar selección";
+		resize.title = tr("Redimensionar selección");
 		// Compact action bar above the frame: duplicate and delete, nothing else in the way.
 		const bar = box.createDiv({ cls: "notelens-selection-bar" });
 		bar.addEventListener("pointerdown", (event) => { event.stopPropagation(); event.preventDefault(); });
@@ -2062,7 +2062,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		resize.addEventListener("pointerdown", (event) => this.startSelectionResize(event));
 		// Rotation handle above the frame: drag it around the centre; Shift snaps to 15°.
 		const rotate = box.createDiv({ cls: "notelens-selection-rotate" });
-		rotate.title = "Girar la selección (Shift: pasos de 15°)";
+		rotate.title = tr("Girar la selección (Shift: pasos de 15°)");
 		rotate.addEventListener("pointerdown", (event) => this.startSelectionRotate(event));
 		this.selectionBoxEl = box;
 	}
@@ -2399,17 +2399,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		setIcon(bar.createSpan({ cls: "notelens-search-icon" }), "search");
 		const input = bar.createEl("input", { cls: "notelens-search-input" });
 		input.type = "text";
-		input.placeholder = "Buscar en la pizarra…";
+		input.placeholder = tr("Buscar en la pizarra…");
 		const count = bar.createSpan({ cls: "notelens-search-count", text: "" });
 		const prev = bar.createEl("button", { cls: "notelens-nav-btn" });
 		setIcon(prev, "chevron-up");
-		prev.title = "Anterior (Shift+Enter)";
+		prev.title = tr("Anterior (Shift+Enter)");
 		const next = bar.createEl("button", { cls: "notelens-nav-btn" });
 		setIcon(next, "chevron-down");
-		next.title = "Siguiente (Enter)";
+		next.title = tr("Siguiente (Enter)");
 		const closeBtn = bar.createEl("button", { cls: "notelens-nav-btn" });
 		setIcon(closeBtn, "x");
-		closeBtn.title = "Cerrar (Esc)";
+		closeBtn.title = tr("Cerrar (Esc)");
 		this.searchEl = bar;
 
 		const run = () => {
@@ -3349,7 +3349,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (hasImages) setIcon(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "image");
 		const badgeClose = el.createEl("button", { cls: "onenote-badge-close" });
 		setIcon(badgeClose, "x");
-		badgeClose.title = "Quitar etiqueta";
+		badgeClose.title = tr("Quitar etiqueta");
 		badgeClose.addEventListener("pointerdown", (e) => e.stopPropagation());
 		badgeClose.addEventListener("click", (e) => {
 			e.stopPropagation();
@@ -3366,9 +3366,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			el.title = pending
 				? `${excerpt}. Clic completa un paso: «${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}». Pasa el cursor para marcar el que quieras`
 				: `${excerpt}. Todos los pasos hechos; clic reabre el último`;
-		} else if (checkable) el.title = badge.done ? `${excerpt}. Hecho; clic para volver a marcar como pendiente` : `${excerpt}. Clic para cambiar su estado; doble clic para editar`;
-		else if (badge.tagId === "tag_hover") el.title = `${excerpt}. Doble clic para editarla`;
-		else el.title = `${tag.label}. Clic para ver el resumen de etiquetas`;
+		} else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
+		else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
+		else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tag.label });
 
 		let pressedAt = 0;
 		el.addEventListener("pointerdown", (e) => {
@@ -3398,7 +3398,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			e.stopPropagation();
 			const menu = new Menu();
 			menu.addItem(item => item
-				.setTitle(badge.tagId === "tag_todo" ? "Editar checklist, notas e imágenes" : "Editar título, nota e imágenes")
+				.setTitle(badge.tagId === "tag_todo" ? tr("Editar checklist, notas e imágenes") : tr("Editar título, nota e imágenes"))
 				.setIcon("pencil")
 				.onClick(() => this.editBadgeNote(badge)));
 			const menuChecklist = badge.tagId === "tag_todo" ? badge.checklist ?? [] : [];
@@ -3406,7 +3406,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const pending = menuChecklist.find(item => !item.done);
 				if (pending) {
 					menu.addItem(item => item
-						.setTitle(tr("Completar el siguiente paso: {p0}", { p0: pending.text || (pending.sketch ? "paso a mano" : "sin nombre") }))
+						.setTitle(tr("Completar el siguiente paso: {p0}", { p0: pending.text || (pending.sketch ? tr("paso a mano") : tr("sin nombre")) }))
 						.setIcon("square-check-big")
 						.onClick(() => this.advanceChecklist(badge)));
 				}
@@ -3422,7 +3422,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					.onClick(() => this.setChecklistAll(badge, false)));
 			} else if (badge.tagId === "tag_todo" || badge.tagId === "tag_question") {
 				menu.addItem(item => item
-					.setTitle(badge.done ? "Marcar como pendiente" : (badge.tagId === "tag_todo" ? "Marcar como hecha" : "Marcar como resuelta"))
+					.setTitle(badge.done ? tr("Marcar como pendiente") : (badge.tagId === "tag_todo" ? tr("Marcar como hecha") : tr("Marcar como resuelta")))
 					.setIcon(badge.done ? "circle" : "check-circle-2")
 					.onClick(() => this.toggleBadgeDone(badge)));
 			}
@@ -3497,7 +3497,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.refreshBadge(badge);
 		if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
 		const completed = checklist.filter(item => item.done).length;
-		new Notice(tr("{p0}: {p1} · {p2}/{p3}", { p0: target.text || (target.sketch ? "Paso a mano" : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
+		new Notice(tr("{p0}: {p1} · {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
 	}
 
 	/** The "todas de esa tarea" path: every step at once, from the context menu. */
@@ -3508,7 +3508,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.syncBadgeDone(badge);
 		this.refreshBadge(badge);
 		if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
-		new Notice(done ? "Todos los pasos marcados como hechos" : "Todos los pasos marcados como pendientes", 2200);
+		new Notice(done ? tr("Todos los pasos marcados como hechos") : tr("Todos los pasos marcados como pendientes"), 2200);
 	}
 
 	private editBadgeNote(badge: Badge): void {
@@ -3614,7 +3614,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 			const pageRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
 			const pageSelect = pageRow.createEl("select", { cls: "notelens-panel-page-select" });
-			pageSelect.title = "Mostrar solo las etiquetas de una página";
+			pageSelect.title = tr("Mostrar solo las etiquetas de una página");
 			pageSelect.createEl("option", { value: "__all__", text: tr("Todas las páginas ({p0})", { p0: this.data.pages.length }) });
 			for (const page of this.data.pages) {
 				const counted = this.data.badges.filter(b => (b.pageId ?? this.data.activePageId) === page.id).length;
@@ -3651,7 +3651,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const box = row.createEl("input");
 				box.type = "checkbox";
 				box.checked = !!badge.done;
-				box.title = badge.tagId === "tag_todo" ? "Tarea hecha" : "Duda resuelta";
+				box.title = badge.tagId === "tag_todo" ? tr("Tarea hecha") : tr("Duda resuelta");
 				box.onclick = (e) => { e.stopPropagation(); this.toggleBadgeDone(badge); };
 			} else {
 				setIcon(row.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
@@ -3660,7 +3660,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const meta = body.createDiv({ cls: "notelens-tag-summary-meta" });
 			meta.createSpan({ cls: "notelens-tag-summary-kind", text: tag.label });
 			meta.createSpan({ cls: "notelens-tag-summary-page", text: pageTitle });
-			body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || "Sin título. Doble clic en la etiqueta para editarla." });
+			body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || tr("Sin título. Doble clic en la etiqueta para editarla.") });
 			if (badge.tagId === "tag_todo" && badge.checklist?.length) {
 				const completed = badge.checklist.filter(item => item.done).length;
 				const nextItem = badge.checklist.find(item => !item.done);
@@ -4511,7 +4511,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		const header = el.createDiv({ cls: "notelens-table-header" });
 		const titleEl = header.createSpan({ cls: "notelens-table-title", text: table.title?.trim() || "Tabla" });
-		titleEl.title = "Doble clic para renombrar la tabla";
+		titleEl.title = tr("Doble clic para renombrar la tabla");
 		titleEl.addEventListener("dblclick", (event) => { event.stopPropagation(); this.renameTable(table, titleEl); });
 		const controls = header.createDiv({ cls: "notelens-table-controls" });
 		const control = (icon: string, title: string, action: () => void) => {
@@ -4576,7 +4576,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			offset += widths[col];
 			const handle = grid.createDiv({ cls: "notelens-table-col-handle" });
 			handle.style.left = `${offset}px`;
-			handle.title = "Arrastra para cambiar el ancho de la columna";
+			handle.title = tr("Arrastra para cambiar el ancho de la columna");
 			handle.addEventListener("pointerdown", (event) => this.startTableColumnResize(event, table, col));
 		}
 		offset = 0;
@@ -4584,12 +4584,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			offset += heights[row];
 			const handle = grid.createDiv({ cls: "notelens-table-row-handle" });
 			handle.style.top = `${offset}px`;
-			handle.title = "Arrastra para cambiar el alto de la fila";
+			handle.title = tr("Arrastra para cambiar el alto de la fila");
 			handle.addEventListener("pointerdown", (event) => this.startTableRowResize(event, table, row));
 		}
 
 		const resize = el.createDiv({ cls: "notelens-table-resize" });
-		resize.title = "Redimensionar tabla";
+		resize.title = tr("Redimensionar tabla");
 		resize.addEventListener("pointerdown", (event) => this.startTableResize(event, table, el));
 		el.addEventListener("dblclick", (event) => {
 			if (this.currentTool !== "select") return;
@@ -4941,11 +4941,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			editor.addClass("notelens-code-editor");
 			editor.setAttr("wrap", "off");
 			editor.spellcheck = false;
-			editor.placeholder = "Escribe o pega código. Tab indenta, Ctrl+Enter termina.";
+			editor.placeholder = tr("Escribe o pega código. Tab indenta, Ctrl+Enter termina.");
 		}
 		if (tb.variant === "math") {
 			editor.addClass("notelens-math-editor");
-			editor.placeholder = "Escribe como en la calculadora: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. También vale LaTeX.";
+			editor.placeholder = tr("Escribe como en la calculadora: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. También vale LaTeX.");
 			this.mathPreviewEl = this.domLayerEl.createDiv({ cls: "notelens-math-preview" });
 			this.mathPreviewEl.style.left = `${tb.x}px`;
 			this.mathPreviewEl.style.top = `${tb.y + (tb.h ?? 60) + 8}px`;
@@ -5138,7 +5138,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		header.createSpan({ cls: "notelens-code-lang", text: CODE_LANGUAGES.find(([id]) => id === lang)?.[1] ?? lang });
 		const copy = header.createEl("button", { cls: "notelens-code-copy" });
 		setIcon(copy, "copy");
-		copy.title = "Copiar código";
+		copy.title = tr("Copiar código");
 		copy.addEventListener("pointerdown", (e) => e.stopPropagation());
 		copy.addEventListener("click", (e) => {
 			e.stopPropagation();
@@ -5146,7 +5146,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		});
 		const closeCode = header.createEl("button", { cls: "notelens-code-copy" });
 		setIcon(closeCode, "x");
-		closeCode.title = "Eliminar bloque";
+		closeCode.title = tr("Eliminar bloque");
 		closeCode.addEventListener("pointerdown", (e) => e.stopPropagation());
 		closeCode.addEventListener("click", (e) => { e.stopPropagation(); this.removeTextBox(tb); });
 
@@ -5234,11 +5234,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Resize handle and close button every text box carries. */
 	private attachBoxChrome(el: HTMLElement, tb: TextBox): void {
 		const resizeHandle = el.createDiv({ cls: "notelens-text-resize" });
-		resizeHandle.title = "Redimensionar";
+		resizeHandle.title = tr("Redimensionar");
 		resizeHandle.addEventListener("pointerdown", (e) => this.startTextResize(e, tb, el));
 		const closeBtn = el.createEl("button", { cls: "notelens-box-close" });
 		setIcon(closeBtn, "x");
-		closeBtn.title = "Eliminar";
+		closeBtn.title = tr("Eliminar");
 		closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 		closeBtn.addEventListener("click", (e) => { e.stopPropagation(); this.removeTextBox(tb); });
 	}
@@ -5455,7 +5455,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		const minusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 		setIcon(minusBtn, "minus");
-		minusBtn.title = "Reducir tamaño";
+		minusBtn.title = tr("Reducir tamaño");
 		minusBtn.onclick = () => apply(() => { tb.fontSize = Math.max(10, tb.fontSize - 2); });
 
 		const sizeLabel = bar.createSpan({ cls: "notelens-format-size" });
@@ -5463,13 +5463,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (plainText) {
 			const translateBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 			setIcon(translateBtn, "languages");
-			translateBtn.title = "Traducir este cuadro";
+			translateBtn.title = tr("Traducir este cuadro");
 			translateBtn.onclick = () => this.translateText();
 		}
 
 		const plusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 		setIcon(plusBtn, "plus");
-		plusBtn.title = "Aumentar tamaño";
+		plusBtn.title = tr("Aumentar tamaño");
 		plusBtn.onclick = () => apply(() => { tb.fontSize = Math.min(96, tb.fontSize + 2); });
 
 		if (tb.variant !== "code") {
@@ -5487,7 +5487,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			for (const c of STICKY_COLORS) {
 				const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color" });
 				dot.style.backgroundColor = c;
-				dot.title = "Color de la nota";
+				dot.title = tr("Color de la nota");
 				dot.onclick = () => apply(() => { tb.stickyColor = c; });
 			}
 		}
@@ -5588,7 +5588,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		// A glyph, not an icon lookup: on some Obsidian builds the icon came out
 		// as an empty square and the bar looked like it had no way to close.
 		const closeBar = bar.createEl("button", { cls: "notelens-embed-close notelens-format-close is-glyph", text: "✕" });
-		closeBar.title = "Terminar de editar (Esc)";
+		closeBar.title = tr("Terminar de editar (Esc)");
 		closeBar.onclick = () => this.commitTextEditor();
 
 		// Above the textbox (below it when there is no room), using the bar's

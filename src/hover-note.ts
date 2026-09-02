@@ -77,7 +77,7 @@ export class HoverNoteModal extends Modal {
 		const titleInput = titleField.createEl("input", { cls: "notelens-hover-note-title-input", type: "text" });
 		titleInput.value = this.noteTitle;
 		titleInput.maxLength = 120;
-		titleInput.placeholder = "Título de la etiqueta";
+		titleInput.placeholder = tr("Título de la etiqueta");
 		titleInput.addEventListener("input", () => { this.noteTitle = titleInput.value; });
 
 		const tabs = contentEl.createDiv({ cls: "notelens-hover-note-tabs" });
@@ -95,7 +95,7 @@ export class HoverNoteModal extends Modal {
 			if (!checklistProgress) return;
 			const items = this.checklist.filter(item => item.text.trim() || item.sketch);
 			const completed = items.filter(item => item.done).length;
-			checklistProgress.setText(items.length ? `${completed}/${items.length} completados` : "Sin pasos todavía");
+			checklistProgress.setText(items.length ? tr("{p0}/{p1} completados", { p0: completed, p1: items.length }) : tr("Sin pasos todavía"));
 		};
 		let renderChecklist: (focusId?: string) => void = () => {};
 		const addChecklistItem = (afterIndex = this.checklist.length - 1) => {
@@ -115,14 +115,14 @@ export class HoverNoteModal extends Modal {
 				const input = row.createEl("input", { cls: "notelens-task-checklist-input", type: "text" });
 				input.value = item.text;
 				input.maxLength = 500;
-				input.placeholder = `Paso ${index + 1}`;
+				input.placeholder = tr("Paso {p0}", { p0: index + 1 });
 				// Pen-only users write the step by hand instead of typing it.
 				const pad = row.createDiv({ cls: "notelens-task-checklist-pad" });
 				const padCanvas = pad.createEl("canvas");
 				const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: tr("Escribe el paso {p0} a mano", { p0: index + 1 }) });
 				const padClear = pad.createEl("button", { cls: "notelens-task-checklist-pad-clear", type: "button" });
 				setIcon(padClear, "eraser");
-				padClear.title = "Borrar lo escrito a mano";
+				padClear.title = tr("Borrar lo escrito a mano");
 				const handwriting = new StepPad(padCanvas, item.sketch, (data) => {
 					item.sketch = data;
 					padHint.toggleClass("hidden-hint", !!data);
@@ -136,7 +136,7 @@ export class HoverNoteModal extends Modal {
 					pad.style.display = drawn ? "" : "none";
 					modeBtn.empty();
 					setIcon(modeBtn, drawn ? "type" : "pen-line");
-					modeBtn.title = drawn ? "Escribir este paso con el teclado" : "Escribir este paso a mano";
+					modeBtn.title = drawn ? tr("Escribir este paso con el teclado") : tr("Escribir este paso a mano");
 					if (drawn) handwriting.redraw();
 				};
 				modeBtn.onclick = () => {
@@ -149,7 +149,7 @@ export class HoverNoteModal extends Modal {
 				applyStepMode(!!item.sketch);
 				const remove = row.createEl("button", { cls: "notelens-task-checklist-remove", type: "button" });
 				setIcon(remove, "x");
-				remove.title = "Eliminar paso";
+				remove.title = tr("Eliminar paso");
 				checkbox.onchange = () => {
 					item.done = checkbox.checked;
 					row.toggleClass("is-done", item.done);
@@ -194,7 +194,7 @@ export class HoverNoteModal extends Modal {
 
 		const area = textPane.createEl("textarea", { cls: `notelens-prompt-textarea ${this.taskMode ? "notelens-task-description" : ""}` });
 		area.value = this.text;
-		area.placeholder = this.taskMode ? "Descripción, fecha, enlaces o detalles opcionales…" : this.placeholder;
+		area.placeholder = this.taskMode ? tr("Descripción, fecha, enlaces o detalles opcionales…") : this.placeholder;
 		area.rows = this.taskMode ? 3 : 7;
 		area.addEventListener("input", () => { this.text = area.value; });
 		area.addEventListener("keydown", (event) => {
@@ -205,17 +205,17 @@ export class HoverNoteModal extends Modal {
 		const toolbar = sketchPane.createDiv({ cls: "notelens-hover-note-tools" });
 		const drawBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(drawBtn, "pen-line");
-		drawBtn.title = "Dibujar sobre la pizarra";
+		drawBtn.title = tr("Dibujar sobre la pizarra");
 		const selectBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(selectBtn, "mouse-pointer-2");
-		selectBtn.title = "Mover o redimensionar imágenes";
+		selectBtn.title = tr("Mover o redimensionar imágenes");
 		toolbar.createDiv({ cls: "onenote-divider" });
 
 		const swatches: HTMLElement[] = [];
 		for (const color of SKETCH_COLORS) {
 			const swatch = toolbar.createEl("button", { cls: "notelens-hover-note-swatch", type: "button" });
 			swatch.style.backgroundColor = color;
-			swatch.title = `Tinta ${color}`;
+			swatch.title = tr("Tinta {p0}", { p0: color });
 			swatch.onclick = () => { this.color = color; selectTool("draw"); };
 			swatches.push(swatch);
 		}
@@ -233,22 +233,22 @@ export class HoverNoteModal extends Modal {
 		toolbar.createDiv({ cls: "onenote-divider" });
 		const uploadBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool notelens-hover-note-upload", type: "button" });
 		setIcon(uploadBtn, "image-plus");
-		uploadBtn.title = "Subir imágenes desde el dispositivo";
+		uploadBtn.title = tr("Subir imágenes desde el dispositivo");
 		const pasteBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(pasteBtn, "clipboard-paste");
-		pasteBtn.title = "Pegar imagen del portapapeles";
+		pasteBtn.title = tr("Pegar imagen del portapapeles");
 		const imageInput = sketchPane.createEl("input", { cls: "notelens-hover-note-file", type: "file" });
 		imageInput.accept = "image/*";
 		imageInput.multiple = true;
 		const deleteImageBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(deleteImageBtn, "trash-2");
-		deleteImageBtn.title = "Quitar la imagen seleccionada";
+		deleteImageBtn.title = tr("Quitar la imagen seleccionada");
 		const undoBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(undoBtn, "undo-2");
-		undoBtn.title = "Deshacer el último trazo";
+		undoBtn.title = tr("Deshacer el último trazo");
 		const clearBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
 		setIcon(clearBtn, "eraser");
-		clearBtn.title = "Borrar todos los trazos";
+		clearBtn.title = tr("Borrar todos los trazos");
 
 		const board = sketchPane.createDiv({ cls: "notelens-hover-note-board" });
 		const canvas = board.createEl("canvas");
@@ -367,7 +367,7 @@ export class HoverNoteModal extends Modal {
 				};
 				const remove = item.createEl("button", { cls: "notelens-hover-note-image-remove", type: "button" });
 				setIcon(remove, "x");
-				remove.title = `Quitar ${image.name}`;
+				remove.title = tr("Quitar {p0}", { p0: image.name });
 				remove.onclick = (event) => { event.stopPropagation(); removeImageById(image.id); };
 			}
 		};
@@ -481,7 +481,7 @@ export class HoverNoteModal extends Modal {
 					this.images.push(image);
 					this.selectedImageId = image.id;
 				} catch (error) {
-					new Notice(error instanceof Error ? error.message : `No se pudo añadir ${file.name}.`);
+					new Notice(error instanceof Error ? error.message : tr("No se pudo añadir {p0}.", { p0: file.name }));
 				}
 			}
 			this.boardTool = "select";
@@ -587,7 +587,7 @@ export class HoverNoteModal extends Modal {
 		const footer = contentEl.createDiv({ cls: "notelens-hover-note-footer" });
 		footer.createSpan({
 			cls: "notelens-hover-note-help",
-			text: this.taskMode ? "La lista, las notas, los trazos y las imágenes se guardan juntos." : "El título, la nota, los trazos y las imágenes se guardan juntos."
+			text: this.taskMode ? tr("La lista, las notas, los trazos y las imágenes se guardan juntos.") : tr("El título, la nota, los trazos y las imágenes se guardan juntos.")
 		});
 		const ok = footer.createEl("button", { cls: "mod-cta", text: tr("Guardar"), type: "button" });
 		const cancel = footer.createEl("button", { text: tr("Cancelar"), type: "button" });

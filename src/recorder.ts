@@ -203,7 +203,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 			discard = false;
 			setState("idle");
 			clock.setText("00:00");
-			status.setText(chunks.length === 0 && !discard ? "No se grabó nada." : "Grabación descartada.");
+			status.setText(chunks.length === 0 && !discard ? tr("No se grabó nada.") : tr("Grabación descartada."));
 			chunks = [];
 			return;
 		}

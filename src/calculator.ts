@@ -517,7 +517,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	setIcon(header.createSpan({ cls: "notelens-calculator-icon" }), "calculator");
 	header.createSpan({ cls: "notelens-calculator-title", text: tr("Calculadora") });
 	const unitBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
-	unitBtn.title = "Grados o radianes para las funciones trigonométricas";
+	unitBtn.title = tr("Grados o radianes para las funciones trigonométricas");
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	makeDraggable(panel, header, container, "notelens-calculator-pos");
@@ -525,7 +525,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	const display = panel.createDiv({ cls: "notelens-calculator-display" });
 	const input = display.createEl("input", { cls: "notelens-calculator-input" });
 	input.type = "text";
-	input.placeholder = "p. ej. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)";
+	input.placeholder = tr("p. ej. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)");
 	input.spellcheck = false;
 	const output = display.createDiv({ cls: "notelens-calculator-output", text: "0" });
 	const alt = display.createDiv({ cls: "notelens-calculator-alt" });
@@ -538,7 +538,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	refreshUnit();
 	const fractionBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
 	fractionBtn.setText("a/b");
-	fractionBtn.title = "Mostrar los resultados como fracción siempre (si no, solo cuando operas con fracciones)";
+	fractionBtn.title = tr("Mostrar los resultados como fracción siempre (si no, solo cuando operas con fracciones)");
 	fractionBtn.onclick = () => { fractionMode = !fractionMode; fractionBtn.toggleClass("active", fractionMode); preview(); };
 	header.insertBefore(fractionBtn, closeBtn);
 
@@ -559,7 +559,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		output.setText(decimal);
 		// Hex and binary only when the input used them (0xFF, 0b101) or asks for them.
 		const extra = describeNumber(result.value, /0x|0b|0o|hex|bin/i.test(input.value));
-		alt.setText(extra.length ? `= ${extra.join("  ·  ")}` : "");
+		alt.setText(extra.length ? tr("= {p0}", { p0: extra.join("  ·  ") }) : "");
 	};
 
 	const preview = () => {
@@ -618,7 +618,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	// --- memory and variables
 	const memoryRow = panel.createDiv({ cls: "notelens-calculator-memory" });
 	const memoryLabel = memoryRow.createSpan({ cls: "notelens-calculator-memory-label" });
-	const refreshMemory = () => { memoryLabel.setText(env.memory ? `M = ${formatNumber(env.memory)}` : "M vacía"); };
+	const refreshMemory = () => { memoryLabel.setText(env.memory ? tr("M = {p0}", { p0: formatNumber(env.memory) }) : tr("M vacía")); };
 	const memKey = (label: string, title: string, action: () => void) => {
 		const b = memoryRow.createEl("button", { cls: "notelens-calculator-key muted small", text: label });
 		b.title = title;
@@ -636,7 +636,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		if (env.vars.size === 0) return;
 		for (const [name, value] of env.vars) {
 			const chip = varsEl.createEl("button", { cls: "notelens-calculator-var", text: tr("{p0} = {p1}", { p0: name, p1: formatNumber(value) }) });
-			chip.title = "Insertar la variable. Escribe «nombre = valor» para definir otra.";
+			chip.title = tr("Insertar la variable. Escribe «nombre = valor» para definir otra.");
 			chip.onclick = () => insertText(name);
 		}
 		const clear = varsEl.createEl("button", { cls: "notelens-calculator-var muted", text: tr("borrar variables") });
@@ -655,11 +655,11 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 			const row = historyEl.createDiv({ cls: "notelens-calculator-entry" });
 			row.createSpan({ cls: "notelens-calculator-entry-expr", text: entry.expression });
 			row.createSpan({ cls: "notelens-calculator-entry-result", text: tr("= {p0}", { p0: entry.result }) });
-			row.title = "Volver a usar";
+			row.title = tr("Volver a usar");
 			row.onclick = () => { input.value = entry.expression; preview(); input.focus(); };
 			const insert = row.createEl("button", { cls: "notelens-table-control" });
 			setIcon(insert, "arrow-down-to-line");
-			insert.title = "Insertar en la pizarra";
+			insert.title = tr("Insertar en la pizarra");
 			insert.onclick = (e) => { e.stopPropagation(); host.insertCalculation(entry.expression, entry.result); };
 		}
 	};

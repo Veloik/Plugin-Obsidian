@@ -153,7 +153,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	const fromSelect = languages.createEl("select", { cls: "dropdown notelens-translator-select" });
 	const swap = languages.createEl("button", { cls: "notelens-nav-btn" });
 	setIcon(swap, "arrow-left-right");
-	swap.title = "Intercambiar idiomas";
+	swap.title = tr("Intercambiar idiomas");
 	const toSelect = languages.createEl("select", { cls: "dropdown notelens-translator-select" });
 	for (const language of LANGUAGES) {
 		fromSelect.createEl("option", { value: language.code, text: language.label });
@@ -177,12 +177,12 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	const captureBtn = sourceRow.createEl("button", { cls: "notelens-translator-capture" });
 	setIcon(captureBtn.createSpan(), "scan-text");
 	captureBtn.createSpan({ text: tr("Capturar de la pizarra (OCR)") });
-	captureBtn.title = "Dibuja un rectángulo sobre la pizarra: se reconoce el texto de imágenes, PDFs y escritura a mano en el idioma de origen y se traduce.";
+	captureBtn.title = tr("Dibuja un rectángulo sobre la pizarra: se reconoce el texto de imágenes, PDFs y escritura a mano en el idioma de origen y se traduce.");
 	const source = panel.createEl("textarea", { cls: "notelens-translator-text" });
-	source.placeholder = "Selecciona un cuadro de texto en la pizarra o escribe aquí.";
+	source.placeholder = tr("Selecciona un cuadro de texto en la pizarra o escribe aquí.");
 	source.rows = 4;
 	const result = panel.createEl("textarea", { cls: "notelens-translator-text notelens-translator-result" });
-	result.placeholder = "Traducción";
+	result.placeholder = tr("Traducción");
 	result.rows = 4;
 	result.readOnly = false;
 	const status = panel.createDiv({ cls: "notelens-translator-status" });
@@ -190,9 +190,9 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	const actions = panel.createDiv({ cls: "notelens-translator-actions" });
 	const translateBtn = actions.createEl("button", { cls: "mod-cta", text: tr("Traducir") });
 	const replaceBtn = actions.createEl("button", { text: tr("Sustituir") });
-	replaceBtn.title = "Cambia el texto original por la traducción";
+	replaceBtn.title = tr("Cambia el texto original por la traducción");
 	const addBtn = actions.createEl("button", { text: tr("Añadir a la pizarra") });
-	addBtn.title = "Crea un cuadro de texto con la traducción junto al original";
+	addBtn.title = tr("Crea un cuadro de texto con la traducción junto al original");
 	const copyBtn = actions.createEl("button", { text: tr("Copiar") });
 
 	let current: TranslationSource = { text: "", kind: "none", count: 0 };
@@ -245,7 +245,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 			// The service explains itself (quota, unsupported pair); show that
 			// rather than a generic line the user cannot act on.
 			const reason = error instanceof Error ? error.message.trim() : "";
-			status.setText(reason || "No se pudo traducir. Comprueba la conexión e inténtalo de nuevo.");
+			status.setText(reason || tr("No se pudo traducir. Comprueba la conexión e inténtalo de nuevo."));
 		} finally {
 			if (id === running) translateBtn.disabled = false;
 			refreshButtons();
@@ -257,11 +257,11 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 		current = host.getTranslationSource();
 		if (current.kind !== "none") {
 			source.value = current.text;
-			sourceLabel.setText(current.kind === "editor" ? "Cuadro que estás editando" : current.count > 1 ? `${current.count} cuadros seleccionados` : "Cuadro seleccionado");
+			sourceLabel.setText(current.kind === "editor" ? tr("Cuadro que estás editando") : current.count > 1 ? tr("{p0} cuadros seleccionados", { p0: current.count }) : tr("Cuadro seleccionado"));
 			void run();
 		} else {
 			sourceLabel.setText(tr("Texto"));
-			status.setText(source.value.trim() ? "" : "Selecciona un cuadro en la pizarra, o escribe aquí y pulsa Traducir.");
+			status.setText(source.value.trim() ? "" : tr("Selecciona un cuadro en la pizarra, o escribe aquí y pulsa Traducir."));
 		}
 		refreshButtons();
 	};

@@ -242,7 +242,7 @@ export function createPanelSearch(
 	count.setAttr("aria-live", "polite");
 	const clearButton = row.createEl("button", { cls: "notelens-panel-search-clear" });
 	setIcon(clearButton, "x");
-	clearButton.title = "Limpiar búsqueda";
+	clearButton.title = tr("Limpiar búsqueda");
 	clearButton.setAttr("aria-label", "Limpiar búsqueda");
 
 	const notify = () => {
@@ -271,7 +271,7 @@ export function createPanelSearch(
 		clear,
 		setCount: (visible, total) => {
 			count.setText(normalizePanelSearch(input.value) ? `${visible}/${total}` : String(total));
-			count.title = `${visible} de ${total} elementos visibles`;
+			count.title = tr("{p0} de {p1} elementos visibles", { p0: visible, p1: total });
 		}
 	};
 }
@@ -341,7 +341,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 			penBtn.empty();
 			setIcon(penBtn, nib.icon);
 			penBtn.setAttr("data-nib", nib.id);
-			penBtn.title = `${nib.label} (P) — opciones al pulsar de nuevo`;
+			penBtn.title = tr("{p0} (P) — opciones al pulsar de nuevo", { p0: nib.label });
 		}
 	}
 	refreshActive();
@@ -349,7 +349,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	// Current color dot: opens the panel.
 	bar.createDiv({ cls: "onenote-divider" });
 	const colorDot = bar.createDiv({ cls: "onenote-color-dot onenote-current-color" });
-	colorDot.title = "Color y opciones del lápiz";
+	colorDot.title = tr("Color y opciones del lápiz");
 	const syncDot = () => {
 		colorDot.style.backgroundColor = host.currentTool === "highlighter"
 			? host.highlighterColorHex
@@ -367,121 +367,121 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const undoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(undoBtn, "undo-2");
-	undoBtn.title = "Deshacer (Ctrl+Z)";
+	undoBtn.title = tr("Deshacer (Ctrl+Z)");
 	undoBtn.onclick = () => host.undo();
 
 	const redoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(redoBtn, "redo-2");
-	redoBtn.title = "Rehacer (Ctrl+Shift+Z)";
+	redoBtn.title = tr("Rehacer (Ctrl+Shift+Z)");
 	redoBtn.onclick = () => host.redo();
 
 	const insertBar = container.createDiv({ cls: "notelens-insert-dock" });
 	shield(insertBar);
 	const pdfBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(pdfBtn, "file-text");
-	pdfBtn.title = "Insertar PDF de la bóveda";
+	pdfBtn.title = tr("Insertar PDF de la bóveda");
 	pdfBtn.onclick = () => host.insertPdf();
 
 	const videoBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(videoBtn, "play-circle");
-	videoBtn.title = "Insertar vídeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom… o un archivo de vídeo local";
+	videoBtn.title = tr("Insertar vídeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom… o un archivo de vídeo local");
 	videoBtn.onclick = () => host.insertVideo();
 
 	const imageBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(imageBtn, "image-plus");
-	imageBtn.title = "Insertar imagen de la bóveda";
+	imageBtn.title = tr("Insertar imagen de la bóveda");
 	imageBtn.onclick = () => host.insertImage();
 
 	const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(stickyBtn, "sticky-note");
-	stickyBtn.title = "Nueva nota adhesiva";
+	stickyBtn.title = tr("Nueva nota adhesiva");
 	stickyBtn.onclick = () => host.addStickyNote();
 
 	const attachBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(attachBtn, "paperclip");
-	attachBtn.title = "Adjuntar cualquier archivo de la bóveda";
+	attachBtn.title = tr("Adjuntar cualquier archivo de la bóveda");
 	attachBtn.onclick = () => host.insertFile();
 
 	const linkBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(linkBtn, "link");
-	linkBtn.title = "Enlazar una nota o pizarra de la bóveda";
+	linkBtn.title = tr("Enlazar una nota o pizarra de la bóveda");
 	linkBtn.onclick = () => host.insertLink();
 
 	const uploadBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(uploadBtn, "upload");
-	uploadBtn.title = "Subir archivo desde el dispositivo";
+	uploadBtn.title = tr("Subir archivo desde el dispositivo");
 	uploadBtn.onclick = () => host.uploadFileFromDevice();
 
 	const tableBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(tableBtn, "table-2");
-	tableBtn.title = "Insertar tabla";
+	tableBtn.title = tr("Insertar tabla");
 	tableBtn.onclick = () => host.insertTable();
 
 	const codeBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(codeBtn, "code-2");
-	codeBtn.title = "Insertar bloque de código";
+	codeBtn.title = tr("Insertar bloque de código");
 	codeBtn.onclick = () => host.insertCodeBlock();
 
 	const chartBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(chartBtn, "bar-chart-3");
-	chartBtn.title = "Insertar gráfico: barras, líneas, circular, dispersión o función y = f(x)";
+	chartBtn.title = tr("Insertar gráfico: barras, líneas, circular, dispersión o función y = f(x)");
 	chartBtn.onclick = () => host.insertChart();
 
 	const mathBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(mathBtn, "sigma");
-	mathBtn.title = "Insertar ecuación: escríbela a mano y se convierte sola, o teclea la notación. También vale $x^2$ dentro de cualquier texto";
+	mathBtn.title = tr("Insertar ecuación: escríbela a mano y se convierte sola, o teclea la notación. También vale $x^2$ dentro de cualquier texto");
 	mathBtn.onclick = () => host.insertMathBlock();
 
 	const recorderBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(recorderBtn, "mic");
-	recorderBtn.title = "Grabar audio: se guarda como MP3 y se añade a la pizarra";
+	recorderBtn.title = tr("Grabar audio: se guarda como MP3 y se añade a la pizarra");
 	recorderBtn.onclick = () => host.toggleRecorder();
 
 	const translateBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(translateBtn, "languages");
-	translateBtn.title = "Traducir texto";
+	translateBtn.title = tr("Traducir texto");
 	translateBtn.onclick = () => host.translateText();
 
 	const documentBar = container.createDiv({ cls: "notelens-document-dock" });
 	shield(documentBar);
 	const rulerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(rulerBtn, "ruler");
-	rulerBtn.title = "Mostrar regla inteligente";
+	rulerBtn.title = tr("Mostrar regla inteligente");
 	rulerBtn.onclick = () => host.toggleRuler();
 
 	const bookmarkBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(bookmarkBtn, "bookmark-plus");
-	bookmarkBtn.title = "Guardar marcador de sección";
+	bookmarkBtn.title = tr("Guardar marcador de sección");
 	bookmarkBtn.onclick = () => host.addViewportBookmark();
 
 	const navBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(navBtn, "folder-tree");
-	navBtn.title = "Navegar entre las pizarras y notas de la bóveda";
+	navBtn.title = tr("Navegar entre las pizarras y notas de la bóveda");
 	navBtn.onclick = () => host.toggleNavigator();
 
 	const calcBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(calcBtn, "calculator");
-	calcBtn.title = "Calculadora científica";
+	calcBtn.title = tr("Calculadora científica");
 	calcBtn.onclick = () => host.toggleCalculator();
 
 	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(a4Btn, "file-stack");
-	a4Btn.title = "Mostrar guías de página A4";
+	a4Btn.title = tr("Mostrar guías de página A4");
 	a4Btn.onclick = () => host.toggleA4Guides();
 
 	const exportBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(exportBtn, "file-down");
-	exportBtn.title = "Exportar a PDF A4";
+	exportBtn.title = tr("Exportar a PDF A4");
 	exportBtn.onclick = () => host.exportA4Pdf();
 
 	const shareBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(shareBtn, "share-2");
-	shareBtn.title = "Exportar paquete editable de NoteLens";
+	shareBtn.title = tr("Exportar paquete editable de NoteLens");
 	shareBtn.onclick = () => host.exportSharePackage();
 
 	const importBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(importBtn, "package-open");
-	importBtn.title = "Importar paquete editable de NoteLens";
+	importBtn.title = tr("Importar paquete editable de NoteLens");
 	importBtn.onclick = () => host.importSharePackage();
 
 	(container as any).__refreshToolbar = () => {
@@ -504,41 +504,41 @@ export function createNavigationControls(host: ToolbarHost, container: HTMLEleme
 
 	const zoomOut = controls.createEl("button", { cls: "notelens-nav-btn" });
 	setIcon(zoomOut, "minus");
-	zoomOut.title = "Alejar";
+	zoomOut.title = tr("Alejar");
 	zoomOut.onclick = () => host.zoomOut();
 
 	const zoomLabel = controls.createEl("button", { cls: "notelens-zoom-label" });
-	zoomLabel.title = "Restablecer zoom";
+	zoomLabel.title = tr("Restablecer zoom");
 	zoomLabel.onclick = () => host.resetView();
 
 	const zoomIn = controls.createEl("button", { cls: "notelens-nav-btn" });
 	setIcon(zoomIn, "plus");
-	zoomIn.title = "Acercar";
+	zoomIn.title = tr("Acercar");
 	zoomIn.onclick = () => host.zoomIn();
 
 	const reset = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-reset" });
 	setIcon(reset, "maximize");
-	reset.title = "Restablecer vista";
+	reset.title = tr("Restablecer vista");
 	reset.onclick = () => host.resetView();
 
 	const fit = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fit" });
 	setIcon(fit, "scan");
-	fit.title = "Ajustar la vista a todo el contenido";
+	fit.title = tr("Ajustar la vista a todo el contenido");
 	fit.onclick = () => host.fitToContent();
 
 	const map = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-map" });
 	setIcon(map, "map");
-	map.title = "Mostrar u ocultar el minimapa";
+	map.title = tr("Mostrar u ocultar el minimapa");
 	map.onclick = () => host.toggleMiniMap();
 
 	const full = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fullscreen" });
 	setIcon(full, "maximize-2");
-	full.title = "Pizarra a pantalla completa (Esc para salir)";
+	full.title = tr("Pizarra a pantalla completa (Esc para salir)");
 	full.onclick = () => host.toggleFullscreen();
 
 	const help = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-help" });
 	setIcon(help, "keyboard");
-	help.title = "Atajos de teclado";
+	help.title = tr("Atajos de teclado");
 	const shortcuts = createShortcutsPanel(container);
 	help.onclick = () => { shortcuts.toggle(); help.toggleClass("active", shortcuts.isOpen()); };
 
@@ -589,19 +589,19 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 	shield(dock);
 	const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle" });
 	setIcon(toggle, "book-open-check");
-	toggle.title = "Marcadores de sección";
+	toggle.title = tr("Marcadores de sección");
 	const panel = dock.createDiv({ cls: "notelens-bookmarks-panel hidden" });
 	const panelHeader = panel.createDiv({ cls: "notelens-bookmarks-header" });
 	panelHeader.createSpan({ text: tr("Marcadores") });
 	const headerButtons = panelHeader.createDiv({ cls: "notelens-bookmarks-header-buttons" });
 	const add = headerButtons.createEl("button", { cls: "notelens-table-control" });
 	setIcon(add, "plus");
-	add.title = "Guardar posición actual";
+	add.title = tr("Guardar posición actual");
 	let clearSearch = () => {};
 	add.onclick = () => { clearSearch(); host.addViewportBookmark(); };
 	const closeBookmarks = headerButtons.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBookmarks, "x");
-	closeBookmarks.title = "Cerrar";
+	closeBookmarks.title = tr("Cerrar");
 	closeBookmarks.onclick = () => panel.addClass("hidden");
 	let searchQuery = "";
 	let refresh: (renameId?: string) => void = () => {};
@@ -614,7 +614,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 	let pageFilter: string | null = null;
 	const pageFilterRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
 	const pageFilterSelect = pageFilterRow.createEl("select", { cls: "notelens-panel-page-select" });
-	pageFilterSelect.title = "Mostrar solo los marcadores de una página";
+	pageFilterSelect.title = tr("Mostrar solo los marcadores de una página");
 	pageFilterSelect.onchange = () => {
 		pageFilter = pageFilterSelect.value === "__all__" ? null : pageFilterSelect.value;
 		refresh();
@@ -695,7 +695,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 			const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
 			copy.createSpan({ cls: "notelens-bookmark-label", text: bookmark.label });
 			if (host.getDocumentPages().length > 1) copy.createSpan({ cls: "notelens-bookmark-page", text: host.getPageTitle(bookmark.pageId) });
-			go.title = `Ir a ${bookmark.label} (doble clic para renombrar)`;
+			go.title = tr("Ir a {p0} (doble clic para renombrar)", { p0: bookmark.label });
 			go.onclick = () => {
 				host.goToViewportBookmark(bookmark.id);
 				panel.addClass("hidden");
@@ -703,11 +703,11 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 			go.ondblclick = (event) => { event.preventDefault(); startRename(item, go, bookmark); };
 			const rename = item.createEl("button", { cls: "notelens-table-control" });
 			setIcon(rename, "pencil");
-			rename.title = "Renombrar marcador";
+			rename.title = tr("Renombrar marcador");
 			rename.onclick = () => startRename(item, go, bookmark);
 			const remove = item.createEl("button", { cls: "notelens-table-control" });
 			setIcon(remove, "x");
-			remove.title = "Eliminar marcador";
+			remove.title = tr("Eliminar marcador");
 			remove.onclick = () => host.deleteViewportBookmark(bookmark.id);
 			if (renameId === bookmark.id) {
 				panel.removeClass("hidden");
@@ -739,7 +739,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 	shield(dock);
 	const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle notelens-pages-toggle" });
 	setIcon(toggle, "files");
-	toggle.title = "Páginas de la libreta";
+	toggle.title = tr("Páginas de la libreta");
 	const count = toggle.createSpan({ cls: "notelens-pages-count" });
 
 	const panel = dock.createDiv({ cls: "notelens-bookmarks-panel notelens-pages-panel hidden" });
@@ -748,12 +748,12 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 	const actions = header.createDiv({ cls: "notelens-bookmarks-header-buttons" });
 	const add = actions.createEl("button", { cls: "notelens-table-control" });
 	setIcon(add, "file-plus-2");
-	add.title = "Añadir página";
+	add.title = tr("Añadir página");
 	let clearSearch = () => {};
 	add.onclick = () => { clearSearch(); host.addDocumentPage(); };
 	const close = actions.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(close, "x");
-	close.title = "Cerrar";
+	close.title = tr("Cerrar");
 	close.onclick = () => panel.addClass("hidden");
 	let searchQuery = "";
 	let refresh: (renameId?: string) => void = () => {};
@@ -816,17 +816,17 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 			go.createSpan({ cls: "notelens-page-thumbnail", text: String(index + 1) });
 			const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
 			copy.createSpan({ cls: "notelens-bookmark-label", text: page.title });
-			copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active ? "Página actual" : "Abrir página" });
-			go.title = `Ir a ${page.title}`;
+			copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active ? tr("Página actual") : tr("Abrir página") });
+			go.title = tr("Ir a {p0}", { p0: page.title });
 			go.onclick = () => host.goToDocumentPage(page.id);
 			go.ondblclick = event => { event.preventDefault(); startRename(item, go, page); };
 			const rename = item.createEl("button", { cls: "notelens-table-control" });
 			setIcon(rename, "pencil");
-			rename.title = "Renombrar página";
+			rename.title = tr("Renombrar página");
 			rename.onclick = () => startRename(item, go, page);
 			const remove = item.createEl("button", { cls: "notelens-table-control notelens-page-remove" });
 			setIcon(remove, "x");
-			remove.title = pages.length === 1 ? "Debe quedar al menos una página" : "Eliminar página";
+			remove.title = pages.length === 1 ? tr("Debe quedar al menos una página") : tr("Eliminar página");
 			remove.toggleClass("is-disabled", pages.length === 1);
 			remove.onclick = () => { if (pages.length > 1) host.deleteDocumentPage(page.id); };
 			if (renameId === page.id) {
@@ -853,12 +853,12 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 export function createFocusModeControl(host: ToolbarHost, container: HTMLElement): void {
 	const button = container.createEl("button", { cls: "notelens-focus-toggle" });
 	shield(button);
-	button.title = "Despejar la pantalla";
+	button.title = tr("Despejar la pantalla");
 	button.onclick = () => host.toggleFocusMode();
 	const refresh = () => {
 		button.empty();
 		setIcon(button, host.getFocusModeEnabled() ? "eye" : "eye-off");
-		button.title = host.getFocusModeEnabled() ? "Mostrar controles" : "Despejar la pantalla";
+		button.title = host.getFocusModeEnabled() ? tr("Mostrar controles") : tr("Despejar la pantalla");
 		button.toggleClass("active", host.getFocusModeEnabled());
 	};
 	refresh();
@@ -875,7 +875,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	shield(panel);
 	const panelClose = panel.createEl("button", { cls: "notelens-panel-close" });
 	setIcon(panelClose, "x");
-	panelClose.title = "Cerrar (Esc)";
+	panelClose.title = tr("Cerrar (Esc)");
 	panelClose.onclick = () => close();
 
 	function createPanelHeader(section: HTMLElement, icon: string, title: string): void {
@@ -1048,7 +1048,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		const b = eraserRow.createEl("button", { cls: "notelens-eraser-choice" });
 		b.createSpan({ cls: "notelens-eraser-block" });
 		b.createSpan({ cls: "notelens-eraser-size-label", text: s.label });
-		b.title = `Goma ${s.label} (${s.value}px)`;
+		b.title = tr("Goma {p0} ({p1}px)", { p0: s.label, p1: s.value });
 		b.onclick = () => { host.setEraserSize(s.value); close(); };
 		eraserBtns.push([b, s.value]);
 	}
@@ -1174,8 +1174,8 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		for (const [b, v] of eraserBtns) b.toggleClass("active", host.eraserSize === v);
 		for (const [b, mode] of eraserModeBtns) b.toggleClass("active", host.eraserMode === mode);
 		eraserHint.setText(host.eraserMode === "partial"
-			? "Corta el trazo justo donde pasas la goma, como en OneNote."
-			: "Borra el trazo entero al tocarlo.");
+			? tr("Corta el trazo justo donde pasas la goma, como en OneNote.")
+			: tr("Borra el trazo entero al tocarlo."));
 		for (const [b, v] of textBtns) b.toggleClass("active", host.textSize === v);
 		fontSelect.value = host.textFont;
 		for (const [b, kind] of shapeButtons) b.toggleClass("active", host.shapeKind === kind);
@@ -1245,7 +1245,7 @@ export function createQuickTagsBar(
 		const summary = bar.createEl("button", { cls: "onenote-tag-chip onenote-tag-summary" });
 		setIcon(summary.createSpan({ cls: "onenote-tag-icon" }), "list-checks");
 		summary.createSpan({ text: tr("Resumen") });
-		summary.title = "Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes";
+		summary.title = tr("Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes");
 		summary.onclick = onSummary;
 	}
 	(container as any).__clearActiveTag = () => setActive(null);
@@ -1258,7 +1258,7 @@ export function createQuickTagsBar(
 export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): void {
 	const btn = container.createEl("button", { cls: "notelens-settings-btn" });
 	setIcon(btn, "settings-2");
-	btn.title = "Formato del fondo";
+	btn.title = tr("Formato del fondo");
 	shield(btn);
 
 	const panel = container.createDiv({ cls: "notelens-settings-panel hidden" });
@@ -1296,7 +1296,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	const openSettings = panel.createEl("button", { cls: "notelens-settings-link" });
 	setIcon(openSettings.createSpan(), "settings-2");
 	openSettings.createSpan({ text: tr("Ajustes del plugin") });
-	openSettings.title = "Abre los ajustes de NoteLens en Obsidian";
+	openSettings.title = tr("Abre los ajustes de NoteLens en Obsidian");
 	openSettings.onclick = () => host.openPluginSettings();
 
 	const marginControl = panel.createEl("label", { cls: "notelens-settings-margin" });
@@ -1313,7 +1313,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	const syncMarginToggle = () => {
 		marginToggle.toggleClass("is-on", host.marginEnabled);
 		marginToggle.setAttr("aria-checked", host.marginEnabled ? "true" : "false");
-		marginToggle.title = host.marginEnabled ? "Ocultar el margen izquierdo" : "Mostrar el margen izquierdo";
+		marginToggle.title = host.marginEnabled ? tr("Ocultar el margen izquierdo") : tr("Mostrar el margen izquierdo");
 	};
 	marginToggle.setAttr("aria-label", "Mostrar margen izquierdo");
 	marginToggle.onclick = (event) => {

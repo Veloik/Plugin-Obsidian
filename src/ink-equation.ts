@@ -70,7 +70,7 @@ export class InkEquationModal extends Modal {
 		sourceRow.createSpan({ cls: "notelens-ink-source-label", text: tr("Notación") });
 		const input = sourceRow.createEl("input", { cls: "notelens-ink-source", type: "text" });
 		input.value = this.source;
-		input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
+		input.placeholder = tr("\\\\frac{a}{b} + \\\\sqrt{x}");
 
 		const status = contentEl.createDiv({ cls: "notelens-ink-status" });
 		const candidates = contentEl.createDiv({ cls: "notelens-ink-candidates hidden" });
@@ -100,7 +100,7 @@ export class InkEquationModal extends Modal {
 		];
 		for (const item of structureItems) {
 			const button = structures.createEl("button", { cls: "notelens-ink-structure", text: item.label });
-			button.title = `Insertar ${item.value}`;
+			button.title = tr("Insertar {p0}", { p0: item.value });
 			button.onclick = () => {
 				const start = input.selectionStart ?? input.value.length;
 				const end = input.selectionEnd ?? start;
@@ -126,7 +126,7 @@ export class InkEquationModal extends Modal {
 				const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
 				for (const alternative of token.alternatives) select.createEl("option", { value: alternative, text: alternative });
 				select.value = token.value;
-				select.title = `Confianza ${Math.round(token.confidence * 100)}%. Elige el símbolo correcto.`;
+				select.title = tr("Confianza {p0}%. Elige el símbolo correcto.", { p0: Math.round(token.confidence * 100) });
 				select.onchange = () => {
 					if (tokenStart < 0) return;
 					input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
@@ -320,9 +320,9 @@ export class InkEquationModal extends Modal {
 					editedByUser = false;
 					drawPreview();
 					showCandidates(vector);
-					status.setText(vector.confidence >= 0.78 ? vector.detail : "Lectura local combinada. Los símbolos dudosos aparecen debajo.");
+					status.setText(vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los símbolos dudosos aparecen debajo."));
 				} else {
-					status.setText(tidied ? "He respetado tu corrección manual." : "No he reconocido nada todavía; sigue escribiendo o usa las estructuras.");
+					status.setText(tidied ? tr("He respetado tu corrección manual.") : tr("No he reconocido nada todavía; sigue escribiendo o usa las estructuras."));
 				}
 			} catch {
 				status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));

@@ -38,7 +38,7 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 	const newBoard = boardsHead.createEl("button", { cls: "notelens-navigator-new" });
 	setIcon(newBoard.createSpan(), "plus");
 	newBoard.createSpan({ text: tr("Nueva") });
-	newBoard.title = "Crear una pizarra nueva";
+	newBoard.title = tr("Crear una pizarra nueva");
 	newBoard.onclick = () => host.createBoard();
 	const boards = panel.createDiv({ cls: "notelens-navigator-list" });
 
@@ -46,7 +46,7 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 	notesHead.createSpan({ cls: "notelens-panel-label", text: tr("Notas") });
 	const search = panel.createEl("input", { cls: "notelens-navigator-search" });
 	search.type = "search";
-	search.placeholder = "Buscar una nota por nombre…";
+	search.placeholder = tr("Buscar una nota por nombre…");
 	const notes = panel.createDiv({ cls: "notelens-navigator-list" });
 	panel.createDiv({ cls: "notelens-calculator-help", text: tr("Clic abre en esta pestaña, Ctrl+clic en una nueva. El botón de enlace deja una tarjeta en la pizarra.") });
 
@@ -60,12 +60,12 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 		if (folder) body.createDiv({ cls: "notelens-navigator-folder", text: folder });
 		const openBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-open" });
 		setIcon(openBtn, "external-link");
-		openBtn.title = host.currentPath === file.path ? "Es la pizarra abierta" : "Abrir";
+		openBtn.title = host.currentPath === file.path ? tr("Es la pizarra abierta") : "Abrir";
 		openBtn.disabled = host.currentPath === file.path;
 		openBtn.onclick = (e) => { e.stopPropagation(); host.openPath(file.path, e.ctrlKey || e.metaKey); };
 		const linkBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-link" });
 		setIcon(linkBtn, "link");
-		linkBtn.title = "Poner un enlace en la pizarra";
+		linkBtn.title = tr("Poner un enlace en la pizarra");
 		linkBtn.onclick = (e) => { e.stopPropagation(); host.linkPath(file.path); };
 		item.onclick = (e) => { if (host.currentPath !== file.path) host.openPath(file.path, e.ctrlKey || e.metaKey); };
 	};
@@ -77,7 +77,7 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 		for (const file of boardFiles) row(boards, file, "board");
 		notes.empty();
 		const noteFiles = host.listNotes(search.value);
-		if (noteFiles.length === 0) notes.createDiv({ cls: "notelens-bookmarks-empty", text: search.value ? "Ninguna nota coincide." : "No hay notas Markdown en la bóveda." });
+		if (noteFiles.length === 0) notes.createDiv({ cls: "notelens-bookmarks-empty", text: search.value ? tr("Ninguna nota coincide.") : tr("No hay notas Markdown en la bóveda.") });
 		for (const file of noteFiles) row(notes, file, "note");
 	};
 	search.addEventListener("input", refresh);

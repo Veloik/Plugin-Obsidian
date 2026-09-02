@@ -345,7 +345,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 					const models = await probeLocalServer(base);
 					b.setButtonText(tr("Probar"));
 					new Notice(models === null
-						? `No hay respuesta en ${base}. ¿Está arrancado el servidor?`
+						? tr("No hay respuesta en {p0}. ¿Está arrancado el servidor?", { p0: base })
 						: `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6000);
 				}));
 
@@ -353,7 +353,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 				.setName(tr("Modelo preferido"))
 				.setDesc(tr("Déjalo vacío para que Leen elija el mejor según la memoria de tu equipo."))
 				.addText(t => t
-					.setPlaceholder("automático")
+					.setPlaceholder(tr("automático"))
 					.setValue(s.aiModel)
 					.onChange(v => { s.aiModel = v.trim(); save(); }));
 
