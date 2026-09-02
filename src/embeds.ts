@@ -4,6 +4,7 @@ import pdfWorkerSource from "pdfjs-dist/build/pdf.worker.min.mjs?raw";
 import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
 import { VIDEO_EXTENSIONS, clamp, toRemoteVideoEmbed } from "./tools";
+import { tr } from "./i18n";
 
 /** Callbacks the embed frames need from the view. */
 export interface EmbedHost {
@@ -200,7 +201,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 				attachCaptionToVideo(host, embed, video);
 			}
 		} else {
-			body.createDiv({ cls: "notelens-embed-missing", text: `Archivo no encontrado: ${embed.src}` });
+			body.createDiv({ cls: "notelens-embed-missing", text: tr("Archivo no encontrado: {p0}", { p0: embed.src }) });
 		}
 	}
 
@@ -235,7 +236,7 @@ async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement
 		const file = picker.files?.[0];
 		if (!file) return;
 		if (!file.name.toLowerCase().endsWith(".vtt")) {
-			new Notice("Selecciona un archivo WebVTT (.vtt).");
+			new Notice(tr("Selecciona un archivo WebVTT (.vtt)."));
 			return;
 		}
 		try {
@@ -254,10 +255,10 @@ async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement
 			if (video) attachCaptionToVideo(host, embed, video);
 			button.title = "Cambiar subtítulos WebVTT";
 			host.onEmbedChanged();
-			new Notice(`Subtítulos añadidos: ${saved.name}`);
+			new Notice(tr("Subtítulos añadidos: {p0}", { p0: saved.name }));
 		} catch (error) {
 			console.error("NoteLens: caption upload failed", error);
-			new Notice("No se pudieron añadir los subtítulos.");
+			new Notice(tr("No se pudieron añadir los subtítulos."));
 		}
 	};
 	picker.click();
@@ -309,7 +310,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 
 	const preview = card.createDiv({ cls: "notelens-link-preview" });
 	if (!(file instanceof TFile)) {
-		preview.setText("No se encuentra el archivo. ¿Se ha movido o borrado?");
+		preview.setText(tr("No se encuentra el archivo. ¿Se ha movido o borrado?"));
 		card.addClass("is-missing");
 	} else if (embed.kind === "note") {
 		void host.app.vault.cachedRead(file).then(content => {
@@ -317,7 +318,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 			preview.setText(lines.slice(0, 5).join("\n") || "Nota vacía");
 		}).catch(() => preview.setText(""));
 	} else {
-		preview.setText("Doble clic para ir a esta pizarra.");
+		preview.setText(tr("Doble clic para ir a esta pizarra."));
 	}
 
 	card.addEventListener("pointerdown", (e) => host.startEmbedDrag(e, card, embed));
@@ -376,7 +377,7 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 async function mountPdfViewer(host: EmbedHost, header: HTMLElement, body: HTMLElement, embed: Embed): Promise<void> {
 	const pdf = await loadPdf(host, embed.src);
 	if (!pdf) {
-		body.createDiv({ cls: "notelens-embed-missing", text: `No se pudo cargar: ${embed.src}` });
+		body.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
 		return;
 	}
 
@@ -416,7 +417,7 @@ async function mountPdfViewer(host: EmbedHost, header: HTMLElement, body: HTMLEl
 			await page.render({ canvasContext: ctx, viewport }).promise;
 			if (token !== renderToken) return; // superseded by a newer render
 
-			pageLabel.setText(`${current} / ${pdf.numPages}`);
+			pageLabel.setText(tr("{p0} / {p1}", { p0: current, p1: pdf.numPages }));
 			embed.page = current;
 			host.onEmbedChanged();
 		} catch (e) {
@@ -465,7 +466,7 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 		e.stopPropagation();
 		const menu = new Menu();
 		menu.addItem(item => item
-			.setTitle("Eliminar documento")
+			.setTitle(tr("Eliminar documento"))
 			.setIcon("trash-2")
 			.onClick(() => {
 				stack.remove();
@@ -476,7 +477,7 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 
 	const pdf = await loadPdf(host, embed.src);
 	if (!pdf) {
-		stack.createDiv({ cls: "notelens-embed-missing", text: `No se pudo cargar: ${embed.src}` });
+		stack.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
 		return;
 	}
 
@@ -552,7 +553,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 		img.src = host.app.vault.getResourcePath(file);
 		img.draggable = false;
 	} else {
-		wrap.createDiv({ cls: "notelens-embed-missing", text: `Imagen no encontrada: ${embed.src}` });
+		wrap.createDiv({ cls: "notelens-embed-missing", text: tr("Imagen no encontrada: {p0}", { p0: embed.src }) });
 	}
 
 	// Permanent close control, matching framed files and charts.
@@ -577,7 +578,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 		e.stopPropagation();
 		const menu = new Menu();
 		menu.addItem(item => item
-			.setTitle("Eliminar imagen")
+			.setTitle(tr("Eliminar imagen"))
 			.setIcon("trash-2")
 			.onClick(() => {
 				wrap.remove();
@@ -671,7 +672,7 @@ function currentScale(el: HTMLElement): number {
 export class PdfPickModal extends FuzzySuggestModal<TFile> {
 	constructor(app: App, private onPick: (file: TFile) => void) {
 		super(app);
-		this.setPlaceholder("Elige un PDF de la bóveda…");
+		this.setPlaceholder(tr("Elige un PDF de la bóveda…"));
 	}
 
 	getItems(): TFile[] {
@@ -691,7 +692,7 @@ export class PdfPickModal extends FuzzySuggestModal<TFile> {
 export class ImagePickModal extends FuzzySuggestModal<TFile> {
 	constructor(app: App, private onPick: (file: TFile) => void) {
 		super(app);
-		this.setPlaceholder("Elige una imagen de la bóveda…");
+		this.setPlaceholder(tr("Elige una imagen de la bóveda…"));
 	}
 
 	getItems(): TFile[] {
@@ -712,7 +713,7 @@ export class ImagePickModal extends FuzzySuggestModal<TFile> {
 export class NoteOrBoardPickModal extends FuzzySuggestModal<TFile> {
 	constructor(app: App, private currentPath: string | null, private onPick: (file: TFile) => void) {
 		super(app);
-		this.setPlaceholder("Nota o pizarra a la que enlazar…");
+		this.setPlaceholder(tr("Nota o pizarra a la que enlazar…"));
 	}
 
 	getItems(): TFile[] {
@@ -733,7 +734,7 @@ export class NoteOrBoardPickModal extends FuzzySuggestModal<TFile> {
 export class VaultFilePickModal extends FuzzySuggestModal<TFile> {
 	constructor(app: App, private onPick: (file: TFile) => void) {
 		super(app);
-		this.setPlaceholder("Busca cualquier archivo de la bóveda…");
+		this.setPlaceholder(tr("Busca cualquier archivo de la bóveda…"));
 	}
 
 	getItems(): TFile[] {
@@ -758,13 +759,13 @@ export class PdfModeModal extends Modal {
 	override onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.createEl("h3", { text: "¿Cómo insertar el PDF?" });
+		contentEl.createEl("h3", { text: tr("¿Cómo insertar el PDF?") });
 
 		const make = (icon: string, title: string, desc: string, mode: "viewer" | "pages") => {
 			const btn = contentEl.createDiv({ cls: "notelens-mode-choice" });
 			const head = btn.createDiv({ cls: "notelens-mode-title" });
 			setIcon(head.createSpan({ cls: "notelens-mode-icon" }), icon);
-			head.createSpan({ text: ` ${title}` });
+			head.createSpan({ text: tr(" {p0}", { p0: title }) });
 			btn.createDiv({ cls: "notelens-mode-desc", text: desc });
 			btn.onclick = () => {
 				this.close();
@@ -795,9 +796,9 @@ export class VideoInsertModal extends Modal {
 	override onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.createEl("h3", { text: "Insertar vídeo" });
+		contentEl.createEl("h3", { text: tr("Insertar vídeo") });
 		contentEl.createEl("p", {
-			text: "Pega un enlace de YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom o Facebook; también puedes usar un vídeo local.",
+			text: tr("Pega un enlace de YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom o Facebook; también puedes usar un vídeo local."),
 			cls: "notelens-modal-hint"
 		});
 
@@ -824,13 +825,13 @@ export class VideoInsertModal extends Modal {
 				return;
 			}
 
-			new Notice("Usa un enlace de vídeo compatible o la ruta de un vídeo de la bóveda.");
+			new Notice(tr("Usa un enlace de vídeo compatible o la ruta de un vídeo de la bóveda."));
 		};
 
 		new Setting(contentEl)
-			.setName("URL o ruta")
+			.setName(tr("URL o ruta"))
 			.addText(text => {
-				text.setPlaceholder("https://instagram.com/reel/... o carpeta/video.mp4");
+				text.setPlaceholder(tr("https://instagram.com/reel/... o carpeta/video.mp4"));
 				text.onChange(v => { value = v; });
 				text.inputEl.addEventListener("keydown", (e) => {
 					if (e.key === "Enter") { e.preventDefault(); submit(); }
@@ -839,7 +840,7 @@ export class VideoInsertModal extends Modal {
 			});
 
 		new Setting(contentEl)
-			.addButton(btn => btn.setButtonText("Insertar").setCta().onClick(submit))
-			.addButton(btn => btn.setButtonText("Cancelar").onClick(() => this.close()));
+			.addButton(btn => btn.setButtonText(tr("Insertar")).setCta().onClick(submit))
+			.addButton(btn => btn.setButtonText(tr("Cancelar")).onClick(() => this.close()));
 	}
 }

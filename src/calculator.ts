@@ -1,5 +1,6 @@
 import { setIcon } from "obsidian";
 import { makeDraggable } from "./panels";
+import { tr } from "./i18n";
 
 /**
  * Scientific calculator engine and panel. The engine compiles expressions
@@ -514,7 +515,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 
 	const header = panel.createDiv({ cls: "notelens-calculator-header" });
 	setIcon(header.createSpan({ cls: "notelens-calculator-icon" }), "calculator");
-	header.createSpan({ cls: "notelens-calculator-title", text: "Calculadora" });
+	header.createSpan({ cls: "notelens-calculator-title", text: tr("Calculadora") });
 	const unitBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
 	unitBtn.title = "Grados o radianes para las funciones trigonométricas";
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
@@ -552,7 +553,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 			const f = formatFraction(fraction);
 			output.setText(f.plain + (f.mixed ? `  (${f.mixed})` : ""));
 			const extra = describeNumber(result.value, /0x|0b|0o|hex|bin/i.test(input.value)).filter(x => x !== f.plain && x !== f.mixed);
-			alt.setText(`= ${[decimal, ...extra].join("  ·  ")}`);
+			alt.setText(tr("= {p0}", { p0: [decimal, ...extra].join("  ·  ") }));
 			return;
 		}
 		output.setText(decimal);
@@ -634,11 +635,11 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		varsEl.empty();
 		if (env.vars.size === 0) return;
 		for (const [name, value] of env.vars) {
-			const chip = varsEl.createEl("button", { cls: "notelens-calculator-var", text: `${name} = ${formatNumber(value)}` });
+			const chip = varsEl.createEl("button", { cls: "notelens-calculator-var", text: tr("{p0} = {p1}", { p0: name, p1: formatNumber(value) }) });
 			chip.title = "Insertar la variable. Escribe «nombre = valor» para definir otra.";
 			chip.onclick = () => insertText(name);
 		}
-		const clear = varsEl.createEl("button", { cls: "notelens-calculator-var muted", text: "borrar variables" });
+		const clear = varsEl.createEl("button", { cls: "notelens-calculator-var muted", text: tr("borrar variables") });
 		clear.onclick = () => { env.vars.clear(); refreshVars(); preview(); };
 	};
 
@@ -647,13 +648,13 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	const renderHistory = () => {
 		historyEl.empty();
 		if (history.length === 0) {
-			historyEl.createDiv({ cls: "notelens-calculator-empty", text: "Los cálculos que hagas quedan aquí." });
+			historyEl.createDiv({ cls: "notelens-calculator-empty", text: tr("Los cálculos que hagas quedan aquí.") });
 			return;
 		}
 		for (const entry of [...history].reverse()) {
 			const row = historyEl.createDiv({ cls: "notelens-calculator-entry" });
 			row.createSpan({ cls: "notelens-calculator-entry-expr", text: entry.expression });
-			row.createSpan({ cls: "notelens-calculator-entry-result", text: `= ${entry.result}` });
+			row.createSpan({ cls: "notelens-calculator-entry-result", text: tr("= {p0}", { p0: entry.result }) });
 			row.title = "Volver a usar";
 			row.onclick = () => { input.value = entry.expression; preview(); input.focus(); };
 			const insert = row.createEl("button", { cls: "notelens-table-control" });
@@ -704,20 +705,20 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	const keys = panel.createDiv({ cls: "notelens-calculator-keys" });
 	const pages: Record<string, Key[]> = {
 		"Básica": [
-			{ label: "sin", insert: "sin()", cls: "fn" }, { label: "cos", insert: "cos()", cls: "fn" }, { label: "tan", insert: "tan()", cls: "fn" }, { label: "(", insert: "(" }, { label: ")", insert: ")" }, { label: "⌫", action: () => { input.value = input.value.slice(0, -1); preview(); input.focus(); }, cls: "muted", title: "Borrar" },
+			{ label: "sin", insert: "sin()", cls: "fn" }, { label: "cos", insert: "cos()", cls: "fn" }, { label: "tan", insert: "tan()", cls: "fn" }, { label: "(", insert: "(" }, { label: ")", insert: ")" }, { label: "⌫", action: () => { input.value = input.value.slice(0, -1); preview(); input.focus(); }, cls: "muted", title: tr("Borrar") },
 			{ label: "ln", insert: "ln()", cls: "fn" }, { label: "log", insert: "log()", cls: "fn" }, { label: "√", insert: "sqrt()", cls: "fn" }, { label: "7", insert: "7" }, { label: "8", insert: "8" }, { label: "9", insert: "9" },
 			{ label: "x²", insert: "^2", cls: "fn" }, { label: "xʸ", insert: "^", cls: "fn" }, { label: "n!", insert: "!", cls: "fn" }, { label: "4", insert: "4" }, { label: "5", insert: "5" }, { label: "6", insert: "6" },
 			{ label: "π", insert: "pi", cls: "fn" }, { label: "e", insert: "e", cls: "fn" }, { label: "ans", insert: "ans", cls: "fn" }, { label: "1", insert: "1" }, { label: "2", insert: "2" }, { label: "3", insert: "3" },
 			{ label: "÷", insert: "/", cls: "op" }, { label: "×", insert: "*", cls: "op" }, { label: "−", insert: "-", cls: "op" }, { label: "0", insert: "0" }, { label: ".", insert: "." }, { label: "+", insert: "+", cls: "op" },
-			{ label: "C", action: () => { input.value = ""; preview(); input.focus(); }, cls: "muted", title: "Limpiar" }, { label: "%", insert: "%", cls: "op", title: "Porcentaje: 200 + 15%, 30% * 80" }, { label: "a/b", action: () => insertFraction(), cls: "fn fraction", title: "Fracción: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el botón a/b de arriba fuerza el resultado en fracción" }, { label: "exp", insert: "exp()", cls: "fn" }, { label: "=", action: commit, cls: "equals" }, { label: "Insertar", action: () => { commit(); const last = history[history.length - 1]; if (last) host.insertCalculation(last.expression, last.result); }, cls: "insert", title: "Calcular e insertar en la pizarra" }
+			{ label: "C", action: () => { input.value = ""; preview(); input.focus(); }, cls: "muted", title: tr("Limpiar") }, { label: "%", insert: "%", cls: "op", title: tr("Porcentaje: 200 + 15%, 30% * 80") }, { label: "a/b", action: () => insertFraction(), cls: "fn fraction", title: tr("Fracción: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el botón a/b de arriba fuerza el resultado en fracción") }, { label: "exp", insert: "exp()", cls: "fn" }, { label: "=", action: commit, cls: "equals" }, { label: "Insertar", action: () => { commit(); const last = history[history.length - 1]; if (last) host.insertCalculation(last.expression, last.result); }, cls: "insert", title: tr("Calcular e insertar en la pizarra") }
 		],
 		"Avanzada": [
 			{ label: "sin⁻¹", insert: "asin()", cls: "fn" }, { label: "cos⁻¹", insert: "acos()", cls: "fn" }, { label: "tan⁻¹", insert: "atan()", cls: "fn" }, { label: "sinh", insert: "sinh()", cls: "fn" }, { label: "cosh", insert: "cosh()", cls: "fn" }, { label: "tanh", insert: "tanh()", cls: "fn" },
-			{ label: "log₂", insert: "log2()", cls: "fn" }, { label: "logₙ", insert: "log(, )", cls: "fn", title: "log(x, base)" }, { label: "ⁿ√", insert: "root(, )", cls: "fn", title: "root(x, n)" }, { label: "|x|", insert: "abs()", cls: "fn" }, { label: "⌊x⌋", insert: "floor()", cls: "fn" }, { label: "⌈x⌉", insert: "ceil()", cls: "fn" },
+			{ label: "log₂", insert: "log2()", cls: "fn" }, { label: "logₙ", insert: "log(, )", cls: "fn", title: tr("log(x, base)") }, { label: "ⁿ√", insert: "root(, )", cls: "fn", title: tr("root(x, n)") }, { label: "|x|", insert: "abs()", cls: "fn" }, { label: "⌊x⌋", insert: "floor()", cls: "fn" }, { label: "⌈x⌉", insert: "ceil()", cls: "fn" },
 			{ label: "nCr", insert: "ncr(, )", cls: "fn" }, { label: "nPr", insert: "npr(, )", cls: "fn" }, { label: "mod", insert: " mod ", cls: "op" }, { label: "gcd", insert: "gcd(, )", cls: "fn" }, { label: "lcm", insert: "lcm(, )", cls: "fn" }, { label: "primo", insert: "isprime()", cls: "fn" },
-			{ label: "media", insert: "mean()", cls: "fn", title: "mean(1, 2, 3)" }, { label: "mediana", insert: "median()", cls: "fn" }, { label: "σ", insert: "stdev()", cls: "fn", title: "Desviación típica muestral: stdev(1, 2, 3)" }, { label: "σ²", insert: "variance()", cls: "fn" }, { label: "moda", insert: "mode()", cls: "fn" }, { label: "hypot", insert: "hypot(, )", cls: "fn" },
-			{ label: "Σ", insert: "sum(, i, 1, 10)", cls: "fn", title: "sum(expresión, i, desde, hasta)" }, { label: "Π", insert: "prod(, i, 1, 10)", cls: "fn", title: "prod(expresión, i, desde, hasta)" }, { label: "∫", insert: "integral(, x, 0, 1)", cls: "fn", title: "integral(expresión, x, desde, hasta)" }, { label: "d/dx", insert: "deriv(, x, 1)", cls: "fn", title: "deriv(expresión, x, punto)" }, { label: "solve", insert: "solve(, x, 1)", cls: "fn", title: "solve(expresión = 0, x, valor inicial)" }, { label: "x =", insert: "x = ", cls: "fn", title: "Definir una variable: x = 5" },
-			{ label: "0x", insert: "0x", cls: "fn", title: "Hexadecimal" }, { label: "0b", insert: "0b", cls: "fn", title: "Binario" }, { label: "M", insert: "M", cls: "fn", title: "Valor guardado en memoria" }, { label: "c", insert: "c", cls: "fn", title: "Velocidad de la luz" }, { label: "g", insert: "g", cls: "fn", title: "Gravedad 9,80665" }, { label: "Nₐ", insert: "NA", cls: "fn", title: "Número de Avogadro" }
+			{ label: "media", insert: "mean()", cls: "fn", title: tr("mean(1, 2, 3)") }, { label: "mediana", insert: "median()", cls: "fn" }, { label: "σ", insert: "stdev()", cls: "fn", title: tr("Desviación típica muestral: stdev(1, 2, 3)") }, { label: "σ²", insert: "variance()", cls: "fn" }, { label: "moda", insert: "mode()", cls: "fn" }, { label: "hypot", insert: "hypot(, )", cls: "fn" },
+			{ label: "Σ", insert: "sum(, i, 1, 10)", cls: "fn", title: tr("sum(expresión, i, desde, hasta)") }, { label: "Π", insert: "prod(, i, 1, 10)", cls: "fn", title: tr("prod(expresión, i, desde, hasta)") }, { label: "∫", insert: "integral(, x, 0, 1)", cls: "fn", title: tr("integral(expresión, x, desde, hasta)") }, { label: "d/dx", insert: "deriv(, x, 1)", cls: "fn", title: tr("deriv(expresión, x, punto)") }, { label: "solve", insert: "solve(, x, 1)", cls: "fn", title: tr("solve(expresión = 0, x, valor inicial)") }, { label: "x =", insert: "x = ", cls: "fn", title: tr("Definir una variable: x = 5") },
+			{ label: "0x", insert: "0x", cls: "fn", title: tr("Hexadecimal") }, { label: "0b", insert: "0b", cls: "fn", title: tr("Binario") }, { label: "M", insert: "M", cls: "fn", title: tr("Valor guardado en memoria") }, { label: "c", insert: "c", cls: "fn", title: tr("Velocidad de la luz") }, { label: "g", insert: "g", cls: "fn", title: tr("Gravedad 9,80665") }, { label: "Nₐ", insert: "NA", cls: "fn", title: tr("Número de Avogadro") }
 		],
 		"Unidades": [
 			{ label: "km→mi", insert: " km to mi" }, { label: "mi→km", insert: " mi to km" }, { label: "m→ft", insert: " m to ft" }, { label: "cm→in", insert: " cm to in" }, { label: "kg→lb", insert: " kg to lb" }, { label: "lb→kg", insert: " lb to kg" },
@@ -741,7 +742,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	}
 	renderKeys("Básica");
 
-	panel.createDiv({ cls: "notelens-calculator-help", text: "Escribe con naturalidad: 2pi r, 200 + 15%, 30% * 80, a = 3 y luego 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calcula, ↑ repite, Esc cierra." });
+	panel.createDiv({ cls: "notelens-calculator-help", text: tr("Escribe con naturalidad: 2pi r, 200 + 15%, 30% * 80, a = 3 y luego 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calcula, ↑ repite, Esc cierra.") });
 	renderHistory();
 
 	let open = false;

@@ -1,5 +1,6 @@
 import { TFile, setIcon } from "obsidian";
 import { makeDraggable, shieldPanel } from "./panels";
+import { tr } from "./i18n";
 
 /**
  * Board navigator: every whiteboard in the vault plus a search over Markdown
@@ -27,27 +28,27 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 
 	const header = panel.createDiv({ cls: "notelens-navigator-header" });
 	setIcon(header.createSpan({ cls: "notelens-calculator-icon" }), "folder-tree");
-	header.createSpan({ cls: "notelens-calculator-title", text: "Pizarras y notas" });
+	header.createSpan({ cls: "notelens-calculator-title", text: tr("Pizarras y notas") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	makeDraggable(panel, header, container, "notelens-navigator-pos");
 
 	const boardsHead = panel.createDiv({ cls: "notelens-navigator-section" });
-	boardsHead.createSpan({ cls: "notelens-panel-label", text: "Pizarras" });
+	boardsHead.createSpan({ cls: "notelens-panel-label", text: tr("Pizarras") });
 	const newBoard = boardsHead.createEl("button", { cls: "notelens-navigator-new" });
 	setIcon(newBoard.createSpan(), "plus");
-	newBoard.createSpan({ text: "Nueva" });
+	newBoard.createSpan({ text: tr("Nueva") });
 	newBoard.title = "Crear una pizarra nueva";
 	newBoard.onclick = () => host.createBoard();
 	const boards = panel.createDiv({ cls: "notelens-navigator-list" });
 
 	const notesHead = panel.createDiv({ cls: "notelens-navigator-section" });
-	notesHead.createSpan({ cls: "notelens-panel-label", text: "Notas" });
+	notesHead.createSpan({ cls: "notelens-panel-label", text: tr("Notas") });
 	const search = panel.createEl("input", { cls: "notelens-navigator-search" });
 	search.type = "search";
 	search.placeholder = "Buscar una nota por nombre…";
 	const notes = panel.createDiv({ cls: "notelens-navigator-list" });
-	panel.createDiv({ cls: "notelens-calculator-help", text: "Clic abre en esta pestaña, Ctrl+clic en una nueva. El botón de enlace deja una tarjeta en la pizarra." });
+	panel.createDiv({ cls: "notelens-calculator-help", text: tr("Clic abre en esta pestaña, Ctrl+clic en una nueva. El botón de enlace deja una tarjeta en la pizarra.") });
 
 	const row = (list: HTMLElement, file: TFile, kind: "board" | "note") => {
 		const item = list.createDiv({ cls: `notelens-navigator-item notelens-navigator-${kind}` });
@@ -72,7 +73,7 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 	const refresh = () => {
 		boards.empty();
 		const boardFiles = host.listBoards();
-		if (boardFiles.length === 0) boards.createDiv({ cls: "notelens-bookmarks-empty", text: "No hay más pizarras en la bóveda." });
+		if (boardFiles.length === 0) boards.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay más pizarras en la bóveda.") });
 		for (const file of boardFiles) row(boards, file, "board");
 		notes.empty();
 		const noteFiles = host.listNotes(search.value);

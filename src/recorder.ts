@@ -1,6 +1,7 @@
 import { Notice, setIcon } from "obsidian";
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { makeDraggable } from "./panels";
+import { tr } from "./i18n";
 
 /**
  * Audio recorder: microphone → MediaRecorder → MP3 encoded on this device
@@ -87,12 +88,12 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 
 	const header = panel.createDiv({ cls: "notelens-recorder-header" });
 	setIcon(header.createSpan({ cls: "notelens-calculator-icon" }), "mic");
-	header.createSpan({ cls: "notelens-calculator-title", text: "Grabadora" });
+	header.createSpan({ cls: "notelens-calculator-title", text: tr("Grabadora") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	makeDraggable(panel, header, container, "notelens-recorder-pos");
 
-	const status = panel.createDiv({ cls: "notelens-recorder-status", text: "Lista. La grabación se guarda como MP3 en la bóveda y aparece en la pizarra." });
+	const status = panel.createDiv({ cls: "notelens-recorder-status", text: tr("Lista. La grabación se guarda como MP3 en la bóveda y aparece en la pizarra.") });
 	const clock = panel.createDiv({ cls: "notelens-recorder-clock", text: "00:00" });
 	const meter = panel.createDiv({ cls: "notelens-recorder-meter" });
 	const meterFill = meter.createDiv({ cls: "notelens-recorder-meter-fill" });
@@ -100,15 +101,15 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 	const actions = panel.createDiv({ cls: "notelens-recorder-actions" });
 	const recordBtn = actions.createEl("button", { cls: "notelens-recorder-record" });
 	setIcon(recordBtn.createSpan(), "circle");
-	recordBtn.createSpan({ text: "Grabar" });
+	recordBtn.createSpan({ text: tr("Grabar") });
 	const stopBtn = actions.createEl("button", { cls: "notelens-recorder-stop" });
 	setIcon(stopBtn.createSpan(), "square");
-	stopBtn.createSpan({ text: "Detener y guardar" });
-	const cancelBtn = actions.createEl("button", { cls: "notelens-recorder-cancel", text: "Descartar" });
+	stopBtn.createSpan({ text: tr("Detener y guardar") });
+	const cancelBtn = actions.createEl("button", { cls: "notelens-recorder-cancel", text: tr("Descartar") });
 
 	const dictation = panel.createEl("button", { cls: "notelens-recorder-dictation" });
 	setIcon(dictation.createSpan(), "captions");
-	dictation.createSpan({ text: "Dictado a texto (si tu sistema lo permite)" });
+	dictation.createSpan({ text: tr("Dictado a texto (si tu sistema lo permite)") });
 	dictation.onclick = () => host.startDictation();
 
 	let state: State = "idle";
@@ -158,11 +159,11 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 	const start = async () => {
 		if (state !== "idle") return;
 		if (typeof navigator.mediaDevices?.getUserMedia !== "function" || typeof MediaRecorder === "undefined") {
-			new Notice("Este dispositivo no permite grabar audio desde Obsidian.");
+			new Notice(tr("Este dispositivo no permite grabar audio desde Obsidian."));
 			return;
 		}
 		setState("requesting");
-		status.setText("Pidiendo acceso al micrófono…");
+		status.setText(tr("Pidiendo acceso al micrófono…"));
 		try {
 			stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
 		} catch (error) {
@@ -189,7 +190,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 		timer = window.setInterval(tick, 250);
 		tick();
 		setState("recording");
-		status.setText("Grabando… pulsa «Detener y guardar» cuando termines.");
+		status.setText(tr("Grabando… pulsa «Detener y guardar» cuando termines."));
 	};
 
 	let discard = false;
@@ -207,17 +208,17 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 			return;
 		}
 		setState("encoding");
-		status.setText("Convirtiendo a MP3…");
+		status.setText(tr("Convirtiendo a MP3…"));
 		try {
 			const blob = new Blob(chunks, { type });
 			chunks = [];
-			const mp3 = await encodeMp3(blob, fraction => status.setText(`Convirtiendo a MP3… ${Math.round(fraction * 100)}%`));
+			const mp3 = await encodeMp3(blob, fraction => status.setText(tr("Convirtiendo a MP3… {p0}%", { p0: Math.round(fraction * 100) })));
 			await host.saveRecording(mp3, seconds);
-			status.setText(`Guardada (${formatClock(seconds)}) y añadida a la pizarra.`);
+			status.setText(tr("Guardada ({p0}) y añadida a la pizarra.", { p0: formatClock(seconds) }));
 		} catch (error) {
 			console.error("NoteLens: recording failed", error);
-			status.setText("No se pudo guardar la grabación.");
-			new Notice("No se pudo guardar la grabación.");
+			status.setText(tr("No se pudo guardar la grabación."));
+			new Notice(tr("No se pudo guardar la grabación."));
 		} finally {
 			setState("idle");
 			clock.setText("00:00");
@@ -230,7 +231,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 
 	let open = false;
 	const toggle = () => {
-		if (open && state === "recording") { new Notice("Detén o descarta la grabación antes de cerrar la grabadora."); return; }
+		if (open && state === "recording") { new Notice(tr("Detén o descarta la grabación antes de cerrar la grabadora.")); return; }
 		open = !open;
 		panel.toggleClass("hidden", !open);
 	};

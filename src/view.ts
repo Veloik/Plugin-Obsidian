@@ -24,6 +24,7 @@ import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
+import { tr } from "./i18n";
 
 export const VIEW_TYPE_ONENOTE = "onenote-canvas-view";
 
@@ -699,9 +700,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (document.fullscreenElement) {
 			void document.exitFullscreen().catch(() => { /* already left */ });
 		} else if (target.requestFullscreen) {
-			void target.requestFullscreen().catch(() => new Notice("Obsidian no permite pantalla completa aquí."));
+			void target.requestFullscreen().catch(() => new Notice(tr("Obsidian no permite pantalla completa aquí.")));
 		} else {
-			new Notice("Este dispositivo no permite pantalla completa.");
+			new Notice(tr("Este dispositivo no permite pantalla completa."));
 		}
 	}
 
@@ -713,7 +714,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.commitTextEditor();
 			const overlay = this.workspaceEl.createDiv({ cls: "notelens-capture-overlay" });
 			const box = overlay.createDiv({ cls: "notelens-capture-box" });
-			overlay.createDiv({ cls: "notelens-capture-hint", text: "Arrastra para elegir la zona que quieres leer. Esc cancela." });
+			overlay.createDiv({ cls: "notelens-capture-hint", text: tr("Arrastra para elegir la zona que quieres leer. Esc cancela.") });
 			let start: { x: number; y: number } | null = null;
 			const wsRect = () => this.workspaceEl.getBoundingClientRect();
 			const finish = (rect: { x: number; y: number; w: number; h: number } | null) => {
@@ -898,7 +899,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		wrap.toggleClass("hidden", !this.miniMapVisible);
 		const header = wrap.createDiv({ cls: "notelens-minimap-header" });
 		setIcon(header.createSpan({ cls: "notelens-minimap-icon" }), "map");
-		header.createSpan({ cls: "notelens-minimap-title", text: "Mapa" });
+		header.createSpan({ cls: "notelens-minimap-title", text: tr("Mapa") });
 		const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 		setIcon(closeBtn, "x");
 		closeBtn.title = "Ocultar el mapa";
@@ -1105,77 +1106,77 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const menu = new Menu();
 
 		menu.addItem(item => item
-			.setTitle("Cuadro de texto aquí")
+			.setTitle(tr("Cuadro de texto aquí"))
 			.setIcon("type")
 			.onClick(() => this.createTextBoxAt(pt.x, pt.y)));
 
 		menu.addItem(item => item
-			.setTitle("Nota adhesiva aquí")
+			.setTitle(tr("Nota adhesiva aquí"))
 			.setIcon("sticky-note")
 			.onClick(() => this.createStickyNoteAt(pt.x, pt.y)));
 
 		menu.addItem(item => item
-			.setTitle("Tabla aquí")
+			.setTitle(tr("Tabla aquí"))
 			.setIcon("table-2")
 			.onClick(() => this.insertTableAt(pt.x, pt.y)));
 
 		menu.addItem(item => item
-			.setTitle("Bloque de código aquí")
+			.setTitle(tr("Bloque de código aquí"))
 			.setIcon("code-2")
 			.onClick(() => this.createTextBoxAt(pt.x, pt.y, undefined, "code")));
 
 		menu.addItem(item => item
-			.setTitle("Dibujar forma")
+			.setTitle(tr("Dibujar forma"))
 			.setIcon("shapes")
 			.onClick(() => this.setTool("shape")));
 
 		menu.addItem(item => item
-			.setTitle("Insertar PDF")
+			.setTitle(tr("Insertar PDF"))
 			.setIcon("file-text")
 			.onClick(() => this.insertPdf()));
 
 		menu.addItem(item => item
-			.setTitle("Insertar vídeo")
+			.setTitle(tr("Insertar vídeo"))
 			.setIcon("play-circle")
 			.onClick(() => this.insertVideo()));
 
 		menu.addItem(item => item
-			.setTitle("Insertar imagen")
+			.setTitle(tr("Insertar imagen"))
 			.setIcon("image-plus")
 			.onClick(() => this.insertImage()));
 
 		menu.addItem(item => item
-			.setTitle("Adjuntar archivo de la bóveda")
+			.setTitle(tr("Adjuntar archivo de la bóveda"))
 			.setIcon("paperclip")
 			.onClick(() => this.insertFile()));
 
 		menu.addItem(item => item
-			.setTitle("Subir archivo desde el dispositivo")
+			.setTitle(tr("Subir archivo desde el dispositivo"))
 			.setIcon("upload")
 			.onClick(() => this.uploadFileFromDevice()));
 
 		menu.addSeparator();
 
 		menu.addItem(item => item
-			.setTitle("Seleccionar")
+			.setTitle(tr("Seleccionar"))
 			.setIcon("mouse-pointer-2")
 			.onClick(() => this.setTool("select")));
 
 		menu.addItem(item => item
-			.setTitle("Lápiz")
+			.setTitle(tr("Lápiz"))
 			.setIcon("pencil")
 			.onClick(() => this.setTool("pen")));
 
 		menu.addSeparator();
 
 		menu.addItem(item => item
-			.setTitle("Restablecer vista")
+			.setTitle(tr("Restablecer vista"))
 			.setIcon("maximize")
 			.onClick(() => this.resetView()));
 
 		if (this.pageStrokes.length || this.pageShapes.length || this.pageBadges.length || this.pageTexts.length || this.pageTables.length || this.pageEmbeds.length) {
 			menu.addItem(item => item
-				.setTitle("Limpiar pizarra")
+				.setTitle(tr("Limpiar pizarra"))
 				.setIcon("trash-2")
 				.onClick(() => this.clearCanvas()));
 		}
@@ -1195,7 +1196,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (text.startsWith(CLIP_PREFIX)) {
 			e.preventDefault();
 			try { this.pasteObjects(JSON.parse(text.slice(CLIP_PREFIX.length)) as ClipboardPayload); }
-			catch (err) { console.error("NoteLens: paste failed", err); new Notice("No se pudo pegar la selección."); }
+			catch (err) { console.error("NoteLens: paste failed", err); new Notice(tr("No se pudo pegar la selección.")); }
 			return;
 		}
 
@@ -1248,10 +1249,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.data.embeds.push(embed);
 			renderEmbedFrame(this, this.domLayerEl, embed);
 			this.save();
-			new Notice("Imagen pegada en la pizarra");
+			new Notice(tr("Imagen pegada en la pizarra"));
 		} catch (err) {
 			console.error("NoteLens: paste failed", err);
-			new Notice("NoteLens: no se pudo pegar la imagen.");
+			new Notice(tr("NoteLens: no se pudo pegar la imagen."));
 		}
 	}
 
@@ -2508,7 +2509,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.clipboardPayload = copy;
 		this.pasteCount = 0;
 		void navigator.clipboard?.writeText(CLIP_PREFIX + JSON.stringify(copy)).catch(() => { /* memory copy still works */ });
-		new Notice(`${cut ? "Cortado" : "Copiado"}: ${count} ${count === 1 ? "objeto" : "objetos"}. Ctrl+V pega donde esté el ratón.`);
+		new Notice(tr("{p0}: {p1} {p2}. Ctrl+V pega donde esté el ratón.", { p0: cut ? "Cortado" : "Copiado", p1: count, p2: count === 1 ? "objeto" : "objetos" }));
 		if (cut) this.deleteSelection();
 	}
 
@@ -2912,7 +2913,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		const saved = await this.app.vault.createBinary(path, mp3);
 		this.insertVaultFile(saved);
-		new Notice(`Grabación guardada (${Math.round(seconds)} s): ${saved.name}`);
+		new Notice(tr("Grabación guardada ({p0} s): {p1}", { p0: Math.round(seconds), p1: saved.name }));
 	}
 
 	setCalculatorUnit(unit: AngleUnit): void { this.calculatorUnit = unit; }
@@ -2921,7 +2922,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	insertCalculation(expression: string, result: string): void {
 		this.history.push();
 		const tb: TextBox = {
-			id: genId("text"), pageId: this.data.activePageId, x: 0, y: 0, text: `${expression} = ${result}`,
+			id: genId("text"), pageId: this.data.activePageId, x: 0, y: 0, text: tr("{p0} = {p1}", { p0: expression, p1: result }),
 			fontSize: this.textSize, color: this.textColor, fontFamily: this.textFont, variant: "text", autoWidth: true, h: 48
 		};
 		tb.w = this.measureAutoWidth(tb);
@@ -2946,7 +2947,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					into.appendChild(renderMath(toRenderableLatex(source), true));
 					finishRenderMath();
 				} catch {
-					into.createSpan({ cls: "notelens-math-placeholder", text: "No se puede representar todavía" });
+					into.createSpan({ cls: "notelens-math-placeholder", text: tr("No se puede representar todavía") });
 				}
 			},
 			tidyFormulaText,
@@ -3065,7 +3066,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		(this.workspaceEl as any).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
-		new Notice("Página limpiada");
+		new Notice(tr("Página limpiada"));
 	}
 
 	undo(): void { this.history.undo(); }
@@ -3193,10 +3194,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				}
 				const saved = await this.app.vault.createBinary(path, await localFile.arrayBuffer());
 				this.insertVaultFile(saved);
-				new Notice(`Archivo añadido: ${saved.name}`);
+				new Notice(tr("Archivo añadido: {p0}", { p0: saved.name }));
 			} catch (error) {
 				console.error("NoteLens: device upload failed", error);
-				new Notice("NoteLens: no se pudo añadir el archivo.");
+				new Notice(tr("NoteLens: no se pudo añadir el archivo."));
 			}
 		};
 		picker.click();
@@ -3285,7 +3286,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		(this.workspaceEl as any).__closePenPanel?.();
 		this.syncToolCursor();
 		this.syncToolbar();
-		new Notice(`Toca en el lienzo para colocar: ${tag.label}`);
+		new Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tag.label }));
 	}
 
 	private createBadgeAt(x: number, y: number, tag: QuickTag): void {
@@ -3405,17 +3406,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const pending = menuChecklist.find(item => !item.done);
 				if (pending) {
 					menu.addItem(item => item
-						.setTitle(`Completar el siguiente paso: ${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}`)
+						.setTitle(tr("Completar el siguiente paso: {p0}", { p0: pending.text || (pending.sketch ? "paso a mano" : "sin nombre") }))
 						.setIcon("square-check-big")
 						.onClick(() => this.advanceChecklist(badge)));
 				}
 				menu.addItem(item => item
-					.setTitle("Marcar todos los pasos como hechos")
+					.setTitle(tr("Marcar todos los pasos como hechos"))
 					.setIcon("check-circle-2")
 					.setDisabled(menuChecklist.every(item => item.done))
 					.onClick(() => this.setChecklistAll(badge, true)));
 				menu.addItem(item => item
-					.setTitle("Marcar todos los pasos como pendientes")
+					.setTitle(tr("Marcar todos los pasos como pendientes"))
 					.setIcon("circle")
 					.setDisabled(menuChecklist.every(item => !item.done))
 					.onClick(() => this.setChecklistAll(badge, false)));
@@ -3426,7 +3427,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					.onClick(() => this.toggleBadgeDone(badge)));
 			}
 			menu.addItem(item => item
-				.setTitle("Eliminar etiqueta")
+				.setTitle(tr("Eliminar etiqueta"))
 				.setIcon("trash")
 				.onClick(() => {
 					this.history.push();
@@ -3496,7 +3497,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.refreshBadge(badge);
 		if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
 		const completed = checklist.filter(item => item.done).length;
-		new Notice(`${target.text || (target.sketch ? "Paso a mano" : "Paso")}: ${target.done ? "hecho" : "pendiente"} · ${completed}/${checklist.length}`, 2200);
+		new Notice(tr("{p0}: {p1} · {p2}/{p3}", { p0: target.text || (target.sketch ? "Paso a mano" : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
 	}
 
 	/** The "todas de esa tarea" path: every step at once, from the context menu. */
@@ -3582,7 +3583,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!panel) return;
 		panel.empty();
 		const header = panel.createDiv({ cls: "notelens-tag-summary-header" });
-		header.createSpan({ text: "Etiquetas de la libreta" });
+		header.createSpan({ text: tr("Etiquetas de la libreta") });
 		const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 		setIcon(closeBtn, "x");
 		closeBtn.onclick = () => this.toggleTagSummary();
@@ -3593,7 +3594,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		});
 
 		const filters = panel.createDiv({ cls: "notelens-tag-summary-filters" });
-		const allBtn = filters.createEl("button", { cls: "onenote-tag-chip", text: "Todas" });
+		const allBtn = filters.createEl("button", { cls: "onenote-tag-chip", text: tr("Todas") });
 		allBtn.toggleClass("active", this.tagSummaryFilter === null);
 		allBtn.onclick = () => { this.tagSummaryFilter = null; this.refreshTagSummary(); };
 		const pageScoped = this.data.badges.filter(b => this.tagSummaryPageFilter === null || (b.pageId ?? this.data.activePageId) === this.tagSummaryPageFilter);
@@ -3602,7 +3603,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const chip = filters.createEl("button", { cls: "onenote-tag-chip" });
 			chip.style.setProperty("--tag-color", tag.color);
 			setIcon(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
-			chip.createSpan({ text: `${tag.label} ${count}` });
+			chip.createSpan({ text: tr("{p0} {p1}", { p0: tag.label, p1: count }) });
 			chip.toggleClass("active", this.tagSummaryFilter === tag.id);
 			chip.onclick = () => { this.tagSummaryFilter = tag.id; this.refreshTagSummary(); };
 		}
@@ -3614,10 +3615,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const pageRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
 			const pageSelect = pageRow.createEl("select", { cls: "notelens-panel-page-select" });
 			pageSelect.title = "Mostrar solo las etiquetas de una página";
-			pageSelect.createEl("option", { value: "__all__", text: `Todas las páginas (${this.data.pages.length})` });
+			pageSelect.createEl("option", { value: "__all__", text: tr("Todas las páginas ({p0})", { p0: this.data.pages.length }) });
 			for (const page of this.data.pages) {
 				const counted = this.data.badges.filter(b => (b.pageId ?? this.data.activePageId) === page.id).length;
-				pageSelect.createEl("option", { value: page.id, text: `${this.getPageTitle(page.id)} (${counted})` });
+				pageSelect.createEl("option", { value: page.id, text: tr("{p0} ({p1})", { p0: this.getPageTitle(page.id), p1: counted }) });
 			}
 			pageSelect.value = this.tagSummaryPageFilter ?? "__all__";
 			pageSelect.onchange = () => {
@@ -3630,7 +3631,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const pendingToggle = pendingRow.createEl("input");
 		pendingToggle.type = "checkbox";
 		pendingToggle.checked = this.tagSummaryPendingOnly;
-		pendingRow.createSpan({ text: "Solo pendientes" });
+		pendingRow.createSpan({ text: tr("Solo pendientes") });
 		pendingToggle.onchange = () => { this.tagSummaryPendingOnly = pendingToggle.checked; this.refreshTagSummary(); };
 
 		const list = panel.createDiv({ cls: "notelens-tag-summary-list" });
@@ -3695,7 +3696,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				empty.setText(this.data.badges.length ? "Nada que mostrar con estos filtros." : "Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante.");
 				empty.removeClass("hidden");
 			} else if (visible === 0) {
-				empty.setText("No hay etiquetas que coincidan con la búsqueda.");
+				empty.setText(tr("No hay etiquetas que coincidan con la búsqueda."));
 				empty.removeClass("hidden");
 			} else {
 				empty.addClass("hidden");
@@ -3924,13 +3925,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const shortcut = isMac ? "pulsa Fn dos veces (o Control dos veces)" : "pulsa Win+H";
 		const hint = this.domLayerEl.createDiv({ cls: "notelens-dictation-hint" });
 		setIcon(hint.createSpan(), "mic");
-		hint.createSpan({ text: ` Dictado: ${shortcut} y habla. Se escribe aquí. Esc termina.` });
+		hint.createSpan({ text: tr(" Dictado: {p0} y habla. Se escribe aquí. Esc termina.", { p0: shortcut }) });
 		hint.style.left = `${at.x}px`;
 		hint.style.top = `${at.y + 56}px`;
 		const remove = () => { hint.remove(); editor.removeEventListener("blur", remove); };
 		editor.addEventListener("blur", remove);
 		editor.focus();
-		new Notice(`Dictado del sistema: ${shortcut} con el cuadro de texto activo. Funciona sin conexión.`, 7000);
+		new Notice(tr("Dictado del sistema: {p0} con el cuadro de texto activo. Funciona sin conexión.", { p0: shortcut }), 7000);
 	}
 
 	getViewportBookmarks(): ViewportBookmark[] {
@@ -3960,7 +3961,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			app.setting?.open();
 			app.setting?.openTabById(this.plugin.manifest.id);
 		} catch {
-			new Notice("Abre Ajustes › Plugins de la comunidad › NoteLens");
+			new Notice(tr("Abre Ajustes › Plugins de la comunidad › NoteLens"));
 		}
 	}
 
@@ -4241,7 +4242,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	deleteDocumentPage(id: string): void {
 		if (this.data.pages.length <= 1) {
-			new Notice("La libreta debe conservar al menos una página.");
+			new Notice(tr("La libreta debe conservar al menos una página."));
 			return;
 		}
 		const index = this.data.pages.findIndex(page => page.id === id);
@@ -4268,7 +4269,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		(this.workspaceEl as any).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
-		new Notice("Página eliminada. Puedes recuperarla con Ctrl+Z.");
+		new Notice(tr("Página eliminada. Puedes recuperarla con Ctrl+Z."));
 	}
 
 	/**
@@ -4349,17 +4350,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 			}
 			const saved = await this.app.vault.createBinary(path, bytes);
-			new Notice(`PDF A4 creado: ${saved.name}`);
+			new Notice(tr("PDF A4 creado: {p0}", { p0: saved.name }));
 			void this.app.workspace.openLinkText(saved.path, this.file?.path ?? "", true);
 		} catch (error) {
 			console.error("NoteLens: PDF export failed", error);
-			new Notice("No se pudo exportar el PDF A4.");
+			new Notice(tr("No se pudo exportar el PDF A4."));
 		}
 	}
 
 	async exportSharePackage(): Promise<void> {
 		try {
-			new Notice("Preparando paquete editable de NoteLens...");
+			new Notice(tr("Preparando paquete editable de NoteLens..."));
 			this.syncActivePageMeta();
 			const title = this.file?.basename ?? "Pizarra NoteLens";
 			const result = await buildSharePackage(this.app, this.data, title);
@@ -4374,10 +4375,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 			const saved = await this.app.vault.createBinary(path, result.bytes);
 			const skipped = result.skippedAssets.length ? ` (${result.skippedAssets.length} adjunto(s) no disponible(s))` : "";
-			new Notice(`Paquete editable creado: ${saved.name}${skipped}`);
+			new Notice(tr("Paquete editable creado: {p0}{p1}", { p0: saved.name, p1: skipped }));
 		} catch (error) {
 			console.error("NoteLens: share export failed", error);
-			new Notice("No se pudo crear el paquete para compartir.");
+			new Notice(tr("No se pudo crear el paquete para compartir."));
 		}
 	}
 
@@ -4389,15 +4390,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const source = picker.files?.[0];
 			if (!source) return;
 			try {
-				new Notice("Importando pizarra editable de NoteLens...");
+				new Notice(tr("Importando pizarra editable de NoteLens..."));
 				const result = await importShareArchive(this.app, source, this.file?.parent?.path ?? "");
 				const missing = result.missingAssets.length ? ` (${result.missingAssets.length} adjunto(s) no se pudieron recuperar)` : "";
-				new Notice(`Pizarra importada: ${result.file.basename}${missing}`);
+				new Notice(tr("Pizarra importada: {p0}{p1}", { p0: result.file.basename, p1: missing }));
 				const leaf = this.app.workspace.getLeaf(true);
 				await leaf.openFile(result.file);
 			} catch (error) {
 				console.error("NoteLens: share import failed", error);
-				new Notice("No se pudo importar el paquete de NoteLens.");
+				new Notice(tr("No se pudo importar el paquete de NoteLens."));
 			}
 		};
 		picker.click();
@@ -4437,7 +4438,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			return;
 		}
 		const targets = this.translatableSelection();
-		if (targets.length === 0) { new Notice("Selecciona el cuadro de texto que quieres sustituir."); return; }
+		if (targets.length === 0) { new Notice(tr("Selecciona el cuadro de texto que quieres sustituir.")); return; }
 		this.history.push();
 		if (targets.length === 1) {
 			targets[0].text = text;
@@ -4605,13 +4606,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private showTableCellMenu(event: MouseEvent, table: CanvasTable, row: number, col: number): void {
 		const menu = new Menu();
 		if (row >= 0) {
-			menu.addItem(item => item.setTitle("Insertar fila arriba").setIcon("arrow-up-to-line").onClick(() => this.insertTableRow(table, row)));
-			menu.addItem(item => item.setTitle("Insertar fila debajo").setIcon("arrow-down-to-line").onClick(() => this.insertTableRow(table, row + 1)));
-			menu.addItem(item => item.setTitle("Insertar columna a la izquierda").setIcon("arrow-left-to-line").onClick(() => this.insertTableColumn(table, col)));
-			menu.addItem(item => item.setTitle("Insertar columna a la derecha").setIcon("arrow-right-to-line").onClick(() => this.insertTableColumn(table, col + 1)));
+			menu.addItem(item => item.setTitle(tr("Insertar fila arriba")).setIcon("arrow-up-to-line").onClick(() => this.insertTableRow(table, row)));
+			menu.addItem(item => item.setTitle(tr("Insertar fila debajo")).setIcon("arrow-down-to-line").onClick(() => this.insertTableRow(table, row + 1)));
+			menu.addItem(item => item.setTitle(tr("Insertar columna a la izquierda")).setIcon("arrow-left-to-line").onClick(() => this.insertTableColumn(table, col)));
+			menu.addItem(item => item.setTitle(tr("Insertar columna a la derecha")).setIcon("arrow-right-to-line").onClick(() => this.insertTableColumn(table, col + 1)));
 			menu.addSeparator();
-			menu.addItem(item => item.setTitle("Eliminar esta fila").setIcon("minus").onClick(() => this.deleteTableRow(table, row)));
-			menu.addItem(item => item.setTitle("Eliminar esta columna").setIcon("minus").onClick(() => this.deleteTableColumn(table, col)));
+			menu.addItem(item => item.setTitle(tr("Eliminar esta fila")).setIcon("minus").onClick(() => this.deleteTableRow(table, row)));
+			menu.addItem(item => item.setTitle(tr("Eliminar esta columna")).setIcon("minus").onClick(() => this.deleteTableColumn(table, col)));
 			menu.addSeparator();
 		}
 		menu.addItem(item => item.setTitle(table.header ? "Quitar fila de encabezado" : "Primera fila como encabezado").setIcon("heading").onClick(() => {
@@ -4626,20 +4627,20 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.renderAll();
 			this.save();
 		}));
-		menu.addItem(item => item.setTitle("Repartir columnas por igual").setIcon("columns-3").onClick(() => {
+		menu.addItem(item => item.setTitle(tr("Repartir columnas por igual")).setIcon("columns-3").onClick(() => {
 			this.history.push();
 			table.colWidths = undefined;
 			table.rowHeights = undefined;
 			this.renderAll();
 			this.save();
 		}));
-		menu.addItem(item => item.setTitle("Renombrar tabla").setIcon("pencil").onClick(() => {
+		menu.addItem(item => item.setTitle(tr("Renombrar tabla")).setIcon("pencil").onClick(() => {
 			const titleEl = this.domLayerEl.querySelector(`[data-id="${table.id}"] .notelens-table-title`) as HTMLElement | null;
 			if (titleEl) this.renameTable(table, titleEl);
 		}));
-		menu.addItem(item => item.setTitle("Crear gráfico con estos datos").setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
+		menu.addItem(item => item.setTitle(tr("Crear gráfico con estos datos")).setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
 		menu.addSeparator();
-		menu.addItem(item => item.setTitle("Eliminar tabla").setIcon("trash-2").onClick(() => {
+		menu.addItem(item => item.setTitle(tr("Eliminar tabla")).setIcon("trash-2").onClick(() => {
 			this.history.push();
 			this.data.tables.remove(table);
 			this.renderAll();
@@ -4912,7 +4913,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			e.stopPropagation();
 			const menu = new Menu();
 			menu.addItem(item => item
-				.setTitle("Eliminar cuadro de texto")
+				.setTitle(tr("Eliminar cuadro de texto"))
 				.setIcon("trash")
 				.onClick(() => {
 					this.history.push();
@@ -5086,7 +5087,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.empty();
 		if (tb.variant === "math") {
 			const src = tb.text.trim();
-			if (!src) { el.createSpan({ cls: "notelens-math-placeholder", text: "Fórmula" }); return; }
+			if (!src) { el.createSpan({ cls: "notelens-math-placeholder", text: tr("Fórmula") }); return; }
 			el.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
 			void finishRenderMath();
 			return;
@@ -5141,7 +5142,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		copy.addEventListener("pointerdown", (e) => e.stopPropagation());
 		copy.addEventListener("click", (e) => {
 			e.stopPropagation();
-			void navigator.clipboard?.writeText(tb.text).then(() => new Notice("Código copiado"));
+			void navigator.clipboard?.writeText(tb.text).then(() => new Notice(tr("Código copiado")));
 		});
 		const closeCode = header.createEl("button", { cls: "notelens-code-copy" });
 		setIcon(closeCode, "x");
@@ -5155,7 +5156,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		for (let i = 1; i <= lines.length; i++) gutter.createDiv({ text: String(i) });
 		const code = body.createEl("code", { cls: "notelens-code-source" });
 		if (!tb.text) {
-			code.createSpan({ cls: "notelens-math-placeholder", text: "Bloque de código vacío" });
+			code.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de código vacío") });
 			return;
 		}
 		const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : undefined;
@@ -5215,7 +5216,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!preview) return;
 		preview.empty();
 		const src = tb.text.trim();
-		if (!src) { preview.createSpan({ cls: "notelens-math-placeholder", text: "Vista previa de la fórmula" }); return; }
+		if (!src) { preview.createSpan({ cls: "notelens-math-placeholder", text: tr("Vista previa de la fórmula") }); return; }
 		preview.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
 		void finishRenderMath();
 	}

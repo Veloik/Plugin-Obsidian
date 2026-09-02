@@ -1,5 +1,6 @@
 import { App, Modal, Notice, setIcon } from "obsidian";
 import { BadgeChecklistItem, BadgeImage, genId } from "./types";
+import { tr } from "./i18n";
 
 export const HOVER_NOTE_BOARD_WIDTH = 560;
 export const HOVER_NOTE_BOARD_HEIGHT = 320;
@@ -72,7 +73,7 @@ export class HoverNoteModal extends Modal {
 		contentEl.createEl("h3", { text: this.dialogTitle });
 
 		const titleField = contentEl.createEl("label", { cls: "notelens-hover-note-title-field" });
-		titleField.createSpan({ text: "Título" });
+		titleField.createSpan({ text: tr("Título") });
 		const titleInput = titleField.createEl("input", { cls: "notelens-hover-note-title-input", type: "text" });
 		titleInput.value = this.noteTitle;
 		titleInput.maxLength = 120;
@@ -85,7 +86,7 @@ export class HoverNoteModal extends Modal {
 		tabText.createSpan({ text: this.taskMode ? "Lista" : "Nota" });
 		const tabSketch = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
 		setIcon(tabSketch.createSpan(), "pen-tool");
-		tabSketch.createSpan({ text: "Pizarra" });
+		tabSketch.createSpan({ text: tr("Pizarra") });
 
 		const textPane = contentEl.createDiv({ cls: `notelens-hover-note-pane ${this.taskMode ? "is-task" : ""}` });
 		let checklistList: HTMLElement | null = null;
@@ -118,7 +119,7 @@ export class HoverNoteModal extends Modal {
 				// Pen-only users write the step by hand instead of typing it.
 				const pad = row.createDiv({ cls: "notelens-task-checklist-pad" });
 				const padCanvas = pad.createEl("canvas");
-				const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: `Escribe el paso ${index + 1} a mano` });
+				const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: tr("Escribe el paso {p0} a mano", { p0: index + 1 }) });
 				const padClear = pad.createEl("button", { cls: "notelens-task-checklist-pad-clear", type: "button" });
 				setIcon(padClear, "eraser");
 				padClear.title = "Borrar lo escrito a mano";
@@ -179,16 +180,16 @@ export class HoverNoteModal extends Modal {
 		if (this.taskMode) {
 			const checklistHeader = textPane.createDiv({ cls: "notelens-task-checklist-header" });
 			const checklistHeading = checklistHeader.createDiv({ cls: "notelens-task-checklist-heading" });
-			checklistHeading.createSpan({ text: "Pasos de la tarea" });
+			checklistHeading.createSpan({ text: tr("Pasos de la tarea") });
 			checklistProgress = checklistHeading.createSpan({ cls: "notelens-task-checklist-progress" });
 			const addItem = checklistHeader.createEl("button", { cls: "notelens-task-checklist-add", type: "button" });
 			setIcon(addItem, "plus");
-			addItem.createSpan({ text: "Añadir paso" });
+			addItem.createSpan({ text: tr("Añadir paso") });
 			addItem.onclick = () => addChecklistItem();
 			checklistList = textPane.createDiv({ cls: "notelens-task-checklist" });
 			if (!this.checklist.length) this.checklist.push({ id: genId("task_item"), text: "", done: false });
 			renderChecklist();
-			textPane.createDiv({ cls: "notelens-task-description-label", text: "Notas de la tarea" });
+			textPane.createDiv({ cls: "notelens-task-description-label", text: tr("Notas de la tarea") });
 		}
 
 		const area = textPane.createEl("textarea", { cls: `notelens-prompt-textarea ${this.taskMode ? "notelens-task-description" : ""}` });
@@ -258,7 +259,7 @@ export class HoverNoteModal extends Modal {
 		canvas.style.width = `${HOVER_NOTE_BOARD_WIDTH}px`;
 		canvas.style.height = `${HOVER_NOTE_BOARD_HEIGHT}px`;
 		const ctx = canvas.getContext("2d");
-		const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: "Dibuja, pega o suelta una imagen" });
+		const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: tr("Dibuja, pega o suelta una imagen") });
 		const imageTray = sketchPane.createDiv({ cls: "notelens-hover-note-images" });
 
 		const drawStroke = (context: CanvasRenderingContext2D, stroke: SketchStroke) => {
@@ -346,8 +347,8 @@ export class HoverNoteModal extends Modal {
 			imageTray.toggleClass("hidden", this.images.length === 0);
 			if (!this.images.length) return;
 			const heading = imageTray.createDiv({ cls: "notelens-hover-note-images-heading" });
-			heading.createSpan({ text: `Imágenes (${this.images.length})` });
-			heading.createSpan({ text: "Selecciona una para moverla o cambiar su tamaño" });
+			heading.createSpan({ text: tr("Imágenes ({p0})", { p0: this.images.length }) });
+			heading.createSpan({ text: tr("Selecciona una para moverla o cambiar su tamaño") });
 			const list = imageTray.createDiv({ cls: "notelens-hover-note-images-list" });
 			for (const image of this.images) {
 				const item = list.createDiv({ cls: "notelens-hover-note-image-chip" });
@@ -470,9 +471,9 @@ export class HoverNoteModal extends Modal {
 
 		const addFiles = async (files: File[], anchor = lastBoardPoint) => {
 			const available = MAX_IMAGES - this.images.length;
-			if (available <= 0) { new Notice(`Cada etiqueta admite hasta ${MAX_IMAGES} imágenes.`); return; }
+			if (available <= 0) { new Notice(tr("Cada etiqueta admite hasta {p0} imágenes.", { p0: MAX_IMAGES })); return; }
 			const accepted = files.filter(file => file.type.startsWith("image/")).slice(0, available);
-			if (!accepted.length) { new Notice("Selecciona un archivo de imagen válido."); return; }
+			if (!accepted.length) { new Notice(tr("Selecciona un archivo de imagen válido.")); return; }
 			const placement = { ...anchor };
 			for (const file of accepted) {
 				try {
@@ -524,10 +525,10 @@ export class HoverNoteModal extends Modal {
 						files.push(new File([blob], `portapapeles-${Date.now()}.${extension}`, { type }));
 					}
 				}
-				if (!files.length) { new Notice("El portapapeles no contiene ninguna imagen."); return; }
+				if (!files.length) { new Notice(tr("El portapapeles no contiene ninguna imagen.")); return; }
 				await addFiles(files, lastBoardPoint);
 			} catch {
-				new Notice("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen.");
+				new Notice(tr("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen."));
 			}
 		};
 		uploadBtn.onclick = () => imageInput.click();
@@ -588,8 +589,8 @@ export class HoverNoteModal extends Modal {
 			cls: "notelens-hover-note-help",
 			text: this.taskMode ? "La lista, las notas, los trazos y las imágenes se guardan juntos." : "El título, la nota, los trazos y las imágenes se guardan juntos."
 		});
-		const ok = footer.createEl("button", { cls: "mod-cta", text: "Guardar", type: "button" });
-		const cancel = footer.createEl("button", { text: "Cancelar", type: "button" });
+		const ok = footer.createEl("button", { cls: "mod-cta", text: tr("Guardar"), type: "button" });
+		const cancel = footer.createEl("button", { text: tr("Cancelar"), type: "button" });
 		const submit = () => {
 			const content: HoverNoteContent = {
 				title: this.noteTitle.trim() || this.dialogTitle,

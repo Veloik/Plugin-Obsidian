@@ -1,6 +1,7 @@
 import { setIcon } from "obsidian";
 import { BackgroundPattern, CanvasFont, DocumentPage, GridSize, ShapeKind, ViewportBookmark, PenStyle, Stroke } from "./types";
 import { CanvasRenderer } from "./renderer";
+import { tr } from "./i18n";
 
 export type ToolId = "select" | "pen" | "highlighter" | "eraser" | "text" | "shape" | "place_badge";
 /** "stroke" removes whole strokes; "partial" cuts only what the eraser touches. */
@@ -285,12 +286,12 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	const toolButtons = new Map<ToolId, HTMLElement>();
 
 	const tools: { id: ToolId; icon: string; title: string }[] = [
-		{ id: "select", icon: "mouse-pointer-2", title: "Seleccionar (V) — arrastra para seleccionar en rectángulo" },
-		{ id: "pen", icon: "pencil", title: "Lápiz (P) — opciones al pulsar de nuevo" },
-		{ id: "highlighter", icon: "highlighter", title: "Subrayador (H) — opciones al pulsar de nuevo" },
-		{ id: "eraser", icon: "eraser", title: "Borrador (E) — opciones al pulsar de nuevo" },
-		{ id: "text", icon: "type", title: "Cuadro de texto (T) — opciones al pulsar de nuevo" },
-		{ id: "shape", icon: "shapes", title: "Formas (S) — líneas, flechas, rectángulos y elipses" }
+		{ id: "select", icon: "mouse-pointer-2", title: tr("Seleccionar (V) — arrastra para seleccionar en rectángulo") },
+		{ id: "pen", icon: "pencil", title: tr("Lápiz (P) — opciones al pulsar de nuevo") },
+		{ id: "highlighter", icon: "highlighter", title: tr("Subrayador (H) — opciones al pulsar de nuevo") },
+		{ id: "eraser", icon: "eraser", title: tr("Borrador (E) — opciones al pulsar de nuevo") },
+		{ id: "text", icon: "type", title: tr("Cuadro de texto (T) — opciones al pulsar de nuevo") },
+		{ id: "shape", icon: "shapes", title: tr("Formas (S) — líneas, flechas, rectángulos y elipses") }
 	];
 
 	// Contextual options panel (created before the buttons reference it)
@@ -557,7 +558,7 @@ function createShortcutsPanel(container: HTMLElement): { toggle: () => void; isO
 	const panel = container.createDiv({ cls: "notelens-shortcuts hidden" });
 	shield(panel);
 	const header = panel.createDiv({ cls: "notelens-shortcuts-header" });
-	header.createSpan({ text: "Atajos" });
+	header.createSpan({ text: tr("Atajos") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	const groups: [string, [string, string][]][] = [
@@ -591,7 +592,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 	toggle.title = "Marcadores de sección";
 	const panel = dock.createDiv({ cls: "notelens-bookmarks-panel hidden" });
 	const panelHeader = panel.createDiv({ cls: "notelens-bookmarks-header" });
-	panelHeader.createSpan({ text: "Marcadores" });
+	panelHeader.createSpan({ text: tr("Marcadores") });
 	const headerButtons = panelHeader.createDiv({ cls: "notelens-bookmarks-header-buttons" });
 	const add = headerButtons.createEl("button", { cls: "notelens-table-control" });
 	setIcon(add, "plus");
@@ -624,10 +625,10 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 		if (pages.length < 2) { pageFilter = null; return; }
 		if (pageFilter && !pages.some(page => page.id === pageFilter)) pageFilter = null;
 		pageFilterSelect.empty();
-		pageFilterSelect.createEl("option", { value: "__all__", text: `Todas las páginas (${pages.length})` });
+		pageFilterSelect.createEl("option", { value: "__all__", text: tr("Todas las páginas ({p0})", { p0: pages.length }) });
 		for (const page of pages) {
 			const counted = host.getViewportBookmarks().filter(b => (b.pageId ?? host.getActivePageId()) === page.id).length;
-			pageFilterSelect.createEl("option", { value: page.id, text: `${host.getPageTitle(page.id)} (${counted})` });
+			pageFilterSelect.createEl("option", { value: page.id, text: tr("{p0} ({p1})", { p0: host.getPageTitle(page.id), p1: counted }) });
 		}
 		pageFilterSelect.value = pageFilter ?? "__all__";
 	};
@@ -675,7 +676,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 			.filter(({ bookmark, index }) => matchesPanelSearch(searchQuery, bookmark.label, host.getPageTitle(bookmark.pageId), index + 1));
 		search.setCount(bookmarks.length, allBookmarks.length);
 		if (allBookmarks.length === 0) {
-			list.createDiv({ cls: "notelens-bookmarks-empty", text: "Sin marcadores. Pulsa + para guardar la vista actual." });
+			list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("Sin marcadores. Pulsa + para guardar la vista actual.") });
 			return;
 		}
 		if (bookmarks.length === 0) {
@@ -743,7 +744,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 
 	const panel = dock.createDiv({ cls: "notelens-bookmarks-panel notelens-pages-panel hidden" });
 	const header = panel.createDiv({ cls: "notelens-bookmarks-header" });
-	header.createSpan({ text: "Páginas" });
+	header.createSpan({ text: tr("Páginas") });
 	const actions = header.createDiv({ cls: "notelens-bookmarks-header-buttons" });
 	const add = actions.createEl("button", { cls: "notelens-table-control" });
 	setIcon(add, "file-plus-2");
@@ -805,7 +806,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 			.filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, `Página ${index + 1}`));
 		search.setCount(visiblePages.length, pages.length);
 		if (visiblePages.length === 0) {
-			list.createDiv({ cls: "notelens-bookmarks-empty", text: "No hay páginas que coincidan con la búsqueda." });
+			list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay páginas que coincidan con la búsqueda.") });
 			return;
 		}
 		for (const { page, index } of visiblePages) {
@@ -887,7 +888,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	// ============================ SELECT ====================================
 	const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
 	createPanelHeader(selectSection, "mouse-pointer-2", "Selección");
-	selectSection.createDiv({ cls: "notelens-panel-label", text: "Modo" });
+	selectSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
 	const selectModeRow = selectSection.createDiv({ cls: "notelens-eraser-modes" });
 	const selectModeBtns: [HTMLElement, SelectionMode][] = [];
 	for (const mode of [
@@ -900,7 +901,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		b.onclick = () => { host.setSelectionMode(mode.id); refresh(); close(); };
 		selectModeBtns.push([b, mode.id]);
 	}
-	selectSection.createDiv({ cls: "notelens-panel-hint", text: "Arrastra sobre la tinta para seleccionarla. Doble clic en un hueco crea un cuadro de texto." });
+	selectSection.createDiv({ cls: "notelens-panel-hint", text: tr("Arrastra sobre la tinta para seleccionarla. Doble clic en un hueco crea un cuadro de texto.") });
 
 	// ============================ PEN =======================================
 	const penSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-pen" });
@@ -929,7 +930,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		previewRenderer.renderAll([sample], [], { x: 0, y: 0, scale: 1 });
 	};
 
-	penSection.createDiv({ cls: "notelens-panel-label", text: "Tipo de trazo" });
+	penSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipo de trazo") });
 	const nibRow = penSection.createDiv({ cls: "notelens-nib-grid" });
 	const nibButtons: [HTMLElement, PenStyle][] = [];
 	const nibHint = penSection.createDiv({ cls: "notelens-panel-hint notelens-nib-hint" });
@@ -942,7 +943,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		nibButtons.push([b, nib.id]);
 	}
 
-	penSection.createDiv({ cls: "notelens-panel-label", text: "Punta" });
+	penSection.createDiv({ cls: "notelens-panel-label", text: tr("Punta") });
 	const widthRow = penSection.createDiv({ cls: "notelens-width-presets notelens-ink-widths" });
 	const widthDots: [HTMLElement, number][] = [];
 	for (const w of WIDTH_PRESETS) {
@@ -956,7 +957,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		widthDots.push([dot, w]);
 	}
 
-	penSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad" });
+	penSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad") });
 	const intensityRow = penSection.createDiv({ cls: "notelens-intensity-row" });
 	const slider = intensityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
 	slider.type = "range";
@@ -971,17 +972,17 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		renderPreview();
 	};
 
-	penSection.createDiv({ cls: "notelens-panel-label", text: "Colores recientes" });
+	penSection.createDiv({ cls: "notelens-panel-label", text: tr("Colores recientes") });
 	const recentRow = penSection.createDiv({ cls: "notelens-color-grid" });
 
-	penSection.createDiv({ cls: "notelens-panel-label", text: "Tinta" });
+	penSection.createDiv({ cls: "notelens-panel-label", text: tr("Tinta") });
 	const paletteGrid = penSection.createDiv({ cls: "notelens-color-grid" });
 	for (const c of PALETTE_COLORS) addColorSwatch(paletteGrid, c);
 
 	const customRow = penSection.createDiv({ cls: "notelens-custom-color" });
 	const customIcon = customRow.createSpan({ cls: "notelens-mode-icon" });
 	setIcon(customIcon, "pipette");
-	customRow.createSpan({ text: " Tinta personalizada..." });
+	customRow.createSpan({ text: tr(" Tinta personalizada...") });
 	const colorInput = customRow.createEl("input");
 	colorInput.type = "color";
 	colorInput.value = host.penColorHex;
@@ -998,7 +999,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	const highlighterSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-highlighter" });
 
 	createPanelHeader(highlighterSection, "highlighter", "Resaltador");
-	highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Trazo ancho" });
+	highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Trazo ancho") });
 	const highlighterWidthRow = highlighterSection.createDiv({ cls: "notelens-width-presets notelens-marker-widths" });
 	const highlighterDots: [HTMLElement, number][] = [];
 	for (const w of HIGHLIGHTER_WIDTHS) {
@@ -1011,7 +1012,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		highlighterDots.push([dot, w]);
 	}
 
-	highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad" });
+	highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad") });
 	const highlighterIntensityRow = highlighterSection.createDiv({ cls: "notelens-intensity-row" });
 	const highlighterSlider = highlighterIntensityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
 	highlighterSlider.type = "range";
@@ -1025,13 +1026,13 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		highlighterOpacityValue.setText(`${Math.round(host.highlighterIntensity * 100)}%`);
 	};
 
-	highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Color fluorescente" });
+	highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Color fluorescente") });
 	const highlighterPalette = highlighterSection.createDiv({ cls: "notelens-color-grid" });
 	for (const c of HIGHLIGHTER_COLORS) addColorSwatch(highlighterPalette, c, (hex) => host.setHighlighterColor(hex));
 
 	const highlighterCustomRow = highlighterSection.createDiv({ cls: "notelens-custom-color" });
 	setIcon(highlighterCustomRow.createSpan({ cls: "notelens-mode-icon" }), "pipette");
-	highlighterCustomRow.createSpan({ text: " Fluor personalizado..." });
+	highlighterCustomRow.createSpan({ text: tr(" Fluor personalizado...") });
 	const highlighterColorInput = highlighterCustomRow.createEl("input");
 	highlighterColorInput.type = "color";
 	highlighterColorInput.value = host.highlighterColorHex;
@@ -1040,7 +1041,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	// ============================ ERASER ====================================
 	const eraserSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-eraser" });
 	createPanelHeader(eraserSection, "eraser", "Goma");
-	eraserSection.createDiv({ cls: "notelens-panel-label", text: "Tamaño de la goma" });
+	eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Tamaño de la goma") });
 	const eraserRow = eraserSection.createDiv({ cls: "notelens-eraser-sizes" });
 	const eraserBtns: [HTMLElement, number][] = [];
 	for (const s of ERASER_SIZES) {
@@ -1051,7 +1052,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		b.onclick = () => { host.setEraserSize(s.value); close(); };
 		eraserBtns.push([b, s.value]);
 	}
-	eraserSection.createDiv({ cls: "notelens-panel-label", text: "Modo" });
+	eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
 	const eraserModeRow = eraserSection.createDiv({ cls: "notelens-eraser-modes" });
 	const eraserModeBtns: [HTMLElement, EraserMode][] = [];
 	for (const mode of [
@@ -1069,43 +1070,43 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	// ============================ TEXT ======================================
 	const textSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-text" });
 	createPanelHeader(textSection, "type", "Texto");
-	textSection.createDiv({ cls: "notelens-panel-label", text: "Tamaño de texto" });
+	textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tamaño de texto") });
 	const textRow = textSection.createDiv({ cls: "notelens-text-sizes" });
 	const textBtns: [HTMLElement, number][] = [];
 	for (const s of TEXT_SIZES) {
 		const b = textRow.createEl("button", { cls: "notelens-text-size-choice" });
-		b.createSpan({ text: "A" });
+		b.createSpan({ text: tr("A") });
 		b.style.setProperty("--text-preview-size", `${Math.max(12, Math.min(s, 25))}px`);
 		b.title = `${s}px`;
 		b.onclick = () => { host.setTextSize(s); close(); };
 		textBtns.push([b, s]);
 	}
-	textSection.createDiv({ cls: "notelens-panel-label", text: "Tipografía" });
+	textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipografía") });
 	const fontSelect = textSection.createEl("select", { cls: "notelens-font-select" });
 	for (const font of FONT_OPTIONS) {
 		const option = fontSelect.createEl("option", { text: font.label, value: font.id });
 		option.style.fontFamily = font.css;
 	}
 	fontSelect.onchange = () => { host.setTextFont(fontSelect.value as CanvasFont); };
-	textSection.createDiv({ cls: "notelens-panel-label", text: "Color de texto" });
+	textSection.createDiv({ cls: "notelens-panel-label", text: tr("Color de texto") });
 	const textColorRow = textSection.createDiv({ cls: "notelens-color-grid" });
 	for (const c of TEXT_COLORS) addColorSwatch(textColorRow, c, (hex) => host.setTextColor(hex));
 
 	// ============================ SHAPES ====================================
 	const shapeSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-shape" });
 	createPanelHeader(shapeSection, "shapes", "Formas");
-	shapeSection.createDiv({ cls: "notelens-panel-label", text: "Tipo de forma" });
+	shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipo de forma") });
 	const shapeRow = shapeSection.createDiv({ cls: "notelens-shape-types" });
 	const shapeButtons: [HTMLElement, ShapeKind][] = [];
 	const shapes: { kind: ShapeKind; icon: string; title: string }[] = [
-		{ kind: "line", icon: "minus", title: "Línea" },
-		{ kind: "arrow", icon: "move-right", title: "Flecha" },
-		{ kind: "rectangle", icon: "square", title: "Rectángulo" },
-		{ kind: "rounded-rectangle", icon: "square-round-corner", title: "Rectángulo redondeado" },
-		{ kind: "ellipse", icon: "circle", title: "Elipse" },
-		{ kind: "diamond", icon: "diamond", title: "Rombo" },
-		{ kind: "triangle", icon: "triangle", title: "Triángulo" },
-		{ kind: "callout", icon: "message-square", title: "Llamada" }
+		{ kind: "line", icon: "minus", title: tr("Línea") },
+		{ kind: "arrow", icon: "move-right", title: tr("Flecha") },
+		{ kind: "rectangle", icon: "square", title: tr("Rectángulo") },
+		{ kind: "rounded-rectangle", icon: "square-round-corner", title: tr("Rectángulo redondeado") },
+		{ kind: "ellipse", icon: "circle", title: tr("Elipse") },
+		{ kind: "diamond", icon: "diamond", title: tr("Rombo") },
+		{ kind: "triangle", icon: "triangle", title: tr("Triángulo") },
+		{ kind: "callout", icon: "message-square", title: tr("Llamada") }
 	];
 	for (const shape of shapes) {
 		const b = shapeRow.createEl("button", { cls: "notelens-shape-choice" });
@@ -1114,7 +1115,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		b.onclick = () => { host.setShapeKind(shape.kind); close(); };
 		shapeButtons.push([b, shape.kind]);
 	}
-	shapeSection.createDiv({ cls: "notelens-panel-label", text: "Grosor" });
+	shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Grosor") });
 	const shapeWidthRow = shapeSection.createDiv({ cls: "notelens-width-presets notelens-ink-widths" });
 	const shapeWidthDots: [HTMLElement, number][] = [];
 	for (const w of WIDTH_PRESETS.slice(0, 6)) {
@@ -1127,7 +1128,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		dot.onclick = () => { host.setStrokeWidth(w); close(); };
 		shapeWidthDots.push([dot, w]);
 	}
-	shapeSection.createDiv({ cls: "notelens-panel-label", text: "Color del contorno" });
+	shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Color del contorno") });
 	const shapeColors = shapeSection.createDiv({ cls: "notelens-color-grid" });
 	for (const c of PALETTE_COLORS) addColorSwatch(shapeColors, c);
 
@@ -1135,14 +1136,14 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	const fillToggle = fillToggleRow.createEl("input");
 	fillToggle.type = "checkbox";
 	fillToggle.checked = host.shapeFillEnabled;
-	fillToggleRow.createSpan({ text: "Rellenar forma" });
+	fillToggleRow.createSpan({ text: tr("Rellenar forma") });
 	fillToggle.onchange = () => host.setShapeFillEnabled(fillToggle.checked);
 
-	shapeSection.createDiv({ cls: "notelens-panel-label", text: "Color del relleno" });
+	shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Color del relleno") });
 	const fillColors = shapeSection.createDiv({ cls: "notelens-color-grid notelens-fill-color-grid" });
 	for (const c of PALETTE_COLORS) addColorSwatch(fillColors, c, (hex) => host.setShapeFillColor(hex));
 
-	shapeSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad del relleno" });
+	shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad del relleno") });
 	const fillOpacityRow = shapeSection.createDiv({ cls: "notelens-intensity-row" });
 	const fillOpacity = fillOpacityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
 	fillOpacity.type = "range";
@@ -1200,7 +1201,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 
 		recentRow.empty();
 		if (host.recentColors.length === 0) {
-			recentRow.createDiv({ cls: "notelens-recent-empty", text: "Sin colores recientes" });
+			recentRow.createDiv({ cls: "notelens-recent-empty", text: tr("Sin colores recientes") });
 		} else {
 			for (const c of host.recentColors) addColorSwatch(recentRow, c);
 		}
@@ -1243,7 +1244,7 @@ export function createQuickTagsBar(
 		bar.createDiv({ cls: "onenote-divider" });
 		const summary = bar.createEl("button", { cls: "onenote-tag-chip onenote-tag-summary" });
 		setIcon(summary.createSpan({ cls: "onenote-tag-icon" }), "list-checks");
-		summary.createSpan({ text: "Resumen" });
+		summary.createSpan({ text: tr("Resumen") });
 		summary.title = "Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes";
 		summary.onclick = onSummary;
 	}
@@ -1264,13 +1265,13 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	shield(panel);
 
 	const header = panel.createDiv({ cls: "notelens-settings-header" });
-	header.createSpan({ text: "Formato del fondo" });
+	header.createSpan({ text: tr("Formato del fondo") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	closeBtn.onclick = () => panel.addClass("hidden");
 
 	// --- Pattern ---
-	panel.createDiv({ cls: "notelens-settings-label", text: "Estilo de página" });
+	panel.createDiv({ cls: "notelens-settings-label", text: tr("Estilo de página") });
 	const bgRow = panel.createDiv({ cls: "notelens-settings-row notelens-settings-row-grid" });
 	const activeBackground = host.background === "margin" ? "lines" : host.background;
 	const bgButtons: [HTMLElement, BackgroundPattern][] = [];
@@ -1294,7 +1295,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	// own settings tab, which is easy to miss.
 	const openSettings = panel.createEl("button", { cls: "notelens-settings-link" });
 	setIcon(openSettings.createSpan(), "settings-2");
-	openSettings.createSpan({ text: "Ajustes del plugin" });
+	openSettings.createSpan({ text: tr("Ajustes del plugin") });
 	openSettings.title = "Abre los ajustes de NoteLens en Obsidian";
 	openSettings.onclick = () => host.openPluginSettings();
 
@@ -1302,8 +1303,8 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	const marginIcon = marginControl.createSpan({ cls: "notelens-settings-margin-icon" });
 	setIcon(marginIcon, "separator-vertical");
 	const marginCopy = marginControl.createSpan({ cls: "notelens-settings-margin-copy" });
-	marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: "Margen izquierdo" });
-	marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: "Independiente del estilo" });
+	marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: tr("Margen izquierdo") });
+	marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: tr("Independiente del estilo") });
 	// A button, not a checkbox: Obsidian themes restyle checkboxes and the
 	// switch came out looking broken in some of them.
 	const marginToggle = marginControl.createEl("button", { cls: "notelens-settings-margin-toggle" });
@@ -1328,7 +1329,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	};
 
 	// --- Grid size ---
-	panel.createDiv({ cls: "notelens-settings-label", text: "Tamaño de cuadrícula" });
+	panel.createDiv({ cls: "notelens-settings-label", text: tr("Tamaño de cuadrícula") });
 	const gridRow = panel.createDiv({ cls: "notelens-settings-row" });
 	const gridButtons: [HTMLElement, GridSize][] = [];
 	for (const opt of [{ id: "small" as GridSize, label: "Pequeña" }, { id: "medium" as GridSize, label: "Mediana" }, { id: "large" as GridSize, label: "Grande" }]) {
@@ -1343,7 +1344,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	for (const [btn, id] of gridButtons) btn.toggleClass("active", id === host.gridSize);
 
 	// --- Line color ---
-	panel.createDiv({ cls: "notelens-settings-label", text: "Color de línea" });
+	panel.createDiv({ cls: "notelens-settings-label", text: tr("Color de línea") });
 	const lineRow = panel.createDiv({ cls: "notelens-color-grid" });
 	for (const c of LINE_COLORS) {
 		const sw = lineRow.createDiv({ cls: "notelens-color-swatch" });
@@ -1358,7 +1359,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	}
 
 	// --- Page color ---
-	panel.createDiv({ cls: "notelens-settings-label", text: "Color de página" });
+	panel.createDiv({ cls: "notelens-settings-label", text: tr("Color de página") });
 	const pageGrid = panel.createDiv({ cls: "notelens-color-grid" });
 	for (const c of PAGE_COLORS) {
 		const sw = pageGrid.createDiv({ cls: "notelens-color-swatch" });
@@ -1374,7 +1375,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 
 	const customPage = panel.createDiv({ cls: "notelens-custom-color notelens-paper-custom" });
 	setIcon(customPage.createSpan({ cls: "notelens-mode-icon" }), "palette");
-	customPage.createSpan({ text: " Color de página personalizado" });
+	customPage.createSpan({ text: tr(" Color de página personalizado") });
 	const customPageInput = customPage.createEl("input");
 	customPageInput.type = "color";
 	customPageInput.value = host.backgroundColor;
@@ -1387,7 +1388,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	panel.createDiv({ cls: "notelens-settings-sep" });
 	const resetBtn = panel.createEl("button", { cls: "notelens-settings-action" });
 	setIcon(resetBtn.createSpan(), "maximize");
-	resetBtn.createSpan({ text: " Restablecer vista" });
+	resetBtn.createSpan({ text: tr(" Restablecer vista") });
 	resetBtn.onclick = () => {
 		host.resetView();
 		panel.addClass("hidden");

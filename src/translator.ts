@@ -1,6 +1,7 @@
 import { Notice, requestUrl, setIcon } from "obsidian";
 import { LocalModelClient } from "./assistant";
 import { makeDraggable, shieldPanel } from "./panels";
+import { tr } from "./i18n";
 
 interface Language {
 	code: string;
@@ -143,7 +144,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 
 	const header = panel.createDiv({ cls: "notelens-translator-header" });
 	setIcon(header.createSpan({ cls: "notelens-calculator-icon" }), "languages");
-	header.createSpan({ cls: "notelens-calculator-title", text: "Traductor" });
+	header.createSpan({ cls: "notelens-calculator-title", text: tr("Traductor") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	makeDraggable(panel, header, container, "notelens-translator-pos");
@@ -172,10 +173,10 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	};
 
 	const sourceRow = panel.createDiv({ cls: "notelens-translator-source-row" });
-	const sourceLabel = sourceRow.createDiv({ cls: "notelens-panel-label", text: "Texto" });
+	const sourceLabel = sourceRow.createDiv({ cls: "notelens-panel-label", text: tr("Texto") });
 	const captureBtn = sourceRow.createEl("button", { cls: "notelens-translator-capture" });
 	setIcon(captureBtn.createSpan(), "scan-text");
-	captureBtn.createSpan({ text: "Capturar de la pizarra (OCR)" });
+	captureBtn.createSpan({ text: tr("Capturar de la pizarra (OCR)") });
 	captureBtn.title = "Dibuja un rectángulo sobre la pizarra: se reconoce el texto de imágenes, PDFs y escritura a mano en el idioma de origen y se traduce.";
 	const source = panel.createEl("textarea", { cls: "notelens-translator-text" });
 	source.placeholder = "Selecciona un cuadro de texto en la pizarra o escribe aquí.";
@@ -187,12 +188,12 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	const status = panel.createDiv({ cls: "notelens-translator-status" });
 
 	const actions = panel.createDiv({ cls: "notelens-translator-actions" });
-	const translateBtn = actions.createEl("button", { cls: "mod-cta", text: "Traducir" });
-	const replaceBtn = actions.createEl("button", { text: "Sustituir" });
+	const translateBtn = actions.createEl("button", { cls: "mod-cta", text: tr("Traducir") });
+	const replaceBtn = actions.createEl("button", { text: tr("Sustituir") });
 	replaceBtn.title = "Cambia el texto original por la traducción";
-	const addBtn = actions.createEl("button", { text: "Añadir a la pizarra" });
+	const addBtn = actions.createEl("button", { text: tr("Añadir a la pizarra") });
 	addBtn.title = "Crea un cuadro de texto con la traducción junto al original";
-	const copyBtn = actions.createEl("button", { text: "Copiar" });
+	const copyBtn = actions.createEl("button", { text: tr("Copiar") });
 
 	let current: TranslationSource = { text: "", kind: "none", count: 0 };
 	let running = 0;
@@ -209,14 +210,14 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 		if (!text) { result.value = ""; status.setText(""); refreshButtons(); return; }
 		const id = ++running;
 		translateBtn.disabled = true;
-		status.setText("Traduciendo…");
+		status.setText(tr("Traduciendo…"));
 		try {
 			// A model on this computer first: free, offline and with no daily cap.
 			let translated: string | null = null;
 			let engine = "";
 			try {
 				const client = new LocalModelClient(host as never);
-				status.setText("Traduciendo con tu modelo local…");
+				status.setText(tr("Traduciendo con tu modelo local…"));
 				translated = await client.translate(
 					source.value,
 					LANGUAGE_NAMES[fromSelect.value] ?? fromSelect.value,
@@ -228,7 +229,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 				throw new Error("No hay ningún modelo local disponible y has pedido traducir solo en local. Descarga uno o desactiva esa opción en los ajustes.");
 			}
 			if (!translated) {
-				status.setText("Traduciendo con el servicio gratuito…");
+				status.setText(tr("Traduciendo con el servicio gratuito…"));
 				translated = await translateText(source.value, fromSelect.value, toSelect.value);
 				engine = "servicio web";
 			}
@@ -237,7 +238,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 			const targetStatus = current.kind === "selection"
 				? (current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados` : "Traducido el cuadro seleccionado")
 				: current.kind === "editor" ? "Traducido el cuadro que estás editando" : "Traducción lista";
-			status.setText(`${targetStatus} · ${engine}.`);
+			status.setText(tr("{p0} · {p1}.", { p0: targetStatus, p1: engine }));
 		} catch (error) {
 			if (id !== running) return;
 			console.error("NoteLens: translation failed", error);
@@ -259,7 +260,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 			sourceLabel.setText(current.kind === "editor" ? "Cuadro que estás editando" : current.count > 1 ? `${current.count} cuadros seleccionados` : "Cuadro seleccionado");
 			void run();
 		} else {
-			sourceLabel.setText("Texto");
+			sourceLabel.setText(tr("Texto"));
 			status.setText(source.value.trim() ? "" : "Selecciona un cuadro en la pizarra, o escribe aquí y pulsa Traducir.");
 		}
 		refreshButtons();
@@ -268,32 +269,32 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	translateBtn.onclick = () => void run();
 	captureBtn.onclick = async () => {
 		captureBtn.disabled = true;
-		status.setText("Dibuja un rectángulo sobre la zona que quieres traducir. Esc cancela.");
+		status.setText(tr("Dibuja un rectángulo sobre la zona que quieres traducir. Esc cancela."));
 		try {
 			const text = await host.captureBoardText(fromSelect.value, (message) => status.setText(message));
 			if (text.trim()) {
 				current = { text, kind: "none", count: 0 };
 				source.value = text;
-				sourceLabel.setText("Texto capturado");
+				sourceLabel.setText(tr("Texto capturado"));
 				await run();
 			} else {
-				status.setText("No se encontró texto en esa zona.");
+				status.setText(tr("No se encontró texto en esa zona."));
 			}
 		} catch (error) {
 			console.error("NoteLens: OCR failed", error);
-			status.setText(`No se pudo reconocer el texto: ${error instanceof Error ? error.message : String(error)}`);
+			status.setText(tr("No se pudo reconocer el texto: {p0}", { p0: error instanceof Error ? error.message : String(error) }));
 		} finally {
 			captureBtn.disabled = false;
 		}
 	};
-	source.addEventListener("input", () => { current = { text: source.value, kind: "none", count: 0 }; sourceLabel.setText("Texto"); refreshButtons(); });
+	source.addEventListener("input", () => { current = { text: source.value, kind: "none", count: 0 }; sourceLabel.setText(tr("Texto")); refreshButtons(); });
 	source.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); void run(); } });
 	result.addEventListener("input", refreshButtons);
-	replaceBtn.onclick = () => { if (result.value.trim()) { host.replaceTranslationTarget(result.value); status.setText("Texto sustituido. Ctrl+Z deshace."); } };
-	addBtn.onclick = () => { if (result.value.trim()) { host.addTranslationToBoard(result.value); status.setText("Traducción añadida a la pizarra."); } };
+	replaceBtn.onclick = () => { if (result.value.trim()) { host.replaceTranslationTarget(result.value); status.setText(tr("Texto sustituido. Ctrl+Z deshace.")); } };
+	addBtn.onclick = () => { if (result.value.trim()) { host.addTranslationToBoard(result.value); status.setText(tr("Traducción añadida a la pizarra.")); } };
 	copyBtn.onclick = async () => {
 		if (!result.value.trim()) return;
-		try { await navigator.clipboard.writeText(result.value); new Notice("Traducción copiada"); }
+		try { await navigator.clipboard.writeText(result.value); new Notice(tr("Traducción copiada")); }
 		catch { result.focus(); result.select(); document.execCommand("copy"); }
 	};
 

@@ -1,6 +1,7 @@
 import { requestUrl, Notice, App, PluginSettingTab, Setting } from "obsidian";
 import type OneNotePlugin from "./main";
 import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, PenStyle } from "./types";
+import { tr } from "./i18n";
 
 /** User preferences: defaults for new boards plus behaviour switches. */
 export interface NoteLensSettings {
@@ -174,50 +175,50 @@ export class NoteLensSettingTab extends PluginSettingTab {
 		// If this line is older than your last build, Obsidian is still running
 		// the previous copy: disable and re-enable the plugin to load the new one.
 		const stamp = containerEl.createDiv({ cls: "setting-item-description notelens-build-stamp" });
-		stamp.setText(`NoteLens · versión cargada: ${NOTELENS_BUILD}`);
+		stamp.setText(tr("NoteLens · versión cargada: {p0}", { p0: NOTELENS_BUILD }));
 
-		new Setting(containerEl).setName("Pizarras nuevas").setHeading();
+		new Setting(containerEl).setName(tr("Pizarras nuevas")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Estilo de página")
-			.setDesc("Patrón de fondo con el que se crean las pizarras nuevas.")
+			.setName(tr("Estilo de página"))
+			.setDesc(tr("Patrón de fondo con el que se crean las pizarras nuevas."))
 			.addDropdown(d => d
 				.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" })
 				.setValue(s.defaultBackground)
 				.onChange(v => { s.defaultBackground = v as BackgroundPattern; save(); }));
 
 		new Setting(containerEl)
-			.setName("Margen izquierdo")
-			.setDesc("Guía independiente que puede combinarse con cualquier estilo de página.")
+			.setName(tr("Margen izquierdo"))
+			.setDesc(tr("Guía independiente que puede combinarse con cualquier estilo de página."))
 			.addToggle(toggle => toggle.setValue(s.defaultMargin).onChange(value => { s.defaultMargin = value; save(); }));
 
 		new Setting(containerEl)
-			.setName("Tamaño de la cuadrícula")
-			.setDesc("Separación entre puntos, líneas o celdas de la rejilla.")
+			.setName(tr("Tamaño de la cuadrícula"))
+			.setDesc(tr("Separación entre puntos, líneas o celdas de la rejilla."))
 			.addDropdown(d => d
 				.addOptions({ small: "Pequeña", medium: "Mediana", large: "Grande" })
 				.setValue(s.defaultGridSize)
 				.onChange(v => { s.defaultGridSize = v as GridSize; save(); }));
 
 		new Setting(containerEl)
-			.setName("Color de página")
+			.setName(tr("Color de página"))
 			.addColorPicker(c => c.setValue(s.defaultPageColor).onChange(v => { s.defaultPageColor = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Color de las líneas del fondo")
+			.setName(tr("Color de las líneas del fondo"))
 			.addColorPicker(c => c.setValue(s.defaultLineColor).onChange(v => { s.defaultLineColor = v; save(); }));
 
-		new Setting(containerEl).setName("Herramientas").setHeading();
+		new Setting(containerEl).setName(tr("Herramientas")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Grosor del lápiz")
-			.setDesc("Grosor inicial en píxeles.")
+			.setName(tr("Grosor del lápiz"))
+			.setDesc(tr("Grosor inicial en píxeles."))
 			.addSlider(sl => sl.setLimits(1, 18, 0.5).setValue(s.penWidth).setDynamicTooltip().onChange(v => { s.penWidth = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Color del lápiz")
-			.setDesc("Con «Automático» la tinta es oscura en páginas claras y clara en páginas oscuras.")
-			.addToggle(t => t.setTooltip("Automático").setValue(s.penColor === "auto").onChange(v => {
+			.setName(tr("Color del lápiz"))
+			.setDesc(tr("Con «Automático» la tinta es oscura en páginas claras y clara en páginas oscuras."))
+			.addToggle(t => t.setTooltip(tr("Automático")).setValue(s.penColor === "auto").onChange(v => {
 				s.penColor = v ? "auto" : "#1f2937";
 				save();
 				this.display();
@@ -228,78 +229,78 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Subrayador")
-			.setDesc("Color, grosor y opacidad iniciales.")
+			.setName(tr("Subrayador"))
+			.setDesc(tr("Color, grosor y opacidad iniciales."))
 			.addColorPicker(c => c.setValue(s.highlighterColor).onChange(v => { s.highlighterColor = v; save(); }))
 			.addSlider(sl => sl.setLimits(8, 48, 2).setValue(s.highlighterWidth).setDynamicTooltip().onChange(v => { s.highlighterWidth = v; save(); }))
 			.addSlider(sl => sl.setLimits(0.1, 0.9, 0.05).setValue(s.highlighterOpacity).setDynamicTooltip().onChange(v => { s.highlighterOpacity = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Tamaño de texto")
+			.setName(tr("Tamaño de texto"))
 			.addSlider(sl => sl.setLimits(10, 72, 1).setValue(s.textSize).setDynamicTooltip().onChange(v => { s.textSize = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Punta del lápiz")
-			.setDesc("Trazo con el que empieza la herramienta de lápiz.")
+			.setName(tr("Punta del lápiz"))
+			.setDesc(tr("Trazo con el que empieza la herramienta de lápiz."))
 			.addDropdown(d => d
 				.addOptions({ ballpoint: "Bolígrafo", pencil: "Lápiz", fountain: "Pluma", marker: "Rotulador", brush: "Pincel" })
 				.setValue(s.penStyle)
 				.onChange(v => { s.penStyle = v as PenStyle; save(); }));
 
 		new Setting(containerEl)
-			.setName("Fuente del texto")
-			.setDesc("Tipografía con la que se crean los cuadros de texto.")
+			.setName(tr("Fuente del texto"))
+			.setDesc(tr("Tipografía con la que se crean los cuadros de texto."))
 			.addDropdown(d => d
 				.addOptions({ sans: "Sin remates", serif: "Con remates", rounded: "Redondeada", mono: "Monoespaciada" })
 				.setValue(s.defaultTextFont)
 				.onChange(v => { s.defaultTextFont = v as CanvasFont; save(); }));
 
 		new Setting(containerEl)
-			.setName("Color de las notas adhesivas")
-			.setDesc("Papel con el que nace cada posit nuevo.")
+			.setName(tr("Color de las notas adhesivas"))
+			.setDesc(tr("Papel con el que nace cada posit nuevo."))
 			.addDropdown(d => d
 				.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" })
 				.setValue(s.defaultStickyColor)
 				.onChange(v => { s.defaultStickyColor = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Calculadora en grados")
-			.setDesc("Desactívalo para trabajar en radianes por defecto.")
+			.setName(tr("Calculadora en grados"))
+			.setDesc(tr("Desactívalo para trabajar en radianes por defecto."))
 			.addToggle(t => t.setValue(s.calculatorDegrees).onChange(v => { s.calculatorDegrees = v; save(); }));
 
-		new Setting(containerEl).setName("Comportamiento").setHeading();
+		new Setting(containerEl).setName(tr("Comportamiento")).setHeading();
 
 		new Setting(containerEl)
-			.setName("La rueda del ratón hace zoom")
-			.setDesc("Desactivado: la rueda desplaza la página y Ctrl+rueda hace zoom, como OneNote.")
+			.setName(tr("La rueda del ratón hace zoom"))
+			.setDesc(tr("Desactivado: la rueda desplaza la página y Ctrl+rueda hace zoom, como OneNote."))
 			.addToggle(t => t.setValue(s.wheelZooms).onChange(v => { s.wheelZooms = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Dibujar con el dedo")
-			.setDesc("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.")
+			.setName(tr("Dibujar con el dedo"))
+			.setDesc(tr("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza."))
 			.addToggle(t => t.setValue(s.fingerDraws).onChange(v => { s.fingerDraws = v; save(); }));
 
-		new Setting(containerEl).setName("Interfaz").setHeading();
+		new Setting(containerEl).setName(tr("Interfaz")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Mostrar etiquetas rápidas")
-			.setDesc("La fila de etiquetas (Importante, Duda, Idea clave…) bajo la barra de dibujo.")
+			.setName(tr("Mostrar etiquetas rápidas"))
+			.setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave…) bajo la barra de dibujo."))
 			.addToggle(t => t.setValue(s.showQuickTags).onChange(v => { s.showQuickTags = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Minimapa visible al abrir")
+			.setName(tr("Minimapa visible al abrir"))
 			.addToggle(t => t.setValue(s.showMinimap).onChange(v => { s.showMinimap = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Interfaz compacta")
-			.setDesc("Botones más pequeños y barras más estrechas.")
+			.setName(tr("Interfaz compacta"))
+			.setDesc(tr("Botones más pequeños y barras más estrechas."))
 			.addToggle(t => t.setValue(s.compactUi).onChange(v => { s.compactUi = v; save(); }));
 
-		new Setting(containerEl).setName("Ayudante Leen").setHeading();
+		new Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
 
 		new Setting(containerEl)
-			.setName("Mostrar a Leen")
-			.setDesc("Abre acciones rápidas para resumir, crear tareas, ordenar objetos y leer fórmulas. El chat local es opcional.")
+			.setName(tr("Mostrar a Leen"))
+			.setDesc(tr("Abre acciones rápidas para resumir, crear tareas, ordenar objetos y leer fórmulas. El chat local es opcional."))
 			.addToggle(t => t.setValue(s.showAssistantPet).onChange(v => {
 				s.showAssistantPet = v;
 				save();
@@ -308,82 +309,82 @@ export class NoteLensSettingTab extends PluginSettingTab {
 
 		if (s.showAssistantPet) {
 			new Setting(containerEl)
-				.setName("Tamaño de Leen")
-				.setDesc("Más pequeño estorba menos; más grande se toca mejor en una tableta.")
+				.setName(tr("Tamaño de Leen"))
+				.setDesc(tr("Más pequeño estorba menos; más grande se toca mejor en una tableta."))
 				.addSlider(sl => sl.setLimits(0.6, 1.6, 0.1).setValue(s.petScale).setDynamicTooltip().onChange(v => { s.petScale = v; save(); }));
 
 			new Setting(containerEl)
-				.setName("Bocadillos de Leen")
-				.setDesc("El aviso que aparece al pasar el ratón por encima.")
+				.setName(tr("Bocadillos de Leen"))
+				.setDesc(tr("El aviso que aparece al pasar el ratón por encima."))
 				.addToggle(t => t.setValue(s.petBubbles).onChange(v => { s.petBubbles = v; save(); }));
 
 			new Setting(containerEl)
-				.setName("Devolver a Leen a su sitio")
-				.setDesc("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")
-				.addButton(b => b.setButtonText("Restablecer posición").onClick(() => {
+				.setName(tr("Devolver a Leen a su sitio"))
+				.setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista."))
+				.addButton(b => b.setButtonText(tr("Restablecer posición")).onClick(() => {
 					s.petX = null;
 					s.petY = null;
 					save();
-					new Notice("Leen volverá a su esquina al reabrir la pizarra");
+					new Notice(tr("Leen volverá a su esquina al reabrir la pizarra"));
 				}));
 
 			new Setting(containerEl)
-				.setName("Acciones locales")
-				.setDesc("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuración.");
+				.setName(tr("Acciones locales"))
+				.setDesc(tr("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuración."));
 
 			new Setting(containerEl)
-				.setName("Servidor del modelo local")
-				.setDesc("Solo para la pestaña opcional «Chat local». Las acciones de pizarra no lo necesitan. Si «localhost» falla, prueba con 127.0.0.1.")
+				.setName(tr("Servidor del modelo local"))
+				.setDesc(tr("Solo para la pestaña opcional «Chat local». Las acciones de pizarra no lo necesitan. Si «localhost» falla, prueba con 127.0.0.1."))
 				.addText(t => t
-					.setPlaceholder("http://127.0.0.1:11434")
+					.setPlaceholder(tr("http://127.0.0.1:11434"))
 					.setValue(s.aiBaseUrl)
 					.onChange(v => { s.aiBaseUrl = v.trim() || DEFAULT_SETTINGS.aiBaseUrl; save(); }))
-				.addButton(b => b.setButtonText("Probar").onClick(async () => {
+				.addButton(b => b.setButtonText(tr("Probar")).onClick(async () => {
 					const base = s.aiBaseUrl.replace(/\/+$/, "");
-					b.setButtonText("Probando…");
+					b.setButtonText(tr("Probando…"));
 					const models = await probeLocalServer(base);
-					b.setButtonText("Probar");
+					b.setButtonText(tr("Probar"));
 					new Notice(models === null
 						? `No hay respuesta en ${base}. ¿Está arrancado el servidor?`
 						: `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6000);
 				}));
 
 			new Setting(containerEl)
-				.setName("Modelo preferido")
-				.setDesc("Déjalo vacío para que Leen elija el mejor según la memoria de tu equipo.")
+				.setName(tr("Modelo preferido"))
+				.setDesc(tr("Déjalo vacío para que Leen elija el mejor según la memoria de tu equipo."))
 				.addText(t => t
 					.setPlaceholder("automático")
 					.setValue(s.aiModel)
 					.onChange(v => { s.aiModel = v.trim(); save(); }));
 
 			new Setting(containerEl)
-				.setName("Usar la pizarra como contexto")
-				.setDesc("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")
+				.setName(tr("Usar la pizarra como contexto"))
+				.setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."))
 				.addToggle(t => t.setValue(s.aiUseBoardContext).onChange(v => { s.aiUseBoardContext = v; save(); }));
 		}
 
-		new Setting(containerEl).setName("Traductor").setHeading();
+		new Setting(containerEl).setName(tr("Traductor")).setHeading();
 
 		const languages: Record<string, string> = {
 			es: "Español", en: "English", fr: "Français", de: "Deutsch", it: "Italiano", pt: "Português", ca: "Català", eu: "Euskara",
 			gl: "Galego", nl: "Nederlands", pl: "Polski", ru: "Русский", uk: "Українська", ar: "العربية", "zh-CN": "中文（简体）", ja: "日本語", ko: "한국어"
 		};
 		new Setting(containerEl)
-			.setName("Traducir solo con el modelo local")
-			.setDesc("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.")
+			.setName(tr("Traducir solo con el modelo local"))
+			.setDesc(tr("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado."))
 			.addToggle(t => t.setValue(s.translationLocalOnly).onChange(v => { s.translationLocalOnly = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Idioma de la transcripción")
-			.setDesc("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de imágenes.")
+			.setName(tr("Idioma de la transcripción"))
+			.setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de imágenes."))
 			.addDropdown(d => d.addOptions(languages).setValue(s.ocrLanguage).onChange(v => { s.ocrLanguage = v; save(); }));
 
 		new Setting(containerEl)
-			.setName("Traducir de … a …")
-			.setDesc("Idiomas que usa el botón Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave).")
+			.setName(tr("Traducir de … a …"))
+			.setDesc(tr("Idiomas que usa el botón Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave)."))
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateFrom).onChange(v => { s.translateFrom = v; save(); }))
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateTo).onChange(v => { s.translateTo = v; save(); }));
 
-		containerEl.createEl("p", { cls: "setting-item-description", text: "Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora." });
+		containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.") });
 	}
 }

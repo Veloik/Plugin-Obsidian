@@ -1,6 +1,7 @@
 import { App, Modal, setIcon } from "obsidian";
 import { recognizeFormula } from "./ocr";
 import { InkMathRecognition, pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
+import { tr } from "./i18n";
 
 type InkTool = "write" | "erase";
 
@@ -48,7 +49,7 @@ export class InkEquationModal extends Modal {
 		modalEl.addClass("notelens-ink-equation-modal");
 		contentEl.empty();
 		contentEl.addClass("notelens-ink-equation");
-		contentEl.createEl("h3", { text: "Insertar ecuación" });
+		contentEl.createEl("h3", { text: tr("Insertar ecuación") });
 
 		// --- the recognised formula, on top, exactly like OneNote
 		const preview = contentEl.createDiv({ cls: "notelens-ink-preview" });
@@ -62,11 +63,11 @@ export class InkEquationModal extends Modal {
 		canvas.style.width = `${BOARD_W}px`;
 		canvas.style.height = `${BOARD_H}px`;
 		const ctx = canvas.getContext("2d");
-		const hint = board.createDiv({ cls: "notelens-ink-hint", text: "Escribe aquí la ecuación con el lápiz o el ratón" });
+		const hint = board.createDiv({ cls: "notelens-ink-hint", text: tr("Escribe aquí la ecuación con el lápiz o el ratón") });
 
 		// --- notation, editable so you can fix what the reader got wrong
 		const sourceRow = contentEl.createDiv({ cls: "notelens-ink-source-row" });
-		sourceRow.createSpan({ cls: "notelens-ink-source-label", text: "Notación" });
+		sourceRow.createSpan({ cls: "notelens-ink-source-label", text: tr("Notación") });
 		const input = sourceRow.createEl("input", { cls: "notelens-ink-source", type: "text" });
 		input.value = this.source;
 		input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
@@ -79,7 +80,7 @@ export class InkEquationModal extends Modal {
 		const drawPreview = () => {
 			preview.empty();
 			const src = input.value.trim();
-			if (!src) { preview.createSpan({ cls: "notelens-ink-placeholder", text: "Aquí verás la ecuación" }); return; }
+			if (!src) { preview.createSpan({ cls: "notelens-ink-placeholder", text: tr("Aquí verás la ecuación") }); return; }
 			this.renderFormula(src, preview);
 		};
 		input.addEventListener("input", () => { this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
@@ -88,7 +89,7 @@ export class InkEquationModal extends Modal {
 		// Common structures are faster and less error-prone than typing every
 		// brace on a tablet. The inserted example stays selected for replacement.
 		const structures = contentEl.createDiv({ cls: "notelens-ink-structures" });
-		structures.createSpan({ cls: "notelens-ink-structures-label", text: "Estructuras" });
+		structures.createSpan({ cls: "notelens-ink-structures-label", text: tr("Estructuras") });
 		const structureItems: { label: string; value: string; select: [number, number] }[] = [
 			{ label: "a⁄b", value: "\\frac{a}{b}", select: [6, 7] },
 			{ label: "xⁿ", value: "x^{n}", select: [3, 4] },
@@ -117,7 +118,7 @@ export class InkEquationModal extends Modal {
 			const uncertain = recognition.tokens.filter(token => token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1).slice(0, 7);
 			candidates.toggleClass("hidden", uncertain.length === 0);
 			if (!uncertain.length) return;
-			candidates.createSpan({ cls: "notelens-ink-candidates-label", text: "Revisar" });
+			candidates.createSpan({ cls: "notelens-ink-candidates-label", text: tr("Revisar") });
 			let searchFrom = 0;
 			for (const token of uncertain) {
 				const tokenStart = input.value.indexOf(token.value, searchFrom);
@@ -233,15 +234,15 @@ export class InkEquationModal extends Modal {
 		});
 		if (this.readFromBoard) {
 			toolButton("scan-text", "Leer de la pizarra", async () => {
-				status.setText("Elige la zona de la pizarra…");
+				status.setText(tr("Elige la zona de la pizarra…"));
 				const text = await this.readFromBoard?.(message => status.setText(message)).catch(() => "") ?? "";
-				if (!text.trim()) { status.setText("No he leído nada. Prueba con una zona más ajustada."); return; }
+				if (!text.trim()) { status.setText(tr("No he leído nada. Prueba con una zona más ajustada.")); return; }
 				input.value = this.tidy(text);
 				this.source = input.value;
 				lastAutomatic = input.value;
 				editedByUser = false;
 				drawPreview();
-				status.setText("Leído desde los objetos y trazos de la pizarra. Revisa solo los símbolos marcados.");
+				status.setText(tr("Leído desde los objetos y trazos de la pizarra. Revisa solo los símbolos marcados."));
 			});
 		}
 		const setTool = (tool: InkTool) => {
@@ -254,8 +255,8 @@ export class InkEquationModal extends Modal {
 
 		// --- footer
 		const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
-		const insert = footer.createEl("button", { cls: "mod-cta", text: "Insertar" });
-		const cancel = footer.createEl("button", { text: "Cancelar" });
+		const insert = footer.createEl("button", { cls: "mod-cta", text: tr("Insertar") });
+		const cancel = footer.createEl("button", { text: tr("Cancelar") });
 		insert.onclick = () => {
 			const value = input.value.trim();
 			this.close();
@@ -275,7 +276,7 @@ export class InkEquationModal extends Modal {
 			if (this.strokes.length === 0) return;
 			if (this.recognizing) { this.pending = true; return; }
 			this.recognizing = true;
-			status.setText("Analizando trazos y estructura…");
+			status.setText(tr("Analizando trazos y estructura…"));
 			try {
 				// The vector pass is instant and retains fractions, superscripts and
 				// stroke grouping. It is the primary recogniser for board ink.
@@ -324,7 +325,7 @@ export class InkEquationModal extends Modal {
 					status.setText(tidied ? "He respetado tu corrección manual." : "No he reconocido nada todavía; sigue escribiendo o usa las estructuras.");
 				}
 			} catch {
-				status.setText("No he podido leer la escritura. Escribe la notación abajo.");
+				status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
 			} finally {
 				this.recognizing = false;
 				if (this.pending) { this.pending = false; this.scheduleRecognition(); }

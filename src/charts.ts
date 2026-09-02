@@ -1,6 +1,7 @@
 import { App, Modal, Setting, setIcon } from "obsidian";
 import { evaluate } from "./calculator";
 import type { CanvasTable, Embed } from "./types";
+import { tr } from "./i18n";
 
 /**
  * Charts drawn on the board: data charts (bar, line, area, pie, scatter) from
@@ -371,7 +372,7 @@ export class ChartEditorModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass("notelens-chart-editor");
-		contentEl.createEl("h3", { text: "Gráfico" });
+		contentEl.createEl("h3", { text: tr("Gráfico") });
 
 		const preview = contentEl.createEl("canvas", { cls: "notelens-chart-preview" });
 		const redraw = () => drawChart(preview, this.spec, 520, 240);
@@ -385,23 +386,23 @@ export class ChartEditorModal extends Modal {
 			functionSetting.settingEl.style.display = fn ? "" : "none";
 		};
 
-		new Setting(contentEl).setName("Tipo").addDropdown(d => {
+		new Setting(contentEl).setName(tr("Tipo")).addDropdown(d => {
 			for (const [id, label] of CHART_TYPES) d.addOption(id, label);
 			d.setValue(this.spec.type).onChange(v => { this.spec.type = v as ChartType; syncVisibility(); redraw(); });
 		});
-		new Setting(contentEl).setName("Título").addText(t => t.setValue(this.spec.title ?? "").onChange(v => { this.spec.title = v; redraw(); }));
+		new Setting(contentEl).setName(tr("Título")).addText(t => t.setValue(this.spec.title ?? "").onChange(v => { this.spec.title = v; redraw(); }));
 
 		dataSetting = new Setting(contentEl)
-			.setName("Datos")
-			.setDesc("Una fila por línea: etiqueta; valor; valor… La primera línea puede nombrar las series empezando por #. Para dispersión: x; y.")
+			.setName(tr("Datos"))
+			.setDesc(tr("Una fila por línea: etiqueta; valor; valor… La primera línea puede nombrar las series empezando por #. Para dispersión: x; y."))
 			.addTextArea(t => {
 				t.setValue(this.spec.data).onChange(v => { this.spec.data = v; redraw(); });
 				t.inputEl.rows = 7;
 				t.inputEl.addClass("notelens-chart-data");
 			});
 		functionSetting = new Setting(contentEl)
-			.setName("Funciones")
-			.setDesc("Una por línea, en x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)… Misma sintaxis que la calculadora.")
+			.setName(tr("Funciones"))
+			.setDesc(tr("Una por línea, en x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)… Misma sintaxis que la calculadora."))
 			.addTextArea(t => {
 				t.setValue(this.spec.functions ?? "").onChange(v => { this.spec.functions = v; redraw(); });
 				t.inputEl.rows = 4;
@@ -415,13 +416,13 @@ export class ChartEditorModal extends Modal {
 			});
 			t.inputEl.style.width = "80px";
 		});
-		numberField(numberField(new Setting(contentEl).setName("Rango x (funciones y dispersión)"), "xMin", "mín"), "xMax", "máx");
-		numberField(numberField(new Setting(contentEl).setName("Rango y (vacío = automático)"), "yMin", "mín"), "yMax", "máx");
-		new Setting(contentEl).setName("Leyenda").addToggle(t => t.setValue(this.spec.showLegend !== false).onChange(v => { this.spec.showLegend = v; redraw(); }));
+		numberField(numberField(new Setting(contentEl).setName(tr("Rango x (funciones y dispersión)")), "xMin", "mín"), "xMax", "máx");
+		numberField(numberField(new Setting(contentEl).setName(tr("Rango y (vacío = automático)")), "yMin", "mín"), "yMax", "máx");
+		new Setting(contentEl).setName(tr("Leyenda")).addToggle(t => t.setValue(this.spec.showLegend !== false).onChange(v => { this.spec.showLegend = v; redraw(); }));
 
 		new Setting(contentEl)
-			.addButton(b => b.setButtonText("Guardar en la pizarra").setCta().onClick(() => { this.close(); this.onSave({ ...this.spec }); }))
-			.addButton(b => b.setButtonText("Cancelar").onClick(() => this.close()));
+			.addButton(b => b.setButtonText(tr("Guardar en la pizarra")).setCta().onClick(() => { this.close(); this.onSave({ ...this.spec }); }))
+			.addButton(b => b.setButtonText(tr("Cancelar")).onClick(() => this.close()));
 		syncVisibility();
 		redraw();
 	}
