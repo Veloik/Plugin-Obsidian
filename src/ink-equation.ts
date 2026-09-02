@@ -70,7 +70,8 @@ export class InkEquationModal extends Modal {
 		sourceRow.createSpan({ cls: "notelens-ink-source-label", text: tr("Notación") });
 		const input = sourceRow.createEl("input", { cls: "notelens-ink-source", type: "text" });
 		input.value = this.source;
-		input.placeholder = tr("\\\\frac{a}{b} + \\\\sqrt{x}");
+		// A LaTeX sample, identical in every language, so it stays out of the catalogue.
+		input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
 
 		const status = contentEl.createDiv({ cls: "notelens-ink-status" });
 		const candidates = contentEl.createDiv({ cls: "notelens-ink-candidates hidden" });

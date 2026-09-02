@@ -596,7 +596,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const closeRuler = label.createEl("button", { cls: "notelens-embed-close notelens-ruler-close" });
 		setIcon(closeRuler, "x");
 		closeRuler.title = tr("Ocultar la regla");
-		closeRuler.setAttr("aria-label", "Ocultar la regla");
+		closeRuler.setAttr("aria-label", tr("Ocultar la regla"));
 		closeRuler.addEventListener("pointerdown", (event) => event.stopPropagation());
 		closeRuler.onclick = (event) => { event.stopPropagation(); this.toggleRuler(); };
 		const rotate = this.rulerEl.createDiv({ cls: "notelens-ruler-rotate" });
@@ -907,7 +907,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const canvas = wrap.createEl("canvas");
 		canvas.width = 400;
 		canvas.height = 240;
-		canvas.setAttr("aria-label", "Minimapa de la pizarra");
+		canvas.setAttr("aria-label", tr("Minimapa de la pizarra"));
 		// Click jumps there; dragging pans the page live.
 		const toScene = (event: PointerEvent) => {
 			const bounds = canvas.getBoundingClientRect();
@@ -3286,7 +3286,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		(this.workspaceEl as any).__closePenPanel?.();
 		this.syncToolCursor();
 		this.syncToolbar();
-		new Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tag.label }));
+		new Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
 	}
 
 	private createBadgeAt(x: number, y: number, tag: QuickTag): void {
@@ -3368,7 +3368,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				: `${excerpt}. Todos los pasos hechos; clic reabre el último`;
 		} else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
 		else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
-		else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tag.label });
+		else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
 
 		let pressedAt = 0;
 		el.addEventListener("pointerdown", (e) => {
@@ -3603,7 +3603,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const chip = filters.createEl("button", { cls: "onenote-tag-chip" });
 			chip.style.setProperty("--tag-color", tag.color);
 			setIcon(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
-			chip.createSpan({ text: tr("{p0} {p1}", { p0: tag.label, p1: count }) });
+			chip.createSpan({ text: tr("{p0} {p1}", { p0: tr(tag.label), p1: count }) });
 			chip.toggleClass("active", this.tagSummaryFilter === tag.id);
 			chip.onclick = () => { this.tagSummaryFilter = tag.id; this.refreshTagSummary(); };
 		}

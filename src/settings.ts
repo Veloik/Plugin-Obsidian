@@ -1,7 +1,7 @@
 import { requestUrl, Notice, App, PluginSettingTab, Setting } from "obsidian";
 import type OneNotePlugin from "./main";
 import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, PenStyle } from "./types";
-import { tr } from "./i18n";
+import { LocaleSetting, setLocale, tr } from "./i18n";
 
 /** User preferences: defaults for new boards plus behaviour switches. */
 export interface NoteLensSettings {
@@ -26,6 +26,8 @@ export interface NoteLensSettings {
 	showQuickTags: boolean;
 	showMinimap: boolean;
 	compactUi: boolean;
+	/** Interface language; "auto" follows Obsidian's own setting. */
+	language: LocaleSetting;
 	calculatorDegrees: boolean;
 	/** Local model server for the assistant pet, e.g. http://localhost:11434 */
 	aiBaseUrl: string;
@@ -75,6 +77,7 @@ export const DEFAULT_SETTINGS: NoteLensSettings = {
 	showQuickTags: true,
 	showMinimap: false,
 	compactUi: false,
+	language: "auto",
 	calculatorDegrees: true,
 	aiBaseUrl: "http://127.0.0.1:11434",
 	aiModel: "",
@@ -99,6 +102,7 @@ export function normalizeSettings(raw: unknown): NoteLensSettings {
 	if (!hex.test(s.defaultPageColor)) s.defaultPageColor = DEFAULT_SETTINGS.defaultPageColor;
 	if (!hex.test(s.defaultLineColor)) s.defaultLineColor = DEFAULT_SETTINGS.defaultLineColor;
 	if (s.penColor !== "auto" && !hex.test(s.penColor)) s.penColor = "auto";
+	if (!["auto", "es", "en"].includes(s.language)) s.language = "auto";
 	if (!["ballpoint", "pencil", "fountain", "marker", "brush"].includes(s.penStyle)) s.penStyle = "ballpoint";
 	if (typeof s.aiBaseUrl !== "string" || !/^https?:\/\//i.test(s.aiBaseUrl)) s.aiBaseUrl = DEFAULT_SETTINGS.aiBaseUrl;
 	if (typeof s.aiModel !== "string") s.aiModel = "";
@@ -176,6 +180,20 @@ export class NoteLensSettingTab extends PluginSettingTab {
 		// the previous copy: disable and re-enable the plugin to load the new one.
 		const stamp = containerEl.createDiv({ cls: "setting-item-description notelens-build-stamp" });
 		stamp.setText(tr("NoteLens · versión cargada: {p0}", { p0: NOTELENS_BUILD }));
+
+		new Setting(containerEl)
+			.setName(tr("Idioma"))
+			.setDesc(tr("«Automático» sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo."))
+			.addDropdown(d => d
+				.addOptions({ auto: tr("Automático"), es: "Español", en: "English" })
+				.setValue(s.language)
+				.onChange(v => {
+					s.language = v as LocaleSetting;
+					setLocale(s.language);
+					save();
+					// Redraw the tab itself so the change is visible at once.
+					this.display();
+				}));
 
 		new Setting(containerEl).setName(tr("Pizarras nuevas")).setHeading();
 

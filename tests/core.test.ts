@@ -5,6 +5,8 @@ import { recognizeInkFormula } from "../src/ink-math";
 import { runLocalStudyTool } from "../src/local-intelligence";
 import { createEmptyDocument, migrateDocument } from "../src/types";
 import { hexToRgba, setColorAlpha, toRemoteVideoEmbed } from "../src/tools";
+import { setLocale, tr } from "../src/i18n";
+import { en } from "../src/locales/en";
 
 test("document migration keeps editable content and normalizes legacy paper", () => {
 	const migrated = migrateDocument({
@@ -67,4 +69,30 @@ test("vector ink recognizes a plus sign", () => {
 	const result = recognizeInkFormula([line(10, 25, 50, 25), line(30, 5, 30, 45)]);
 	assert.equal(result.source, "+");
 	assert.ok(result.confidence > 0.5);
+});
+
+test("the English catalogue keeps every placeholder its message needs", () => {
+	const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort();
+	const broken: string[] = [];
+	for (const [spanish, english] of Object.entries(en)) {
+		if (!english.trim()) broken.push(`vacío: ${spanish}`);
+		const wanted = placeholders(spanish).join(",");
+		const got = placeholders(english).join(",");
+		// A translation that drops {p0} silently prints a message with a hole in it.
+		if (wanted !== got) broken.push(`${spanish} → ${english} (${wanted} ≠ ${got})`);
+	}
+	assert.deepEqual(broken, []);
+	assert.ok(Object.keys(en).length > 400, "the catalogue should cover the interface");
+});
+
+test("translation falls back to Spanish and fills placeholders", () => {
+	setLocale("es");
+	assert.equal(tr("Insertar tabla"), "Insertar tabla");
+	assert.equal(tr("Paso {p0}", { p0: 3 }), "Paso 3");
+	setLocale("en");
+	assert.equal(tr("Insertar tabla"), "Insert table");
+	assert.equal(tr("Paso {p0}", { p0: 3 }), "Step 3");
+	// A message the catalogue does not carry must read as Spanish, never as a key.
+	assert.equal(tr("Mensaje que no existe en el catálogo"), "Mensaje que no existe en el catálogo");
+	setLocale("es");
 });

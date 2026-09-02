@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.2.0
+
+### Added
+
+- English interface alongside Spanish, following Obsidian's own language setting, with a Language control in the settings to force either one.
+- Catalogues in `src/locales/`, keyed by the Spanish source string, so a new language is one file and a missing message falls back to Spanish instead of showing a key.
+- A test that fails when a translation drops a placeholder such as `{p0}`, which would otherwise print a message with a hole in it.
+- Bilingual README, English first.
+
+### Fixed
+
+- A unicode escape that was rendered literally in the "open the original post" button.
+
 ## 2.1.0
 
 ### Added

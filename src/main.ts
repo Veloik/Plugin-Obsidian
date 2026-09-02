@@ -7,12 +7,14 @@ import { formulaCandidateScore, recognizeInkFormula } from "./ink-math";
 import { runLocalStudyTool } from "./local-intelligence";
 import { DocumentDefaults, createEmptyDocument } from "./types";
 import { DEFAULT_SETTINGS, NoteLensSettingTab, NoteLensSettings, normalizeSettings } from "./settings";
+import { setLocale, tr } from "./i18n";
 
 export default class OneNotePlugin extends Plugin {
 	override settings: NoteLensSettings = { ...DEFAULT_SETTINGS };
 
 	override async onload(): Promise<void> {
 		this.settings = normalizeSettings(await this.loadData());
+		setLocale(this.settings.language);
 		this.addSettingTab(new NoteLensSettingTab(this.app, this));
 
 		this.registerView(
@@ -22,13 +24,13 @@ export default class OneNotePlugin extends Plugin {
 
 		this.registerExtensions(["notelens", "onenote"], VIEW_TYPE_ONENOTE);
 
-		this.addRibbonIcon("pencil", "Nueva pizarra NoteLens", () => {
+		this.addRibbonIcon("pencil", tr("Nueva pizarra NoteLens"), () => {
 			void this.createNewOneNoteFile();
 		});
 
 		this.addCommand({
 			id: "create-notelens-canvas",
-			name: "Crear nueva pizarra NoteLens",
+			name: tr("Crear nueva pizarra NoteLens"),
 			callback: () => void this.createNewOneNoteFile()
 		});
 	}
@@ -42,6 +44,7 @@ export default class OneNotePlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		setLocale(this.settings.language);
 		// Apply them to the boards that are already open, instead of waiting for
 		// the user to close and reopen every one of them. Never let a workspace
 		// quirk stop the settings from being saved.

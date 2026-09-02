@@ -463,7 +463,7 @@ export function mountChartFrame(host: ChartHost, layer: HTMLElement, embed: Embe
 	const remove = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
 	remove.title = tr("Eliminar gráfico");
-	remove.setAttr("aria-label", "Eliminar gráfico");
+	remove.setAttr("aria-label", tr("Eliminar gráfico"));
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); frame.remove(); host.onEmbedDeleted(embed); };
 

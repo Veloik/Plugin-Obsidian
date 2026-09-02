@@ -20690,14 +20690,14 @@ var init_index_es = __esm({
           this.initialUnits = prop.getUnits();
         }
         if (this.duration > this.maxDuration) {
-          var fill = this.getAttribute("fill").getString("remove");
+          var fill2 = this.getAttribute("fill").getString("remove");
           if (this.getAttribute("repeatCount").getString() === "indefinite" || this.getAttribute("repeatDur").getString() === "indefinite") {
             this.duration = 0;
-          } else if (fill === "freeze" && !this.frozen) {
+          } else if (fill2 === "freeze" && !this.frozen) {
             this.frozen = true;
             parent.animationFrozen = true;
             parent.animationFrozenValue = prop.getString();
-          } else if (fill === "remove" && !this.removed) {
+          } else if (fill2 === "remove" && !this.removed) {
             this.removed = true;
             prop.setValue(parent.animationFrozen ? parent.animationFrozenValue : this.initialValue);
             return true;
@@ -20991,7 +20991,7 @@ var init_index_es = __esm({
         var {
           glyphInfo
         } = this;
-        var fill = ctx.fillStyle;
+        var fill2 = ctx.fillStyle;
         if (textDecoration === "underline") {
           ctx.beginPath();
         }
@@ -21021,7 +21021,7 @@ var init_index_es = __esm({
         });
         if (textDecoration === "underline") {
           ctx.lineWidth = fontSize / 20;
-          ctx.strokeStyle = fill;
+          ctx.strokeStyle = fill2;
           ctx.stroke();
           ctx.closePath();
         }
@@ -25598,6 +25598,553 @@ function shieldPanel(panel) {
   panel.addEventListener("keydown", (e3) => e3.stopPropagation());
 }
 
+// src/locales/en.ts
+var en = {
+  " Color de p\xE1gina personalizado": " Custom page color",
+  " Dictado: {p0} y habla. Se escribe aqu\xED. Esc termina.": " Dictation: {p0} and speak. It types here. Esc ends it.",
+  " Fluor personalizado...": " Custom highlighter\u2026",
+  " Restablecer vista": " Reset view",
+  " Tinta personalizada...": " Custom ink\u2026",
+  "Abre Ajustes \u203A Plugins de la comunidad \u203A NoteLens": "Open Settings \u203A Community plugins \u203A NoteLens",
+  "Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.": "Opens quick actions to summarize, create tasks, tidy objects and read formulas. Local chat is optional.",
+  "Abre los ajustes de NoteLens en Obsidian": "Open the NoteLens settings in Obsidian",
+  "Abrir EPUB": "Open EPUB",
+  "Abrir archivo": "Open file",
+  "Abrir archivo original": "Open the original file",
+  "Abrir la nota (Ctrl: en pesta\xF1a nueva)": "Open the note (Ctrl: in a new tab)",
+  "Abrir la pizarra (Ctrl: en pesta\xF1a nueva)": "Open the board (Ctrl: in a new tab)",
+  "Abrir publicaci\xF3n original": "Open the original post",
+  "Abrir p\xE1gina": "Open page",
+  "Acciones locales": "Local actions",
+  "Acercar": "Zoom in",
+  "Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.": "On by default: your text never leaves your computer and there are no quotas. You need a local model downloaded.",
+  "Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.": "On: your finger draws with the active tool; two fingers pan and zoom. Off: one finger always pans.",
+  "Adjuntar archivo de la b\xF3veda": "Attach a file from the vault",
+  "Adjuntar cualquier archivo de la b\xF3veda": "Attach any file from the vault",
+  "Ajustar la vista a todo el contenido": "Fit the view to all the content",
+  "Ajustes del plugin": "Plugin settings",
+  "Alejar": "Zoom out",
+  "Alternar regla y transportador": "Toggle ruler and protractor",
+  "Analizando trazos y estructura\u2026": "Analyzing strokes and structure\u2026",
+  "Anterior (Shift+Enter)": "Previous (Shift+Enter)",
+  "Aqu\xED ver\xE1s la ecuaci\xF3n": "Your equation will appear here",
+  "Archivo a\xF1adido: {p0}": "File added: {p0}",
+  "Archivo no encontrado: {p0}": "File not found: {p0}",
+  "Arrastra para cambiar el alto de la fila": "Drag to change the row height",
+  "Arrastra para cambiar el ancho de la columna": "Drag to change the column width",
+  "Arrastra para elegir la zona que quieres leer. Esc cancela.": "Drag to choose the area you want to read. Esc cancels.",
+  "Arrastra sobre la tinta para seleccionarla. Doble clic en un hueco crea un cuadro de texto.": "Drag over the ink to select it. Double-click an empty spot to create a text box.",
+  "Atajos": "Shortcuts",
+  "Atajos de teclado": "Keyboard shortcuts",
+  "Aumentar tama\xF1o": "Increase size",
+  "Autom\xE1tico": "Automatic",
+  "Ayudante Leen": "Leen the assistant",
+  "A\xF1adir a la pizarra": "Add to the board",
+  "A\xF1adir paso": "Add step",
+  "A\xF1adir p\xE1gina": "Add page",
+  "A\xF1adir subt\xEDtulos WebVTT": "Add WebVTT subtitles",
+  "Binario": "Binary",
+  "Bloque de c\xF3digo aqu\xED": "Code block here",
+  "Bloque de c\xF3digo vac\xEDo": "Empty code block",
+  "Bocadillos de Leen": "Leen's speech bubbles",
+  "Bol\xEDgrafo": "Ballpoint",
+  "Borra el trazo entero al tocarlo.": "Erases the whole stroke as soon as you touch it.",
+  "Borrador (E) \u2014 opciones al pulsar de nuevo": "Eraser (E) \u2014 press again for options",
+  "Borrar": "Clear",
+  "Borrar lo escrito a mano": "Erase the handwriting",
+  "Borrar todos los trazos": "Erase every stroke",
+  "Botones m\xE1s peque\xF1os y barras m\xE1s estrechas.": "Smaller buttons and narrower bars.",
+  "Busca cualquier archivo de la b\xF3veda\u2026": "Search any file in the vault\u2026",
+  "Buscar en la pizarra\u2026": "Search the board\u2026",
+  "Buscar una nota por nombre\u2026": "Find a note by name\u2026",
+  "Cada etiqueta admite hasta {p0} im\xE1genes.": "Each tag holds up to {p0} images.",
+  "Calculadora": "Calculator",
+  "Calculadora cient\xEDfica": "Scientific calculator",
+  "Calculadora en grados": "Calculator in degrees",
+  "Calcular e insertar en la pizarra": "Calculate and insert into the board",
+  "Cambia el texto original por la traducci\xF3n": "Replaces the original text with the translation",
+  "Cambiar subt\xEDtulos WebVTT": "Change WebVTT subtitles",
+  "Cancelar": "Cancel",
+  "Capturar de la pizarra (OCR)": "Capture from the board (OCR)",
+  "Cerrar": "Close",
+  "Cerrar (Esc)": "Close (Esc)",
+  "Cerrar y quitar de la pizarra": "Close and remove from the board",
+  "Clic abre en esta pesta\xF1a, Ctrl+clic en una nueva. El bot\xF3n de enlace deja una tarjeta en la pizarra.": "Click opens in this tab, Ctrl+click in a new one. The link button leaves a card on the board.",
+  "Cl\xE1sica": "Classic",
+  "Color de la nota": "Note color",
+  "Color de las l\xEDneas del fondo": "Background line color",
+  "Color de las notas adhesivas": "Sticky note color",
+  "Color de l\xEDnea": "Line color",
+  "Color de p\xE1gina": "Page color",
+  "Color de texto": "Text color",
+  "Color del contorno": "Outline color",
+  "Color del l\xE1piz": "Pen color",
+  "Color del relleno": "Fill color",
+  "Color fluorescente": "Highlighter color",
+  "Color y opciones del l\xE1piz": "Pen color and options",
+  "Color, grosor y opacidad iniciales.": "Starting color, thickness and opacity.",
+  "Colores recientes": "Recent colors",
+  "Completar el siguiente paso: {p0}": "Complete the next step: {p0}",
+  "Comportamiento": "Behavior",
+  "Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras.": "With \u201CAutomatic\u201D, ink is dark on light pages and light on dark ones.",
+  "Confianza {p0}%. Elige el s\xEDmbolo correcto.": "Confidence {p0}%. Pick the right symbol.",
+  "Convirtiendo a MP3\u2026": "Converting to MP3\u2026",
+  "Convirtiendo a MP3\u2026 {p0}%": "Converting to MP3\u2026 {p0}%",
+  "Copiar": "Copy",
+  "Copiar c\xF3digo": "Copy code",
+  "Corta el trazo justo donde pasas la goma, como en OneNote.": "Cuts the stroke exactly where the eraser passes, like OneNote.",
+  "Crea un cuadro de texto con la traducci\xF3n junto al original": "Creates a text box with the translation next to the original",
+  "Crear gr\xE1fico con estos datos": "Create a chart from this data",
+  "Crear nueva pizarra NoteLens": "Create a new NoteLens board",
+  "Crear una pizarra nueva": "Create a new board",
+  "Cuadro de texto (T) \u2014 opciones al pulsar de nuevo": "Text box (T) \u2014 press again for options",
+  "Cuadro de texto aqu\xED": "Text box here",
+  "Cuadro que est\xE1s editando": "Box you are editing",
+  "Cuadro seleccionado": "Selected box",
+  "C\xF3digo copiado": "Code copied",
+  "Datos": "Data",
+  "Debe quedar al menos una p\xE1gina": "At least one page must remain",
+  "Definir una variable: x = 5": "Define a variable: x = 5",
+  "Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote.": "Off: the wheel scrolls the page and Ctrl+wheel zooms, like OneNote.",
+  "Desact\xEDvalo para trabajar en radianes por defecto.": "Turn it off to work in radians by default.",
+  "Descartar": "Discard",
+  "Descripci\xF3n, fecha, enlaces o detalles opcionales\u2026": "Description, date, links or optional details\u2026",
+  "Deshacer (Ctrl+Z)": "Undo (Ctrl+Z)",
+  "Deshacer el \xFAltimo trazo": "Undo the last stroke",
+  "Despejar la pantalla": "Clear the screen",
+  "Desviaci\xF3n t\xEDpica muestral: stdev(1, 2, 3)": "Sample standard deviation: stdev(1, 2, 3)",
+  "Detener y guardar": "Stop and save",
+  "Det\xE9n o descarta la grabaci\xF3n antes de cerrar la grabadora.": "Stop or discard the recording before closing the recorder.",
+  "Devolver a Leen a su sitio": "Send Leen back to his spot",
+  "Dibuja un rect\xE1ngulo sobre la pizarra: se reconoce el texto de im\xE1genes, PDFs y escritura a mano en el idioma de origen y se traduce.": "Draw a rectangle on the board: text in images, PDFs and handwriting is recognized in the source language and translated.",
+  "Dibuja un rect\xE1ngulo sobre la zona que quieres traducir. Esc cancela.": "Draw a rectangle over the area you want to translate. Esc cancels.",
+  "Dibuja, pega o suelta una imagen": "Draw, paste or drop an image",
+  "Dibujar con el dedo": "Draw with your finger",
+  "Dibujar forma": "Draw shape",
+  "Dibujar sobre la pizarra": "Draw on the board",
+  "Dictado a texto (si tu sistema lo permite)": "Speech to text (if your system allows it)",
+  "Dictado del sistema: {p0} con el cuadro de texto activo. Funciona sin conexi\xF3n.": "System dictation: {p0} with the text box active. Works offline.",
+  "Doble clic para ir a esta pizarra.": "Double-click to go to this board.",
+  "Doble clic para renombrar la tabla": "Double-click to rename the table",
+  "Duda": "Question",
+  "Duda resuelta": "Question answered",
+  "Duda: algo que preguntar o aclarar": "Question: something to ask or clear up",
+  "D\xE9jalo vac\xEDo para que Leen elija el mejor seg\xFAn la memoria de tu equipo.": "Leave it empty and Leen picks the best one for your computer's memory.",
+  "Editar checklist, notas e im\xE1genes": "Edit checklist, notes and images",
+  "Editar datos del gr\xE1fico": "Edit chart data",
+  "Editar t\xEDtulo, nota e im\xE1genes": "Edit title, note and images",
+  "El aviso que aparece al pasar el rat\xF3n por encima.": "The hint shown when you hover the tag.",
+  "El portapapeles no contiene ninguna imagen.": "The clipboard holds no image.",
+  "El t\xEDtulo, la nota, los trazos y las im\xE1genes se guardan juntos.": "The title, the note, the strokes and the images are saved together.",
+  "Elige la zona de la pizarra\u2026": "Choose the area of the board\u2026",
+  "Elige un PDF de la b\xF3veda\u2026": "Choose a PDF from the vault\u2026",
+  "Elige una imagen de la b\xF3veda\u2026": "Choose an image from the vault\u2026",
+  "Eliminar": "Delete",
+  "Eliminar bloque": "Delete block",
+  "Eliminar cuadro de texto": "Delete text box",
+  "Eliminar documento": "Delete document",
+  "Eliminar esta columna": "Delete this column",
+  "Eliminar esta fila": "Delete this row",
+  "Eliminar etiqueta": "Delete tag",
+  "Eliminar gr\xE1fico": "Delete chart",
+  "Eliminar imagen": "Delete image",
+  "Eliminar marcador": "Delete bookmark",
+  "Eliminar paso": "Delete step",
+  "Eliminar p\xE1gina": "Delete page",
+  "Eliminar tabla": "Delete table",
+  "Elipse": "Ellipse",
+  "Engorda cuando vas despacio y se afina al correr, como una plumilla.": "Swells when you go slowly and thins when you speed up, like a nib.",
+  "Enlazar una nota o pizarra de la b\xF3veda": "Link a note or board from the vault",
+  "Es la pizarra abierta": "This board is already open",
+  "Escribe aqu\xED la ecuaci\xF3n con el l\xE1piz o el rat\xF3n": "Write the equation here with the pen or the mouse",
+  "Escribe como en la calculadora: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Tambi\xE9n vale LaTeX.": "Type it as on a calculator: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. LaTeX works too.",
+  "Escribe con naturalidad: 2pi r, 200 + 15%, 30% * 80, a = 3 y luego 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calcula, \u2191 repite, Esc cierra.": "Write naturally: 2pi r, 200 + 15%, 30% * 80, a = 3 and then 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calculates, \u2191 repeats, Esc closes.",
+  "Escribe el paso {p0} a mano": "Write step {p0} by hand",
+  "Escribe o pega c\xF3digo. Tab indenta, Ctrl+Enter termina.": "Type or paste code. Tab indents, Ctrl+Enter finishes.",
+  "Escribir este paso a mano": "Write this step by hand",
+  "Escribir este paso con el teclado": "Type this step with the keyboard",
+  "Este dispositivo no permite grabar audio desde Obsidian.": "This device does not allow recording audio from Obsidian.",
+  "Este dispositivo no permite pantalla completa.": "This device does not allow full screen.",
+  "Estilo de p\xE1gina": "Page style",
+  "Estructuras": "Structures",
+  "Etiquetas de la libreta": "Notebook tags",
+  "Exportar a PDF A4": "Export to A4 PDF",
+  "Exportar paquete editable de NoteLens": "Export an editable NoteLens package",
+  "Flecha": "Arrow",
+  "Formas (S) \u2014 l\xEDneas, flechas, rect\xE1ngulos y elipses": "Shapes (S) \u2014 lines, arrows, rectangles and ellipses",
+  "Formato del fondo": "Background format",
+  "Fracci\xF3n: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el bot\xF3n a/b de arriba fuerza el resultado en fracci\xF3n": "Fraction: type the numerator, then the denominator. 2/3 + 1/6 gives 5/6; the a/b button above forces a fraction result",
+  "Fuente del texto": "Text font",
+  "Funciones": "Functions",
+  "F\xF3rmula": "Formula",
+  "Girar la selecci\xF3n (Shift: pasos de 15\xB0)": "Rotate the selection (Shift: 15\xB0 steps)",
+  "Girar regla": "Rotate ruler",
+  "Goma {p0} ({p1}px)": "{p0} eraser ({p1}px)",
+  "Grabaci\xF3n descartada.": "Recording discarded.",
+  "Grabaci\xF3n guardada ({p0} s): {p1}": "Recording saved ({p0} s): {p1}",
+  "Grabadora": "Recorder",
+  "Grabando\u2026 pulsa \xABDetener y guardar\xBB cuando termines.": "Recording\u2026 press \u201CStop and save\u201D when you are done.",
+  "Grabar": "Record",
+  "Grabar audio: se guarda como MP3 y se a\xF1ade a la pizarra": "Record audio: it is saved as MP3 and added to the board",
+  "Grados o radianes para las funciones trigonom\xE9tricas": "Degrees or radians for trigonometric functions",
+  "Grafito suave con grano, ideal para bocetos y apuntes r\xE1pidos.": "Soft, grainy graphite, ideal for sketches and quick notes.",
+  "Gravedad 9,80665": "Gravity 9.80665",
+  "Grosor": "Thickness",
+  "Grosor del l\xE1piz": "Pen thickness",
+  "Grosor inicial en p\xEDxeles.": "Starting thickness in pixels.",
+  "Gr\xE1fico": "Chart",
+  "Guardada ({p0}) y a\xF1adida a la pizarra.": "Saved ({p0}) and added to the board.",
+  "Guardar en la pizarra": "Save to the board",
+  "Guardar marcador de secci\xF3n": "Save section bookmark",
+  "Guardar posici\xF3n actual": "Save the current position",
+  "Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina.": "A separate guide that can be combined with any page style.",
+  "He respetado tu correcci\xF3n manual.": "I kept your manual correction.",
+  "Herramientas": "Tools",
+  "Hexadecimal": "Hexadecimal",
+  "Idea clave": "Key idea",
+  "Idea clave: el concepto que hay que recordar": "Key idea: the concept to remember",
+  "Idioma": "Language",
+  "Idioma de la transcripci\xF3n": "Transcription language",
+  "Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.": "The language the board reader expects when recognizing handwriting or text inside images.",
+  "Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave).": "Languages used by the Translate button on the selected text (free MyMemory service, no key).",
+  "Imagen no encontrada: {p0}": "Image not found: {p0}",
+  "Imagen pegada en la pizarra": "Image pasted on the board",
+  "Importando pizarra editable de NoteLens...": "Importing an editable NoteLens board...",
+  "Importante": "Important",
+  "Importante: m\xE1rcalo para encontrarlo al repasar": "Important: mark it to find it when you revise",
+  "Importar paquete editable de NoteLens": "Import an editable NoteLens package",
+  "Im\xE1genes ({p0})": "Images ({p0})",
+  "Independiente del estilo": "Independent of the style",
+  "Insertar": "Insert",
+  "Insertar PDF": "Insert PDF",
+  "Insertar PDF de la b\xF3veda": "Insert a PDF from the vault",
+  "Insertar bloque de c\xF3digo": "Insert code block",
+  "Insertar columna a la derecha": "Insert column to the right",
+  "Insertar columna a la izquierda": "Insert column to the left",
+  "Insertar ecuaci\xF3n": "Insert equation",
+  "Insertar ecuaci\xF3n: escr\xEDbela a mano y se convierte sola, o teclea la notaci\xF3n. Tambi\xE9n vale $x^2$ dentro de cualquier texto": "Insert an equation: write it by hand and it converts itself, or type the notation. $x^2$ inside any text works too",
+  "Insertar en la pizarra": "Insert into the board",
+  "Insertar fila arriba": "Insert row above",
+  "Insertar fila debajo": "Insert row below",
+  "Insertar gr\xE1fico: barras, l\xEDneas, circular, dispersi\xF3n o funci\xF3n y = f(x)": "Insert a chart: bars, lines, pie, scatter or function y = f(x)",
+  "Insertar imagen": "Insert image",
+  "Insertar imagen de la b\xF3veda": "Insert an image from the vault",
+  "Insertar la variable. Escribe \xABnombre = valor\xBB para definir otra.": "Insert the variable. Type \u201Cname = value\u201D to define another one.",
+  "Insertar tabla": "Insert table",
+  "Insertar v\xEDdeo": "Insert video",
+  "Insertar v\xEDdeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom\u2026 o un archivo de v\xEDdeo local": "Insert a video: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom\u2026 or a local video file",
+  "Insertar {p0}": "Insert {p0}",
+  "Intercambiar idiomas": "Swap languages",
+  "Interfaz": "Interface",
+  "Interfaz compacta": "Compact interface",
+  "Ir a {p0}": "Go to {p0}",
+  "Ir a {p0} (doble clic para renombrar)": "Go to {p0} (double-click to rename)",
+  "La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo.": "The tag row (Important, Question, Key idea\u2026) under the drawing bar.",
+  "La libreta debe conservar al menos una p\xE1gina.": "The notebook must keep at least one page.",
+  "La lista, las notas, los trazos y las im\xE1genes se guardan juntos.": "The list, the notes, the strokes and the images are saved together.",
+  "La presi\xF3n manda y los extremos se afinan; con rat\xF3n queda caligr\xE1fico.": "Pressure rules and the ends taper; with a mouse it looks calligraphic.",
+  "La rueda del rat\xF3n hace zoom": "The mouse wheel zooms",
+  "Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.": "Tools, interface and Leen change straight away on open boards. Anything under \u201CNew boards\u201D only affects the ones you create from now on.",
+  "Lazo (L)": "Lasso (L)",
+  "Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo.": "Combined local reading. Doubtful symbols are shown below.",
+  "Leen volver\xE1 a su esquina al reabrir la pizarra": "Leen returns to his corner when you reopen the board",
+  "Leyenda": "Legend",
+  "Le\xEDdo desde los objetos y trazos de la pizarra. Revisa solo los s\xEDmbolos marcados.": "Read from the objects and strokes on the board. Check only the symbols flagged.",
+  "Limpiar": "Clear",
+  "Limpiar b\xFAsqueda": "Clear the search",
+  "Limpiar pizarra": "Clear the board",
+  "Liso": "Plain",
+  "Lista. La grabaci\xF3n se guarda como MP3 en la b\xF3veda y aparece en la pizarra.": "Ready. The recording is saved as MP3 in the vault and appears on the board.",
+  "Llamada": "Callout",
+  "Los c\xE1lculos que hagas quedan aqu\xED.": "Your calculations stay here.",
+  "L\xE1piz": "Pencil",
+  "L\xE1piz (P) \u2014 opciones al pulsar de nuevo": "Pencil (P) \u2014 press again for options",
+  "L\xEDnea": "Line",
+  "M = {p0}": "M = {p0}",
+  "M vac\xEDa": "M empty",
+  "Mapa": "Map",
+  "Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.": "Ticks the chat box from the start, to always ask about your notes.",
+  "Marcadores": "Bookmarks",
+  "Marcadores de secci\xF3n": "Section bookmarks",
+  "Marcar como hecha": "Mark as done",
+  "Marcar como pendiente": "Mark as pending",
+  "Marcar como resuelta": "Mark as answered",
+  "Marcar todos los pasos como hechos": "Mark every step as done",
+  "Marcar todos los pasos como pendientes": "Mark every step as pending",
+  "Margen izquierdo": "Left margin",
+  "Minimapa de la pizarra": "Board minimap",
+  "Minimapa visible al abrir": "Minimap visible on open",
+  "Modelo preferido": "Preferred model",
+  "Modo": "Mode",
+  "Monoespaciada": "Monospaced",
+  "Mostrar a Leen": "Show Leen",
+  "Mostrar controles": "Show controls",
+  "Mostrar el margen izquierdo": "Show the left margin",
+  "Mostrar etiquetas r\xE1pidas": "Show quick tags",
+  "Mostrar gu\xEDas de p\xE1gina A4": "Show A4 page guides",
+  "Mostrar los resultados como fracci\xF3n siempre (si no, solo cuando operas con fracciones)": "Always show results as a fraction (otherwise only when you work with fractions)",
+  "Mostrar margen izquierdo": "Show left margin",
+  "Mostrar regla inteligente": "Show the smart ruler",
+  "Mostrar solo las etiquetas de una p\xE1gina": "Show only the tags on one page",
+  "Mostrar solo los marcadores de una p\xE1gina": "Show only the bookmarks on one page",
+  "Mostrar u ocultar el minimapa": "Show or hide the minimap",
+  "Mover o redimensionar im\xE1genes": "Move or resize images",
+  "M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.": "Smaller gets in the way less; bigger is easier to tap on a tablet.",
+  "Navegar entre las pizarras y notas de la b\xF3veda": "Move between the boards and notes in the vault",
+  "Ninguna nota coincide.": "No note matches.",
+  "No hay etiquetas que coincidan con la b\xFAsqueda.": "No tag matches the search.",
+  "No hay m\xE1s pizarras en la b\xF3veda.": "There are no other boards in the vault.",
+  "No hay notas Markdown en la b\xF3veda.": "There are no Markdown notes in the vault.",
+  "No hay p\xE1ginas que coincidan con la b\xFAsqueda.": "No page matches the search.",
+  "No hay respuesta en {p0}. \xBFEst\xE1 arrancado el servidor?": "No answer from {p0}. Is the server running?",
+  "No he le\xEDdo nada. Prueba con una zona m\xE1s ajustada.": "I read nothing. Try a tighter area.",
+  "No he podido leer la escritura. Escribe la notaci\xF3n abajo.": "I could not read the handwriting. Type the notation below.",
+  "No he reconocido nada todav\xEDa; sigue escribiendo o usa las estructuras.": "I have not recognized anything yet; keep writing or use the structures.",
+  "No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen.": "I could not read the image from the clipboard. Try Ctrl+V on the board or use Upload image.",
+  "No se encontr\xF3 texto en esa zona.": "No text was found in that area.",
+  "No se encuentra el archivo. \xBFSe ha movido o borrado?": "The file cannot be found. Has it been moved or deleted?",
+  "No se grab\xF3 nada.": "Nothing was recorded.",
+  "No se pudieron a\xF1adir los subt\xEDtulos.": "The subtitles could not be added.",
+  "No se pudo a\xF1adir {p0}.": "{p0} could not be added.",
+  "No se pudo cargar: {p0}": "Could not load: {p0}",
+  "No se pudo crear el paquete para compartir.": "The package to share could not be created.",
+  "No se pudo exportar el PDF A4.": "The A4 PDF could not be exported.",
+  "No se pudo guardar la grabaci\xF3n.": "The recording could not be saved.",
+  "No se pudo importar el paquete de NoteLens.": "The NoteLens package could not be imported.",
+  "No se pudo pegar la selecci\xF3n.": "The selection could not be pasted.",
+  "No se pudo reconocer el texto: {p0}": "The text could not be recognized: {p0}",
+  "No se pudo traducir. Comprueba la conexi\xF3n e int\xE9ntalo de nuevo.": "Could not translate. Check your connection and try again.",
+  "No se puede representar todav\xEDa": "Cannot be rendered yet",
+  "Nota adhesiva aqu\xED": "Sticky note here",
+  "Nota flotante": "Floating note",
+  "Nota flotante: un aviso que aparece al pasar el rat\xF3n": "Floating note: a hint that appears on hover",
+  "Nota o pizarra a la que enlazar\u2026": "Note or board to link to\u2026",
+  "Nota vac\xEDa": "Empty note",
+  "Notaci\xF3n": "Notation",
+  "Notas": "Notes",
+  "Notas de la tarea": "Task notes",
+  "NoteLens \xB7 versi\xF3n cargada: {p0}": "NoteLens \xB7 build loaded: {p0}",
+  "NoteLens: no se pudo a\xF1adir el archivo.": "NoteLens: the file could not be added.",
+  "NoteLens: no se pudo pegar la imagen.": "NoteLens: the image could not be pasted.",
+  "Nueva": "New",
+  "Nueva nota adhesiva": "New sticky note",
+  "Nueva pizarra NoteLens": "New NoteLens board",
+  "N\xFAmero de Avogadro": "Avogadro's number",
+  "Obsidian no permite pantalla completa aqu\xED.": "Obsidian does not allow full screen here.",
+  "Ocultar el mapa": "Hide the map",
+  "Ocultar el margen izquierdo": "Hide the left margin",
+  "Ocultar la regla": "Hide the ruler",
+  "Opacidad": "Opacity",
+  "Opacidad del relleno": "Fill opacity",
+  "PDF A4 creado: {p0}": "A4 PDF created: {p0}",
+  "Papel con el que nace cada posit nuevo.": "The paper every new sticky note starts with.",
+  "Paquete editable creado: {p0}{p1}": "Editable package created: {p0}{p1}",
+  "Paso a mano": "Handwritten step",
+  "Paso {p0}": "Step {p0}",
+  "Pasos de la tarea": "Task steps",
+  "Patr\xF3n de fondo con el que se crean las pizarras nuevas.": "Background pattern new boards are created with.",
+  "Pega un enlace de YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom o Facebook; tambi\xE9n puedes usar un v\xEDdeo local.": "Paste a link from YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom or Facebook; a local video works too.",
+  "Pegar imagen del portapapeles": "Paste an image from the clipboard",
+  "Pidiendo acceso al micr\xF3fono\u2026": "Asking for microphone access\u2026",
+  "Pincel": "Brush",
+  "Pizarra": "Board",
+  "Pizarra NoteLens": "NoteLens board",
+  "Pizarra a pantalla completa (Esc para salir)": "Board in full screen (Esc to leave)",
+  "Pizarra importada": "Board imported",
+  "Pizarra importada: {p0}{p1}": "Board imported: {p0}{p1}",
+  "Pizarras": "Boards",
+  "Pizarras nuevas": "New boards",
+  "Pizarras y notas": "Boards and notes",
+  "Pluma": "Fountain pen",
+  "Poner un enlace en la pizarra": "Put a link on the board",
+  "Porcentaje: 200 + 15%, 30% * 80": "Percentage: 200 + 15%, 30% * 80",
+  "Preparando paquete editable de NoteLens...": "Preparing an editable NoteLens package...",
+  "Probando\u2026": "Testing\u2026",
+  "Probar": "Test",
+  "Punta": "Nib",
+  "Punta de fieltro: grosor constante, sin importar la presi\xF3n.": "Felt tip: constant thickness, whatever the pressure.",
+  "Punta del l\xE1piz": "Pen nib",
+  "Puntos": "Dots",
+  "P\xE1gina actual": "Current page",
+  "P\xE1gina eliminada. Puedes recuperarla con Ctrl+Z.": "Page deleted. You can bring it back with Ctrl+Z.",
+  "P\xE1gina limpiada": "Page cleared",
+  "P\xE1ginas": "Pages",
+  "P\xE1ginas de la libreta": "Notebook pages",
+  "Quitar archivo de la pizarra": "Remove the file from the board",
+  "Quitar documento de la pizarra": "Remove the document from the board",
+  "Quitar el enlace de la pizarra": "Remove the link from the board",
+  "Quitar etiqueta": "Remove tag",
+  "Quitar imagen de la pizarra": "Remove the image from the board",
+  "Quitar la imagen seleccionada": "Remove the selected image",
+  "Quitar {p0}": "Remove {p0}",
+  "Rango x (funciones y dispersi\xF3n)": "x range (functions and scatter)",
+  "Rango y (vac\xEDo = autom\xE1tico)": "y range (empty = automatic)",
+  "Rayas": "Ruled",
+  "Rect\xE1ngulo": "Rectangle",
+  "Rect\xE1ngulo redondeado": "Rounded rectangle",
+  "Redimensionar": "Resize",
+  "Redimensionar selecci\xF3n": "Resize the selection",
+  "Redimensionar tabla": "Resize table",
+  "Redondeada": "Rounded",
+  "Reducir tama\xF1o": "Decrease size",
+  "Rehacer (Ctrl+Shift+Z)": "Redo (Ctrl+Shift+Z)",
+  "Rejilla": "Grid",
+  "Rellenar forma": "Fill shape",
+  "Renombrar marcador": "Rename bookmark",
+  "Renombrar p\xE1gina": "Rename page",
+  "Renombrar tabla": "Rename table",
+  "Repartir columnas por igual": "Distribute columns evenly",
+  "Restablecer posici\xF3n": "Reset position",
+  "Restablecer vista": "Reset view",
+  "Restablecer zoom": "Reset zoom",
+  "Resumen": "Summary",
+  "Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuraci\xF3n.": "Summary, key ideas, review plan, outline, flashcards, cleanup, ink and LaTeX all work instantly with no API and no setup.",
+  "Revisar": "Review",
+  "Rombo": "Diamond",
+  "Rotulador": "Marker",
+  "Selecciona el cuadro de texto que quieres sustituir.": "Select the text box you want to replace.",
+  "Selecciona un archivo WebVTT (.vtt).": "Choose a WebVTT (.vtt) file.",
+  "Selecciona un archivo de imagen v\xE1lido.": "Choose a valid image file.",
+  "Selecciona un cuadro de texto en la pizarra o escribe aqu\xED.": "Select a text box on the board or type here.",
+  "Selecciona un cuadro en la pizarra, o escribe aqu\xED y pulsa Traducir.": "Select a box on the board, or type here and press Translate.",
+  "Selecciona una para moverla o cambiar su tama\xF1o": "Select one to move it or change its size",
+  "Seleccionar": "Select",
+  "Seleccionar (V) \u2014 arrastra para seleccionar en rect\xE1ngulo": "Select (V) \u2014 drag to select a rectangle",
+  "Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.": "Spacing between the dots, lines or cells of the grid.",
+  "Servidor del modelo local": "Local model server",
+  "Siguiente (Enter)": "Next (Enter)",
+  "Sin colores recientes": "No recent colors",
+  "Sin marcadores. Pulsa + para guardar la vista actual.": "No bookmarks. Press + to save the current view.",
+  "Sin pasos todav\xEDa": "No steps yet",
+  "Sin t\xEDtulo. Doble clic en la etiqueta para editarla.": "No title. Double-click the tag to edit it.",
+  "Solo lo que tocas": "Only what you touch",
+  "Solo para la pesta\xF1a opcional \xABChat local\xBB. Las acciones de pizarra no lo necesitan. Si \xABlocalhost\xBB falla, prueba con 127.0.0.1.": "Only for the optional \u201CLocal chat\u201D tab. Board actions do not need it. If \u201Clocalhost\u201D fails, try 127.0.0.1.",
+  "Solo pendientes": "Pending only",
+  "Subir archivo desde el dispositivo": "Upload a file from your device",
+  "Subir im\xE1genes desde el dispositivo": "Upload images from your device",
+  "Subrayador": "Highlighter",
+  "Subrayador (H) \u2014 opciones al pulsar de nuevo": "Highlighter (H) \u2014 press again for options",
+  "Subt\xEDtulos a\xF1adidos: {p0}": "Subtitles added: {p0}",
+  "Sustituir": "Replace",
+  "Tabla aqu\xED": "Table here",
+  "Tama\xF1o de Leen": "Leen's size",
+  "Tama\xF1o de cuadr\xEDcula": "Grid size",
+  "Tama\xF1o de la cuadr\xEDcula": "Grid size",
+  "Tama\xF1o de la goma": "Eraser size",
+  "Tama\xF1o de texto": "Text size",
+  "Tarea": "Task",
+  "Tarea hecha": "Task done",
+  "Tarea: pendiente con casilla; clic para completarla": "Task: pending, with a checkbox; click to complete it",
+  "Terminar de editar (Esc)": "Finish editing (Esc)",
+  "Texto": "Text",
+  "Texto capturado": "Captured text",
+  "Texto sustituido. Ctrl+Z deshace.": "Text replaced. Ctrl+Z undoes it.",
+  "Tinta": "Ink",
+  "Tinta {p0}": "{p0} ink",
+  "Tipo": "Type",
+  "Tipo de forma": "Shape type",
+  "Tipo de trazo": "Stroke type",
+  "Tipograf\xEDa": "Typeface",
+  "Tipograf\xEDa con la que se crean los cuadros de texto.": "The typeface new text boxes are created with.",
+  "Toca en el lienzo para colocar: {p0}": "Tap the canvas to place: {p0}",
+  "Todas": "All",
+  "Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes": "Every tag on the board: pending tasks, questions, ideas and important marks",
+  "Todas las p\xE1ginas ({p0})": "All pages ({p0})",
+  "Todos los pasos marcados como hechos": "Every step marked as done",
+  "Todos los pasos marcados como pendientes": "Every step marked as pending",
+  "Traducci\xF3n": "Translation",
+  "Traducci\xF3n a\xF1adida a la pizarra.": "Translation added to the board.",
+  "Traducci\xF3n copiada": "Translation copied",
+  "Traduciendo con el servicio gratuito\u2026": "Translating with the free service\u2026",
+  "Traduciendo con tu modelo local\u2026": "Translating with your local model\u2026",
+  "Traduciendo\u2026": "Translating\u2026",
+  "Traducir": "Translate",
+  "Traducir de \u2026 a \u2026": "Translate from \u2026 to \u2026",
+  "Traducir este cuadro": "Translate this box",
+  "Traducir solo con el modelo local": "Translate with the local model only",
+  "Traducir texto": "Translate text",
+  "Traductor": "Translator",
+  "Trazo ancho": "Wide stroke",
+  "Trazo con el que empieza la herramienta de l\xE1piz.": "The stroke the pencil tool starts with.",
+  "Trazo entero": "Whole stroke",
+  "Trazo limpio y uniforme; la presi\xF3n lo afina un poco.": "A clean, even stroke; pressure thins it a little.",
+  "Tri\xE1ngulo": "Triangle",
+  "T\xEDtulo": "Title",
+  "T\xEDtulo de la etiqueta": "Tag title",
+  "URL o ruta": "URL or path",
+  "Una fila por l\xEDnea: etiqueta; valor; valor\u2026 La primera l\xEDnea puede nombrar las series empezando por #. Para dispersi\xF3n: x; y.": "One row per line: label; value; value\u2026 The first line can name the series starting with #. For scatter: x; y.",
+  "Una por l\xEDnea, en x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)\u2026 Misma sintaxis que la calculadora.": "One per line, in x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)\u2026 Same syntax as the calculator.",
+  "Usa un enlace de v\xEDdeo compatible o la ruta de un v\xEDdeo de la b\xF3veda.": "Use a supported video link or the path of a video in the vault.",
+  "Usar la pizarra como contexto": "Use the board as context",
+  "Valor guardado en memoria": "Value saved in memory",
+  "Velocidad de la luz": "Speed of light",
+  "Vista previa de la f\xF3rmula": "Formula preview",
+  "Volver a usar": "Use again",
+  "Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.": "Goes back to the bottom right corner if you dragged him out of sight.",
+  "autom\xE1tico": "automatic",
+  "borrar variables": "clear variables",
+  "deriv(expresi\xF3n, x, punto)": "deriv(expression, x, point)",
+  "d\xEDas\u2192h": "days\u2192h",
+  "http://127.0.0.1:11434": "http://127.0.0.1:11434",
+  "https://instagram.com/reel/... o carpeta/video.mp4": "https://instagram.com/reel/... or folder/video.mp4",
+  "integral(expresi\xF3n, x, desde, hasta)": "integral(expression, x, from, to)",
+  "log(x, base)": "log(x, base)",
+  "mean(1, 2, 3)": "mean(1, 2, 3)",
+  "p. ej. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)": "e.g. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)",
+  "paso a mano": "handwritten step",
+  "prod(expresi\xF3n, i, desde, hasta)": "prod(expression, i, from, to)",
+  "root(x, n)": "root(x, n)",
+  "sin nombre": "untitled",
+  "solve(expresi\xF3n = 0, x, valor inicial)": "solve(expression = 0, x, initial value)",
+  "sum(expresi\xF3n, i, desde, hasta)": "sum(expression, i, from, to)",
+  "{p0} (P) \u2014 opciones al pulsar de nuevo": "{p0} (P) \u2014 press again for options",
+  "{p0} cuadros seleccionados": "{p0} boxes selected",
+  "{p0} de {p1} elementos visibles": "{p0} of {p1} items visible",
+  "{p0}. Clic para cambiar su estado; doble clic para editar": "{p0}. Click to change its state; double-click to edit",
+  "{p0}. Clic para ver el resumen de etiquetas": "{p0}. Click to see the tag summary",
+  "{p0}. Doble clic para editarla": "{p0}. Double-click to edit it",
+  "{p0}. Hecho; clic para volver a marcar como pendiente": "{p0}. Done; click to mark it pending again",
+  "{p0}/{p1} completados": "{p0}/{p1} completed",
+  "{p0}: {p1} {p2}. Ctrl+V pega donde est\xE9 el rat\xF3n.": "{p0}: {p1} {p2}. Ctrl+V pastes wherever the mouse is.",
+  "\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo.": "\u201CAutomatic\u201D follows Obsidian's language. Open boards update when you change it.",
+  "\xBFC\xF3mo insertar el PDF?": "How should the PDF be inserted?",
+  "\xC1ngulos {p0}\xB0": "Angles {p0}\xB0"
+};
+
+// src/i18n.ts
+var CATALOGUES = { es: {}, en };
+var SOURCE_LOCALE = "es";
+var active = SOURCE_LOCALE;
+function detectLocale() {
+  let stored = null;
+  try {
+    stored = window.localStorage.getItem("language");
+  } catch {
+    stored = null;
+  }
+  const code = (stored || "").toLowerCase();
+  if (!code) return SOURCE_LOCALE;
+  if (code === "es" || code.startsWith("es-")) return "es";
+  return "en";
+}
+function resolveLocale(setting) {
+  return setting === "auto" ? detectLocale() : setting;
+}
+function setLocale(setting) {
+  active = resolveLocale(setting);
+}
+function fill(text2, params) {
+  if (!params) return text2;
+  return text2.replace(
+    /\{(\w+)\}/g,
+    (match, key) => Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match
+  );
+}
+function tr(message, params) {
+  if (active === SOURCE_LOCALE) return fill(message, params);
+  return fill(CATALOGUES[active][message] ?? message, params);
+}
+
 // src/calculator.ts
 function toRad(x4, unit2) {
   return unit2 === "deg" ? x4 * Math.PI / 180 : x4;
@@ -26172,16 +26719,16 @@ function createCalculatorPanel(host, container) {
   panel.addEventListener("keydown", (e3) => e3.stopPropagation());
   const header = panel.createDiv({ cls: "notelens-calculator-header" });
   (0, import_obsidian2.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "calculator");
-  header.createSpan({ cls: "notelens-calculator-title", text: "Calculadora" });
+  header.createSpan({ cls: "notelens-calculator-title", text: tr("Calculadora") });
   const unitBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
-  unitBtn.title = "Grados o radianes para las funciones trigonom\xE9tricas";
+  unitBtn.title = tr("Grados o radianes para las funciones trigonom\xE9tricas");
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian2.setIcon)(closeBtn, "x");
   makeDraggable(panel, header, container, "notelens-calculator-pos");
   const display = panel.createDiv({ cls: "notelens-calculator-display" });
   const input = display.createEl("input", { cls: "notelens-calculator-input" });
   input.type = "text";
-  input.placeholder = "p. ej. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)";
+  input.placeholder = tr("p. ej. 2sin(30)^2, 200 + 15%, 5 km to mi, a = 3, sum(i^2, i, 1, 10)");
   input.spellcheck = false;
   const output = display.createDiv({ cls: "notelens-calculator-output", text: "0" });
   const alt = display.createDiv({ cls: "notelens-calculator-alt" });
@@ -26199,7 +26746,7 @@ function createCalculatorPanel(host, container) {
   refreshUnit();
   const fractionBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
   fractionBtn.setText("a/b");
-  fractionBtn.title = "Mostrar los resultados como fracci\xF3n siempre (si no, solo cuando operas con fracciones)";
+  fractionBtn.title = tr("Mostrar los resultados como fracci\xF3n siempre (si no, solo cuando operas con fracciones)");
   fractionBtn.onclick = () => {
     fractionMode = !fractionMode;
     fractionBtn.toggleClass("active", fractionMode);
@@ -26216,12 +26763,12 @@ function createCalculatorPanel(host, container) {
       const f4 = formatFraction(fraction);
       output.setText(f4.plain + (f4.mixed ? `  (${f4.mixed})` : ""));
       const extra2 = describeNumber(result.value, /0x|0b|0o|hex|bin/i.test(input.value)).filter((x4) => x4 !== f4.plain && x4 !== f4.mixed);
-      alt.setText(`= ${[decimal, ...extra2].join("  \xB7  ")}`);
+      alt.setText(tr("= {p0}", { p0: [decimal, ...extra2].join("  \xB7  ") }));
       return;
     }
     output.setText(decimal);
     const extra = describeNumber(result.value, /0x|0b|0o|hex|bin/i.test(input.value));
-    alt.setText(extra.length ? `= ${extra.join("  \xB7  ")}` : "");
+    alt.setText(extra.length ? tr("= {p0}", { p0: extra.join("  \xB7  ") }) : "");
   };
   const preview = () => {
     const src = input.value.trim();
@@ -26279,7 +26826,7 @@ function createCalculatorPanel(host, container) {
   const memoryRow = panel.createDiv({ cls: "notelens-calculator-memory" });
   const memoryLabel = memoryRow.createSpan({ cls: "notelens-calculator-memory-label" });
   const refreshMemory = () => {
-    memoryLabel.setText(env.memory ? `M = ${formatNumber(env.memory)}` : "M vac\xEDa");
+    memoryLabel.setText(env.memory ? tr("M = {p0}", { p0: formatNumber(env.memory) }) : tr("M vac\xEDa"));
   };
   const memKey = (label, title, action) => {
     const b3 = memoryRow.createEl("button", { cls: "notelens-calculator-key muted small", text: label });
@@ -26306,11 +26853,11 @@ function createCalculatorPanel(host, container) {
     varsEl.empty();
     if (env.vars.size === 0) return;
     for (const [name, value] of env.vars) {
-      const chip = varsEl.createEl("button", { cls: "notelens-calculator-var", text: `${name} = ${formatNumber(value)}` });
-      chip.title = "Insertar la variable. Escribe \xABnombre = valor\xBB para definir otra.";
+      const chip = varsEl.createEl("button", { cls: "notelens-calculator-var", text: tr("{p0} = {p1}", { p0: name, p1: formatNumber(value) }) });
+      chip.title = tr("Insertar la variable. Escribe \xABnombre = valor\xBB para definir otra.");
       chip.onclick = () => insertText(name);
     }
-    const clear = varsEl.createEl("button", { cls: "notelens-calculator-var muted", text: "borrar variables" });
+    const clear = varsEl.createEl("button", { cls: "notelens-calculator-var muted", text: tr("borrar variables") });
     clear.onclick = () => {
       env.vars.clear();
       refreshVars();
@@ -26321,14 +26868,14 @@ function createCalculatorPanel(host, container) {
   const renderHistory = () => {
     historyEl.empty();
     if (history.length === 0) {
-      historyEl.createDiv({ cls: "notelens-calculator-empty", text: "Los c\xE1lculos que hagas quedan aqu\xED." });
+      historyEl.createDiv({ cls: "notelens-calculator-empty", text: tr("Los c\xE1lculos que hagas quedan aqu\xED.") });
       return;
     }
     for (const entry of [...history].reverse()) {
       const row = historyEl.createDiv({ cls: "notelens-calculator-entry" });
       row.createSpan({ cls: "notelens-calculator-entry-expr", text: entry.expression });
-      row.createSpan({ cls: "notelens-calculator-entry-result", text: `= ${entry.result}` });
-      row.title = "Volver a usar";
+      row.createSpan({ cls: "notelens-calculator-entry-result", text: tr("= {p0}", { p0: entry.result }) });
+      row.title = tr("Volver a usar");
       row.onclick = () => {
         input.value = entry.expression;
         preview();
@@ -26336,7 +26883,7 @@ function createCalculatorPanel(host, container) {
       };
       const insert = row.createEl("button", { cls: "notelens-table-control" });
       (0, import_obsidian2.setIcon)(insert, "arrow-down-to-line");
-      insert.title = "Insertar en la pizarra";
+      insert.title = tr("Insertar en la pizarra");
       insert.onclick = (e3) => {
         e3.stopPropagation();
         host.insertCalculation(entry.expression, entry.result);
@@ -26405,7 +26952,7 @@ function createCalculatorPanel(host, container) {
         input.value = input.value.slice(0, -1);
         preview();
         input.focus();
-      }, cls: "muted", title: "Borrar" },
+      }, cls: "muted", title: tr("Borrar") },
       { label: "ln", insert: "ln()", cls: "fn" },
       { label: "log", insert: "log()", cls: "fn" },
       { label: "\u221A", insert: "sqrt()", cls: "fn" },
@@ -26434,16 +26981,16 @@ function createCalculatorPanel(host, container) {
         input.value = "";
         preview();
         input.focus();
-      }, cls: "muted", title: "Limpiar" },
-      { label: "%", insert: "%", cls: "op", title: "Porcentaje: 200 + 15%, 30% * 80" },
-      { label: "a/b", action: () => insertFraction(), cls: "fn fraction", title: "Fracci\xF3n: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el bot\xF3n a/b de arriba fuerza el resultado en fracci\xF3n" },
+      }, cls: "muted", title: tr("Limpiar") },
+      { label: "%", insert: "%", cls: "op", title: tr("Porcentaje: 200 + 15%, 30% * 80") },
+      { label: "a/b", action: () => insertFraction(), cls: "fn fraction", title: tr("Fracci\xF3n: escribe el numerador, luego el denominador. 2/3 + 1/6 da 5/6; el bot\xF3n a/b de arriba fuerza el resultado en fracci\xF3n") },
       { label: "exp", insert: "exp()", cls: "fn" },
       { label: "=", action: commit, cls: "equals" },
       { label: "Insertar", action: () => {
         commit();
         const last = history[history.length - 1];
         if (last) host.insertCalculation(last.expression, last.result);
-      }, cls: "insert", title: "Calcular e insertar en la pizarra" }
+      }, cls: "insert", title: tr("Calcular e insertar en la pizarra") }
     ],
     "Avanzada": [
       { label: "sin\u207B\xB9", insert: "asin()", cls: "fn" },
@@ -26453,8 +27000,8 @@ function createCalculatorPanel(host, container) {
       { label: "cosh", insert: "cosh()", cls: "fn" },
       { label: "tanh", insert: "tanh()", cls: "fn" },
       { label: "log\u2082", insert: "log2()", cls: "fn" },
-      { label: "log\u2099", insert: "log(, )", cls: "fn", title: "log(x, base)" },
-      { label: "\u207F\u221A", insert: "root(, )", cls: "fn", title: "root(x, n)" },
+      { label: "log\u2099", insert: "log(, )", cls: "fn", title: tr("log(x, base)") },
+      { label: "\u207F\u221A", insert: "root(, )", cls: "fn", title: tr("root(x, n)") },
       { label: "|x|", insert: "abs()", cls: "fn" },
       { label: "\u230Ax\u230B", insert: "floor()", cls: "fn" },
       { label: "\u2308x\u2309", insert: "ceil()", cls: "fn" },
@@ -26464,24 +27011,24 @@ function createCalculatorPanel(host, container) {
       { label: "gcd", insert: "gcd(, )", cls: "fn" },
       { label: "lcm", insert: "lcm(, )", cls: "fn" },
       { label: "primo", insert: "isprime()", cls: "fn" },
-      { label: "media", insert: "mean()", cls: "fn", title: "mean(1, 2, 3)" },
+      { label: "media", insert: "mean()", cls: "fn", title: tr("mean(1, 2, 3)") },
       { label: "mediana", insert: "median()", cls: "fn" },
-      { label: "\u03C3", insert: "stdev()", cls: "fn", title: "Desviaci\xF3n t\xEDpica muestral: stdev(1, 2, 3)" },
+      { label: "\u03C3", insert: "stdev()", cls: "fn", title: tr("Desviaci\xF3n t\xEDpica muestral: stdev(1, 2, 3)") },
       { label: "\u03C3\xB2", insert: "variance()", cls: "fn" },
       { label: "moda", insert: "mode()", cls: "fn" },
       { label: "hypot", insert: "hypot(, )", cls: "fn" },
-      { label: "\u03A3", insert: "sum(, i, 1, 10)", cls: "fn", title: "sum(expresi\xF3n, i, desde, hasta)" },
-      { label: "\u03A0", insert: "prod(, i, 1, 10)", cls: "fn", title: "prod(expresi\xF3n, i, desde, hasta)" },
-      { label: "\u222B", insert: "integral(, x, 0, 1)", cls: "fn", title: "integral(expresi\xF3n, x, desde, hasta)" },
-      { label: "d/dx", insert: "deriv(, x, 1)", cls: "fn", title: "deriv(expresi\xF3n, x, punto)" },
-      { label: "solve", insert: "solve(, x, 1)", cls: "fn", title: "solve(expresi\xF3n = 0, x, valor inicial)" },
-      { label: "x =", insert: "x = ", cls: "fn", title: "Definir una variable: x = 5" },
-      { label: "0x", insert: "0x", cls: "fn", title: "Hexadecimal" },
-      { label: "0b", insert: "0b", cls: "fn", title: "Binario" },
-      { label: "M", insert: "M", cls: "fn", title: "Valor guardado en memoria" },
-      { label: "c", insert: "c", cls: "fn", title: "Velocidad de la luz" },
-      { label: "g", insert: "g", cls: "fn", title: "Gravedad 9,80665" },
-      { label: "N\u2090", insert: "NA", cls: "fn", title: "N\xFAmero de Avogadro" }
+      { label: "\u03A3", insert: "sum(, i, 1, 10)", cls: "fn", title: tr("sum(expresi\xF3n, i, desde, hasta)") },
+      { label: "\u03A0", insert: "prod(, i, 1, 10)", cls: "fn", title: tr("prod(expresi\xF3n, i, desde, hasta)") },
+      { label: "\u222B", insert: "integral(, x, 0, 1)", cls: "fn", title: tr("integral(expresi\xF3n, x, desde, hasta)") },
+      { label: "d/dx", insert: "deriv(, x, 1)", cls: "fn", title: tr("deriv(expresi\xF3n, x, punto)") },
+      { label: "solve", insert: "solve(, x, 1)", cls: "fn", title: tr("solve(expresi\xF3n = 0, x, valor inicial)") },
+      { label: "x =", insert: "x = ", cls: "fn", title: tr("Definir una variable: x = 5") },
+      { label: "0x", insert: "0x", cls: "fn", title: tr("Hexadecimal") },
+      { label: "0b", insert: "0b", cls: "fn", title: tr("Binario") },
+      { label: "M", insert: "M", cls: "fn", title: tr("Valor guardado en memoria") },
+      { label: "c", insert: "c", cls: "fn", title: tr("Velocidad de la luz") },
+      { label: "g", insert: "g", cls: "fn", title: tr("Gravedad 9,80665") },
+      { label: "N\u2090", insert: "NA", cls: "fn", title: tr("N\xFAmero de Avogadro") }
     ],
     "Unidades": [
       { label: "km\u2192mi", insert: " km to mi" },
@@ -26513,7 +27060,7 @@ function createCalculatorPanel(host, container) {
   const renderKeys = (page) => {
     keys.empty();
     for (const key of pages[page]) {
-      const b3 = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: key.label });
+      const b3 = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: tr(key.label) });
       if (key.title) b3.title = key.title;
       b3.onclick = () => {
         if (key.action) key.action();
@@ -26527,7 +27074,7 @@ function createCalculatorPanel(host, container) {
     tab.onclick = () => renderKeys(page);
   }
   renderKeys("B\xE1sica");
-  panel.createDiv({ cls: "notelens-calculator-help", text: "Escribe con naturalidad: 2pi r, 200 + 15%, 30% * 80, a = 3 y luego 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calcula, \u2191 repite, Esc cierra." });
+  panel.createDiv({ cls: "notelens-calculator-help", text: tr("Escribe con naturalidad: 2pi r, 200 + 15%, 30% * 80, a = 3 y luego 2a, 5 km to mi, 20 C to F, sum(i^2, i, 1, 10), integral(x^2, x, 0, 1), solve(x^2 - 2, x, 1), 0xFF + 0b101, mean(4, 7, 9). Enter calcula, \u2191 repite, Esc cierra.") });
   renderHistory();
   let open2 = false;
   const toggle = () => {
@@ -36240,7 +36787,7 @@ var ua = Fa.new_byte;
 var er = Fa.assert;
 var ar = Oe();
 var rr = V2;
-var tr = Na;
+var tr2 = Na;
 var sr = Va();
 var ir = P2;
 var nr = Oa();
@@ -36266,7 +36813,7 @@ function br() {
 }
 function cr(w3, Z3, X3) {
   arguments.length != 3 && (console.error("WARN: Mp3Encoder(channels, samplerate, kbps) not specified"), w3 = 1, Z3 = 44100, X3 = 128);
-  var z3 = new ar(), u0 = new ur(), W3 = new tr(), Q3 = new vr(), D3 = new rr(), g3 = new sr(), f0 = new ir(), A3 = new hr(), m5 = new or(), O4 = new br(), s0 = new _r(), K3 = new nr(), t0 = new fr(), U3 = new mr();
+  var z3 = new ar(), u0 = new ur(), W3 = new tr2(), Q3 = new vr(), D3 = new rr(), g3 = new sr(), f0 = new ir(), A3 = new hr(), m5 = new or(), O4 = new br(), s0 = new _r(), K3 = new nr(), t0 = new fr(), U3 = new mr();
   z3.setModules(W3, Q3, D3, g3, f0, A3, m5, O4, U3), Q3.setModules(W3, U3, m5, A3), O4.setModules(Q3, m5), D3.setModules(z3), f0.setModules(Q3, s0, g3, K3), g3.setModules(K3, s0, z3.enc.psy), s0.setModules(Q3), K3.setModules(g3), A3.setModules(z3, Q3, m5), u0.setModules(t0, U3), t0.setModules(m5, O4, D3);
   var R3 = z3.lame_init();
   R3.num_channels = w3, R3.in_samplerate = Z3, R3.brate = X3, R3.mode = lr.STEREO, R3.quality = 3, R3.bWriteVbrTag = false, R3.disable_reservoir = true, R3.write_id3tag_automatic = false, z3.lame_init_params(R3);
@@ -36380,25 +36927,25 @@ function createRecorderPanel(host, container) {
   panel.addEventListener("keydown", (e3) => e3.stopPropagation());
   const header = panel.createDiv({ cls: "notelens-recorder-header" });
   (0, import_obsidian3.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "mic");
-  header.createSpan({ cls: "notelens-calculator-title", text: "Grabadora" });
+  header.createSpan({ cls: "notelens-calculator-title", text: tr("Grabadora") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian3.setIcon)(closeBtn, "x");
   makeDraggable(panel, header, container, "notelens-recorder-pos");
-  const status = panel.createDiv({ cls: "notelens-recorder-status", text: "Lista. La grabaci\xF3n se guarda como MP3 en la b\xF3veda y aparece en la pizarra." });
+  const status = panel.createDiv({ cls: "notelens-recorder-status", text: tr("Lista. La grabaci\xF3n se guarda como MP3 en la b\xF3veda y aparece en la pizarra.") });
   const clock = panel.createDiv({ cls: "notelens-recorder-clock", text: "00:00" });
   const meter = panel.createDiv({ cls: "notelens-recorder-meter" });
   const meterFill = meter.createDiv({ cls: "notelens-recorder-meter-fill" });
   const actions = panel.createDiv({ cls: "notelens-recorder-actions" });
   const recordBtn = actions.createEl("button", { cls: "notelens-recorder-record" });
   (0, import_obsidian3.setIcon)(recordBtn.createSpan(), "circle");
-  recordBtn.createSpan({ text: "Grabar" });
+  recordBtn.createSpan({ text: tr("Grabar") });
   const stopBtn = actions.createEl("button", { cls: "notelens-recorder-stop" });
   (0, import_obsidian3.setIcon)(stopBtn.createSpan(), "square");
-  stopBtn.createSpan({ text: "Detener y guardar" });
-  const cancelBtn = actions.createEl("button", { cls: "notelens-recorder-cancel", text: "Descartar" });
+  stopBtn.createSpan({ text: tr("Detener y guardar") });
+  const cancelBtn = actions.createEl("button", { cls: "notelens-recorder-cancel", text: tr("Descartar") });
   const dictation = panel.createEl("button", { cls: "notelens-recorder-dictation" });
   (0, import_obsidian3.setIcon)(dictation.createSpan(), "captions");
-  dictation.createSpan({ text: "Dictado a texto (si tu sistema lo permite)" });
+  dictation.createSpan({ text: tr("Dictado a texto (si tu sistema lo permite)") });
   dictation.onclick = () => host.startDictation();
   let state = "idle";
   let recorder = null;
@@ -36442,11 +36989,11 @@ function createRecorderPanel(host, container) {
   const start = async () => {
     if (state !== "idle") return;
     if (typeof navigator.mediaDevices?.getUserMedia !== "function" || typeof MediaRecorder === "undefined") {
-      new import_obsidian3.Notice("Este dispositivo no permite grabar audio desde Obsidian.");
+      new import_obsidian3.Notice(tr("Este dispositivo no permite grabar audio desde Obsidian."));
       return;
     }
     setState("requesting");
-    status.setText("Pidiendo acceso al micr\xF3fono\u2026");
+    status.setText(tr("Pidiendo acceso al micr\xF3fono\u2026"));
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
     } catch (error) {
@@ -36476,7 +37023,7 @@ function createRecorderPanel(host, container) {
     timer = window.setInterval(tick, 250);
     tick();
     setState("recording");
-    status.setText("Grabando\u2026 pulsa \xABDetener y guardar\xBB cuando termines.");
+    status.setText(tr("Grabando\u2026 pulsa \xABDetener y guardar\xBB cuando termines."));
   };
   let discard = false;
   const finish = async () => {
@@ -36488,22 +37035,22 @@ function createRecorderPanel(host, container) {
       discard = false;
       setState("idle");
       clock.setText("00:00");
-      status.setText(chunks.length === 0 && !discard ? "No se grab\xF3 nada." : "Grabaci\xF3n descartada.");
+      status.setText(chunks.length === 0 && !discard ? tr("No se grab\xF3 nada.") : tr("Grabaci\xF3n descartada."));
       chunks = [];
       return;
     }
     setState("encoding");
-    status.setText("Convirtiendo a MP3\u2026");
+    status.setText(tr("Convirtiendo a MP3\u2026"));
     try {
       const blob = new Blob(chunks, { type });
       chunks = [];
-      const mp3 = await encodeMp3(blob, (fraction) => status.setText(`Convirtiendo a MP3\u2026 ${Math.round(fraction * 100)}%`));
+      const mp3 = await encodeMp3(blob, (fraction) => status.setText(tr("Convirtiendo a MP3\u2026 {p0}%", { p0: Math.round(fraction * 100) })));
       await host.saveRecording(mp3, seconds);
-      status.setText(`Guardada (${formatClock(seconds)}) y a\xF1adida a la pizarra.`);
+      status.setText(tr("Guardada ({p0}) y a\xF1adida a la pizarra.", { p0: formatClock(seconds) }));
     } catch (error) {
       console.error("NoteLens: recording failed", error);
-      status.setText("No se pudo guardar la grabaci\xF3n.");
-      new import_obsidian3.Notice("No se pudo guardar la grabaci\xF3n.");
+      status.setText(tr("No se pudo guardar la grabaci\xF3n."));
+      new import_obsidian3.Notice(tr("No se pudo guardar la grabaci\xF3n."));
     } finally {
       setState("idle");
       clock.setText("00:00");
@@ -36520,7 +37067,7 @@ function createRecorderPanel(host, container) {
   let open2 = false;
   const toggle = () => {
     if (open2 && state === "recording") {
-      new import_obsidian3.Notice("Det\xE9n o descarta la grabaci\xF3n antes de cerrar la grabadora.");
+      new import_obsidian3.Notice(tr("Det\xE9n o descarta la grabaci\xF3n antes de cerrar la grabadora."));
       return;
     }
     open2 = !open2;
@@ -37246,7 +37793,7 @@ async function buildSharePackage(app, document2, title) {
   const manifest = {
     format: PACKAGE_FORMAT,
     packageVersion: PACKAGE_VERSION,
-    title: safeFileName(title, "Pizarra NoteLens"),
+    title: safeFileName(title, tr("Pizarra NoteLens")),
     exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
     document: document2,
     assets
@@ -37266,7 +37813,7 @@ function parsePackage(raw) {
   return {
     format: PACKAGE_FORMAT,
     packageVersion: PACKAGE_VERSION,
-    title: typeof value.title === "string" ? value.title : "Pizarra importada",
+    title: typeof value.title === "string" ? value.title : tr("Pizarra importada"),
     exportedAt: typeof value.exportedAt === "string" ? value.exportedAt : "",
     document: migrateDocument(value.document),
     assets: Array.isArray(value.assets) ? value.assets.filter((asset) => typeof asset?.source === "string" && typeof asset?.entry === "string") : []
@@ -37434,7 +37981,7 @@ function createTranslatorPanel(host, container) {
   shieldPanel(panel);
   const header = panel.createDiv({ cls: "notelens-translator-header" });
   (0, import_obsidian5.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "languages");
-  header.createSpan({ cls: "notelens-calculator-title", text: "Traductor" });
+  header.createSpan({ cls: "notelens-calculator-title", text: tr("Traductor") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian5.setIcon)(closeBtn, "x");
   makeDraggable(panel, header, container, "notelens-translator-pos");
@@ -37442,7 +37989,7 @@ function createTranslatorPanel(host, container) {
   const fromSelect = languages.createEl("select", { cls: "dropdown notelens-translator-select" });
   const swap = languages.createEl("button", { cls: "notelens-nav-btn" });
   (0, import_obsidian5.setIcon)(swap, "arrow-left-right");
-  swap.title = "Intercambiar idiomas";
+  swap.title = tr("Intercambiar idiomas");
   const toSelect = languages.createEl("select", { cls: "dropdown notelens-translator-select" });
   for (const language of LANGUAGES) {
     fromSelect.createEl("option", { value: language.code, text: language.label });
@@ -37467,26 +38014,26 @@ function createTranslatorPanel(host, container) {
     languagesChanged();
   };
   const sourceRow = panel.createDiv({ cls: "notelens-translator-source-row" });
-  const sourceLabel = sourceRow.createDiv({ cls: "notelens-panel-label", text: "Texto" });
+  const sourceLabel = sourceRow.createDiv({ cls: "notelens-panel-label", text: tr("Texto") });
   const captureBtn = sourceRow.createEl("button", { cls: "notelens-translator-capture" });
   (0, import_obsidian5.setIcon)(captureBtn.createSpan(), "scan-text");
-  captureBtn.createSpan({ text: "Capturar de la pizarra (OCR)" });
-  captureBtn.title = "Dibuja un rect\xE1ngulo sobre la pizarra: se reconoce el texto de im\xE1genes, PDFs y escritura a mano en el idioma de origen y se traduce.";
+  captureBtn.createSpan({ text: tr("Capturar de la pizarra (OCR)") });
+  captureBtn.title = tr("Dibuja un rect\xE1ngulo sobre la pizarra: se reconoce el texto de im\xE1genes, PDFs y escritura a mano en el idioma de origen y se traduce.");
   const source = panel.createEl("textarea", { cls: "notelens-translator-text" });
-  source.placeholder = "Selecciona un cuadro de texto en la pizarra o escribe aqu\xED.";
+  source.placeholder = tr("Selecciona un cuadro de texto en la pizarra o escribe aqu\xED.");
   source.rows = 4;
   const result = panel.createEl("textarea", { cls: "notelens-translator-text notelens-translator-result" });
-  result.placeholder = "Traducci\xF3n";
+  result.placeholder = tr("Traducci\xF3n");
   result.rows = 4;
   result.readOnly = false;
   const status = panel.createDiv({ cls: "notelens-translator-status" });
   const actions = panel.createDiv({ cls: "notelens-translator-actions" });
-  const translateBtn = actions.createEl("button", { cls: "mod-cta", text: "Traducir" });
-  const replaceBtn = actions.createEl("button", { text: "Sustituir" });
-  replaceBtn.title = "Cambia el texto original por la traducci\xF3n";
-  const addBtn = actions.createEl("button", { text: "A\xF1adir a la pizarra" });
-  addBtn.title = "Crea un cuadro de texto con la traducci\xF3n junto al original";
-  const copyBtn = actions.createEl("button", { text: "Copiar" });
+  const translateBtn = actions.createEl("button", { cls: "mod-cta", text: tr("Traducir") });
+  const replaceBtn = actions.createEl("button", { text: tr("Sustituir") });
+  replaceBtn.title = tr("Cambia el texto original por la traducci\xF3n");
+  const addBtn = actions.createEl("button", { text: tr("A\xF1adir a la pizarra") });
+  addBtn.title = tr("Crea un cuadro de texto con la traducci\xF3n junto al original");
+  const copyBtn = actions.createEl("button", { text: tr("Copiar") });
   let current = { text: "", kind: "none", count: 0 };
   let running = 0;
   const refreshButtons = () => {
@@ -37505,13 +38052,13 @@ function createTranslatorPanel(host, container) {
     }
     const id = ++running;
     translateBtn.disabled = true;
-    status.setText("Traduciendo\u2026");
+    status.setText(tr("Traduciendo\u2026"));
     try {
       let translated = null;
       let engine = "";
       try {
         const client = new LocalModelClient(host);
-        status.setText("Traduciendo con tu modelo local\u2026");
+        status.setText(tr("Traduciendo con tu modelo local\u2026"));
         translated = await client.translate(
           source.value,
           LANGUAGE_NAMES[fromSelect.value] ?? fromSelect.value,
@@ -37524,19 +38071,19 @@ function createTranslatorPanel(host, container) {
         throw new Error("No hay ning\xFAn modelo local disponible y has pedido traducir solo en local. Descarga uno o desactiva esa opci\xF3n en los ajustes.");
       }
       if (!translated) {
-        status.setText("Traduciendo con el servicio gratuito\u2026");
+        status.setText(tr("Traduciendo con el servicio gratuito\u2026"));
         translated = await translateText(source.value, fromSelect.value, toSelect.value);
         engine = "servicio web";
       }
       if (id !== running) return;
       result.value = translated;
       const targetStatus = current.kind === "selection" ? current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados` : "Traducido el cuadro seleccionado" : current.kind === "editor" ? "Traducido el cuadro que est\xE1s editando" : "Traducci\xF3n lista";
-      status.setText(`${targetStatus} \xB7 ${engine}.`);
+      status.setText(tr("{p0} \xB7 {p1}.", { p0: targetStatus, p1: engine }));
     } catch (error) {
       if (id !== running) return;
       console.error("NoteLens: translation failed", error);
       const reason = error instanceof Error ? error.message.trim() : "";
-      status.setText(reason || "No se pudo traducir. Comprueba la conexi\xF3n e int\xE9ntalo de nuevo.");
+      status.setText(reason || tr("No se pudo traducir. Comprueba la conexi\xF3n e int\xE9ntalo de nuevo."));
     } finally {
       if (id === running) translateBtn.disabled = false;
       refreshButtons();
@@ -37546,38 +38093,38 @@ function createTranslatorPanel(host, container) {
     current = host.getTranslationSource();
     if (current.kind !== "none") {
       source.value = current.text;
-      sourceLabel.setText(current.kind === "editor" ? "Cuadro que est\xE1s editando" : current.count > 1 ? `${current.count} cuadros seleccionados` : "Cuadro seleccionado");
+      sourceLabel.setText(current.kind === "editor" ? tr("Cuadro que est\xE1s editando") : current.count > 1 ? tr("{p0} cuadros seleccionados", { p0: current.count }) : tr("Cuadro seleccionado"));
       void run();
     } else {
-      sourceLabel.setText("Texto");
-      status.setText(source.value.trim() ? "" : "Selecciona un cuadro en la pizarra, o escribe aqu\xED y pulsa Traducir.");
+      sourceLabel.setText(tr("Texto"));
+      status.setText(source.value.trim() ? "" : tr("Selecciona un cuadro en la pizarra, o escribe aqu\xED y pulsa Traducir."));
     }
     refreshButtons();
   };
   translateBtn.onclick = () => void run();
   captureBtn.onclick = async () => {
     captureBtn.disabled = true;
-    status.setText("Dibuja un rect\xE1ngulo sobre la zona que quieres traducir. Esc cancela.");
+    status.setText(tr("Dibuja un rect\xE1ngulo sobre la zona que quieres traducir. Esc cancela."));
     try {
       const text2 = await host.captureBoardText(fromSelect.value, (message) => status.setText(message));
       if (text2.trim()) {
         current = { text: text2, kind: "none", count: 0 };
         source.value = text2;
-        sourceLabel.setText("Texto capturado");
+        sourceLabel.setText(tr("Texto capturado"));
         await run();
       } else {
-        status.setText("No se encontr\xF3 texto en esa zona.");
+        status.setText(tr("No se encontr\xF3 texto en esa zona."));
       }
     } catch (error) {
       console.error("NoteLens: OCR failed", error);
-      status.setText(`No se pudo reconocer el texto: ${error instanceof Error ? error.message : String(error)}`);
+      status.setText(tr("No se pudo reconocer el texto: {p0}", { p0: error instanceof Error ? error.message : String(error) }));
     } finally {
       captureBtn.disabled = false;
     }
   };
   source.addEventListener("input", () => {
     current = { text: source.value, kind: "none", count: 0 };
-    sourceLabel.setText("Texto");
+    sourceLabel.setText(tr("Texto"));
     refreshButtons();
   });
   source.addEventListener("keydown", (e3) => {
@@ -37590,20 +38137,20 @@ function createTranslatorPanel(host, container) {
   replaceBtn.onclick = () => {
     if (result.value.trim()) {
       host.replaceTranslationTarget(result.value);
-      status.setText("Texto sustituido. Ctrl+Z deshace.");
+      status.setText(tr("Texto sustituido. Ctrl+Z deshace."));
     }
   };
   addBtn.onclick = () => {
     if (result.value.trim()) {
       host.addTranslationToBoard(result.value);
-      status.setText("Traducci\xF3n a\xF1adida a la pizarra.");
+      status.setText(tr("Traducci\xF3n a\xF1adida a la pizarra."));
     }
   };
   copyBtn.onclick = async () => {
     if (!result.value.trim()) return;
     try {
       await navigator.clipboard.writeText(result.value);
-      new import_obsidian5.Notice("Traducci\xF3n copiada");
+      new import_obsidian5.Notice(tr("Traducci\xF3n copiada"));
     } catch {
       result.focus();
       result.select();
@@ -37848,40 +38395,40 @@ var hTree = function(d3, mb) {
     if (t22[i5].s > maxSym)
       maxSym = t22[i5].s;
   }
-  var tr2 = new u16(maxSym + 1);
-  var mbt = ln(t4[i1 - 1], tr2, 0);
+  var tr3 = new u16(maxSym + 1);
+  var mbt = ln(t4[i1 - 1], tr3, 0);
   if (mbt > mb) {
     var i5 = 0, dt2 = 0;
     var lft = mbt - mb, cst = 1 << lft;
     t22.sort(function(a4, b3) {
-      return tr2[b3.s] - tr2[a4.s] || a4.f - b3.f;
+      return tr3[b3.s] - tr3[a4.s] || a4.f - b3.f;
     });
     for (; i5 < s4; ++i5) {
       var i2_1 = t22[i5].s;
-      if (tr2[i2_1] > mb) {
-        dt2 += cst - (1 << mbt - tr2[i2_1]);
-        tr2[i2_1] = mb;
+      if (tr3[i2_1] > mb) {
+        dt2 += cst - (1 << mbt - tr3[i2_1]);
+        tr3[i2_1] = mb;
       } else
         break;
     }
     dt2 >>= lft;
     while (dt2 > 0) {
       var i2_2 = t22[i5].s;
-      if (tr2[i2_2] < mb)
-        dt2 -= 1 << mb - tr2[i2_2]++ - 1;
+      if (tr3[i2_2] < mb)
+        dt2 -= 1 << mb - tr3[i2_2]++ - 1;
       else
         ++i5;
     }
     for (; i5 >= 0 && dt2; --i5) {
       var i2_3 = t22[i5].s;
-      if (tr2[i2_3] == mb) {
-        --tr2[i2_3];
+      if (tr3[i2_3] == mb) {
+        --tr3[i2_3];
         ++dt2;
       }
     }
     mbt = mb;
   }
-  return { t: new u8(tr2), l: mbt };
+  return { t: new u8(tr3), l: mbt };
 };
 var ln = function(n3, l4, d3) {
   return n3.s == -1 ? Math.max(ln(n3.l, l4, d3 + 1), ln(n3.r, l4, d3 + 1)) : l4[n3.s] = d3;
@@ -41456,7 +42003,7 @@ var inflate_table = (type, lens, lens_index, codes, table, table_index, work, op
   let used = 0;
   let huff = 0;
   let incr;
-  let fill;
+  let fill2;
   let low;
   let mask;
   let next;
@@ -41552,12 +42099,12 @@ var inflate_table = (type, lens, lens_index, codes, table, table_index, work, op
       here_val = 0;
     }
     incr = 1 << len - drop;
-    fill = 1 << curr;
-    min = fill;
+    fill2 = 1 << curr;
+    min = fill2;
     do {
-      fill -= incr;
-      table[next + (huff >> drop) + fill] = here_bits << 24 | here_op << 16 | here_val | 0;
-    } while (fill !== 0);
+      fill2 -= incr;
+      table[next + (huff >> drop) + fill2] = here_bits << 24 | here_op << 16 | here_val | 0;
+    } while (fill2 !== 0);
     incr = 1 << len - 1;
     while (huff & incr) {
       incr >>= 1;
@@ -45108,7 +45655,7 @@ function E(e3) {
       return B3(U3(t5));
     }).join(" "), e4 = B3(U3(e4)), lt2("[" + t4 + "] " + e4 + " d"), this;
   };
-  var tr2 = y4.__private__.getLineHeight = y4.getLineHeight = function() {
+  var tr3 = y4.__private__.getLineHeight = y4.getLineHeight = function() {
     return pt2 * Ke2;
   };
   y4.__private__.getLineHeight = y4.getLineHeight = function() {
@@ -45290,7 +45837,7 @@ function E(e3) {
   }, kr = y4.setPageHeight = function(t4, e4) {
     Ar(t4, e4 * St2);
   };
-  return y4.internal = { pdfEscape: ge3, getStyle: De2, getFont: Xe, getFontSize: mt2, getCharSpace: fr2, getTextColor: lr2, getLineHeight: tr2, getLineHeightFactor: rr2, getLineWidth: $e2, write: ht2, getHorizontalCoordinate: nr2, getVerticalCoordinate: ir2, getCoordinateString: ar2, getVerticalCoordinateString: or2, collections: {}, newObject: Xt2, newAdditionalObject: $t2, newObjectDeferred: Kt2, newObjectDeferredBegin: Zt2, getFilters: ne3, putStream: ie3, events: Dt2, scaleFactor: St2, pageSize: { getWidth: function() {
+  return y4.internal = { pdfEscape: ge3, getStyle: De2, getFont: Xe, getFontSize: mt2, getCharSpace: fr2, getTextColor: lr2, getLineHeight: tr3, getLineHeightFactor: rr2, getLineWidth: $e2, write: ht2, getHorizontalCoordinate: nr2, getVerticalCoordinate: ir2, getCoordinateString: ar2, getVerticalCoordinateString: or2, collections: {}, newObject: Xt2, newAdditionalObject: $t2, newObjectDeferred: Kt2, newObjectDeferredBegin: Zt2, getFilters: ne3, putStream: ie3, events: Dt2, scaleFactor: St2, pageSize: { getWidth: function() {
     return Sr2($3);
   }, setWidth: function(t4) {
     _r2($3, t4);
@@ -47515,7 +48062,7 @@ function ue(t4) {
                   tn(p6, g5, m7, v6, b5), xn(v6, b5, m7, 1, 0);
                   break;
                 case zn:
-                  en(p6, g5, m7, v6, b5);
+                  en2(p6, g5, m7, v6, b5);
                   break;
                 default:
                   e3(0);
@@ -47608,7 +48155,7 @@ function ue(t4) {
     }
     function kt2() {
       var e4 = new ar2();
-      return null == e4 ? null : (e4.a = 0, e4.xb = pi, rt2("Predictor", "VP8LPredictors"), rt2("Predictor", "VP8LPredictors_C"), rt2("PredictorAdd", "VP8LPredictorsAdd"), rt2("PredictorAdd", "VP8LPredictorsAdd_C"), Vr = G3, Zr = J3, $r = K3, Qr = Z3, tn = $3, en = Q3, rn = tt2, t5.VP8LMapColor32b = Yr, t5.VP8LMapColor8b = Xr, e4);
+      return null == e4 ? null : (e4.a = 0, e4.xb = pi, rt2("Predictor", "VP8LPredictors"), rt2("Predictor", "VP8LPredictors_C"), rt2("PredictorAdd", "VP8LPredictorsAdd"), rt2("PredictorAdd", "VP8LPredictorsAdd_C"), Vr = G3, Zr = J3, $r = K3, Qr = Z3, tn = $3, en2 = Q3, rn = tt2, t5.VP8LMapColor32b = Yr, t5.VP8LMapColor8b = Xr, e4);
     }
     function Ft2(t6, r4, n4, s5, u6) {
       var c7 = 1, f6 = [t6], p6 = [r4], g5 = s5.m, m7 = s5.s, v6 = null, b5 = 0;
@@ -48153,7 +48700,7 @@ function ue(t4) {
     function Qe2(t6, e4, r4, n4, i6, a5, o5, s5) {
       Ge2(t6, e4 + 4 * i6, i6, 1, 8, a5, o5, s5), Ge2(r4, n4 + 4 * i6, i6, 1, 8, a5, o5, s5);
     }
-    function tr2(t6, e4, r4, n4, i6, a5, o5, s5) {
+    function tr3(t6, e4, r4, n4, i6, a5, o5, s5) {
       Ge2(t6, e4 + 4, 1, i6, 8, a5, o5, s5), Ge2(r4, n4 + 4, 1, i6, 8, a5, o5, s5);
     }
     function er2() {
@@ -48635,7 +49182,7 @@ function ue(t4) {
     });
     var Vr, Gr = t5.ColorIndexInverseTransform, Yr = t5.MapARGB, Jr = t5.VP8LColorIndexInverseTransformAlpha, Xr = t5.MapAlpha, Kr = t5.VP8LPredictorsAdd = [];
     Kr.length = 16, (t5.VP8LPredictors = []).length = 16, (t5.VP8LPredictorsAdd_C = []).length = 16, (t5.VP8LPredictors_C = []).length = 16;
-    var Zr, $r, Qr, tn, en, rn, nn, an, on, sn, un, cn, ln2, hn, fn, dn, pn, gn, mn, vn, bn, yn, wn, Nn, Ln, xn, An, Sn, _n = a4(511), Pn = a4(2041), kn = a4(225), Fn = a4(767), In = 0, Cn = Pn, jn = kn, On = Fn, Bn = _n, Mn = 0, qn = 1, En = 2, Rn = 3, Dn = 4, Tn = 5, zn = 6, Un = 7, Hn = 8, Wn = 9, Vn = 10, Gn = [2, 3, 7], Yn = [3, 3, 11], Jn = [280, 256, 256, 256, 40], Xn = [0, 1, 1, 1, 0], Kn = [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], Zn = [24, 7, 23, 25, 40, 6, 39, 41, 22, 26, 38, 42, 56, 5, 55, 57, 21, 27, 54, 58, 37, 43, 72, 4, 71, 73, 20, 28, 53, 59, 70, 74, 36, 44, 88, 69, 75, 52, 60, 3, 87, 89, 19, 29, 86, 90, 35, 45, 68, 76, 85, 91, 51, 61, 104, 2, 103, 105, 18, 30, 102, 106, 34, 46, 84, 92, 67, 77, 101, 107, 50, 62, 120, 1, 119, 121, 83, 93, 17, 31, 100, 108, 66, 78, 118, 122, 33, 47, 117, 123, 49, 63, 99, 109, 82, 94, 0, 116, 124, 65, 79, 16, 32, 98, 110, 48, 115, 125, 81, 95, 64, 114, 126, 97, 111, 80, 113, 127, 96, 112], $n = [2954, 2956, 2958, 2962, 2970, 2986, 3018, 3082, 3212, 3468, 3980, 5004], Qn = 8, ti = [4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 17, 18, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 25, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 93, 95, 96, 98, 100, 101, 102, 104, 106, 108, 110, 112, 114, 116, 118, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 143, 145, 148, 151, 154, 157], ei = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 119, 122, 125, 128, 131, 134, 137, 140, 143, 146, 149, 152, 155, 158, 161, 164, 167, 170, 173, 177, 181, 185, 189, 193, 197, 201, 205, 209, 213, 217, 221, 225, 229, 234, 239, 245, 249, 254, 259, 264, 269, 274, 279, 284], ri = null, ni = [[173, 148, 140, 0], [176, 155, 140, 135, 0], [180, 157, 141, 134, 130, 0], [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0]], ii = [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15], ai = [-0, 1, -1, 2, -2, 3, 4, 6, -3, 5, -4, -5, -6, 7, -7, 8, -8, -9], oi = [[[[128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]], [[253, 136, 254, 255, 228, 219, 128, 128, 128, 128, 128], [189, 129, 242, 255, 227, 213, 255, 219, 128, 128, 128], [106, 126, 227, 252, 214, 209, 255, 255, 128, 128, 128]], [[1, 98, 248, 255, 236, 226, 255, 255, 128, 128, 128], [181, 133, 238, 254, 221, 234, 255, 154, 128, 128, 128], [78, 134, 202, 247, 198, 180, 255, 219, 128, 128, 128]], [[1, 185, 249, 255, 243, 255, 128, 128, 128, 128, 128], [184, 150, 247, 255, 236, 224, 128, 128, 128, 128, 128], [77, 110, 216, 255, 236, 230, 128, 128, 128, 128, 128]], [[1, 101, 251, 255, 241, 255, 128, 128, 128, 128, 128], [170, 139, 241, 252, 236, 209, 255, 255, 128, 128, 128], [37, 116, 196, 243, 228, 255, 255, 255, 128, 128, 128]], [[1, 204, 254, 255, 245, 255, 128, 128, 128, 128, 128], [207, 160, 250, 255, 238, 128, 128, 128, 128, 128, 128], [102, 103, 231, 255, 211, 171, 128, 128, 128, 128, 128]], [[1, 152, 252, 255, 240, 255, 128, 128, 128, 128, 128], [177, 135, 243, 255, 234, 225, 128, 128, 128, 128, 128], [80, 129, 211, 255, 194, 224, 128, 128, 128, 128, 128]], [[1, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [246, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [255, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]]], [[[198, 35, 237, 223, 193, 187, 162, 160, 145, 155, 62], [131, 45, 198, 221, 172, 176, 220, 157, 252, 221, 1], [68, 47, 146, 208, 149, 167, 221, 162, 255, 223, 128]], [[1, 149, 241, 255, 221, 224, 255, 255, 128, 128, 128], [184, 141, 234, 253, 222, 220, 255, 199, 128, 128, 128], [81, 99, 181, 242, 176, 190, 249, 202, 255, 255, 128]], [[1, 129, 232, 253, 214, 197, 242, 196, 255, 255, 128], [99, 121, 210, 250, 201, 198, 255, 202, 128, 128, 128], [23, 91, 163, 242, 170, 187, 247, 210, 255, 255, 128]], [[1, 200, 246, 255, 234, 255, 128, 128, 128, 128, 128], [109, 178, 241, 255, 231, 245, 255, 255, 128, 128, 128], [44, 130, 201, 253, 205, 192, 255, 255, 128, 128, 128]], [[1, 132, 239, 251, 219, 209, 255, 165, 128, 128, 128], [94, 136, 225, 251, 218, 190, 255, 255, 128, 128, 128], [22, 100, 174, 245, 186, 161, 255, 199, 128, 128, 128]], [[1, 182, 249, 255, 232, 235, 128, 128, 128, 128, 128], [124, 143, 241, 255, 227, 234, 128, 128, 128, 128, 128], [35, 77, 181, 251, 193, 211, 255, 205, 128, 128, 128]], [[1, 157, 247, 255, 236, 231, 255, 255, 128, 128, 128], [121, 141, 235, 255, 225, 227, 255, 255, 128, 128, 128], [45, 99, 188, 251, 195, 217, 255, 224, 128, 128, 128]], [[1, 1, 251, 255, 213, 255, 128, 128, 128, 128, 128], [203, 1, 248, 255, 255, 128, 128, 128, 128, 128, 128], [137, 1, 177, 255, 224, 255, 128, 128, 128, 128, 128]]], [[[253, 9, 248, 251, 207, 208, 255, 192, 128, 128, 128], [175, 13, 224, 243, 193, 185, 249, 198, 255, 255, 128], [73, 17, 171, 221, 161, 179, 236, 167, 255, 234, 128]], [[1, 95, 247, 253, 212, 183, 255, 255, 128, 128, 128], [239, 90, 244, 250, 211, 209, 255, 255, 128, 128, 128], [155, 77, 195, 248, 188, 195, 255, 255, 128, 128, 128]], [[1, 24, 239, 251, 218, 219, 255, 205, 128, 128, 128], [201, 51, 219, 255, 196, 186, 128, 128, 128, 128, 128], [69, 46, 190, 239, 201, 218, 255, 228, 128, 128, 128]], [[1, 191, 251, 255, 255, 128, 128, 128, 128, 128, 128], [223, 165, 249, 255, 213, 255, 128, 128, 128, 128, 128], [141, 124, 248, 255, 255, 128, 128, 128, 128, 128, 128]], [[1, 16, 248, 255, 255, 128, 128, 128, 128, 128, 128], [190, 36, 230, 255, 236, 255, 128, 128, 128, 128, 128], [149, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[1, 226, 255, 128, 128, 128, 128, 128, 128, 128, 128], [247, 192, 255, 128, 128, 128, 128, 128, 128, 128, 128], [240, 128, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[1, 134, 252, 255, 255, 128, 128, 128, 128, 128, 128], [213, 62, 250, 255, 255, 128, 128, 128, 128, 128, 128], [55, 93, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]]], [[[202, 24, 213, 235, 186, 191, 220, 160, 240, 175, 255], [126, 38, 182, 232, 169, 184, 228, 174, 255, 187, 128], [61, 46, 138, 219, 151, 178, 240, 170, 255, 216, 128]], [[1, 112, 230, 250, 199, 191, 247, 159, 255, 255, 128], [166, 109, 228, 252, 211, 215, 255, 174, 128, 128, 128], [39, 77, 162, 232, 172, 180, 245, 178, 255, 255, 128]], [[1, 52, 220, 246, 198, 199, 249, 220, 255, 255, 128], [124, 74, 191, 243, 183, 193, 250, 221, 255, 255, 128], [24, 71, 130, 219, 154, 170, 243, 182, 255, 255, 128]], [[1, 182, 225, 249, 219, 240, 255, 224, 128, 128, 128], [149, 150, 226, 252, 216, 205, 255, 171, 128, 128, 128], [28, 108, 170, 242, 183, 194, 254, 223, 255, 255, 128]], [[1, 81, 230, 252, 204, 203, 255, 192, 128, 128, 128], [123, 102, 209, 247, 188, 196, 255, 233, 128, 128, 128], [20, 95, 153, 243, 164, 173, 255, 203, 128, 128, 128]], [[1, 222, 248, 255, 216, 213, 128, 128, 128, 128, 128], [168, 175, 246, 252, 235, 205, 255, 255, 128, 128, 128], [47, 116, 215, 255, 211, 212, 255, 255, 128, 128, 128]], [[1, 121, 236, 253, 212, 214, 255, 255, 128, 128, 128], [141, 84, 213, 252, 201, 202, 255, 219, 128, 128, 128], [42, 80, 160, 240, 162, 185, 255, 205, 128, 128, 128]], [[1, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [244, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [238, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128]]]], si = [[[231, 120, 48, 89, 115, 113, 120, 152, 112], [152, 179, 64, 126, 170, 118, 46, 70, 95], [175, 69, 143, 80, 85, 82, 72, 155, 103], [56, 58, 10, 171, 218, 189, 17, 13, 152], [114, 26, 17, 163, 44, 195, 21, 10, 173], [121, 24, 80, 195, 26, 62, 44, 64, 85], [144, 71, 10, 38, 171, 213, 144, 34, 26], [170, 46, 55, 19, 136, 160, 33, 206, 71], [63, 20, 8, 114, 114, 208, 12, 9, 226], [81, 40, 11, 96, 182, 84, 29, 16, 36]], [[134, 183, 89, 137, 98, 101, 106, 165, 148], [72, 187, 100, 130, 157, 111, 32, 75, 80], [66, 102, 167, 99, 74, 62, 40, 234, 128], [41, 53, 9, 178, 241, 141, 26, 8, 107], [74, 43, 26, 146, 73, 166, 49, 23, 157], [65, 38, 105, 160, 51, 52, 31, 115, 128], [104, 79, 12, 27, 217, 255, 87, 17, 7], [87, 68, 71, 44, 114, 51, 15, 186, 23], [47, 41, 14, 110, 182, 183, 21, 17, 194], [66, 45, 25, 102, 197, 189, 23, 18, 22]], [[88, 88, 147, 150, 42, 46, 45, 196, 205], [43, 97, 183, 117, 85, 38, 35, 179, 61], [39, 53, 200, 87, 26, 21, 43, 232, 171], [56, 34, 51, 104, 114, 102, 29, 93, 77], [39, 28, 85, 171, 58, 165, 90, 98, 64], [34, 22, 116, 206, 23, 34, 43, 166, 73], [107, 54, 32, 26, 51, 1, 81, 43, 31], [68, 25, 106, 22, 64, 171, 36, 225, 114], [34, 19, 21, 102, 132, 188, 16, 76, 124], [62, 18, 78, 95, 85, 57, 50, 48, 51]], [[193, 101, 35, 159, 215, 111, 89, 46, 111], [60, 148, 31, 172, 219, 228, 21, 18, 111], [112, 113, 77, 85, 179, 255, 38, 120, 114], [40, 42, 1, 196, 245, 209, 10, 25, 109], [88, 43, 29, 140, 166, 213, 37, 43, 154], [61, 63, 30, 155, 67, 45, 68, 1, 209], [100, 80, 8, 43, 154, 1, 51, 26, 71], [142, 78, 78, 16, 255, 128, 34, 197, 171], [41, 40, 5, 102, 211, 183, 4, 1, 221], [51, 50, 17, 168, 209, 192, 23, 25, 82]], [[138, 31, 36, 171, 27, 166, 38, 44, 229], [67, 87, 58, 169, 82, 115, 26, 59, 179], [63, 59, 90, 180, 59, 166, 93, 73, 154], [40, 40, 21, 116, 143, 209, 34, 39, 175], [47, 15, 16, 183, 34, 223, 49, 45, 183], [46, 17, 33, 183, 6, 98, 15, 32, 183], [57, 46, 22, 24, 128, 1, 54, 17, 37], [65, 32, 73, 115, 28, 128, 23, 128, 205], [40, 3, 9, 115, 51, 192, 18, 6, 223], [87, 37, 9, 115, 59, 77, 64, 21, 47]], [[104, 55, 44, 218, 9, 54, 53, 130, 226], [64, 90, 70, 205, 40, 41, 23, 26, 57], [54, 57, 112, 184, 5, 41, 38, 166, 213], [30, 34, 26, 133, 152, 116, 10, 32, 134], [39, 19, 53, 221, 26, 114, 32, 73, 255], [31, 9, 65, 234, 2, 15, 1, 118, 73], [75, 32, 12, 51, 192, 255, 160, 43, 51], [88, 31, 35, 67, 102, 85, 55, 186, 85], [56, 21, 23, 111, 59, 205, 45, 37, 192], [55, 38, 70, 124, 73, 102, 1, 34, 98]], [[125, 98, 42, 88, 104, 85, 117, 175, 82], [95, 84, 53, 89, 128, 100, 113, 101, 45], [75, 79, 123, 47, 51, 128, 81, 171, 1], [57, 17, 5, 71, 102, 57, 53, 41, 49], [38, 33, 13, 121, 57, 73, 26, 1, 85], [41, 10, 67, 138, 77, 110, 90, 47, 114], [115, 21, 2, 10, 102, 255, 166, 23, 6], [101, 29, 16, 10, 85, 128, 101, 196, 26], [57, 18, 10, 102, 102, 213, 34, 20, 43], [117, 20, 15, 36, 163, 128, 68, 1, 26]], [[102, 61, 71, 37, 34, 53, 31, 243, 192], [69, 60, 71, 38, 73, 119, 28, 222, 37], [68, 45, 128, 34, 1, 47, 11, 245, 171], [62, 17, 19, 70, 146, 85, 55, 62, 70], [37, 43, 37, 154, 100, 163, 85, 160, 1], [63, 9, 92, 136, 28, 64, 32, 201, 85], [75, 15, 9, 9, 64, 255, 184, 119, 16], [86, 6, 28, 5, 64, 255, 25, 248, 1], [56, 8, 17, 132, 137, 255, 55, 116, 128], [58, 15, 20, 82, 135, 57, 26, 121, 40]], [[164, 50, 31, 137, 154, 133, 25, 35, 218], [51, 103, 44, 131, 131, 123, 31, 6, 158], [86, 40, 64, 135, 148, 224, 45, 183, 128], [22, 26, 17, 131, 240, 154, 14, 1, 209], [45, 16, 21, 91, 64, 222, 7, 1, 197], [56, 21, 39, 155, 60, 138, 23, 102, 213], [83, 12, 13, 54, 192, 255, 68, 47, 28], [85, 26, 85, 85, 128, 128, 32, 146, 171], [18, 11, 7, 63, 144, 171, 4, 4, 246], [35, 27, 10, 146, 174, 171, 12, 26, 128]], [[190, 80, 35, 99, 180, 80, 126, 54, 45], [85, 126, 47, 87, 176, 51, 41, 20, 32], [101, 75, 128, 139, 118, 146, 116, 128, 85], [56, 41, 15, 176, 236, 85, 37, 9, 62], [71, 30, 17, 119, 118, 255, 17, 18, 138], [101, 38, 60, 138, 55, 70, 43, 26, 142], [146, 36, 19, 30, 171, 255, 97, 27, 20], [138, 45, 61, 62, 219, 1, 81, 188, 64], [32, 41, 20, 117, 151, 142, 20, 21, 163], [112, 19, 12, 61, 195, 128, 48, 4, 24]]], ui = [[[[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[176, 246, 255, 255, 255, 255, 255, 255, 255, 255, 255], [223, 241, 252, 255, 255, 255, 255, 255, 255, 255, 255], [249, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 244, 252, 255, 255, 255, 255, 255, 255, 255, 255], [234, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 246, 254, 255, 255, 255, 255, 255, 255, 255, 255], [239, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 248, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 253, 255, 254, 255, 255, 255, 255, 255, 255], [250, 255, 254, 255, 254, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[217, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [225, 252, 241, 253, 255, 255, 254, 255, 255, 255, 255], [234, 250, 241, 250, 253, 255, 253, 254, 255, 255, 255]], [[255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [223, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [238, 253, 254, 254, 255, 255, 255, 255, 255, 255, 255]], [[255, 248, 254, 255, 255, 255, 255, 255, 255, 255, 255], [249, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 255], [247, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [252, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 253, 255, 255, 255, 255, 255, 255, 255, 255], [250, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[186, 251, 250, 255, 255, 255, 255, 255, 255, 255, 255], [234, 251, 244, 254, 255, 255, 255, 255, 255, 255, 255], [251, 251, 243, 253, 254, 255, 254, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [236, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 253, 253, 254, 254, 255, 255, 255, 255, 255, 255]], [[255, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[248, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [250, 254, 252, 254, 255, 255, 255, 255, 255, 255, 255], [248, 254, 249, 253, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255], [246, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255], [252, 254, 251, 254, 254, 255, 255, 255, 255, 255, 255]], [[255, 254, 252, 255, 255, 255, 255, 255, 255, 255, 255], [248, 254, 253, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 254, 254, 255, 255, 255, 255, 255, 255, 255]], [[255, 251, 254, 255, 255, 255, 255, 255, 255, 255, 255], [245, 251, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 251, 253, 255, 255, 255, 255, 255, 255, 255, 255], [252, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 252, 255, 255, 255, 255, 255, 255, 255, 255, 255], [249, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 253, 255, 255, 255, 255, 255, 255, 255, 255], [250, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]]], ci = [0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0], li = [], hi = [], fi = [], di = 1, pi = 2, gi = [], mi = [];
+    var Zr, $r, Qr, tn, en2, rn, nn, an, on, sn, un, cn, ln2, hn, fn, dn, pn, gn, mn, vn, bn, yn, wn, Nn, Ln, xn, An, Sn, _n = a4(511), Pn = a4(2041), kn = a4(225), Fn = a4(767), In = 0, Cn = Pn, jn = kn, On = Fn, Bn = _n, Mn = 0, qn = 1, En = 2, Rn = 3, Dn = 4, Tn = 5, zn = 6, Un = 7, Hn = 8, Wn = 9, Vn = 10, Gn = [2, 3, 7], Yn = [3, 3, 11], Jn = [280, 256, 256, 256, 40], Xn = [0, 1, 1, 1, 0], Kn = [17, 18, 0, 1, 2, 3, 4, 5, 16, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], Zn = [24, 7, 23, 25, 40, 6, 39, 41, 22, 26, 38, 42, 56, 5, 55, 57, 21, 27, 54, 58, 37, 43, 72, 4, 71, 73, 20, 28, 53, 59, 70, 74, 36, 44, 88, 69, 75, 52, 60, 3, 87, 89, 19, 29, 86, 90, 35, 45, 68, 76, 85, 91, 51, 61, 104, 2, 103, 105, 18, 30, 102, 106, 34, 46, 84, 92, 67, 77, 101, 107, 50, 62, 120, 1, 119, 121, 83, 93, 17, 31, 100, 108, 66, 78, 118, 122, 33, 47, 117, 123, 49, 63, 99, 109, 82, 94, 0, 116, 124, 65, 79, 16, 32, 98, 110, 48, 115, 125, 81, 95, 64, 114, 126, 97, 111, 80, 113, 127, 96, 112], $n = [2954, 2956, 2958, 2962, 2970, 2986, 3018, 3082, 3212, 3468, 3980, 5004], Qn = 8, ti = [4, 5, 6, 7, 8, 9, 10, 10, 11, 12, 13, 14, 15, 16, 17, 17, 18, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 25, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 93, 95, 96, 98, 100, 101, 102, 104, 106, 108, 110, 112, 114, 116, 118, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 143, 145, 148, 151, 154, 157], ei = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 106, 108, 110, 112, 114, 116, 119, 122, 125, 128, 131, 134, 137, 140, 143, 146, 149, 152, 155, 158, 161, 164, 167, 170, 173, 177, 181, 185, 189, 193, 197, 201, 205, 209, 213, 217, 221, 225, 229, 234, 239, 245, 249, 254, 259, 264, 269, 274, 279, 284], ri = null, ni = [[173, 148, 140, 0], [176, 155, 140, 135, 0], [180, 157, 141, 134, 130, 0], [254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129, 0]], ii = [0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15], ai = [-0, 1, -1, 2, -2, 3, 4, 6, -3, 5, -4, -5, -6, 7, -7, 8, -8, -9], oi = [[[[128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]], [[253, 136, 254, 255, 228, 219, 128, 128, 128, 128, 128], [189, 129, 242, 255, 227, 213, 255, 219, 128, 128, 128], [106, 126, 227, 252, 214, 209, 255, 255, 128, 128, 128]], [[1, 98, 248, 255, 236, 226, 255, 255, 128, 128, 128], [181, 133, 238, 254, 221, 234, 255, 154, 128, 128, 128], [78, 134, 202, 247, 198, 180, 255, 219, 128, 128, 128]], [[1, 185, 249, 255, 243, 255, 128, 128, 128, 128, 128], [184, 150, 247, 255, 236, 224, 128, 128, 128, 128, 128], [77, 110, 216, 255, 236, 230, 128, 128, 128, 128, 128]], [[1, 101, 251, 255, 241, 255, 128, 128, 128, 128, 128], [170, 139, 241, 252, 236, 209, 255, 255, 128, 128, 128], [37, 116, 196, 243, 228, 255, 255, 255, 128, 128, 128]], [[1, 204, 254, 255, 245, 255, 128, 128, 128, 128, 128], [207, 160, 250, 255, 238, 128, 128, 128, 128, 128, 128], [102, 103, 231, 255, 211, 171, 128, 128, 128, 128, 128]], [[1, 152, 252, 255, 240, 255, 128, 128, 128, 128, 128], [177, 135, 243, 255, 234, 225, 128, 128, 128, 128, 128], [80, 129, 211, 255, 194, 224, 128, 128, 128, 128, 128]], [[1, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [246, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [255, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]]], [[[198, 35, 237, 223, 193, 187, 162, 160, 145, 155, 62], [131, 45, 198, 221, 172, 176, 220, 157, 252, 221, 1], [68, 47, 146, 208, 149, 167, 221, 162, 255, 223, 128]], [[1, 149, 241, 255, 221, 224, 255, 255, 128, 128, 128], [184, 141, 234, 253, 222, 220, 255, 199, 128, 128, 128], [81, 99, 181, 242, 176, 190, 249, 202, 255, 255, 128]], [[1, 129, 232, 253, 214, 197, 242, 196, 255, 255, 128], [99, 121, 210, 250, 201, 198, 255, 202, 128, 128, 128], [23, 91, 163, 242, 170, 187, 247, 210, 255, 255, 128]], [[1, 200, 246, 255, 234, 255, 128, 128, 128, 128, 128], [109, 178, 241, 255, 231, 245, 255, 255, 128, 128, 128], [44, 130, 201, 253, 205, 192, 255, 255, 128, 128, 128]], [[1, 132, 239, 251, 219, 209, 255, 165, 128, 128, 128], [94, 136, 225, 251, 218, 190, 255, 255, 128, 128, 128], [22, 100, 174, 245, 186, 161, 255, 199, 128, 128, 128]], [[1, 182, 249, 255, 232, 235, 128, 128, 128, 128, 128], [124, 143, 241, 255, 227, 234, 128, 128, 128, 128, 128], [35, 77, 181, 251, 193, 211, 255, 205, 128, 128, 128]], [[1, 157, 247, 255, 236, 231, 255, 255, 128, 128, 128], [121, 141, 235, 255, 225, 227, 255, 255, 128, 128, 128], [45, 99, 188, 251, 195, 217, 255, 224, 128, 128, 128]], [[1, 1, 251, 255, 213, 255, 128, 128, 128, 128, 128], [203, 1, 248, 255, 255, 128, 128, 128, 128, 128, 128], [137, 1, 177, 255, 224, 255, 128, 128, 128, 128, 128]]], [[[253, 9, 248, 251, 207, 208, 255, 192, 128, 128, 128], [175, 13, 224, 243, 193, 185, 249, 198, 255, 255, 128], [73, 17, 171, 221, 161, 179, 236, 167, 255, 234, 128]], [[1, 95, 247, 253, 212, 183, 255, 255, 128, 128, 128], [239, 90, 244, 250, 211, 209, 255, 255, 128, 128, 128], [155, 77, 195, 248, 188, 195, 255, 255, 128, 128, 128]], [[1, 24, 239, 251, 218, 219, 255, 205, 128, 128, 128], [201, 51, 219, 255, 196, 186, 128, 128, 128, 128, 128], [69, 46, 190, 239, 201, 218, 255, 228, 128, 128, 128]], [[1, 191, 251, 255, 255, 128, 128, 128, 128, 128, 128], [223, 165, 249, 255, 213, 255, 128, 128, 128, 128, 128], [141, 124, 248, 255, 255, 128, 128, 128, 128, 128, 128]], [[1, 16, 248, 255, 255, 128, 128, 128, 128, 128, 128], [190, 36, 230, 255, 236, 255, 128, 128, 128, 128, 128], [149, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[1, 226, 255, 128, 128, 128, 128, 128, 128, 128, 128], [247, 192, 255, 128, 128, 128, 128, 128, 128, 128, 128], [240, 128, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[1, 134, 252, 255, 255, 128, 128, 128, 128, 128, 128], [213, 62, 250, 255, 255, 128, 128, 128, 128, 128, 128], [55, 93, 255, 128, 128, 128, 128, 128, 128, 128, 128]], [[128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128], [128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128]]], [[[202, 24, 213, 235, 186, 191, 220, 160, 240, 175, 255], [126, 38, 182, 232, 169, 184, 228, 174, 255, 187, 128], [61, 46, 138, 219, 151, 178, 240, 170, 255, 216, 128]], [[1, 112, 230, 250, 199, 191, 247, 159, 255, 255, 128], [166, 109, 228, 252, 211, 215, 255, 174, 128, 128, 128], [39, 77, 162, 232, 172, 180, 245, 178, 255, 255, 128]], [[1, 52, 220, 246, 198, 199, 249, 220, 255, 255, 128], [124, 74, 191, 243, 183, 193, 250, 221, 255, 255, 128], [24, 71, 130, 219, 154, 170, 243, 182, 255, 255, 128]], [[1, 182, 225, 249, 219, 240, 255, 224, 128, 128, 128], [149, 150, 226, 252, 216, 205, 255, 171, 128, 128, 128], [28, 108, 170, 242, 183, 194, 254, 223, 255, 255, 128]], [[1, 81, 230, 252, 204, 203, 255, 192, 128, 128, 128], [123, 102, 209, 247, 188, 196, 255, 233, 128, 128, 128], [20, 95, 153, 243, 164, 173, 255, 203, 128, 128, 128]], [[1, 222, 248, 255, 216, 213, 128, 128, 128, 128, 128], [168, 175, 246, 252, 235, 205, 255, 255, 128, 128, 128], [47, 116, 215, 255, 211, 212, 255, 255, 128, 128, 128]], [[1, 121, 236, 253, 212, 214, 255, 255, 128, 128, 128], [141, 84, 213, 252, 201, 202, 255, 219, 128, 128, 128], [42, 80, 160, 240, 162, 185, 255, 205, 128, 128, 128]], [[1, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [244, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128], [238, 1, 255, 128, 128, 128, 128, 128, 128, 128, 128]]]], si = [[[231, 120, 48, 89, 115, 113, 120, 152, 112], [152, 179, 64, 126, 170, 118, 46, 70, 95], [175, 69, 143, 80, 85, 82, 72, 155, 103], [56, 58, 10, 171, 218, 189, 17, 13, 152], [114, 26, 17, 163, 44, 195, 21, 10, 173], [121, 24, 80, 195, 26, 62, 44, 64, 85], [144, 71, 10, 38, 171, 213, 144, 34, 26], [170, 46, 55, 19, 136, 160, 33, 206, 71], [63, 20, 8, 114, 114, 208, 12, 9, 226], [81, 40, 11, 96, 182, 84, 29, 16, 36]], [[134, 183, 89, 137, 98, 101, 106, 165, 148], [72, 187, 100, 130, 157, 111, 32, 75, 80], [66, 102, 167, 99, 74, 62, 40, 234, 128], [41, 53, 9, 178, 241, 141, 26, 8, 107], [74, 43, 26, 146, 73, 166, 49, 23, 157], [65, 38, 105, 160, 51, 52, 31, 115, 128], [104, 79, 12, 27, 217, 255, 87, 17, 7], [87, 68, 71, 44, 114, 51, 15, 186, 23], [47, 41, 14, 110, 182, 183, 21, 17, 194], [66, 45, 25, 102, 197, 189, 23, 18, 22]], [[88, 88, 147, 150, 42, 46, 45, 196, 205], [43, 97, 183, 117, 85, 38, 35, 179, 61], [39, 53, 200, 87, 26, 21, 43, 232, 171], [56, 34, 51, 104, 114, 102, 29, 93, 77], [39, 28, 85, 171, 58, 165, 90, 98, 64], [34, 22, 116, 206, 23, 34, 43, 166, 73], [107, 54, 32, 26, 51, 1, 81, 43, 31], [68, 25, 106, 22, 64, 171, 36, 225, 114], [34, 19, 21, 102, 132, 188, 16, 76, 124], [62, 18, 78, 95, 85, 57, 50, 48, 51]], [[193, 101, 35, 159, 215, 111, 89, 46, 111], [60, 148, 31, 172, 219, 228, 21, 18, 111], [112, 113, 77, 85, 179, 255, 38, 120, 114], [40, 42, 1, 196, 245, 209, 10, 25, 109], [88, 43, 29, 140, 166, 213, 37, 43, 154], [61, 63, 30, 155, 67, 45, 68, 1, 209], [100, 80, 8, 43, 154, 1, 51, 26, 71], [142, 78, 78, 16, 255, 128, 34, 197, 171], [41, 40, 5, 102, 211, 183, 4, 1, 221], [51, 50, 17, 168, 209, 192, 23, 25, 82]], [[138, 31, 36, 171, 27, 166, 38, 44, 229], [67, 87, 58, 169, 82, 115, 26, 59, 179], [63, 59, 90, 180, 59, 166, 93, 73, 154], [40, 40, 21, 116, 143, 209, 34, 39, 175], [47, 15, 16, 183, 34, 223, 49, 45, 183], [46, 17, 33, 183, 6, 98, 15, 32, 183], [57, 46, 22, 24, 128, 1, 54, 17, 37], [65, 32, 73, 115, 28, 128, 23, 128, 205], [40, 3, 9, 115, 51, 192, 18, 6, 223], [87, 37, 9, 115, 59, 77, 64, 21, 47]], [[104, 55, 44, 218, 9, 54, 53, 130, 226], [64, 90, 70, 205, 40, 41, 23, 26, 57], [54, 57, 112, 184, 5, 41, 38, 166, 213], [30, 34, 26, 133, 152, 116, 10, 32, 134], [39, 19, 53, 221, 26, 114, 32, 73, 255], [31, 9, 65, 234, 2, 15, 1, 118, 73], [75, 32, 12, 51, 192, 255, 160, 43, 51], [88, 31, 35, 67, 102, 85, 55, 186, 85], [56, 21, 23, 111, 59, 205, 45, 37, 192], [55, 38, 70, 124, 73, 102, 1, 34, 98]], [[125, 98, 42, 88, 104, 85, 117, 175, 82], [95, 84, 53, 89, 128, 100, 113, 101, 45], [75, 79, 123, 47, 51, 128, 81, 171, 1], [57, 17, 5, 71, 102, 57, 53, 41, 49], [38, 33, 13, 121, 57, 73, 26, 1, 85], [41, 10, 67, 138, 77, 110, 90, 47, 114], [115, 21, 2, 10, 102, 255, 166, 23, 6], [101, 29, 16, 10, 85, 128, 101, 196, 26], [57, 18, 10, 102, 102, 213, 34, 20, 43], [117, 20, 15, 36, 163, 128, 68, 1, 26]], [[102, 61, 71, 37, 34, 53, 31, 243, 192], [69, 60, 71, 38, 73, 119, 28, 222, 37], [68, 45, 128, 34, 1, 47, 11, 245, 171], [62, 17, 19, 70, 146, 85, 55, 62, 70], [37, 43, 37, 154, 100, 163, 85, 160, 1], [63, 9, 92, 136, 28, 64, 32, 201, 85], [75, 15, 9, 9, 64, 255, 184, 119, 16], [86, 6, 28, 5, 64, 255, 25, 248, 1], [56, 8, 17, 132, 137, 255, 55, 116, 128], [58, 15, 20, 82, 135, 57, 26, 121, 40]], [[164, 50, 31, 137, 154, 133, 25, 35, 218], [51, 103, 44, 131, 131, 123, 31, 6, 158], [86, 40, 64, 135, 148, 224, 45, 183, 128], [22, 26, 17, 131, 240, 154, 14, 1, 209], [45, 16, 21, 91, 64, 222, 7, 1, 197], [56, 21, 39, 155, 60, 138, 23, 102, 213], [83, 12, 13, 54, 192, 255, 68, 47, 28], [85, 26, 85, 85, 128, 128, 32, 146, 171], [18, 11, 7, 63, 144, 171, 4, 4, 246], [35, 27, 10, 146, 174, 171, 12, 26, 128]], [[190, 80, 35, 99, 180, 80, 126, 54, 45], [85, 126, 47, 87, 176, 51, 41, 20, 32], [101, 75, 128, 139, 118, 146, 116, 128, 85], [56, 41, 15, 176, 236, 85, 37, 9, 62], [71, 30, 17, 119, 118, 255, 17, 18, 138], [101, 38, 60, 138, 55, 70, 43, 26, 142], [146, 36, 19, 30, 171, 255, 97, 27, 20], [138, 45, 61, 62, 219, 1, 81, 188, 64], [32, 41, 20, 117, 151, 142, 20, 21, 163], [112, 19, 12, 61, 195, 128, 48, 4, 24]]], ui = [[[[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[176, 246, 255, 255, 255, 255, 255, 255, 255, 255, 255], [223, 241, 252, 255, 255, 255, 255, 255, 255, 255, 255], [249, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 244, 252, 255, 255, 255, 255, 255, 255, 255, 255], [234, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 246, 254, 255, 255, 255, 255, 255, 255, 255, 255], [239, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 248, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 253, 255, 254, 255, 255, 255, 255, 255, 255], [250, 255, 254, 255, 254, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[217, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [225, 252, 241, 253, 255, 255, 254, 255, 255, 255, 255], [234, 250, 241, 250, 253, 255, 253, 254, 255, 255, 255]], [[255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [223, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [238, 253, 254, 254, 255, 255, 255, 255, 255, 255, 255]], [[255, 248, 254, 255, 255, 255, 255, 255, 255, 255, 255], [249, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 255], [247, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [252, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 253, 255, 255, 255, 255, 255, 255, 255, 255], [250, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[186, 251, 250, 255, 255, 255, 255, 255, 255, 255, 255], [234, 251, 244, 254, 255, 255, 255, 255, 255, 255, 255], [251, 251, 243, 253, 254, 255, 254, 255, 255, 255, 255]], [[255, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [236, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [251, 253, 253, 254, 254, 255, 255, 255, 255, 255, 255]], [[255, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [254, 254, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]], [[[248, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [250, 254, 252, 254, 255, 255, 255, 255, 255, 255, 255], [248, 254, 249, 253, 255, 255, 255, 255, 255, 255, 255]], [[255, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255], [246, 253, 253, 255, 255, 255, 255, 255, 255, 255, 255], [252, 254, 251, 254, 254, 255, 255, 255, 255, 255, 255]], [[255, 254, 252, 255, 255, 255, 255, 255, 255, 255, 255], [248, 254, 253, 255, 255, 255, 255, 255, 255, 255, 255], [253, 255, 254, 254, 255, 255, 255, 255, 255, 255, 255]], [[255, 251, 254, 255, 255, 255, 255, 255, 255, 255, 255], [245, 251, 254, 255, 255, 255, 255, 255, 255, 255, 255], [253, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 251, 253, 255, 255, 255, 255, 255, 255, 255, 255], [252, 253, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 252, 255, 255, 255, 255, 255, 255, 255, 255, 255], [249, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 253, 255, 255, 255, 255, 255, 255, 255, 255], [250, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]], [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255], [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]]]], ci = [0, 1, 2, 3, 6, 4, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 0], li = [], hi = [], fi = [], di = 1, pi = 2, gi = [], mi = [];
     mr2("UpsampleRgbLinePair", Lr, 3), mr2("UpsampleBgrLinePair", xr, 3), mr2("UpsampleRgbaLinePair", kr, 4), mr2("UpsampleBgraLinePair", Pr, 4), mr2("UpsampleArgbLinePair", _r2, 4), mr2("UpsampleRgba4444LinePair", Sr2, 2), mr2("UpsampleRgb565LinePair", Ar, 2);
     var vi = t5.UpsampleRgbLinePair, bi = t5.UpsampleBgrLinePair, yi = t5.UpsampleRgbaLinePair, wi = t5.UpsampleBgraLinePair, Ni = t5.UpsampleArgbLinePair, Li = t5.UpsampleRgba4444LinePair, xi = t5.UpsampleRgb565LinePair, Ai = 16, Si = 1 << Ai - 1, _i = -227, Pi = 482, ki = 6, Fi = (256 << ki) - 1, Ii = 0, Ci = a4(256), ji = a4(256), Oi = a4(256), Bi = a4(256), Mi = a4(Pi - _i), qi = a4(Pi - _i);
     Fr("YuvToRgbRow", Lr, 3), Fr("YuvToBgrRow", xr, 3), Fr("YuvToRgbaRow", kr, 4), Fr("YuvToBgraRow", Pr, 4), Fr("YuvToArgbRow", _r2, 4), Fr("YuvToRgba4444Row", Sr2, 2), Fr("YuvToRgb565Row", Ar, 2);
@@ -48767,7 +49314,7 @@ function ue(t4) {
                             for (s6 = -255; 510 >= s6; ++s6) Fn[255 + s6] = 0 > s6 ? 0 : 255 < s6 ? 255 : s6;
                             In = 1;
                           }
-                          nn = ue2, an = ie3, sn = ae3, un = oe2, cn = se3, on = ne3, ln2 = Ye, hn = Je2, fn = Ze2, dn = $e2, pn = Xe, gn = Ke2, mn = Qe2, vn = tr2, bn = ze2, yn = Ue2, wn = He2, Nn = We2, hi[0] = xe3, hi[1] = le2, hi[2] = Ne3, hi[3] = Le3, hi[4] = Ae3, hi[5] = _e3, hi[6] = Se3, hi[7] = Pe3, hi[8] = Fe2, hi[9] = ke2, li[0] = me2, li[1] = fe2, li[2] = de3, li[3] = pe3, li[4] = ve2, li[5] = be2, li[6] = ye3, fi[0] = Oe2, fi[1] = he2, fi[2] = Ie3, fi[3] = Ce2, fi[4] = Me2, fi[5] = Be2, fi[6] = qe, s6 = 1;
+                          nn = ue2, an = ie3, sn = ae3, un = oe2, cn = se3, on = ne3, ln2 = Ye, hn = Je2, fn = Ze2, dn = $e2, pn = Xe, gn = Ke2, mn = Qe2, vn = tr3, bn = ze2, yn = Ue2, wn = He2, Nn = We2, hi[0] = xe3, hi[1] = le2, hi[2] = Ne3, hi[3] = Le3, hi[4] = Ae3, hi[5] = _e3, hi[6] = Se3, hi[7] = Pe3, hi[8] = Fe2, hi[9] = ke2, li[0] = me2, li[1] = fe2, li[2] = de3, li[3] = pe3, li[4] = ve2, li[5] = be2, li[6] = ye3, fi[0] = Oe2, fi[1] = he2, fi[2] = Ie3, fi[3] = Ce2, fi[4] = Me2, fi[5] = Be2, fi[6] = qe, s6 = 1;
                         } else s6 = 0;
                       }
                       s6 && (s6 = (function(t8, r6) {
@@ -51250,9 +51797,9 @@ function drawShape(pdf, page, shape) {
   const outline = rgb(shape.color);
   pdf.setDrawColor(outline.r, outline.g, outline.b);
   pdf.setLineWidth(Math.max(0.2, shape.width * SCENE_TO_MM));
-  const fill = shape.fill && shape.kind !== "line" && shape.kind !== "arrow" && (shape.fillOpacity ?? 0) > 0 ? blend(shape.fill, shape.fillOpacity ?? 0) : null;
-  if (fill) pdf.setFillColor(fill.r, fill.g, fill.b);
-  const style = fill ? "FD" : "S";
+  const fill2 = shape.fill && shape.kind !== "line" && shape.kind !== "arrow" && (shape.fillOpacity ?? 0) > 0 ? blend(shape.fill, shape.fillOpacity ?? 0) : null;
+  if (fill2) pdf.setFillColor(fill2.r, fill2.g, fill2.b);
+  const style = fill2 ? "FD" : "S";
   if (shape.kind === "rectangle") pdf.rect(x4, y4, w3, h4, style);
   else if (shape.kind === "rounded-rectangle" || shape.kind === "callout") {
     pdf.roundedRect(x4, y4, w3, h4, Math.min(5, Math.abs(w3) / 5), Math.min(5, Math.abs(h4) / 5), style);
@@ -74099,7 +74646,7 @@ var ChartEditorModal = class extends import_obsidian6.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("notelens-chart-editor");
-    contentEl.createEl("h3", { text: "Gr\xE1fico" });
+    contentEl.createEl("h3", { text: tr("Gr\xE1fico") });
     const preview = contentEl.createEl("canvas", { cls: "notelens-chart-preview" });
     const redraw = () => drawChart(preview, this.spec, 520, 240);
     let dataSetting;
@@ -74109,7 +74656,7 @@ var ChartEditorModal = class extends import_obsidian6.Modal {
       dataSetting.settingEl.style.display = fn ? "none" : "";
       functionSetting.settingEl.style.display = fn ? "" : "none";
     };
-    new import_obsidian6.Setting(contentEl).setName("Tipo").addDropdown((d3) => {
+    new import_obsidian6.Setting(contentEl).setName(tr("Tipo")).addDropdown((d3) => {
       for (const [id, label] of CHART_TYPES) d3.addOption(id, label);
       d3.setValue(this.spec.type).onChange((v4) => {
         this.spec.type = v4;
@@ -74117,11 +74664,11 @@ var ChartEditorModal = class extends import_obsidian6.Modal {
         redraw();
       });
     });
-    new import_obsidian6.Setting(contentEl).setName("T\xEDtulo").addText((t4) => t4.setValue(this.spec.title ?? "").onChange((v4) => {
+    new import_obsidian6.Setting(contentEl).setName(tr("T\xEDtulo")).addText((t4) => t4.setValue(this.spec.title ?? "").onChange((v4) => {
       this.spec.title = v4;
       redraw();
     }));
-    dataSetting = new import_obsidian6.Setting(contentEl).setName("Datos").setDesc("Una fila por l\xEDnea: etiqueta; valor; valor\u2026 La primera l\xEDnea puede nombrar las series empezando por #. Para dispersi\xF3n: x; y.").addTextArea((t4) => {
+    dataSetting = new import_obsidian6.Setting(contentEl).setName(tr("Datos")).setDesc(tr("Una fila por l\xEDnea: etiqueta; valor; valor\u2026 La primera l\xEDnea puede nombrar las series empezando por #. Para dispersi\xF3n: x; y.")).addTextArea((t4) => {
       t4.setValue(this.spec.data).onChange((v4) => {
         this.spec.data = v4;
         redraw();
@@ -74129,7 +74676,7 @@ var ChartEditorModal = class extends import_obsidian6.Modal {
       t4.inputEl.rows = 7;
       t4.inputEl.addClass("notelens-chart-data");
     });
-    functionSetting = new import_obsidian6.Setting(contentEl).setName("Funciones").setDesc("Una por l\xEDnea, en x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)\u2026 Misma sintaxis que la calculadora.").addTextArea((t4) => {
+    functionSetting = new import_obsidian6.Setting(contentEl).setName(tr("Funciones")).setDesc(tr("Una por l\xEDnea, en x: sin(x), x^2 - 3x + 2, e^(-x^2), abs(x)\u2026 Misma sintaxis que la calculadora.")).addTextArea((t4) => {
       t4.setValue(this.spec.functions ?? "").onChange((v4) => {
         this.spec.functions = v4;
         redraw();
@@ -74145,16 +74692,16 @@ var ChartEditorModal = class extends import_obsidian6.Modal {
       });
       t4.inputEl.style.width = "80px";
     });
-    numberField(numberField(new import_obsidian6.Setting(contentEl).setName("Rango x (funciones y dispersi\xF3n)"), "xMin", "m\xEDn"), "xMax", "m\xE1x");
-    numberField(numberField(new import_obsidian6.Setting(contentEl).setName("Rango y (vac\xEDo = autom\xE1tico)"), "yMin", "m\xEDn"), "yMax", "m\xE1x");
-    new import_obsidian6.Setting(contentEl).setName("Leyenda").addToggle((t4) => t4.setValue(this.spec.showLegend !== false).onChange((v4) => {
+    numberField(numberField(new import_obsidian6.Setting(contentEl).setName(tr("Rango x (funciones y dispersi\xF3n)")), "xMin", "m\xEDn"), "xMax", "m\xE1x");
+    numberField(numberField(new import_obsidian6.Setting(contentEl).setName(tr("Rango y (vac\xEDo = autom\xE1tico)")), "yMin", "m\xEDn"), "yMax", "m\xE1x");
+    new import_obsidian6.Setting(contentEl).setName(tr("Leyenda")).addToggle((t4) => t4.setValue(this.spec.showLegend !== false).onChange((v4) => {
       this.spec.showLegend = v4;
       redraw();
     }));
-    new import_obsidian6.Setting(contentEl).addButton((b3) => b3.setButtonText("Guardar en la pizarra").setCta().onClick(() => {
+    new import_obsidian6.Setting(contentEl).addButton((b3) => b3.setButtonText(tr("Guardar en la pizarra")).setCta().onClick(() => {
       this.close();
       this.onSave({ ...this.spec });
-    })).addButton((b3) => b3.setButtonText("Cancelar").onClick(() => this.close()));
+    })).addButton((b3) => b3.setButtonText(tr("Cancelar")).onClick(() => this.close()));
     syncVisibility();
     redraw();
   }
@@ -74173,18 +74720,18 @@ function mountChartFrame(host, layer, embed) {
   frame2.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
   const header = frame2.createDiv({ cls: "notelens-embed-header" });
   (0, import_obsidian6.setIcon)(header.createSpan({ cls: "notelens-embed-icon" }), spec.type === "function" ? "function-square" : spec.type === "pie" ? "pie-chart" : spec.type === "line" || spec.type === "area" ? "line-chart" : "bar-chart-3");
-  header.createSpan({ cls: "notelens-embed-title", text: spec.title || CHART_TYPES.find(([id]) => id === spec.type)?.[1] || "Gr\xE1fico" });
+  header.createSpan({ cls: "notelens-embed-title", text: spec.title || CHART_TYPES.find(([id]) => id === spec.type)?.[1] || tr("Gr\xE1fico") });
   const edit = header.createEl("button", { cls: "notelens-embed-open" });
   (0, import_obsidian6.setIcon)(edit, "pencil");
-  edit.title = "Editar datos del gr\xE1fico";
+  edit.title = tr("Editar datos del gr\xE1fico");
   edit.onclick = (e3) => {
     e3.stopPropagation();
     host.editChart(embed);
   };
   const remove = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian6.setIcon)(remove, "x");
-  remove.title = "Eliminar gr\xE1fico";
-  remove.setAttr("aria-label", "Eliminar gr\xE1fico");
+  remove.title = tr("Eliminar gr\xE1fico");
+  remove.setAttr("aria-label", tr("Eliminar gr\xE1fico"));
   remove.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   remove.onclick = (e3) => {
     e3.stopPropagation();
@@ -74304,7 +74851,7 @@ function renderEmbedFrame(host, layer, embed) {
   if (embed.kind !== "youtube" && embed.kind !== "web-video") {
     const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
     (0, import_obsidian7.setIcon)(openBtn, "external-link");
-    openBtn.title = "Abrir archivo original";
+    openBtn.title = tr("Abrir archivo original");
     openBtn.onclick = (e3) => {
       e3.stopPropagation();
       host.openVaultFile(embed.src);
@@ -74313,7 +74860,7 @@ function renderEmbedFrame(host, layer, embed) {
   if (embed.kind === "youtube" || embed.kind === "web-video") {
     const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
     (0, import_obsidian7.setIcon)(openBtn, "external-link");
-    openBtn.title = "Abrir publicaci\xF3n original";
+    openBtn.title = tr("Abrir publicaci\xF3n original");
     openBtn.onclick = (event) => {
       event.stopPropagation();
       host.openVaultFile(embed.originalUrl ?? embed.src);
@@ -74322,7 +74869,7 @@ function renderEmbedFrame(host, layer, embed) {
   if (embed.kind === "video") {
     const captionsBtn = header.createEl("button", { cls: "notelens-embed-open" });
     (0, import_obsidian7.setIcon)(captionsBtn, "captions");
-    captionsBtn.title = embed.captionSrc ? "Cambiar subt\xEDtulos WebVTT" : "A\xF1adir subt\xEDtulos WebVTT";
+    captionsBtn.title = embed.captionSrc ? tr("Cambiar subt\xEDtulos WebVTT") : tr("A\xF1adir subt\xEDtulos WebVTT");
     captionsBtn.onclick = (event) => {
       event.stopPropagation();
       void pickCaptionTrack(host, embed, body, captionsBtn);
@@ -74330,8 +74877,8 @@ function renderEmbedFrame(host, layer, embed) {
   }
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian7.setIcon)(closeBtn, "x");
-  closeBtn.title = "Cerrar y quitar de la pizarra";
-  closeBtn.setAttr("aria-label", "Cerrar y quitar de la pizarra");
+  closeBtn.title = tr("Cerrar y quitar de la pizarra");
+  closeBtn.setAttr("aria-label", tr("Cerrar y quitar de la pizarra"));
   closeBtn.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   closeBtn.onclick = (e3) => {
     e3.stopPropagation();
@@ -74363,7 +74910,7 @@ function renderEmbedFrame(host, layer, embed) {
         attachCaptionToVideo(host, embed, video);
       }
     } else {
-      body.createDiv({ cls: "notelens-embed-missing", text: `Archivo no encontrado: ${embed.src}` });
+      body.createDiv({ cls: "notelens-embed-missing", text: tr("Archivo no encontrado: {p0}", { p0: embed.src }) });
     }
   }
   setupFrameDrag(host, header, frame2, embed);
@@ -74393,7 +74940,7 @@ async function pickCaptionTrack(host, embed, body, button) {
     const file = picker.files?.[0];
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".vtt")) {
-      new import_obsidian7.Notice("Selecciona un archivo WebVTT (.vtt).");
+      new import_obsidian7.Notice(tr("Selecciona un archivo WebVTT (.vtt)."));
       return;
     }
     try {
@@ -74412,12 +74959,12 @@ async function pickCaptionTrack(host, embed, body, button) {
       embed.captionSrc = saved.path;
       const video = body.querySelector("video");
       if (video) attachCaptionToVideo(host, embed, video);
-      button.title = "Cambiar subt\xEDtulos WebVTT";
+      button.title = tr("Cambiar subt\xEDtulos WebVTT");
       host.onEmbedChanged();
-      new import_obsidian7.Notice(`Subt\xEDtulos a\xF1adidos: ${saved.name}`);
+      new import_obsidian7.Notice(tr("Subt\xEDtulos a\xF1adidos: {p0}", { p0: saved.name }));
     } catch (error) {
       console.error("NoteLens: caption upload failed", error);
-      new import_obsidian7.Notice("No se pudieron a\xF1adir los subt\xEDtulos.");
+      new import_obsidian7.Notice(tr("No se pudieron a\xF1adir los subt\xEDtulos."));
     }
   };
   picker.click();
@@ -74455,18 +75002,18 @@ function mountLinkCard(host, layer, embed) {
   const name = file instanceof import_obsidian7.TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
   details.createDiv({ cls: "notelens-attachment-title", text: name });
   const folder = embed.src.includes("/") ? embed.src.slice(0, embed.src.lastIndexOf("/")) : "";
-  details.createDiv({ cls: "notelens-attachment-meta", text: (embed.kind === "board" ? "Pizarra" : "Nota") + (folder ? ` \xB7 ${folder}` : "") });
+  details.createDiv({ cls: "notelens-attachment-meta", text: (embed.kind === "board" ? "Pizarra" : "Nota") + (folder ? tr(" \xB7 {p0}", { p0: folder }) : "") });
   const open2 = head.createEl("button", { cls: "notelens-attachment-open" });
   (0, import_obsidian7.setIcon)(open2, "external-link");
-  open2.title = embed.kind === "board" ? "Abrir la pizarra (Ctrl: en pesta\xF1a nueva)" : "Abrir la nota (Ctrl: en pesta\xF1a nueva)";
+  open2.title = embed.kind === "board" ? tr("Abrir la pizarra (Ctrl: en pesta\xF1a nueva)") : tr("Abrir la nota (Ctrl: en pesta\xF1a nueva)");
   open2.onclick = (e3) => {
     e3.stopPropagation();
     host.openLink(embed.src, e3.ctrlKey || e3.metaKey);
   };
   const remove = head.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian7.setIcon)(remove, "x");
-  remove.title = "Quitar el enlace de la pizarra";
-  remove.setAttr("aria-label", "Quitar el enlace de la pizarra");
+  remove.title = tr("Quitar el enlace de la pizarra");
+  remove.setAttr("aria-label", tr("Quitar el enlace de la pizarra"));
   remove.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   remove.onclick = (e3) => {
     e3.stopPropagation();
@@ -74475,15 +75022,15 @@ function mountLinkCard(host, layer, embed) {
   };
   const preview = card.createDiv({ cls: "notelens-link-preview" });
   if (!(file instanceof import_obsidian7.TFile)) {
-    preview.setText("No se encuentra el archivo. \xBFSe ha movido o borrado?");
+    preview.setText(tr("No se encuentra el archivo. \xBFSe ha movido o borrado?"));
     card.addClass("is-missing");
   } else if (embed.kind === "note") {
     void host.app.vault.cachedRead(file).then((content) => {
       const lines = content.replace(/^---[\s\S]*?---\s*/, "").split(/\r?\n/).map((l4) => l4.replace(/^#+\s*/, "").replace(/[*_`>]/g, "").trim()).filter(Boolean);
-      preview.setText(lines.slice(0, 5).join("\n") || "Nota vac\xEDa");
+      preview.setText(lines.slice(0, 5).join("\n") || tr("Nota vac\xEDa"));
     }).catch(() => preview.setText(""));
   } else {
-    preview.setText("Doble clic para ir a esta pizarra.");
+    preview.setText(tr("Doble clic para ir a esta pizarra."));
   }
   card.addEventListener("pointerdown", (e3) => host.startEmbedDrag(e3, card, embed));
   card.addEventListener("dblclick", (e3) => {
@@ -74507,15 +75054,15 @@ function mountAttachmentCard(host, layer, embed) {
   details.createDiv({ cls: "notelens-attachment-meta", text: extension });
   const open2 = card.createEl("button", { cls: "notelens-attachment-open" });
   (0, import_obsidian7.setIcon)(open2, "external-link");
-  open2.title = embed.kind === "epub" ? "Abrir EPUB" : "Abrir archivo";
+  open2.title = embed.kind === "epub" ? tr("Abrir EPUB") : tr("Abrir archivo");
   open2.onclick = (e3) => {
     e3.stopPropagation();
     host.openVaultFile(embed.src);
   };
   const remove = card.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian7.setIcon)(remove, "x");
-  remove.title = "Quitar archivo de la pizarra";
-  remove.setAttr("aria-label", "Quitar archivo de la pizarra");
+  remove.title = tr("Quitar archivo de la pizarra");
+  remove.setAttr("aria-label", tr("Quitar archivo de la pizarra"));
   remove.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   remove.onclick = (e3) => {
     e3.stopPropagation();
@@ -74531,7 +75078,7 @@ function mountAttachmentCard(host, layer, embed) {
 async function mountPdfViewer(host, header, body, embed) {
   const pdf = await loadPdf(host, embed.src);
   if (!pdf) {
-    body.createDiv({ cls: "notelens-embed-missing", text: `No se pudo cargar: ${embed.src}` });
+    body.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
     return;
   }
   const nav = header.createDiv({ cls: "notelens-pdf-nav" });
@@ -74563,7 +75110,7 @@ async function mountPdfViewer(host, header, body, embed) {
       if (!ctx) return;
       await page.render({ canvasContext: ctx, viewport }).promise;
       if (token !== renderToken) return;
-      pageLabel.setText(`${current} / ${pdf.numPages}`);
+      pageLabel.setText(tr("{p0} / {p1}", { p0: current, p1: pdf.numPages }));
       embed.page = current;
       host.onEmbedChanged();
     } catch (e3) {
@@ -74584,8 +75131,8 @@ async function mountPdfPages(host, layer, embed) {
   const controls = stack.createDiv({ cls: "notelens-stack-controls" });
   const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian7.setIcon)(delBtn, "x");
-  delBtn.title = "Quitar documento de la pizarra";
-  delBtn.setAttr("aria-label", "Quitar documento de la pizarra");
+  delBtn.title = tr("Quitar documento de la pizarra");
+  delBtn.setAttr("aria-label", tr("Quitar documento de la pizarra"));
   delBtn.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   delBtn.onclick = (e3) => {
     e3.stopPropagation();
@@ -74599,7 +75146,7 @@ async function mountPdfPages(host, layer, embed) {
     e3.preventDefault();
     e3.stopPropagation();
     const menu = new import_obsidian7.Menu();
-    menu.addItem((item) => item.setTitle("Eliminar documento").setIcon("trash-2").onClick(() => {
+    menu.addItem((item) => item.setTitle(tr("Eliminar documento")).setIcon("trash-2").onClick(() => {
       stack.remove();
       host.onEmbedDeleted(embed);
     }));
@@ -74607,7 +75154,7 @@ async function mountPdfPages(host, layer, embed) {
   });
   const pdf = await loadPdf(host, embed.src);
   if (!pdf) {
-    stack.createDiv({ cls: "notelens-embed-missing", text: `No se pudo cargar: ${embed.src}` });
+    stack.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
     return;
   }
   const rendered = /* @__PURE__ */ new Set();
@@ -74667,13 +75214,13 @@ function mountLooseImage(host, layer, embed) {
     img.src = host.app.vault.getResourcePath(file);
     img.draggable = false;
   } else {
-    wrap.createDiv({ cls: "notelens-embed-missing", text: `Imagen no encontrada: ${embed.src}` });
+    wrap.createDiv({ cls: "notelens-embed-missing", text: tr("Imagen no encontrada: {p0}", { p0: embed.src }) });
   }
   const controls = wrap.createDiv({ cls: "notelens-stack-controls" });
   const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
   (0, import_obsidian7.setIcon)(delBtn, "x");
-  delBtn.title = "Quitar imagen de la pizarra";
-  delBtn.setAttr("aria-label", "Quitar imagen de la pizarra");
+  delBtn.title = tr("Quitar imagen de la pizarra");
+  delBtn.setAttr("aria-label", tr("Quitar imagen de la pizarra"));
   delBtn.addEventListener("pointerdown", (e3) => e3.stopPropagation());
   delBtn.onclick = (e3) => {
     e3.stopPropagation();
@@ -74687,7 +75234,7 @@ function mountLooseImage(host, layer, embed) {
     e3.preventDefault();
     e3.stopPropagation();
     const menu = new import_obsidian7.Menu();
-    menu.addItem((item) => item.setTitle("Eliminar imagen").setIcon("trash-2").onClick(() => {
+    menu.addItem((item) => item.setTitle(tr("Eliminar imagen")).setIcon("trash-2").onClick(() => {
       wrap.remove();
       host.onEmbedDeleted(embed);
     }));
@@ -74762,7 +75309,7 @@ var PdfPickModal = class extends import_obsidian7.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
-    this.setPlaceholder("Elige un PDF de la b\xF3veda\u2026");
+    this.setPlaceholder(tr("Elige un PDF de la b\xF3veda\u2026"));
   }
   getItems() {
     return this.app.vault.getFiles().filter((f4) => f4.extension.toLowerCase() === "pdf");
@@ -74778,7 +75325,7 @@ var ImagePickModal = class extends import_obsidian7.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
-    this.setPlaceholder("Elige una imagen de la b\xF3veda\u2026");
+    this.setPlaceholder(tr("Elige una imagen de la b\xF3veda\u2026"));
   }
   getItems() {
     return this.app.vault.getFiles().filter((file) => ["png", "jpg", "jpeg", "gif", "webp", "svg", "avif"].includes(file.extension.toLowerCase()));
@@ -74795,7 +75342,7 @@ var NoteOrBoardPickModal = class extends import_obsidian7.FuzzySuggestModal {
     super(app);
     this.currentPath = currentPath;
     this.onPick = onPick;
-    this.setPlaceholder("Nota o pizarra a la que enlazar\u2026");
+    this.setPlaceholder(tr("Nota o pizarra a la que enlazar\u2026"));
   }
   getItems() {
     return this.app.vault.getFiles().filter((file) => ["md", "notelens", "onenote"].includes(file.extension.toLowerCase()) && file.path !== this.currentPath).sort((a4, b3) => b3.stat.mtime - a4.stat.mtime);
@@ -74811,7 +75358,7 @@ var VaultFilePickModal = class extends import_obsidian7.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
-    this.setPlaceholder("Busca cualquier archivo de la b\xF3veda\u2026");
+    this.setPlaceholder(tr("Busca cualquier archivo de la b\xF3veda\u2026"));
   }
   getItems() {
     return this.app.vault.getFiles().filter((file) => !["notelens", "onenote"].includes(file.extension.toLowerCase()));
@@ -74831,12 +75378,12 @@ var PdfModeModal = class extends import_obsidian7.Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h3", { text: "\xBFC\xF3mo insertar el PDF?" });
+    contentEl.createEl("h3", { text: tr("\xBFC\xF3mo insertar el PDF?") });
     const make = (icon, title, desc, mode2) => {
       const btn = contentEl.createDiv({ cls: "notelens-mode-choice" });
       const head = btn.createDiv({ cls: "notelens-mode-title" });
       (0, import_obsidian7.setIcon)(head.createSpan({ cls: "notelens-mode-icon" }), icon);
-      head.createSpan({ text: ` ${title}` });
+      head.createSpan({ text: tr(" {p0}", { p0: title }) });
       btn.createDiv({ cls: "notelens-mode-desc", text: desc });
       btn.onclick = () => {
         this.close();
@@ -74865,9 +75412,9 @@ var VideoInsertModal = class extends import_obsidian7.Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h3", { text: "Insertar v\xEDdeo" });
+    contentEl.createEl("h3", { text: tr("Insertar v\xEDdeo") });
     contentEl.createEl("p", {
-      text: "Pega un enlace de YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom o Facebook; tambi\xE9n puedes usar un v\xEDdeo local.",
+      text: tr("Pega un enlace de YouTube/Shorts, TikTok, Instagram, X, Vimeo, Dailymotion, Streamable, Loom o Facebook; tambi\xE9n puedes usar un v\xEDdeo local."),
       cls: "notelens-modal-hint"
     });
     let value = "";
@@ -74897,10 +75444,10 @@ var VideoInsertModal = class extends import_obsidian7.Modal {
         this.onPick({ id: genId("embed"), kind: "video", src: v4, x: 0, y: 0, w: 560, h: 315 });
         return;
       }
-      new import_obsidian7.Notice("Usa un enlace de v\xEDdeo compatible o la ruta de un v\xEDdeo de la b\xF3veda.");
+      new import_obsidian7.Notice(tr("Usa un enlace de v\xEDdeo compatible o la ruta de un v\xEDdeo de la b\xF3veda."));
     };
-    new import_obsidian7.Setting(contentEl).setName("URL o ruta").addText((text2) => {
-      text2.setPlaceholder("https://instagram.com/reel/... o carpeta/video.mp4");
+    new import_obsidian7.Setting(contentEl).setName(tr("URL o ruta")).addText((text2) => {
+      text2.setPlaceholder(tr("https://instagram.com/reel/... o carpeta/video.mp4"));
       text2.onChange((v4) => {
         value = v4;
       });
@@ -74912,7 +75459,7 @@ var VideoInsertModal = class extends import_obsidian7.Modal {
       });
       window.setTimeout(() => text2.inputEl.focus(), 50);
     });
-    new import_obsidian7.Setting(contentEl).addButton((btn) => btn.setButtonText("Insertar").setCta().onClick(submit)).addButton((btn) => btn.setButtonText("Cancelar").onClick(() => this.close()));
+    new import_obsidian7.Setting(contentEl).addButton((btn) => btn.setButtonText(tr("Insertar")).setCta().onClick(submit)).addButton((btn) => btn.setButtonText(tr("Cancelar")).onClick(() => this.close()));
   }
 };
 
@@ -74927,25 +75474,25 @@ function createNavigatorPanel(host, container) {
   shieldPanel(panel);
   const header = panel.createDiv({ cls: "notelens-navigator-header" });
   (0, import_obsidian8.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "folder-tree");
-  header.createSpan({ cls: "notelens-calculator-title", text: "Pizarras y notas" });
+  header.createSpan({ cls: "notelens-calculator-title", text: tr("Pizarras y notas") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian8.setIcon)(closeBtn, "x");
   makeDraggable(panel, header, container, "notelens-navigator-pos");
   const boardsHead = panel.createDiv({ cls: "notelens-navigator-section" });
-  boardsHead.createSpan({ cls: "notelens-panel-label", text: "Pizarras" });
+  boardsHead.createSpan({ cls: "notelens-panel-label", text: tr("Pizarras") });
   const newBoard = boardsHead.createEl("button", { cls: "notelens-navigator-new" });
   (0, import_obsidian8.setIcon)(newBoard.createSpan(), "plus");
-  newBoard.createSpan({ text: "Nueva" });
-  newBoard.title = "Crear una pizarra nueva";
+  newBoard.createSpan({ text: tr("Nueva") });
+  newBoard.title = tr("Crear una pizarra nueva");
   newBoard.onclick = () => host.createBoard();
   const boards = panel.createDiv({ cls: "notelens-navigator-list" });
   const notesHead = panel.createDiv({ cls: "notelens-navigator-section" });
-  notesHead.createSpan({ cls: "notelens-panel-label", text: "Notas" });
+  notesHead.createSpan({ cls: "notelens-panel-label", text: tr("Notas") });
   const search = panel.createEl("input", { cls: "notelens-navigator-search" });
   search.type = "search";
-  search.placeholder = "Buscar una nota por nombre\u2026";
+  search.placeholder = tr("Buscar una nota por nombre\u2026");
   const notes = panel.createDiv({ cls: "notelens-navigator-list" });
-  panel.createDiv({ cls: "notelens-calculator-help", text: "Clic abre en esta pesta\xF1a, Ctrl+clic en una nueva. El bot\xF3n de enlace deja una tarjeta en la pizarra." });
+  panel.createDiv({ cls: "notelens-calculator-help", text: tr("Clic abre en esta pesta\xF1a, Ctrl+clic en una nueva. El bot\xF3n de enlace deja una tarjeta en la pizarra.") });
   const row = (list, file, kind) => {
     const item = list.createDiv({ cls: `notelens-navigator-item notelens-navigator-${kind}` });
     if (host.currentPath === file.path) item.addClass("is-current");
@@ -74956,7 +75503,7 @@ function createNavigatorPanel(host, container) {
     if (folder) body.createDiv({ cls: "notelens-navigator-folder", text: folder });
     const openBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-open" });
     (0, import_obsidian8.setIcon)(openBtn, "external-link");
-    openBtn.title = host.currentPath === file.path ? "Es la pizarra abierta" : "Abrir";
+    openBtn.title = host.currentPath === file.path ? tr("Es la pizarra abierta") : "Abrir";
     openBtn.disabled = host.currentPath === file.path;
     openBtn.onclick = (e3) => {
       e3.stopPropagation();
@@ -74964,7 +75511,7 @@ function createNavigatorPanel(host, container) {
     };
     const linkBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-link" });
     (0, import_obsidian8.setIcon)(linkBtn, "link");
-    linkBtn.title = "Poner un enlace en la pizarra";
+    linkBtn.title = tr("Poner un enlace en la pizarra");
     linkBtn.onclick = (e3) => {
       e3.stopPropagation();
       host.linkPath(file.path);
@@ -74976,11 +75523,11 @@ function createNavigatorPanel(host, container) {
   const refresh = () => {
     boards.empty();
     const boardFiles = host.listBoards();
-    if (boardFiles.length === 0) boards.createDiv({ cls: "notelens-bookmarks-empty", text: "No hay m\xE1s pizarras en la b\xF3veda." });
+    if (boardFiles.length === 0) boards.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay m\xE1s pizarras en la b\xF3veda.") });
     for (const file of boardFiles) row(boards, file, "board");
     notes.empty();
     const noteFiles = host.listNotes(search.value);
-    if (noteFiles.length === 0) notes.createDiv({ cls: "notelens-bookmarks-empty", text: search.value ? "Ninguna nota coincide." : "No hay notas Markdown en la b\xF3veda." });
+    if (noteFiles.length === 0) notes.createDiv({ cls: "notelens-bookmarks-empty", text: search.value ? tr("Ninguna nota coincide.") : tr("No hay notas Markdown en la b\xF3veda.") });
     for (const file of noteFiles) row(notes, file, "note");
   };
   search.addEventListener("input", refresh);
@@ -75338,11 +75885,11 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     contentEl.addClass("notelens-hover-note");
     contentEl.createEl("h3", { text: this.dialogTitle });
     const titleField = contentEl.createEl("label", { cls: "notelens-hover-note-title-field" });
-    titleField.createSpan({ text: "T\xEDtulo" });
+    titleField.createSpan({ text: tr("T\xEDtulo") });
     const titleInput = titleField.createEl("input", { cls: "notelens-hover-note-title-input", type: "text" });
     titleInput.value = this.noteTitle;
     titleInput.maxLength = 120;
-    titleInput.placeholder = "T\xEDtulo de la etiqueta";
+    titleInput.placeholder = tr("T\xEDtulo de la etiqueta");
     titleInput.addEventListener("input", () => {
       this.noteTitle = titleInput.value;
     });
@@ -75352,7 +75899,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     tabText.createSpan({ text: this.taskMode ? "Lista" : "Nota" });
     const tabSketch = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
     (0, import_obsidian9.setIcon)(tabSketch.createSpan(), "pen-tool");
-    tabSketch.createSpan({ text: "Pizarra" });
+    tabSketch.createSpan({ text: tr("Pizarra") });
     const textPane = contentEl.createDiv({ cls: `notelens-hover-note-pane ${this.taskMode ? "is-task" : ""}` });
     let checklistList = null;
     let checklistProgress = null;
@@ -75360,7 +75907,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
       if (!checklistProgress) return;
       const items = this.checklist.filter((item) => item.text.trim() || item.sketch);
       const completed = items.filter((item) => item.done).length;
-      checklistProgress.setText(items.length ? `${completed}/${items.length} completados` : "Sin pasos todav\xEDa");
+      checklistProgress.setText(items.length ? tr("{p0}/{p1} completados", { p0: completed, p1: items.length }) : tr("Sin pasos todav\xEDa"));
     };
     let renderChecklist = () => {
     };
@@ -75381,13 +75928,13 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
         const input = row.createEl("input", { cls: "notelens-task-checklist-input", type: "text" });
         input.value = item.text;
         input.maxLength = 500;
-        input.placeholder = `Paso ${index2 + 1}`;
+        input.placeholder = tr("Paso {p0}", { p0: index2 + 1 });
         const pad = row.createDiv({ cls: "notelens-task-checklist-pad" });
         const padCanvas = pad.createEl("canvas");
-        const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: `Escribe el paso ${index2 + 1} a mano` });
+        const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: tr("Escribe el paso {p0} a mano", { p0: index2 + 1 }) });
         const padClear = pad.createEl("button", { cls: "notelens-task-checklist-pad-clear", type: "button" });
         (0, import_obsidian9.setIcon)(padClear, "eraser");
-        padClear.title = "Borrar lo escrito a mano";
+        padClear.title = tr("Borrar lo escrito a mano");
         const handwriting = new StepPad(padCanvas, item.sketch, (data) => {
           item.sketch = data;
           padHint.toggleClass("hidden-hint", !!data);
@@ -75401,7 +75948,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
           pad.style.display = drawn ? "" : "none";
           modeBtn.empty();
           (0, import_obsidian9.setIcon)(modeBtn, drawn ? "type" : "pen-line");
-          modeBtn.title = drawn ? "Escribir este paso con el teclado" : "Escribir este paso a mano";
+          modeBtn.title = drawn ? tr("Escribir este paso con el teclado") : tr("Escribir este paso a mano");
           if (drawn) handwriting.redraw();
         };
         modeBtn.onclick = () => {
@@ -75417,7 +75964,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
         applyStepMode(!!item.sketch);
         const remove = row.createEl("button", { cls: "notelens-task-checklist-remove", type: "button" });
         (0, import_obsidian9.setIcon)(remove, "x");
-        remove.title = "Eliminar paso";
+        remove.title = tr("Eliminar paso");
         checkbox.onchange = () => {
           item.done = checkbox.checked;
           row.toggleClass("is-done", item.done);
@@ -75456,20 +76003,20 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     if (this.taskMode) {
       const checklistHeader = textPane.createDiv({ cls: "notelens-task-checklist-header" });
       const checklistHeading = checklistHeader.createDiv({ cls: "notelens-task-checklist-heading" });
-      checklistHeading.createSpan({ text: "Pasos de la tarea" });
+      checklistHeading.createSpan({ text: tr("Pasos de la tarea") });
       checklistProgress = checklistHeading.createSpan({ cls: "notelens-task-checklist-progress" });
       const addItem = checklistHeader.createEl("button", { cls: "notelens-task-checklist-add", type: "button" });
       (0, import_obsidian9.setIcon)(addItem, "plus");
-      addItem.createSpan({ text: "A\xF1adir paso" });
+      addItem.createSpan({ text: tr("A\xF1adir paso") });
       addItem.onclick = () => addChecklistItem();
       checklistList = textPane.createDiv({ cls: "notelens-task-checklist" });
       if (!this.checklist.length) this.checklist.push({ id: genId("task_item"), text: "", done: false });
       renderChecklist();
-      textPane.createDiv({ cls: "notelens-task-description-label", text: "Notas de la tarea" });
+      textPane.createDiv({ cls: "notelens-task-description-label", text: tr("Notas de la tarea") });
     }
     const area = textPane.createEl("textarea", { cls: `notelens-prompt-textarea ${this.taskMode ? "notelens-task-description" : ""}` });
     area.value = this.text;
-    area.placeholder = this.taskMode ? "Descripci\xF3n, fecha, enlaces o detalles opcionales\u2026" : this.placeholder;
+    area.placeholder = this.taskMode ? tr("Descripci\xF3n, fecha, enlaces o detalles opcionales\u2026") : this.placeholder;
     area.rows = this.taskMode ? 3 : 7;
     area.addEventListener("input", () => {
       this.text = area.value;
@@ -75484,16 +76031,16 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     const toolbar = sketchPane.createDiv({ cls: "notelens-hover-note-tools" });
     const drawBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(drawBtn, "pen-line");
-    drawBtn.title = "Dibujar sobre la pizarra";
+    drawBtn.title = tr("Dibujar sobre la pizarra");
     const selectBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(selectBtn, "mouse-pointer-2");
-    selectBtn.title = "Mover o redimensionar im\xE1genes";
+    selectBtn.title = tr("Mover o redimensionar im\xE1genes");
     toolbar.createDiv({ cls: "onenote-divider" });
     const swatches = [];
     for (const color of SKETCH_COLORS) {
       const swatch = toolbar.createEl("button", { cls: "notelens-hover-note-swatch", type: "button" });
       swatch.style.backgroundColor = color;
-      swatch.title = `Tinta ${color}`;
+      swatch.title = tr("Tinta {p0}", { p0: color });
       swatch.onclick = () => {
         this.color = color;
         selectTool("draw");
@@ -75517,22 +76064,22 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     toolbar.createDiv({ cls: "onenote-divider" });
     const uploadBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool notelens-hover-note-upload", type: "button" });
     (0, import_obsidian9.setIcon)(uploadBtn, "image-plus");
-    uploadBtn.title = "Subir im\xE1genes desde el dispositivo";
+    uploadBtn.title = tr("Subir im\xE1genes desde el dispositivo");
     const pasteBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(pasteBtn, "clipboard-paste");
-    pasteBtn.title = "Pegar imagen del portapapeles";
+    pasteBtn.title = tr("Pegar imagen del portapapeles");
     const imageInput = sketchPane.createEl("input", { cls: "notelens-hover-note-file", type: "file" });
     imageInput.accept = "image/*";
     imageInput.multiple = true;
     const deleteImageBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(deleteImageBtn, "trash-2");
-    deleteImageBtn.title = "Quitar la imagen seleccionada";
+    deleteImageBtn.title = tr("Quitar la imagen seleccionada");
     const undoBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(undoBtn, "undo-2");
-    undoBtn.title = "Deshacer el \xFAltimo trazo";
+    undoBtn.title = tr("Deshacer el \xFAltimo trazo");
     const clearBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
     (0, import_obsidian9.setIcon)(clearBtn, "eraser");
-    clearBtn.title = "Borrar todos los trazos";
+    clearBtn.title = tr("Borrar todos los trazos");
     const board = sketchPane.createDiv({ cls: "notelens-hover-note-board" });
     const canvas = board.createEl("canvas");
     canvas.tabIndex = 0;
@@ -75542,7 +76089,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     canvas.style.width = `${HOVER_NOTE_BOARD_WIDTH}px`;
     canvas.style.height = `${HOVER_NOTE_BOARD_HEIGHT}px`;
     const ctx = canvas.getContext("2d");
-    const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: "Dibuja, pega o suelta una imagen" });
+    const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: tr("Dibuja, pega o suelta una imagen") });
     const imageTray = sketchPane.createDiv({ cls: "notelens-hover-note-images" });
     const drawStroke2 = (context, stroke) => {
       const points = stroke.points;
@@ -75624,8 +76171,8 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
       imageTray.toggleClass("hidden", this.images.length === 0);
       if (!this.images.length) return;
       const heading = imageTray.createDiv({ cls: "notelens-hover-note-images-heading" });
-      heading.createSpan({ text: `Im\xE1genes (${this.images.length})` });
-      heading.createSpan({ text: "Selecciona una para moverla o cambiar su tama\xF1o" });
+      heading.createSpan({ text: tr("Im\xE1genes ({p0})", { p0: this.images.length }) });
+      heading.createSpan({ text: tr("Selecciona una para moverla o cambiar su tama\xF1o") });
       const list = imageTray.createDiv({ cls: "notelens-hover-note-images-list" });
       for (const image of this.images) {
         const item = list.createDiv({ cls: "notelens-hover-note-image-chip" });
@@ -75644,7 +76191,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
         };
         const remove = item.createEl("button", { cls: "notelens-hover-note-image-remove", type: "button" });
         (0, import_obsidian9.setIcon)(remove, "x");
-        remove.title = `Quitar ${image.name}`;
+        remove.title = tr("Quitar {p0}", { p0: image.name });
         remove.onclick = (event) => {
           event.stopPropagation();
           removeImageById(image.id);
@@ -75751,12 +76298,12 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     const addFiles = async (files, anchor = lastBoardPoint) => {
       const available = MAX_IMAGES - this.images.length;
       if (available <= 0) {
-        new import_obsidian9.Notice(`Cada etiqueta admite hasta ${MAX_IMAGES} im\xE1genes.`);
+        new import_obsidian9.Notice(tr("Cada etiqueta admite hasta {p0} im\xE1genes.", { p0: MAX_IMAGES }));
         return;
       }
       const accepted = files.filter((file) => file.type.startsWith("image/")).slice(0, available);
       if (!accepted.length) {
-        new import_obsidian9.Notice("Selecciona un archivo de imagen v\xE1lido.");
+        new import_obsidian9.Notice(tr("Selecciona un archivo de imagen v\xE1lido."));
         return;
       }
       const placement = { ...anchor };
@@ -75766,7 +76313,7 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
           this.images.push(image);
           this.selectedImageId = image.id;
         } catch (error) {
-          new import_obsidian9.Notice(error instanceof Error ? error.message : `No se pudo a\xF1adir ${file.name}.`);
+          new import_obsidian9.Notice(error instanceof Error ? error.message : tr("No se pudo a\xF1adir {p0}.", { p0: file.name }));
         }
       }
       this.boardTool = "select";
@@ -75811,12 +76358,12 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
           }
         }
         if (!files.length) {
-          new import_obsidian9.Notice("El portapapeles no contiene ninguna imagen.");
+          new import_obsidian9.Notice(tr("El portapapeles no contiene ninguna imagen."));
           return;
         }
         await addFiles(files, lastBoardPoint);
       } catch {
-        new import_obsidian9.Notice("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen.");
+        new import_obsidian9.Notice(tr("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen."));
       }
     };
     uploadBtn.onclick = () => imageInput.click();
@@ -75882,10 +76429,10 @@ var HoverNoteModal = class extends import_obsidian9.Modal {
     const footer = contentEl.createDiv({ cls: "notelens-hover-note-footer" });
     footer.createSpan({
       cls: "notelens-hover-note-help",
-      text: this.taskMode ? "La lista, las notas, los trazos y las im\xE1genes se guardan juntos." : "El t\xEDtulo, la nota, los trazos y las im\xE1genes se guardan juntos."
+      text: this.taskMode ? tr("La lista, las notas, los trazos y las im\xE1genes se guardan juntos.") : tr("El t\xEDtulo, la nota, los trazos y las im\xE1genes se guardan juntos.")
     });
-    const ok = footer.createEl("button", { cls: "mod-cta", text: "Guardar", type: "button" });
-    const cancel = footer.createEl("button", { text: "Cancelar", type: "button" });
+    const ok = footer.createEl("button", { cls: "mod-cta", text: tr("Guardar"), type: "button" });
+    const cancel = footer.createEl("button", { text: tr("Cancelar"), type: "button" });
     const submit = () => {
       const content = {
         title: this.noteTitle.trim() || this.dialogTitle,
@@ -76137,7 +76684,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     modalEl.addClass("notelens-ink-equation-modal");
     contentEl.empty();
     contentEl.addClass("notelens-ink-equation");
-    contentEl.createEl("h3", { text: "Insertar ecuaci\xF3n" });
+    contentEl.createEl("h3", { text: tr("Insertar ecuaci\xF3n") });
     const preview = contentEl.createDiv({ cls: "notelens-ink-preview" });
     const board = contentEl.createDiv({ cls: "notelens-ink-board" });
     const canvas = board.createEl("canvas");
@@ -76147,9 +76694,9 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     canvas.style.width = `${BOARD_W}px`;
     canvas.style.height = `${BOARD_H}px`;
     const ctx = canvas.getContext("2d");
-    const hint = board.createDiv({ cls: "notelens-ink-hint", text: "Escribe aqu\xED la ecuaci\xF3n con el l\xE1piz o el rat\xF3n" });
+    const hint = board.createDiv({ cls: "notelens-ink-hint", text: tr("Escribe aqu\xED la ecuaci\xF3n con el l\xE1piz o el rat\xF3n") });
     const sourceRow = contentEl.createDiv({ cls: "notelens-ink-source-row" });
-    sourceRow.createSpan({ cls: "notelens-ink-source-label", text: "Notaci\xF3n" });
+    sourceRow.createSpan({ cls: "notelens-ink-source-label", text: tr("Notaci\xF3n") });
     const input = sourceRow.createEl("input", { cls: "notelens-ink-source", type: "text" });
     input.value = this.source;
     input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
@@ -76161,7 +76708,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
       preview.empty();
       const src = input.value.trim();
       if (!src) {
-        preview.createSpan({ cls: "notelens-ink-placeholder", text: "Aqu\xED ver\xE1s la ecuaci\xF3n" });
+        preview.createSpan({ cls: "notelens-ink-placeholder", text: tr("Aqu\xED ver\xE1s la ecuaci\xF3n") });
         return;
       }
       this.renderFormula(src, preview);
@@ -76173,7 +76720,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     });
     drawPreview();
     const structures = contentEl.createDiv({ cls: "notelens-ink-structures" });
-    structures.createSpan({ cls: "notelens-ink-structures-label", text: "Estructuras" });
+    structures.createSpan({ cls: "notelens-ink-structures-label", text: tr("Estructuras") });
     const structureItems = [
       { label: "a\u2044b", value: "\\frac{a}{b}", select: [6, 7] },
       { label: "x\u207F", value: "x^{n}", select: [3, 4] },
@@ -76184,7 +76731,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     ];
     for (const item of structureItems) {
       const button = structures.createEl("button", { cls: "notelens-ink-structure", text: item.label });
-      button.title = `Insertar ${item.value}`;
+      button.title = tr("Insertar {p0}", { p0: item.value });
       button.onclick = () => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
@@ -76201,7 +76748,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
       const uncertain = recognition.tokens.filter((token) => token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1).slice(0, 7);
       candidates.toggleClass("hidden", uncertain.length === 0);
       if (!uncertain.length) return;
-      candidates.createSpan({ cls: "notelens-ink-candidates-label", text: "Revisar" });
+      candidates.createSpan({ cls: "notelens-ink-candidates-label", text: tr("Revisar") });
       let searchFrom = 0;
       for (const token of uncertain) {
         const tokenStart = input.value.indexOf(token.value, searchFrom);
@@ -76209,7 +76756,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
         const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
         for (const alternative of token.alternatives) select.createEl("option", { value: alternative, text: alternative });
         select.value = token.value;
-        select.title = `Confianza ${Math.round(token.confidence * 100)}%. Elige el s\xEDmbolo correcto.`;
+        select.title = tr("Confianza {p0}%. Elige el s\xEDmbolo correcto.", { p0: Math.round(token.confidence * 100) });
         select.onchange = () => {
           if (tokenStart < 0) return;
           input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
@@ -76329,10 +76876,10 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     });
     if (this.readFromBoard) {
       toolButton("scan-text", "Leer de la pizarra", async () => {
-        status.setText("Elige la zona de la pizarra\u2026");
+        status.setText(tr("Elige la zona de la pizarra\u2026"));
         const text2 = await this.readFromBoard?.((message) => status.setText(message)).catch(() => "") ?? "";
         if (!text2.trim()) {
-          status.setText("No he le\xEDdo nada. Prueba con una zona m\xE1s ajustada.");
+          status.setText(tr("No he le\xEDdo nada. Prueba con una zona m\xE1s ajustada."));
           return;
         }
         input.value = this.tidy(text2);
@@ -76340,7 +76887,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
         lastAutomatic = input.value;
         editedByUser = false;
         drawPreview();
-        status.setText("Le\xEDdo desde los objetos y trazos de la pizarra. Revisa solo los s\xEDmbolos marcados.");
+        status.setText(tr("Le\xEDdo desde los objetos y trazos de la pizarra. Revisa solo los s\xEDmbolos marcados."));
       });
     }
     const setTool = (tool) => {
@@ -76351,8 +76898,8 @@ var InkEquationModal = class extends import_obsidian10.Modal {
     };
     setTool("write");
     const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
-    const insert = footer.createEl("button", { cls: "mod-cta", text: "Insertar" });
-    const cancel = footer.createEl("button", { text: "Cancelar" });
+    const insert = footer.createEl("button", { cls: "mod-cta", text: tr("Insertar") });
+    const cancel = footer.createEl("button", { text: tr("Cancelar") });
     insert.onclick = () => {
       const value = input.value.trim();
       this.close();
@@ -76376,7 +76923,7 @@ var InkEquationModal = class extends import_obsidian10.Modal {
         return;
       }
       this.recognizing = true;
-      status.setText("Analizando trazos y estructura\u2026");
+      status.setText(tr("Analizando trazos y estructura\u2026"));
       try {
         const vector = recognizeInkFormula(this.strokes);
         let text2 = vector.source;
@@ -76414,12 +76961,12 @@ var InkEquationModal = class extends import_obsidian10.Modal {
           editedByUser = false;
           drawPreview();
           showCandidates(vector);
-          status.setText(vector.confidence >= 0.78 ? vector.detail : "Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo.");
+          status.setText(vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo."));
         } else {
-          status.setText(tidied ? "He respetado tu correcci\xF3n manual." : "No he reconocido nada todav\xEDa; sigue escribiendo o usa las estructuras.");
+          status.setText(tidied ? tr("He respetado tu correcci\xF3n manual.") : tr("No he reconocido nada todav\xEDa; sigue escribiendo o usa las estructuras."));
         }
       } catch {
-        status.setText("No he podido leer la escritura. Escribe la notaci\xF3n abajo.");
+        status.setText(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo."));
       } finally {
         this.recognizing = false;
         if (this.pending) {
@@ -76586,8 +77133,8 @@ function createPanelSearch(parent, placeholder, initialValue, onChange) {
   count.setAttr("aria-live", "polite");
   const clearButton = row.createEl("button", { cls: "notelens-panel-search-clear" });
   (0, import_obsidian11.setIcon)(clearButton, "x");
-  clearButton.title = "Limpiar b\xFAsqueda";
-  clearButton.setAttr("aria-label", "Limpiar b\xFAsqueda");
+  clearButton.title = tr("Limpiar b\xFAsqueda");
+  clearButton.setAttr("aria-label", tr("Limpiar b\xFAsqueda"));
   const notify = () => {
     clearButton.toggleClass("hidden", !input.value);
     onChange(input.value);
@@ -76614,7 +77161,7 @@ function createPanelSearch(parent, placeholder, initialValue, onChange) {
     clear,
     setCount: (visible, total) => {
       count.setText(normalizePanelSearch(input.value) ? `${visible}/${total}` : String(total));
-      count.title = `${visible} de ${total} elementos visibles`;
+      count.title = tr("{p0} de {p1} elementos visibles", { p0: visible, p1: total });
     }
   };
 }
@@ -76623,12 +77170,12 @@ function createToolbar(host, container) {
   shield(bar);
   const toolButtons = /* @__PURE__ */ new Map();
   const tools = [
-    { id: "select", icon: "mouse-pointer-2", title: "Seleccionar (V) \u2014 arrastra para seleccionar en rect\xE1ngulo" },
-    { id: "pen", icon: "pencil", title: "L\xE1piz (P) \u2014 opciones al pulsar de nuevo" },
-    { id: "highlighter", icon: "highlighter", title: "Subrayador (H) \u2014 opciones al pulsar de nuevo" },
-    { id: "eraser", icon: "eraser", title: "Borrador (E) \u2014 opciones al pulsar de nuevo" },
-    { id: "text", icon: "type", title: "Cuadro de texto (T) \u2014 opciones al pulsar de nuevo" },
-    { id: "shape", icon: "shapes", title: "Formas (S) \u2014 l\xEDneas, flechas, rect\xE1ngulos y elipses" }
+    { id: "select", icon: "mouse-pointer-2", title: tr("Seleccionar (V) \u2014 arrastra para seleccionar en rect\xE1ngulo") },
+    { id: "pen", icon: "pencil", title: tr("L\xE1piz (P) \u2014 opciones al pulsar de nuevo") },
+    { id: "highlighter", icon: "highlighter", title: tr("Subrayador (H) \u2014 opciones al pulsar de nuevo") },
+    { id: "eraser", icon: "eraser", title: tr("Borrador (E) \u2014 opciones al pulsar de nuevo") },
+    { id: "text", icon: "type", title: tr("Cuadro de texto (T) \u2014 opciones al pulsar de nuevo") },
+    { id: "shape", icon: "shapes", title: tr("Formas (S) \u2014 l\xEDneas, flechas, rect\xE1ngulos y elipses") }
   ];
   const panel = createOptionsPanel(host, container, () => closePanel());
   let panelOpen = false;
@@ -76675,13 +77222,13 @@ function createToolbar(host, container) {
       penBtn.empty();
       (0, import_obsidian11.setIcon)(penBtn, nib.icon);
       penBtn.setAttr("data-nib", nib.id);
-      penBtn.title = `${nib.label} (P) \u2014 opciones al pulsar de nuevo`;
+      penBtn.title = tr("{p0} (P) \u2014 opciones al pulsar de nuevo", { p0: tr(nib.label) });
     }
   }
   refreshActive();
   bar.createDiv({ cls: "onenote-divider" });
   const colorDot = bar.createDiv({ cls: "onenote-color-dot onenote-current-color" });
-  colorDot.title = "Color y opciones del l\xE1piz";
+  colorDot.title = tr("Color y opciones del l\xE1piz");
   const syncDot = () => {
     colorDot.style.backgroundColor = host.currentTool === "highlighter" ? host.highlighterColorHex : host.currentTool === "text" ? host.textColor : host.penColorHex;
   };
@@ -76697,99 +77244,99 @@ function createToolbar(host, container) {
   bar.createDiv({ cls: "onenote-divider" });
   const undoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(undoBtn, "undo-2");
-  undoBtn.title = "Deshacer (Ctrl+Z)";
+  undoBtn.title = tr("Deshacer (Ctrl+Z)");
   undoBtn.onclick = () => host.undo();
   const redoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(redoBtn, "redo-2");
-  redoBtn.title = "Rehacer (Ctrl+Shift+Z)";
+  redoBtn.title = tr("Rehacer (Ctrl+Shift+Z)");
   redoBtn.onclick = () => host.redo();
   const insertBar = container.createDiv({ cls: "notelens-insert-dock" });
   shield(insertBar);
   const pdfBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(pdfBtn, "file-text");
-  pdfBtn.title = "Insertar PDF de la b\xF3veda";
+  pdfBtn.title = tr("Insertar PDF de la b\xF3veda");
   pdfBtn.onclick = () => host.insertPdf();
   const videoBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(videoBtn, "play-circle");
-  videoBtn.title = "Insertar v\xEDdeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom\u2026 o un archivo de v\xEDdeo local";
+  videoBtn.title = tr("Insertar v\xEDdeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom\u2026 o un archivo de v\xEDdeo local");
   videoBtn.onclick = () => host.insertVideo();
   const imageBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(imageBtn, "image-plus");
-  imageBtn.title = "Insertar imagen de la b\xF3veda";
+  imageBtn.title = tr("Insertar imagen de la b\xF3veda");
   imageBtn.onclick = () => host.insertImage();
   const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(stickyBtn, "sticky-note");
-  stickyBtn.title = "Nueva nota adhesiva";
+  stickyBtn.title = tr("Nueva nota adhesiva");
   stickyBtn.onclick = () => host.addStickyNote();
   const attachBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(attachBtn, "paperclip");
-  attachBtn.title = "Adjuntar cualquier archivo de la b\xF3veda";
+  attachBtn.title = tr("Adjuntar cualquier archivo de la b\xF3veda");
   attachBtn.onclick = () => host.insertFile();
   const linkBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(linkBtn, "link");
-  linkBtn.title = "Enlazar una nota o pizarra de la b\xF3veda";
+  linkBtn.title = tr("Enlazar una nota o pizarra de la b\xF3veda");
   linkBtn.onclick = () => host.insertLink();
   const uploadBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(uploadBtn, "upload");
-  uploadBtn.title = "Subir archivo desde el dispositivo";
+  uploadBtn.title = tr("Subir archivo desde el dispositivo");
   uploadBtn.onclick = () => host.uploadFileFromDevice();
   const tableBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(tableBtn, "table-2");
-  tableBtn.title = "Insertar tabla";
+  tableBtn.title = tr("Insertar tabla");
   tableBtn.onclick = () => host.insertTable();
   const codeBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(codeBtn, "code-2");
-  codeBtn.title = "Insertar bloque de c\xF3digo";
+  codeBtn.title = tr("Insertar bloque de c\xF3digo");
   codeBtn.onclick = () => host.insertCodeBlock();
   const chartBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(chartBtn, "bar-chart-3");
-  chartBtn.title = "Insertar gr\xE1fico: barras, l\xEDneas, circular, dispersi\xF3n o funci\xF3n y = f(x)";
+  chartBtn.title = tr("Insertar gr\xE1fico: barras, l\xEDneas, circular, dispersi\xF3n o funci\xF3n y = f(x)");
   chartBtn.onclick = () => host.insertChart();
   const mathBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(mathBtn, "sigma");
-  mathBtn.title = "Insertar ecuaci\xF3n: escr\xEDbela a mano y se convierte sola, o teclea la notaci\xF3n. Tambi\xE9n vale $x^2$ dentro de cualquier texto";
+  mathBtn.title = tr("Insertar ecuaci\xF3n: escr\xEDbela a mano y se convierte sola, o teclea la notaci\xF3n. Tambi\xE9n vale $x^2$ dentro de cualquier texto");
   mathBtn.onclick = () => host.insertMathBlock();
   const recorderBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(recorderBtn, "mic");
-  recorderBtn.title = "Grabar audio: se guarda como MP3 y se a\xF1ade a la pizarra";
+  recorderBtn.title = tr("Grabar audio: se guarda como MP3 y se a\xF1ade a la pizarra");
   recorderBtn.onclick = () => host.toggleRecorder();
   const translateBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(translateBtn, "languages");
-  translateBtn.title = "Traducir texto";
+  translateBtn.title = tr("Traducir texto");
   translateBtn.onclick = () => host.translateText();
   const documentBar = container.createDiv({ cls: "notelens-document-dock" });
   shield(documentBar);
   const rulerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(rulerBtn, "ruler");
-  rulerBtn.title = "Mostrar regla inteligente";
+  rulerBtn.title = tr("Mostrar regla inteligente");
   rulerBtn.onclick = () => host.toggleRuler();
   const bookmarkBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(bookmarkBtn, "bookmark-plus");
-  bookmarkBtn.title = "Guardar marcador de secci\xF3n";
+  bookmarkBtn.title = tr("Guardar marcador de secci\xF3n");
   bookmarkBtn.onclick = () => host.addViewportBookmark();
   const navBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(navBtn, "folder-tree");
-  navBtn.title = "Navegar entre las pizarras y notas de la b\xF3veda";
+  navBtn.title = tr("Navegar entre las pizarras y notas de la b\xF3veda");
   navBtn.onclick = () => host.toggleNavigator();
   const calcBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(calcBtn, "calculator");
-  calcBtn.title = "Calculadora cient\xEDfica";
+  calcBtn.title = tr("Calculadora cient\xEDfica");
   calcBtn.onclick = () => host.toggleCalculator();
   const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(a4Btn, "file-stack");
-  a4Btn.title = "Mostrar gu\xEDas de p\xE1gina A4";
+  a4Btn.title = tr("Mostrar gu\xEDas de p\xE1gina A4");
   a4Btn.onclick = () => host.toggleA4Guides();
   const exportBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(exportBtn, "file-down");
-  exportBtn.title = "Exportar a PDF A4";
+  exportBtn.title = tr("Exportar a PDF A4");
   exportBtn.onclick = () => host.exportA4Pdf();
   const shareBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(shareBtn, "share-2");
-  shareBtn.title = "Exportar paquete editable de NoteLens";
+  shareBtn.title = tr("Exportar paquete editable de NoteLens");
   shareBtn.onclick = () => host.exportSharePackage();
   const importBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian11.setIcon)(importBtn, "package-open");
-  importBtn.title = "Importar paquete editable de NoteLens";
+  importBtn.title = tr("Importar paquete editable de NoteLens");
   importBtn.onclick = () => host.importSharePackage();
   container.__refreshToolbar = () => {
     refreshActive();
@@ -76808,34 +77355,34 @@ function createNavigationControls(host, container) {
   shield(controls);
   const zoomOut = controls.createEl("button", { cls: "notelens-nav-btn" });
   (0, import_obsidian11.setIcon)(zoomOut, "minus");
-  zoomOut.title = "Alejar";
+  zoomOut.title = tr("Alejar");
   zoomOut.onclick = () => host.zoomOut();
   const zoomLabel = controls.createEl("button", { cls: "notelens-zoom-label" });
-  zoomLabel.title = "Restablecer zoom";
+  zoomLabel.title = tr("Restablecer zoom");
   zoomLabel.onclick = () => host.resetView();
   const zoomIn = controls.createEl("button", { cls: "notelens-nav-btn" });
   (0, import_obsidian11.setIcon)(zoomIn, "plus");
-  zoomIn.title = "Acercar";
+  zoomIn.title = tr("Acercar");
   zoomIn.onclick = () => host.zoomIn();
   const reset = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-reset" });
   (0, import_obsidian11.setIcon)(reset, "maximize");
-  reset.title = "Restablecer vista";
+  reset.title = tr("Restablecer vista");
   reset.onclick = () => host.resetView();
   const fit = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fit" });
   (0, import_obsidian11.setIcon)(fit, "scan");
-  fit.title = "Ajustar la vista a todo el contenido";
+  fit.title = tr("Ajustar la vista a todo el contenido");
   fit.onclick = () => host.fitToContent();
   const map = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-map" });
   (0, import_obsidian11.setIcon)(map, "map");
-  map.title = "Mostrar u ocultar el minimapa";
+  map.title = tr("Mostrar u ocultar el minimapa");
   map.onclick = () => host.toggleMiniMap();
   const full = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fullscreen" });
   (0, import_obsidian11.setIcon)(full, "maximize-2");
-  full.title = "Pizarra a pantalla completa (Esc para salir)";
+  full.title = tr("Pizarra a pantalla completa (Esc para salir)");
   full.onclick = () => host.toggleFullscreen();
   const help = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-help" });
   (0, import_obsidian11.setIcon)(help, "keyboard");
-  help.title = "Atajos de teclado";
+  help.title = tr("Atajos de teclado");
   const shortcuts = createShortcutsPanel(container);
   help.onclick = () => {
     shortcuts.toggle();
@@ -76855,7 +77402,7 @@ function createShortcutsPanel(container) {
   const panel = container.createDiv({ cls: "notelens-shortcuts hidden" });
   shield(panel);
   const header = panel.createDiv({ cls: "notelens-shortcuts-header" });
-  header.createSpan({ text: "Atajos" });
+  header.createSpan({ text: tr("Atajos") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian11.setIcon)(closeBtn, "x");
   const groups = [
@@ -76887,14 +77434,14 @@ function createBookmarksControl(host, container) {
   shield(dock);
   const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle" });
   (0, import_obsidian11.setIcon)(toggle, "book-open-check");
-  toggle.title = "Marcadores de secci\xF3n";
+  toggle.title = tr("Marcadores de secci\xF3n");
   const panel = dock.createDiv({ cls: "notelens-bookmarks-panel hidden" });
   const panelHeader = panel.createDiv({ cls: "notelens-bookmarks-header" });
-  panelHeader.createSpan({ text: "Marcadores" });
+  panelHeader.createSpan({ text: tr("Marcadores") });
   const headerButtons = panelHeader.createDiv({ cls: "notelens-bookmarks-header-buttons" });
   const add = headerButtons.createEl("button", { cls: "notelens-table-control" });
   (0, import_obsidian11.setIcon)(add, "plus");
-  add.title = "Guardar posici\xF3n actual";
+  add.title = tr("Guardar posici\xF3n actual");
   let clearSearch = () => {
   };
   add.onclick = () => {
@@ -76903,7 +77450,7 @@ function createBookmarksControl(host, container) {
   };
   const closeBookmarks = headerButtons.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian11.setIcon)(closeBookmarks, "x");
-  closeBookmarks.title = "Cerrar";
+  closeBookmarks.title = tr("Cerrar");
   closeBookmarks.onclick = () => panel.addClass("hidden");
   let searchQuery = "";
   let refresh = () => {
@@ -76916,7 +77463,7 @@ function createBookmarksControl(host, container) {
   let pageFilter = null;
   const pageFilterRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
   const pageFilterSelect = pageFilterRow.createEl("select", { cls: "notelens-panel-page-select" });
-  pageFilterSelect.title = "Mostrar solo los marcadores de una p\xE1gina";
+  pageFilterSelect.title = tr("Mostrar solo los marcadores de una p\xE1gina");
   pageFilterSelect.onchange = () => {
     pageFilter = pageFilterSelect.value === "__all__" ? null : pageFilterSelect.value;
     refresh();
@@ -76930,10 +77477,10 @@ function createBookmarksControl(host, container) {
     }
     if (pageFilter && !pages.some((page) => page.id === pageFilter)) pageFilter = null;
     pageFilterSelect.empty();
-    pageFilterSelect.createEl("option", { value: "__all__", text: `Todas las p\xE1ginas (${pages.length})` });
+    pageFilterSelect.createEl("option", { value: "__all__", text: tr("Todas las p\xE1ginas ({p0})", { p0: pages.length }) });
     for (const page of pages) {
       const counted = host.getViewportBookmarks().filter((b3) => (b3.pageId ?? host.getActivePageId()) === page.id).length;
-      pageFilterSelect.createEl("option", { value: page.id, text: `${host.getPageTitle(page.id)} (${counted})` });
+      pageFilterSelect.createEl("option", { value: page.id, text: tr("{p0} ({p1})", { p0: host.getPageTitle(page.id), p1: counted }) });
     }
     pageFilterSelect.value = pageFilter ?? "__all__";
   };
@@ -76980,7 +77527,7 @@ function createBookmarksControl(host, container) {
     const bookmarks = allBookmarks.map((bookmark, index2) => ({ bookmark, index: index2 })).filter(({ bookmark }) => pageFilter === null || (bookmark.pageId ?? host.getActivePageId()) === pageFilter).filter(({ bookmark, index: index2 }) => matchesPanelSearch(searchQuery, bookmark.label, host.getPageTitle(bookmark.pageId), index2 + 1));
     search.setCount(bookmarks.length, allBookmarks.length);
     if (allBookmarks.length === 0) {
-      list.createDiv({ cls: "notelens-bookmarks-empty", text: "Sin marcadores. Pulsa + para guardar la vista actual." });
+      list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("Sin marcadores. Pulsa + para guardar la vista actual.") });
       return;
     }
     if (bookmarks.length === 0) {
@@ -76997,7 +77544,7 @@ function createBookmarksControl(host, container) {
       const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
       copy.createSpan({ cls: "notelens-bookmark-label", text: bookmark.label });
       if (host.getDocumentPages().length > 1) copy.createSpan({ cls: "notelens-bookmark-page", text: host.getPageTitle(bookmark.pageId) });
-      go.title = `Ir a ${bookmark.label} (doble clic para renombrar)`;
+      go.title = tr("Ir a {p0} (doble clic para renombrar)", { p0: bookmark.label });
       go.onclick = () => {
         host.goToViewportBookmark(bookmark.id);
         panel.addClass("hidden");
@@ -77008,11 +77555,11 @@ function createBookmarksControl(host, container) {
       };
       const rename = item.createEl("button", { cls: "notelens-table-control" });
       (0, import_obsidian11.setIcon)(rename, "pencil");
-      rename.title = "Renombrar marcador";
+      rename.title = tr("Renombrar marcador");
       rename.onclick = () => startRename(item, go, bookmark);
       const remove = item.createEl("button", { cls: "notelens-table-control" });
       (0, import_obsidian11.setIcon)(remove, "x");
-      remove.title = "Eliminar marcador";
+      remove.title = tr("Eliminar marcador");
       remove.onclick = () => host.deleteViewportBookmark(bookmark.id);
       if (renameId === bookmark.id) {
         panel.removeClass("hidden");
@@ -77039,15 +77586,15 @@ function createPagesControl(host, container) {
   shield(dock);
   const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle notelens-pages-toggle" });
   (0, import_obsidian11.setIcon)(toggle, "files");
-  toggle.title = "P\xE1ginas de la libreta";
+  toggle.title = tr("P\xE1ginas de la libreta");
   const count = toggle.createSpan({ cls: "notelens-pages-count" });
   const panel = dock.createDiv({ cls: "notelens-bookmarks-panel notelens-pages-panel hidden" });
   const header = panel.createDiv({ cls: "notelens-bookmarks-header" });
-  header.createSpan({ text: "P\xE1ginas" });
+  header.createSpan({ text: tr("P\xE1ginas") });
   const actions = header.createDiv({ cls: "notelens-bookmarks-header-buttons" });
   const add = actions.createEl("button", { cls: "notelens-table-control" });
   (0, import_obsidian11.setIcon)(add, "file-plus-2");
-  add.title = "A\xF1adir p\xE1gina";
+  add.title = tr("A\xF1adir p\xE1gina");
   let clearSearch = () => {
   };
   add.onclick = () => {
@@ -77056,7 +77603,7 @@ function createPagesControl(host, container) {
   };
   const close = actions.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian11.setIcon)(close, "x");
-  close.title = "Cerrar";
+  close.title = tr("Cerrar");
   close.onclick = () => panel.addClass("hidden");
   let searchQuery = "";
   let refresh = () => {
@@ -77106,23 +77653,23 @@ function createPagesControl(host, container) {
     if (renameId) container.__closeBookmarks?.();
     list.empty();
     const pages = host.getDocumentPages();
-    const active = host.getActivePageId();
-    count.setText(String(Math.max(1, pages.findIndex((page) => page.id === active) + 1)));
+    const active2 = host.getActivePageId();
+    count.setText(String(Math.max(1, pages.findIndex((page) => page.id === active2) + 1)));
     const visiblePages = pages.map((page, index2) => ({ page, index: index2 })).filter(({ page, index: index2 }) => matchesPanelSearch(searchQuery, page.title, index2 + 1, `P\xE1gina ${index2 + 1}`));
     search.setCount(visiblePages.length, pages.length);
     if (visiblePages.length === 0) {
-      list.createDiv({ cls: "notelens-bookmarks-empty", text: "No hay p\xE1ginas que coincidan con la b\xFAsqueda." });
+      list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay p\xE1ginas que coincidan con la b\xFAsqueda.") });
       return;
     }
     for (const { page, index: index2 } of visiblePages) {
       const item = list.createDiv({ cls: "notelens-bookmark-item notelens-page-item" });
-      item.toggleClass("active", page.id === active);
+      item.toggleClass("active", page.id === active2);
       const go = item.createEl("button", { cls: "notelens-bookmark-go" });
       go.createSpan({ cls: "notelens-page-thumbnail", text: String(index2 + 1) });
       const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
       copy.createSpan({ cls: "notelens-bookmark-label", text: page.title });
-      copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active ? "P\xE1gina actual" : "Abrir p\xE1gina" });
-      go.title = `Ir a ${page.title}`;
+      copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active2 ? tr("P\xE1gina actual") : tr("Abrir p\xE1gina") });
+      go.title = tr("Ir a {p0}", { p0: page.title });
       go.onclick = () => host.goToDocumentPage(page.id);
       go.ondblclick = (event) => {
         event.preventDefault();
@@ -77130,11 +77677,11 @@ function createPagesControl(host, container) {
       };
       const rename = item.createEl("button", { cls: "notelens-table-control" });
       (0, import_obsidian11.setIcon)(rename, "pencil");
-      rename.title = "Renombrar p\xE1gina";
+      rename.title = tr("Renombrar p\xE1gina");
       rename.onclick = () => startRename(item, go, page);
       const remove = item.createEl("button", { cls: "notelens-table-control notelens-page-remove" });
       (0, import_obsidian11.setIcon)(remove, "x");
-      remove.title = pages.length === 1 ? "Debe quedar al menos una p\xE1gina" : "Eliminar p\xE1gina";
+      remove.title = pages.length === 1 ? tr("Debe quedar al menos una p\xE1gina") : tr("Eliminar p\xE1gina");
       remove.toggleClass("is-disabled", pages.length === 1);
       remove.onclick = () => {
         if (pages.length > 1) host.deleteDocumentPage(page.id);
@@ -77160,12 +77707,12 @@ function createPagesControl(host, container) {
 function createFocusModeControl(host, container) {
   const button = container.createEl("button", { cls: "notelens-focus-toggle" });
   shield(button);
-  button.title = "Despejar la pantalla";
+  button.title = tr("Despejar la pantalla");
   button.onclick = () => host.toggleFocusMode();
   const refresh = () => {
     button.empty();
     (0, import_obsidian11.setIcon)(button, host.getFocusModeEnabled() ? "eye" : "eye-off");
-    button.title = host.getFocusModeEnabled() ? "Mostrar controles" : "Despejar la pantalla";
+    button.title = host.getFocusModeEnabled() ? tr("Mostrar controles") : tr("Despejar la pantalla");
     button.toggleClass("active", host.getFocusModeEnabled());
   };
   refresh();
@@ -77176,7 +77723,7 @@ function createOptionsPanel(host, container, close) {
   shield(panel);
   const panelClose = panel.createEl("button", { cls: "notelens-panel-close" });
   (0, import_obsidian11.setIcon)(panelClose, "x");
-  panelClose.title = "Cerrar (Esc)";
+  panelClose.title = tr("Cerrar (Esc)");
   panelClose.onclick = () => close();
   function createPanelHeader(section, icon, title) {
     const header = section.createDiv({ cls: "notelens-tool-panel-header" });
@@ -77186,7 +77733,7 @@ function createOptionsPanel(host, container, close) {
   }
   const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
   createPanelHeader(selectSection, "mouse-pointer-2", "Selecci\xF3n");
-  selectSection.createDiv({ cls: "notelens-panel-label", text: "Modo" });
+  selectSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
   const selectModeRow = selectSection.createDiv({ cls: "notelens-eraser-modes" });
   const selectModeBtns = [];
   for (const mode2 of [
@@ -77195,7 +77742,7 @@ function createOptionsPanel(host, container, close) {
   ]) {
     const b3 = selectModeRow.createEl("button", { cls: "notelens-eraser-mode" });
     (0, import_obsidian11.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
-    b3.createSpan({ text: mode2.label });
+    b3.createSpan({ text: tr(mode2.label) });
     b3.onclick = () => {
       host.setSelectionMode(mode2.id);
       refresh();
@@ -77203,7 +77750,7 @@ function createOptionsPanel(host, container, close) {
     };
     selectModeBtns.push([b3, mode2.id]);
   }
-  selectSection.createDiv({ cls: "notelens-panel-hint", text: "Arrastra sobre la tinta para seleccionarla. Doble clic en un hueco crea un cuadro de texto." });
+  selectSection.createDiv({ cls: "notelens-panel-hint", text: tr("Arrastra sobre la tinta para seleccionarla. Doble clic en un hueco crea un cuadro de texto.") });
   const penSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-pen" });
   createPanelHeader(penSection, "pen-tool", "Bol\xEDgrafo");
   const penHeading = penSection.querySelector(".notelens-tool-heading");
@@ -77225,22 +77772,22 @@ function createOptionsPanel(host, container, close) {
     const sample = { id: "preview", type: "pen", color: host.strokeColor, width: Math.min(host.strokeWidth, 12), style: host.penStyle, points: pts };
     previewRenderer.renderAll([sample], [], { x: 0, y: 0, scale: 1 });
   };
-  penSection.createDiv({ cls: "notelens-panel-label", text: "Tipo de trazo" });
+  penSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipo de trazo") });
   const nibRow = penSection.createDiv({ cls: "notelens-nib-grid" });
   const nibButtons = [];
   const nibHint = penSection.createDiv({ cls: "notelens-panel-hint notelens-nib-hint" });
   for (const nib of PEN_STYLES) {
     const b3 = nibRow.createEl("button", { cls: "notelens-nib" });
     (0, import_obsidian11.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
-    b3.createSpan({ text: nib.label });
-    b3.title = nib.hint;
+    b3.createSpan({ text: tr(nib.label) });
+    b3.title = tr(nib.hint);
     b3.onclick = () => {
       host.setPenStyle(nib.id);
       refresh();
     };
     nibButtons.push([b3, nib.id]);
   }
-  penSection.createDiv({ cls: "notelens-panel-label", text: "Punta" });
+  penSection.createDiv({ cls: "notelens-panel-label", text: tr("Punta") });
   const widthRow = penSection.createDiv({ cls: "notelens-width-presets notelens-ink-widths" });
   const widthDots = [];
   for (const w3 of WIDTH_PRESETS) {
@@ -77256,7 +77803,7 @@ function createOptionsPanel(host, container, close) {
     };
     widthDots.push([dot, w3]);
   }
-  penSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad" });
+  penSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad") });
   const intensityRow = penSection.createDiv({ cls: "notelens-intensity-row" });
   const slider = intensityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
   slider.type = "range";
@@ -77270,15 +77817,15 @@ function createOptionsPanel(host, container, close) {
     penOpacityValue.setText(`${Math.round(host.strokeIntensity * 100)}%`);
     renderPreview();
   };
-  penSection.createDiv({ cls: "notelens-panel-label", text: "Colores recientes" });
+  penSection.createDiv({ cls: "notelens-panel-label", text: tr("Colores recientes") });
   const recentRow = penSection.createDiv({ cls: "notelens-color-grid" });
-  penSection.createDiv({ cls: "notelens-panel-label", text: "Tinta" });
+  penSection.createDiv({ cls: "notelens-panel-label", text: tr("Tinta") });
   const paletteGrid = penSection.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of PALETTE_COLORS) addColorSwatch(paletteGrid, c5);
   const customRow = penSection.createDiv({ cls: "notelens-custom-color" });
   const customIcon = customRow.createSpan({ cls: "notelens-mode-icon" });
   (0, import_obsidian11.setIcon)(customIcon, "pipette");
-  customRow.createSpan({ text: " Tinta personalizada..." });
+  customRow.createSpan({ text: tr(" Tinta personalizada...") });
   const colorInput = customRow.createEl("input");
   colorInput.type = "color";
   colorInput.value = host.penColorHex;
@@ -77297,7 +77844,7 @@ function createOptionsPanel(host, container, close) {
   }
   const highlighterSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-highlighter" });
   createPanelHeader(highlighterSection, "highlighter", "Resaltador");
-  highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Trazo ancho" });
+  highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Trazo ancho") });
   const highlighterWidthRow = highlighterSection.createDiv({ cls: "notelens-width-presets notelens-marker-widths" });
   const highlighterDots = [];
   for (const w3 of HIGHLIGHTER_WIDTHS) {
@@ -77312,7 +77859,7 @@ function createOptionsPanel(host, container, close) {
     };
     highlighterDots.push([dot, w3]);
   }
-  highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad" });
+  highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad") });
   const highlighterIntensityRow = highlighterSection.createDiv({ cls: "notelens-intensity-row" });
   const highlighterSlider = highlighterIntensityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
   highlighterSlider.type = "range";
@@ -77325,12 +77872,12 @@ function createOptionsPanel(host, container, close) {
     host.setStrokeIntensity(parseFloat(highlighterSlider.value));
     highlighterOpacityValue.setText(`${Math.round(host.highlighterIntensity * 100)}%`);
   };
-  highlighterSection.createDiv({ cls: "notelens-panel-label", text: "Color fluorescente" });
+  highlighterSection.createDiv({ cls: "notelens-panel-label", text: tr("Color fluorescente") });
   const highlighterPalette = highlighterSection.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of HIGHLIGHTER_COLORS) addColorSwatch(highlighterPalette, c5, (hex) => host.setHighlighterColor(hex));
   const highlighterCustomRow = highlighterSection.createDiv({ cls: "notelens-custom-color" });
   (0, import_obsidian11.setIcon)(highlighterCustomRow.createSpan({ cls: "notelens-mode-icon" }), "pipette");
-  highlighterCustomRow.createSpan({ text: " Fluor personalizado..." });
+  highlighterCustomRow.createSpan({ text: tr(" Fluor personalizado...") });
   const highlighterColorInput = highlighterCustomRow.createEl("input");
   highlighterColorInput.type = "color";
   highlighterColorInput.value = host.highlighterColorHex;
@@ -77340,21 +77887,21 @@ function createOptionsPanel(host, container, close) {
   };
   const eraserSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-eraser" });
   createPanelHeader(eraserSection, "eraser", "Goma");
-  eraserSection.createDiv({ cls: "notelens-panel-label", text: "Tama\xF1o de la goma" });
+  eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Tama\xF1o de la goma") });
   const eraserRow = eraserSection.createDiv({ cls: "notelens-eraser-sizes" });
   const eraserBtns = [];
   for (const s4 of ERASER_SIZES) {
     const b3 = eraserRow.createEl("button", { cls: "notelens-eraser-choice" });
     b3.createSpan({ cls: "notelens-eraser-block" });
-    b3.createSpan({ cls: "notelens-eraser-size-label", text: s4.label });
-    b3.title = `Goma ${s4.label} (${s4.value}px)`;
+    b3.createSpan({ cls: "notelens-eraser-size-label", text: tr(s4.label) });
+    b3.title = tr("Goma {p0} ({p1}px)", { p0: tr(s4.label), p1: s4.value });
     b3.onclick = () => {
       host.setEraserSize(s4.value);
       close();
     };
     eraserBtns.push([b3, s4.value]);
   }
-  eraserSection.createDiv({ cls: "notelens-panel-label", text: "Modo" });
+  eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
   const eraserModeRow = eraserSection.createDiv({ cls: "notelens-eraser-modes" });
   const eraserModeBtns = [];
   for (const mode2 of [
@@ -77363,7 +77910,7 @@ function createOptionsPanel(host, container, close) {
   ]) {
     const b3 = eraserModeRow.createEl("button", { cls: "notelens-eraser-mode" });
     (0, import_obsidian11.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
-    b3.createSpan({ text: mode2.label });
+    b3.createSpan({ text: tr(mode2.label) });
     b3.onclick = () => {
       host.setEraserMode(mode2.id);
       refresh();
@@ -77373,7 +77920,7 @@ function createOptionsPanel(host, container, close) {
   const eraserHint = eraserSection.createDiv({ cls: "notelens-panel-hint" });
   const textSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-text" });
   createPanelHeader(textSection, "type", "Texto");
-  textSection.createDiv({ cls: "notelens-panel-label", text: "Tama\xF1o de texto" });
+  textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tama\xF1o de texto") });
   const textRow = textSection.createDiv({ cls: "notelens-text-sizes" });
   const textBtns = [];
   for (const s4 of TEXT_SIZES) {
@@ -77387,32 +77934,32 @@ function createOptionsPanel(host, container, close) {
     };
     textBtns.push([b3, s4]);
   }
-  textSection.createDiv({ cls: "notelens-panel-label", text: "Tipograf\xEDa" });
+  textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipograf\xEDa") });
   const fontSelect = textSection.createEl("select", { cls: "notelens-font-select" });
   for (const font of FONT_OPTIONS) {
-    const option = fontSelect.createEl("option", { text: font.label, value: font.id });
+    const option = fontSelect.createEl("option", { text: tr(font.label), value: font.id });
     option.style.fontFamily = font.css;
   }
   fontSelect.onchange = () => {
     host.setTextFont(fontSelect.value);
   };
-  textSection.createDiv({ cls: "notelens-panel-label", text: "Color de texto" });
+  textSection.createDiv({ cls: "notelens-panel-label", text: tr("Color de texto") });
   const textColorRow = textSection.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of TEXT_COLORS) addColorSwatch(textColorRow, c5, (hex) => host.setTextColor(hex));
   const shapeSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-shape" });
   createPanelHeader(shapeSection, "shapes", "Formas");
-  shapeSection.createDiv({ cls: "notelens-panel-label", text: "Tipo de forma" });
+  shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipo de forma") });
   const shapeRow = shapeSection.createDiv({ cls: "notelens-shape-types" });
   const shapeButtons = [];
   const shapes = [
-    { kind: "line", icon: "minus", title: "L\xEDnea" },
-    { kind: "arrow", icon: "move-right", title: "Flecha" },
-    { kind: "rectangle", icon: "square", title: "Rect\xE1ngulo" },
-    { kind: "rounded-rectangle", icon: "square-round-corner", title: "Rect\xE1ngulo redondeado" },
-    { kind: "ellipse", icon: "circle", title: "Elipse" },
-    { kind: "diamond", icon: "diamond", title: "Rombo" },
-    { kind: "triangle", icon: "triangle", title: "Tri\xE1ngulo" },
-    { kind: "callout", icon: "message-square", title: "Llamada" }
+    { kind: "line", icon: "minus", title: tr("L\xEDnea") },
+    { kind: "arrow", icon: "move-right", title: tr("Flecha") },
+    { kind: "rectangle", icon: "square", title: tr("Rect\xE1ngulo") },
+    { kind: "rounded-rectangle", icon: "square-round-corner", title: tr("Rect\xE1ngulo redondeado") },
+    { kind: "ellipse", icon: "circle", title: tr("Elipse") },
+    { kind: "diamond", icon: "diamond", title: tr("Rombo") },
+    { kind: "triangle", icon: "triangle", title: tr("Tri\xE1ngulo") },
+    { kind: "callout", icon: "message-square", title: tr("Llamada") }
   ];
   for (const shape of shapes) {
     const b3 = shapeRow.createEl("button", { cls: "notelens-shape-choice" });
@@ -77424,7 +77971,7 @@ function createOptionsPanel(host, container, close) {
     };
     shapeButtons.push([b3, shape.kind]);
   }
-  shapeSection.createDiv({ cls: "notelens-panel-label", text: "Grosor" });
+  shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Grosor") });
   const shapeWidthRow = shapeSection.createDiv({ cls: "notelens-width-presets notelens-ink-widths" });
   const shapeWidthDots = [];
   for (const w3 of WIDTH_PRESETS.slice(0, 6)) {
@@ -77440,19 +77987,19 @@ function createOptionsPanel(host, container, close) {
     };
     shapeWidthDots.push([dot, w3]);
   }
-  shapeSection.createDiv({ cls: "notelens-panel-label", text: "Color del contorno" });
+  shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Color del contorno") });
   const shapeColors = shapeSection.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of PALETTE_COLORS) addColorSwatch(shapeColors, c5);
   const fillToggleRow = shapeSection.createEl("label", { cls: "notelens-fill-toggle" });
   const fillToggle = fillToggleRow.createEl("input");
   fillToggle.type = "checkbox";
   fillToggle.checked = host.shapeFillEnabled;
-  fillToggleRow.createSpan({ text: "Rellenar forma" });
+  fillToggleRow.createSpan({ text: tr("Rellenar forma") });
   fillToggle.onchange = () => host.setShapeFillEnabled(fillToggle.checked);
-  shapeSection.createDiv({ cls: "notelens-panel-label", text: "Color del relleno" });
+  shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Color del relleno") });
   const fillColors = shapeSection.createDiv({ cls: "notelens-color-grid notelens-fill-color-grid" });
   for (const c5 of PALETTE_COLORS) addColorSwatch(fillColors, c5, (hex) => host.setShapeFillColor(hex));
-  shapeSection.createDiv({ cls: "notelens-panel-label", text: "Opacidad del relleno" });
+  shapeSection.createDiv({ cls: "notelens-panel-label", text: tr("Opacidad del relleno") });
   const fillOpacityRow = shapeSection.createDiv({ cls: "notelens-intensity-row" });
   const fillOpacity = fillOpacityRow.createEl("input", { cls: "onenote-width-slider notelens-tool-slider" });
   fillOpacity.type = "range";
@@ -77479,7 +78026,7 @@ function createOptionsPanel(host, container, close) {
     for (const [dot, w3] of highlighterDots) dot.toggleClass("active", Math.abs(host.highlighterWidth - w3) < 0.01);
     for (const [b3, v4] of eraserBtns) b3.toggleClass("active", host.eraserSize === v4);
     for (const [b3, mode2] of eraserModeBtns) b3.toggleClass("active", host.eraserMode === mode2);
-    eraserHint.setText(host.eraserMode === "partial" ? "Corta el trazo justo donde pasas la goma, como en OneNote." : "Borra el trazo entero al tocarlo.");
+    eraserHint.setText(host.eraserMode === "partial" ? tr("Corta el trazo justo donde pasas la goma, como en OneNote.") : tr("Borra el trazo entero al tocarlo."));
     for (const [b3, v4] of textBtns) b3.toggleClass("active", host.textSize === v4);
     fontSelect.value = host.textFont;
     for (const [b3, kind] of shapeButtons) b3.toggleClass("active", host.shapeKind === kind);
@@ -77493,10 +78040,10 @@ function createOptionsPanel(host, container, close) {
     penOpacityValue.setText(`${Math.round(host.strokeIntensity * 100)}%`);
     colorInput.value = host.penColorHex;
     const nib = penStyleById(host.penStyle);
-    penHeading.setText(nib.label);
+    penHeading.setText(tr(nib.label));
     penHeadingIcon.empty();
     (0, import_obsidian11.setIcon)(penHeadingIcon, nib.icon);
-    nibHint.setText(nib.hint);
+    nibHint.setText(tr(nib.hint));
     for (const [b3, id] of nibButtons) b3.toggleClass("active", id === host.penStyle);
     if (!panel.hasClass("hidden")) renderPreview();
     highlighterSlider.value = String(host.highlighterIntensity);
@@ -77504,7 +78051,7 @@ function createOptionsPanel(host, container, close) {
     highlighterColorInput.value = host.highlighterColorHex;
     recentRow.empty();
     if (host.recentColors.length === 0) {
-      recentRow.createDiv({ cls: "notelens-recent-empty", text: "Sin colores recientes" });
+      recentRow.createDiv({ cls: "notelens-recent-empty", text: tr("Sin colores recientes") });
     } else {
       for (const c5 of host.recentColors) addColorSwatch(recentRow, c5);
     }
@@ -77522,11 +78069,11 @@ function createQuickTagsBar(container, onPick, onSummary) {
   for (const t4 of QUICK_TAGS) {
     const chip = bar.createEl("button", { cls: "onenote-tag-chip" });
     chip.setAttr("data-tag", t4.id);
-    chip.title = TAG_HINTS[t4.id] ?? t4.label;
+    chip.title = tr(TAG_HINTS[t4.id] ?? t4.label);
     chip.style.setProperty("--tag-color", t4.color);
     const iconEl = chip.createSpan({ cls: "onenote-tag-icon" });
     (0, import_obsidian11.setIcon)(iconEl, t4.icon);
-    chip.createSpan({ text: t4.label });
+    chip.createSpan({ text: tr(t4.label) });
     chip.onclick = () => {
       setActive(t4.id);
       onPick(t4);
@@ -77537,8 +78084,8 @@ function createQuickTagsBar(container, onPick, onSummary) {
     bar.createDiv({ cls: "onenote-divider" });
     const summary = bar.createEl("button", { cls: "onenote-tag-chip onenote-tag-summary" });
     (0, import_obsidian11.setIcon)(summary.createSpan({ cls: "onenote-tag-icon" }), "list-checks");
-    summary.createSpan({ text: "Resumen" });
-    summary.title = "Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes";
+    summary.createSpan({ text: tr("Resumen") });
+    summary.title = tr("Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes");
     summary.onclick = onSummary;
   }
   container.__clearActiveTag = () => setActive(null);
@@ -77546,16 +78093,16 @@ function createQuickTagsBar(container, onPick, onSummary) {
 function createSettingsPanel(host, container) {
   const btn = container.createEl("button", { cls: "notelens-settings-btn" });
   (0, import_obsidian11.setIcon)(btn, "settings-2");
-  btn.title = "Formato del fondo";
+  btn.title = tr("Formato del fondo");
   shield(btn);
   const panel = container.createDiv({ cls: "notelens-settings-panel hidden" });
   shield(panel);
   const header = panel.createDiv({ cls: "notelens-settings-header" });
-  header.createSpan({ text: "Formato del fondo" });
+  header.createSpan({ text: tr("Formato del fondo") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian11.setIcon)(closeBtn, "x");
   closeBtn.onclick = () => panel.addClass("hidden");
-  panel.createDiv({ cls: "notelens-settings-label", text: "Estilo de p\xE1gina" });
+  panel.createDiv({ cls: "notelens-settings-label", text: tr("Estilo de p\xE1gina") });
   const bgRow = panel.createDiv({ cls: "notelens-settings-row notelens-settings-row-grid" });
   const activeBackground = host.background === "margin" ? "lines" : host.background;
   const bgButtons = [];
@@ -77565,8 +78112,8 @@ function createSettingsPanel(host, container) {
     });
     const iconEl = b3.createSpan({ cls: "notelens-settings-choice-icon" });
     (0, import_obsidian11.setIcon)(iconEl, opt.icon);
-    b3.createSpan({ cls: "notelens-settings-choice-label", text: opt.label });
-    b3.title = opt.label;
+    b3.createSpan({ cls: "notelens-settings-choice-label", text: tr(opt.label) });
+    b3.title = tr(opt.label);
     b3.onclick = () => {
       host.setBackground(opt.id);
       bgRow.querySelectorAll(".notelens-settings-choice").forEach((c5) => c5.removeClass("active"));
@@ -77576,24 +78123,24 @@ function createSettingsPanel(host, container) {
   }
   const openSettings = panel.createEl("button", { cls: "notelens-settings-link" });
   (0, import_obsidian11.setIcon)(openSettings.createSpan(), "settings-2");
-  openSettings.createSpan({ text: "Ajustes del plugin" });
-  openSettings.title = "Abre los ajustes de NoteLens en Obsidian";
+  openSettings.createSpan({ text: tr("Ajustes del plugin") });
+  openSettings.title = tr("Abre los ajustes de NoteLens en Obsidian");
   openSettings.onclick = () => host.openPluginSettings();
   const marginControl = panel.createEl("label", { cls: "notelens-settings-margin" });
   const marginIcon = marginControl.createSpan({ cls: "notelens-settings-margin-icon" });
   (0, import_obsidian11.setIcon)(marginIcon, "separator-vertical");
   const marginCopy = marginControl.createSpan({ cls: "notelens-settings-margin-copy" });
-  marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: "Margen izquierdo" });
-  marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: "Independiente del estilo" });
+  marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: tr("Margen izquierdo") });
+  marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: tr("Independiente del estilo") });
   const marginToggle = marginControl.createEl("button", { cls: "notelens-settings-margin-toggle" });
   marginToggle.type = "button";
   marginToggle.setAttr("role", "switch");
   const syncMarginToggle = () => {
     marginToggle.toggleClass("is-on", host.marginEnabled);
     marginToggle.setAttr("aria-checked", host.marginEnabled ? "true" : "false");
-    marginToggle.title = host.marginEnabled ? "Ocultar el margen izquierdo" : "Mostrar el margen izquierdo";
+    marginToggle.title = host.marginEnabled ? tr("Ocultar el margen izquierdo") : tr("Mostrar el margen izquierdo");
   };
-  marginToggle.setAttr("aria-label", "Mostrar margen izquierdo");
+  marginToggle.setAttr("aria-label", tr("Mostrar margen izquierdo"));
   marginToggle.onclick = (event) => {
     event.preventDefault();
     host.setMarginEnabled(!host.marginEnabled);
@@ -77605,7 +78152,7 @@ function createSettingsPanel(host, container) {
     for (const [button, pattern] of bgButtons) button.toggleClass("active", pattern === current);
     syncMarginToggle();
   };
-  panel.createDiv({ cls: "notelens-settings-label", text: "Tama\xF1o de cuadr\xEDcula" });
+  panel.createDiv({ cls: "notelens-settings-label", text: tr("Tama\xF1o de cuadr\xEDcula") });
   const gridRow = panel.createDiv({ cls: "notelens-settings-row" });
   const gridButtons = [];
   for (const opt of [{ id: "small", label: "Peque\xF1a" }, { id: "medium", label: "Mediana" }, { id: "large", label: "Grande" }]) {
@@ -77618,7 +78165,7 @@ function createSettingsPanel(host, container) {
     gridButtons.push([b3, opt.id]);
   }
   for (const [btn2, id] of gridButtons) btn2.toggleClass("active", id === host.gridSize);
-  panel.createDiv({ cls: "notelens-settings-label", text: "Color de l\xEDnea" });
+  panel.createDiv({ cls: "notelens-settings-label", text: tr("Color de l\xEDnea") });
   const lineRow = panel.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of LINE_COLORS) {
     const sw = lineRow.createDiv({ cls: "notelens-color-swatch" });
@@ -77631,7 +78178,7 @@ function createSettingsPanel(host, container) {
       sw.addClass("active");
     };
   }
-  panel.createDiv({ cls: "notelens-settings-label", text: "Color de p\xE1gina" });
+  panel.createDiv({ cls: "notelens-settings-label", text: tr("Color de p\xE1gina") });
   const pageGrid = panel.createDiv({ cls: "notelens-color-grid" });
   for (const c5 of PAGE_COLORS) {
     const sw = pageGrid.createDiv({ cls: "notelens-color-swatch" });
@@ -77646,7 +78193,7 @@ function createSettingsPanel(host, container) {
   }
   const customPage = panel.createDiv({ cls: "notelens-custom-color notelens-paper-custom" });
   (0, import_obsidian11.setIcon)(customPage.createSpan({ cls: "notelens-mode-icon" }), "palette");
-  customPage.createSpan({ text: " Color de p\xE1gina personalizado" });
+  customPage.createSpan({ text: tr(" Color de p\xE1gina personalizado") });
   const customPageInput = customPage.createEl("input");
   customPageInput.type = "color";
   customPageInput.value = host.backgroundColor;
@@ -77657,7 +78204,7 @@ function createSettingsPanel(host, container) {
   panel.createDiv({ cls: "notelens-settings-sep" });
   const resetBtn = panel.createEl("button", { cls: "notelens-settings-action" });
   (0, import_obsidian11.setIcon)(resetBtn.createSpan(), "maximize");
-  resetBtn.createSpan({ text: " Restablecer vista" });
+  resetBtn.createSpan({ text: tr(" Restablecer vista") });
   resetBtn.onclick = () => {
     host.resetView();
     panel.addClass("hidden");
@@ -78237,7 +78784,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     }
     const label = this.rulerEl.createDiv({ cls: "notelens-ruler-label" });
     const modeBtn = label.createEl("button", { cls: "notelens-ruler-mode" });
-    modeBtn.title = "Alternar regla y transportador";
+    modeBtn.title = tr("Alternar regla y transportador");
     modeBtn.onclick = (event) => {
       event.stopPropagation();
       this.rulerState.mode = this.rulerState.mode === "ruler" ? "protractor" : "ruler";
@@ -78245,15 +78792,15 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     };
     const closeRuler = label.createEl("button", { cls: "notelens-embed-close notelens-ruler-close" });
     (0, import_obsidian12.setIcon)(closeRuler, "x");
-    closeRuler.title = "Ocultar la regla";
-    closeRuler.setAttr("aria-label", "Ocultar la regla");
+    closeRuler.title = tr("Ocultar la regla");
+    closeRuler.setAttr("aria-label", tr("Ocultar la regla"));
     closeRuler.addEventListener("pointerdown", (event) => event.stopPropagation());
     closeRuler.onclick = (event) => {
       event.stopPropagation();
       this.toggleRuler();
     };
     const rotate = this.rulerEl.createDiv({ cls: "notelens-ruler-rotate" });
-    rotate.title = "Girar regla";
+    rotate.title = tr("Girar regla");
     rotate.addEventListener("pointerdown", (event) => this.startRulerRotate(event));
     this.rulerEl.addEventListener("pointerdown", (event) => this.startRulerDrag(event));
     this.renderRuler();
@@ -78271,7 +78818,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     const mode2 = this.rulerEl.querySelector(".notelens-ruler-mode");
     if (mode2) {
       const angle = (Math.round(this.rulerState.angle) % 360 + 360) % 360;
-      mode2.setText(isProtractor ? `\xC1ngulos ${angle}\xB0` : "Regla");
+      mode2.setText(isProtractor ? tr("\xC1ngulos {p0}\xB0", { p0: angle }) : "Regla");
       mode2.setAttr("aria-label", mode2.textContent || "Regla");
     }
   }
@@ -78350,9 +78897,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       void document.exitFullscreen().catch(() => {
       });
     } else if (target.requestFullscreen) {
-      void target.requestFullscreen().catch(() => new import_obsidian12.Notice("Obsidian no permite pantalla completa aqu\xED."));
+      void target.requestFullscreen().catch(() => new import_obsidian12.Notice(tr("Obsidian no permite pantalla completa aqu\xED.")));
     } else {
-      new import_obsidian12.Notice("Este dispositivo no permite pantalla completa.");
+      new import_obsidian12.Notice(tr("Este dispositivo no permite pantalla completa."));
     }
   }
   isFullscreen() {
@@ -78364,7 +78911,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       this.commitTextEditor();
       const overlay = this.workspaceEl.createDiv({ cls: "notelens-capture-overlay" });
       const box = overlay.createDiv({ cls: "notelens-capture-box" });
-      overlay.createDiv({ cls: "notelens-capture-hint", text: "Arrastra para elegir la zona que quieres leer. Esc cancela." });
+      overlay.createDiv({ cls: "notelens-capture-hint", text: tr("Arrastra para elegir la zona que quieres leer. Esc cancela.") });
       let start = null;
       const wsRect = () => this.workspaceEl.getBoundingClientRect();
       const finish = (rect) => {
@@ -78561,15 +79108,15 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     wrap.toggleClass("hidden", !this.miniMapVisible);
     const header = wrap.createDiv({ cls: "notelens-minimap-header" });
     (0, import_obsidian12.setIcon)(header.createSpan({ cls: "notelens-minimap-icon" }), "map");
-    header.createSpan({ cls: "notelens-minimap-title", text: "Mapa" });
+    header.createSpan({ cls: "notelens-minimap-title", text: tr("Mapa") });
     const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
     (0, import_obsidian12.setIcon)(closeBtn, "x");
-    closeBtn.title = "Ocultar el mapa";
+    closeBtn.title = tr("Ocultar el mapa");
     closeBtn.onclick = () => this.toggleMiniMap();
     const canvas = wrap.createEl("canvas");
     canvas.width = 400;
     canvas.height = 240;
-    canvas.setAttr("aria-label", "Minimapa de la pizarra");
+    canvas.setAttr("aria-label", tr("Minimapa de la pizarra"));
     const toScene = (event) => {
       const bounds = canvas.getBoundingClientRect();
       const map = this.miniMapBounds;
@@ -78651,11 +79198,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = light ? "rgba(15, 23, 42, 0.14)" : "rgba(226, 232, 240, 0.12)";
     for (let gx = 12; gx < canvas.width; gx += 24) for (let gy = 12; gy < canvas.height; gy += 24) ctx.fillRect(gx, gy, 1.5, 1.5);
-    const rounded = (x4, y4, w3, h4, fill, stroke) => {
+    const rounded = (x4, y4, w3, h4, fill2, stroke) => {
       ctx.beginPath();
       if (typeof ctx.roundRect === "function") ctx.roundRect(x4, y4, w3, h4, 2);
       else ctx.rect(x4, y4, w3, h4);
-      ctx.fillStyle = fill;
+      ctx.fillStyle = fill2;
       ctx.fill();
       if (stroke) {
         ctx.strokeStyle = stroke;
@@ -78681,9 +79228,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       const el = this.domLayerEl.querySelector(`[data-id="${t4.id}"]`);
       const w3 = el?.offsetWidth || t4.w || 200;
       const h4 = el?.offsetHeight || t4.h || 40;
-      const fill = t4.stickyColor ? hexToRgba(t4.stickyColor, 0.9) : t4.variant === "code" ? "rgba(125, 211, 252, 0.45)" : t4.variant === "math" ? "rgba(167, 139, 250, 0.55)" : light ? "rgba(15, 23, 42, 0.3)" : "rgba(226, 232, 240, 0.5)";
+      const fill2 = t4.stickyColor ? hexToRgba(t4.stickyColor, 0.9) : t4.variant === "code" ? "rgba(125, 211, 252, 0.45)" : t4.variant === "math" ? "rgba(167, 139, 250, 0.55)" : light ? "rgba(15, 23, 42, 0.3)" : "rgba(226, 232, 240, 0.5)";
       const edge = t4.stickyColor ? "rgba(113, 87, 15, 0.8)" : t4.variant === "code" ? "#7dd3fc" : t4.variant === "math" ? "#c4b5fd" : light ? "rgba(15, 23, 42, 0.7)" : "rgba(241, 245, 249, 0.9)";
-      rounded(mapX(t4.x), mapY(t4.y), Math.max(6, w3 * sx), Math.max(4, h4 * sy), fill, edge);
+      rounded(mapX(t4.x), mapY(t4.y), Math.max(6, w3 * sx), Math.max(4, h4 * sy), fill2, edge);
     }
     for (const table of this.pageTables) rounded(mapX(table.x), mapY(table.y), Math.max(6, table.w * sx), Math.max(4, table.h * sy), "rgba(56, 189, 248, 0.3)", "#38bdf8");
     for (const em of this.pageEmbeds) rounded(mapX(em.x), mapY(em.y), Math.max(6, em.w * sx), Math.max(4, em.h * sy), "rgba(148, 163, 184, 0.4)", "#cbd5e1");
@@ -78765,23 +79312,23 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
   showCanvasMenu(e3) {
     const pt2 = this.getSceneCoords(e3.clientX, e3.clientY);
     const menu = new import_obsidian12.Menu();
-    menu.addItem((item) => item.setTitle("Cuadro de texto aqu\xED").setIcon("type").onClick(() => this.createTextBoxAt(pt2.x, pt2.y)));
-    menu.addItem((item) => item.setTitle("Nota adhesiva aqu\xED").setIcon("sticky-note").onClick(() => this.createStickyNoteAt(pt2.x, pt2.y)));
-    menu.addItem((item) => item.setTitle("Tabla aqu\xED").setIcon("table-2").onClick(() => this.insertTableAt(pt2.x, pt2.y)));
-    menu.addItem((item) => item.setTitle("Bloque de c\xF3digo aqu\xED").setIcon("code-2").onClick(() => this.createTextBoxAt(pt2.x, pt2.y, void 0, "code")));
-    menu.addItem((item) => item.setTitle("Dibujar forma").setIcon("shapes").onClick(() => this.setTool("shape")));
-    menu.addItem((item) => item.setTitle("Insertar PDF").setIcon("file-text").onClick(() => this.insertPdf()));
-    menu.addItem((item) => item.setTitle("Insertar v\xEDdeo").setIcon("play-circle").onClick(() => this.insertVideo()));
-    menu.addItem((item) => item.setTitle("Insertar imagen").setIcon("image-plus").onClick(() => this.insertImage()));
-    menu.addItem((item) => item.setTitle("Adjuntar archivo de la b\xF3veda").setIcon("paperclip").onClick(() => this.insertFile()));
-    menu.addItem((item) => item.setTitle("Subir archivo desde el dispositivo").setIcon("upload").onClick(() => this.uploadFileFromDevice()));
+    menu.addItem((item) => item.setTitle(tr("Cuadro de texto aqu\xED")).setIcon("type").onClick(() => this.createTextBoxAt(pt2.x, pt2.y)));
+    menu.addItem((item) => item.setTitle(tr("Nota adhesiva aqu\xED")).setIcon("sticky-note").onClick(() => this.createStickyNoteAt(pt2.x, pt2.y)));
+    menu.addItem((item) => item.setTitle(tr("Tabla aqu\xED")).setIcon("table-2").onClick(() => this.insertTableAt(pt2.x, pt2.y)));
+    menu.addItem((item) => item.setTitle(tr("Bloque de c\xF3digo aqu\xED")).setIcon("code-2").onClick(() => this.createTextBoxAt(pt2.x, pt2.y, void 0, "code")));
+    menu.addItem((item) => item.setTitle(tr("Dibujar forma")).setIcon("shapes").onClick(() => this.setTool("shape")));
+    menu.addItem((item) => item.setTitle(tr("Insertar PDF")).setIcon("file-text").onClick(() => this.insertPdf()));
+    menu.addItem((item) => item.setTitle(tr("Insertar v\xEDdeo")).setIcon("play-circle").onClick(() => this.insertVideo()));
+    menu.addItem((item) => item.setTitle(tr("Insertar imagen")).setIcon("image-plus").onClick(() => this.insertImage()));
+    menu.addItem((item) => item.setTitle(tr("Adjuntar archivo de la b\xF3veda")).setIcon("paperclip").onClick(() => this.insertFile()));
+    menu.addItem((item) => item.setTitle(tr("Subir archivo desde el dispositivo")).setIcon("upload").onClick(() => this.uploadFileFromDevice()));
     menu.addSeparator();
-    menu.addItem((item) => item.setTitle("Seleccionar").setIcon("mouse-pointer-2").onClick(() => this.setTool("select")));
-    menu.addItem((item) => item.setTitle("L\xE1piz").setIcon("pencil").onClick(() => this.setTool("pen")));
+    menu.addItem((item) => item.setTitle(tr("Seleccionar")).setIcon("mouse-pointer-2").onClick(() => this.setTool("select")));
+    menu.addItem((item) => item.setTitle(tr("L\xE1piz")).setIcon("pencil").onClick(() => this.setTool("pen")));
     menu.addSeparator();
-    menu.addItem((item) => item.setTitle("Restablecer vista").setIcon("maximize").onClick(() => this.resetView()));
+    menu.addItem((item) => item.setTitle(tr("Restablecer vista")).setIcon("maximize").onClick(() => this.resetView()));
     if (this.pageStrokes.length || this.pageShapes.length || this.pageBadges.length || this.pageTexts.length || this.pageTables.length || this.pageEmbeds.length) {
-      menu.addItem((item) => item.setTitle("Limpiar pizarra").setIcon("trash-2").onClick(() => this.clearCanvas()));
+      menu.addItem((item) => item.setTitle(tr("Limpiar pizarra")).setIcon("trash-2").onClick(() => this.clearCanvas()));
     }
     menu.showAtMouseEvent(e3);
   }
@@ -78798,7 +79345,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
         this.pasteObjects(JSON.parse(text2.slice(CLIP_PREFIX.length)));
       } catch (err2) {
         console.error("NoteLens: paste failed", err2);
-        new import_obsidian12.Notice("No se pudo pegar la selecci\xF3n.");
+        new import_obsidian12.Notice(tr("No se pudo pegar la selecci\xF3n."));
       }
       return;
     }
@@ -78858,10 +79405,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       this.data.embeds.push(embed);
       renderEmbedFrame(this, this.domLayerEl, embed);
       this.save();
-      new import_obsidian12.Notice("Imagen pegada en la pizarra");
+      new import_obsidian12.Notice(tr("Imagen pegada en la pizarra"));
     } catch (err2) {
       console.error("NoteLens: paste failed", err2);
-      new import_obsidian12.Notice("NoteLens: no se pudo pegar la imagen.");
+      new import_obsidian12.Notice(tr("NoteLens: no se pudo pegar la imagen."));
     }
   }
   onKeyDown(e3) {
@@ -79085,9 +79632,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       this.hideFormatBar();
     }
     const wasEditing = !!this.activeTextEditor;
-    const active = document.activeElement;
-    if (active && active !== e3.target && this.workspaceEl.contains(active) && (active.isContentEditable || active.tagName === "TEXTAREA" || active.tagName === "INPUT")) {
-      active.blur();
+    const active2 = document.activeElement;
+    if (active2 && active2 !== e3.target && this.workspaceEl.contains(active2) && (active2.isContentEditable || active2.tagName === "TEXTAREA" || active2.tagName === "INPUT")) {
+      active2.blur();
     }
     if (this.activeTextEditor) this.commitTextEditor();
     if (e3.pointerType === "touch" && !this.plugin.settings.fingerDraws || e3.button === 1) {
@@ -79608,7 +80155,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     const screenTop = vt2.y + (b3.y - pad) * vt2.scale;
     if (screenTop < 170) box.addClass("is-below");
     const resize = box.createDiv({ cls: "notelens-selection-resize" });
-    resize.title = "Redimensionar selecci\xF3n";
+    resize.title = tr("Redimensionar selecci\xF3n");
     const bar = box.createDiv({ cls: "notelens-selection-bar" });
     bar.addEventListener("pointerdown", (event) => {
       event.stopPropagation();
@@ -79629,7 +80176,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     action("x", "Eliminar (Supr)", () => this.deleteSelection());
     resize.addEventListener("pointerdown", (event) => this.startSelectionResize(event));
     const rotate = box.createDiv({ cls: "notelens-selection-rotate" });
-    rotate.title = "Girar la selecci\xF3n (Shift: pasos de 15\xB0)";
+    rotate.title = tr("Girar la selecci\xF3n (Shift: pasos de 15\xB0)");
     rotate.addEventListener("pointerdown", (event) => this.startSelectionRotate(event));
     this.selectionBoxEl = box;
   }
@@ -79988,17 +80535,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     (0, import_obsidian12.setIcon)(bar.createSpan({ cls: "notelens-search-icon" }), "search");
     const input = bar.createEl("input", { cls: "notelens-search-input" });
     input.type = "text";
-    input.placeholder = "Buscar en la pizarra\u2026";
+    input.placeholder = tr("Buscar en la pizarra\u2026");
     const count = bar.createSpan({ cls: "notelens-search-count", text: "" });
     const prev = bar.createEl("button", { cls: "notelens-nav-btn" });
     (0, import_obsidian12.setIcon)(prev, "chevron-up");
-    prev.title = "Anterior (Shift+Enter)";
+    prev.title = tr("Anterior (Shift+Enter)");
     const next = bar.createEl("button", { cls: "notelens-nav-btn" });
     (0, import_obsidian12.setIcon)(next, "chevron-down");
-    next.title = "Siguiente (Enter)";
+    next.title = tr("Siguiente (Enter)");
     const closeBtn = bar.createEl("button", { cls: "notelens-nav-btn" });
     (0, import_obsidian12.setIcon)(closeBtn, "x");
-    closeBtn.title = "Cerrar (Esc)";
+    closeBtn.title = tr("Cerrar (Esc)");
     this.searchEl = bar;
     const run = () => {
       this.searchHits = this.findMatches(input.value);
@@ -80097,7 +80644,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.pasteCount = 0;
     void navigator.clipboard?.writeText(CLIP_PREFIX + JSON.stringify(copy)).catch(() => {
     });
-    new import_obsidian12.Notice(`${cut ? "Cortado" : "Copiado"}: ${count} ${count === 1 ? "objeto" : "objetos"}. Ctrl+V pega donde est\xE9 el rat\xF3n.`);
+    new import_obsidian12.Notice(tr("{p0}: {p1} {p2}. Ctrl+V pega donde est\xE9 el rat\xF3n.", { p0: cut ? "Cortado" : "Copiado", p1: count, p2: count === 1 ? "objeto" : "objetos" }));
     if (cut) this.deleteSelection();
   }
   pasteObjects(payload) {
@@ -80513,7 +81060,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     }
     const saved = await this.app.vault.createBinary(path, mp3);
     this.insertVaultFile(saved);
-    new import_obsidian12.Notice(`Grabaci\xF3n guardada (${Math.round(seconds)} s): ${saved.name}`);
+    new import_obsidian12.Notice(tr("Grabaci\xF3n guardada ({p0} s): {p1}", { p0: Math.round(seconds), p1: saved.name }));
   }
   setCalculatorUnit(unit2) {
     this.calculatorUnit = unit2;
@@ -80526,7 +81073,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       pageId: this.data.activePageId,
       x: 0,
       y: 0,
-      text: `${expression} = ${result}`,
+      text: tr("{p0} = {p1}", { p0: expression, p1: result }),
       fontSize: this.textSize,
       color: this.textColor,
       fontFamily: this.textFont,
@@ -80555,7 +81102,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
           into.appendChild((0, import_obsidian12.renderMath)(toRenderableLatex(source), true));
           (0, import_obsidian12.finishRenderMath)();
         } catch {
-          into.createSpan({ cls: "notelens-math-placeholder", text: "No se puede representar todav\xEDa" });
+          into.createSpan({ cls: "notelens-math-placeholder", text: tr("No se puede representar todav\xEDa") });
         }
       },
       tidyFormulaText,
@@ -80678,7 +81225,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.workspaceEl.__refreshBookmarks?.();
     this.refreshTagSummary();
     this.save();
-    new import_obsidian12.Notice("P\xE1gina limpiada");
+    new import_obsidian12.Notice(tr("P\xE1gina limpiada"));
   }
   undo() {
     this.history.undo();
@@ -80810,10 +81357,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
         }
         const saved = await this.app.vault.createBinary(path, await localFile.arrayBuffer());
         this.insertVaultFile(saved);
-        new import_obsidian12.Notice(`Archivo a\xF1adido: ${saved.name}`);
+        new import_obsidian12.Notice(tr("Archivo a\xF1adido: {p0}", { p0: saved.name }));
       } catch (error) {
         console.error("NoteLens: device upload failed", error);
-        new import_obsidian12.Notice("NoteLens: no se pudo a\xF1adir el archivo.");
+        new import_obsidian12.Notice(tr("NoteLens: no se pudo a\xF1adir el archivo."));
       }
     };
     picker.click();
@@ -80897,7 +81444,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.workspaceEl.__closePenPanel?.();
     this.syncToolCursor();
     this.syncToolbar();
-    new import_obsidian12.Notice(`Toca en el lienzo para colocar: ${tag.label}`);
+    new import_obsidian12.Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
   }
   createBadgeAt(x4, y4, tag) {
     const defaultTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
@@ -80961,7 +81508,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     if (hasImages) (0, import_obsidian12.setIcon)(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "image");
     const badgeClose = el.createEl("button", { cls: "onenote-badge-close" });
     (0, import_obsidian12.setIcon)(badgeClose, "x");
-    badgeClose.title = "Quitar etiqueta";
+    badgeClose.title = tr("Quitar etiqueta");
     badgeClose.addEventListener("pointerdown", (e3) => e3.stopPropagation());
     badgeClose.addEventListener("click", (e3) => {
       e3.stopPropagation();
@@ -80976,9 +81523,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     if (badge.tagId === "tag_todo" && badge.checklist?.length) {
       const pending = badge.checklist.find((item) => !item.done);
       el.title = pending ? `${excerpt}. Clic completa un paso: \xAB${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}\xBB. Pasa el cursor para marcar el que quieras` : `${excerpt}. Todos los pasos hechos; clic reabre el \xFAltimo`;
-    } else if (checkable) el.title = badge.done ? `${excerpt}. Hecho; clic para volver a marcar como pendiente` : `${excerpt}. Clic para cambiar su estado; doble clic para editar`;
-    else if (badge.tagId === "tag_hover") el.title = `${excerpt}. Doble clic para editarla`;
-    else el.title = `${tag.label}. Clic para ver el resumen de etiquetas`;
+    } else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
+    else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
+    else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
     let pressedAt = 0;
     el.addEventListener("pointerdown", (e3) => {
       pressedAt = performance.now();
@@ -81004,19 +81551,19 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       e3.preventDefault();
       e3.stopPropagation();
       const menu = new import_obsidian12.Menu();
-      menu.addItem((item) => item.setTitle(badge.tagId === "tag_todo" ? "Editar checklist, notas e im\xE1genes" : "Editar t\xEDtulo, nota e im\xE1genes").setIcon("pencil").onClick(() => this.editBadgeNote(badge)));
+      menu.addItem((item) => item.setTitle(badge.tagId === "tag_todo" ? tr("Editar checklist, notas e im\xE1genes") : tr("Editar t\xEDtulo, nota e im\xE1genes")).setIcon("pencil").onClick(() => this.editBadgeNote(badge)));
       const menuChecklist = badge.tagId === "tag_todo" ? badge.checklist ?? [] : [];
       if (menuChecklist.length) {
         const pending = menuChecklist.find((item) => !item.done);
         if (pending) {
-          menu.addItem((item) => item.setTitle(`Completar el siguiente paso: ${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}`).setIcon("square-check-big").onClick(() => this.advanceChecklist(badge)));
+          menu.addItem((item) => item.setTitle(tr("Completar el siguiente paso: {p0}", { p0: pending.text || (pending.sketch ? tr("paso a mano") : tr("sin nombre")) })).setIcon("square-check-big").onClick(() => this.advanceChecklist(badge)));
         }
-        menu.addItem((item) => item.setTitle("Marcar todos los pasos como hechos").setIcon("check-circle-2").setDisabled(menuChecklist.every((item2) => item2.done)).onClick(() => this.setChecklistAll(badge, true)));
-        menu.addItem((item) => item.setTitle("Marcar todos los pasos como pendientes").setIcon("circle").setDisabled(menuChecklist.every((item2) => !item2.done)).onClick(() => this.setChecklistAll(badge, false)));
+        menu.addItem((item) => item.setTitle(tr("Marcar todos los pasos como hechos")).setIcon("check-circle-2").setDisabled(menuChecklist.every((item2) => item2.done)).onClick(() => this.setChecklistAll(badge, true)));
+        menu.addItem((item) => item.setTitle(tr("Marcar todos los pasos como pendientes")).setIcon("circle").setDisabled(menuChecklist.every((item2) => !item2.done)).onClick(() => this.setChecklistAll(badge, false)));
       } else if (badge.tagId === "tag_todo" || badge.tagId === "tag_question") {
-        menu.addItem((item) => item.setTitle(badge.done ? "Marcar como pendiente" : badge.tagId === "tag_todo" ? "Marcar como hecha" : "Marcar como resuelta").setIcon(badge.done ? "circle" : "check-circle-2").onClick(() => this.toggleBadgeDone(badge)));
+        menu.addItem((item) => item.setTitle(badge.done ? tr("Marcar como pendiente") : badge.tagId === "tag_todo" ? tr("Marcar como hecha") : tr("Marcar como resuelta")).setIcon(badge.done ? "circle" : "check-circle-2").onClick(() => this.toggleBadgeDone(badge)));
       }
-      menu.addItem((item) => item.setTitle("Eliminar etiqueta").setIcon("trash").onClick(() => {
+      menu.addItem((item) => item.setTitle(tr("Eliminar etiqueta")).setIcon("trash").onClick(() => {
         this.history.push();
         el.remove();
         this.data.badges.remove(badge);
@@ -81078,7 +81625,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.refreshBadge(badge);
     if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
     const completed = checklist.filter((item) => item.done).length;
-    new import_obsidian12.Notice(`${target.text || (target.sketch ? "Paso a mano" : "Paso")}: ${target.done ? "hecho" : "pendiente"} \xB7 ${completed}/${checklist.length}`, 2200);
+    new import_obsidian12.Notice(tr("{p0}: {p1} \xB7 {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
   }
   /** The "todas de esa tarea" path: every step at once, from the context menu. */
   setChecklistAll(badge, done) {
@@ -81088,7 +81635,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     this.syncBadgeDone(badge);
     this.refreshBadge(badge);
     if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
-    new import_obsidian12.Notice(done ? "Todos los pasos marcados como hechos" : "Todos los pasos marcados como pendientes", 2200);
+    new import_obsidian12.Notice(done ? tr("Todos los pasos marcados como hechos") : tr("Todos los pasos marcados como pendientes"), 2200);
   }
   editBadgeNote(badge) {
     const tag = quickTagById(badge.tagId);
@@ -81149,7 +81696,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     if (!panel) return;
     panel.empty();
     const header = panel.createDiv({ cls: "notelens-tag-summary-header" });
-    header.createSpan({ text: "Etiquetas de la libreta" });
+    header.createSpan({ text: tr("Etiquetas de la libreta") });
     const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
     (0, import_obsidian12.setIcon)(closeBtn, "x");
     closeBtn.onclick = () => this.toggleTagSummary();
@@ -81160,7 +81707,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       applySearch();
     });
     const filters = panel.createDiv({ cls: "notelens-tag-summary-filters" });
-    const allBtn = filters.createEl("button", { cls: "onenote-tag-chip", text: "Todas" });
+    const allBtn = filters.createEl("button", { cls: "onenote-tag-chip", text: tr("Todas") });
     allBtn.toggleClass("active", this.tagSummaryFilter === null);
     allBtn.onclick = () => {
       this.tagSummaryFilter = null;
@@ -81172,7 +81719,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       const chip = filters.createEl("button", { cls: "onenote-tag-chip" });
       chip.style.setProperty("--tag-color", tag.color);
       (0, import_obsidian12.setIcon)(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
-      chip.createSpan({ text: `${tag.label} ${count}` });
+      chip.createSpan({ text: tr("{p0} {p1}", { p0: tr(tag.label), p1: count }) });
       chip.toggleClass("active", this.tagSummaryFilter === tag.id);
       chip.onclick = () => {
         this.tagSummaryFilter = tag.id;
@@ -81185,11 +81732,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       }
       const pageRow = panel.createDiv({ cls: "notelens-panel-page-filter" });
       const pageSelect = pageRow.createEl("select", { cls: "notelens-panel-page-select" });
-      pageSelect.title = "Mostrar solo las etiquetas de una p\xE1gina";
-      pageSelect.createEl("option", { value: "__all__", text: `Todas las p\xE1ginas (${this.data.pages.length})` });
+      pageSelect.title = tr("Mostrar solo las etiquetas de una p\xE1gina");
+      pageSelect.createEl("option", { value: "__all__", text: tr("Todas las p\xE1ginas ({p0})", { p0: this.data.pages.length }) });
       for (const page of this.data.pages) {
         const counted = this.data.badges.filter((b3) => (b3.pageId ?? this.data.activePageId) === page.id).length;
-        pageSelect.createEl("option", { value: page.id, text: `${this.getPageTitle(page.id)} (${counted})` });
+        pageSelect.createEl("option", { value: page.id, text: tr("{p0} ({p1})", { p0: this.getPageTitle(page.id), p1: counted }) });
       }
       pageSelect.value = this.tagSummaryPageFilter ?? "__all__";
       pageSelect.onchange = () => {
@@ -81201,7 +81748,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     const pendingToggle = pendingRow.createEl("input");
     pendingToggle.type = "checkbox";
     pendingToggle.checked = this.tagSummaryPendingOnly;
-    pendingRow.createSpan({ text: "Solo pendientes" });
+    pendingRow.createSpan({ text: tr("Solo pendientes") });
     pendingToggle.onchange = () => {
       this.tagSummaryPendingOnly = pendingToggle.checked;
       this.refreshTagSummary();
@@ -81221,7 +81768,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
         const box = row.createEl("input");
         box.type = "checkbox";
         box.checked = !!badge.done;
-        box.title = badge.tagId === "tag_todo" ? "Tarea hecha" : "Duda resuelta";
+        box.title = badge.tagId === "tag_todo" ? tr("Tarea hecha") : tr("Duda resuelta");
         box.onclick = (e3) => {
           e3.stopPropagation();
           this.toggleBadgeDone(badge);
@@ -81233,7 +81780,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       const meta = body.createDiv({ cls: "notelens-tag-summary-meta" });
       meta.createSpan({ cls: "notelens-tag-summary-kind", text: tag.label });
       meta.createSpan({ cls: "notelens-tag-summary-page", text: pageTitle });
-      body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || "Sin t\xEDtulo. Doble clic en la etiqueta para editarla." });
+      body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || tr("Sin t\xEDtulo. Doble clic en la etiqueta para editarla.") });
       if (badge.tagId === "tag_todo" && badge.checklist?.length) {
         const completed = badge.checklist.filter((item) => item.done).length;
         const nextItem = badge.checklist.find((item) => !item.done);
@@ -81269,7 +81816,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
         empty3.setText(this.data.badges.length ? "Nada que mostrar con estos filtros." : "Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante.");
         empty3.removeClass("hidden");
       } else if (visible === 0) {
-        empty3.setText("No hay etiquetas que coincidan con la b\xFAsqueda.");
+        empty3.setText(tr("No hay etiquetas que coincidan con la b\xFAsqueda."));
         empty3.removeClass("hidden");
       } else {
         empty3.addClass("hidden");
@@ -81494,7 +82041,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     const shortcut = isMac ? "pulsa Fn dos veces (o Control dos veces)" : "pulsa Win+H";
     const hint = this.domLayerEl.createDiv({ cls: "notelens-dictation-hint" });
     (0, import_obsidian12.setIcon)(hint.createSpan(), "mic");
-    hint.createSpan({ text: ` Dictado: ${shortcut} y habla. Se escribe aqu\xED. Esc termina.` });
+    hint.createSpan({ text: tr(" Dictado: {p0} y habla. Se escribe aqu\xED. Esc termina.", { p0: shortcut }) });
     hint.style.left = `${at2.x}px`;
     hint.style.top = `${at2.y + 56}px`;
     const remove = () => {
@@ -81503,7 +82050,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
     };
     editor.addEventListener("blur", remove);
     editor.focus();
-    new import_obsidian12.Notice(`Dictado del sistema: ${shortcut} con el cuadro de texto activo. Funciona sin conexi\xF3n.`, 7e3);
+    new import_obsidian12.Notice(tr("Dictado del sistema: {p0} con el cuadro de texto activo. Funciona sin conexi\xF3n.", { p0: shortcut }), 7e3);
   }
   getViewportBookmarks() {
     return this.data.bookmarks;
@@ -81537,7 +82084,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian12.FileV
       app.setting?.open();
       app.setting?.openTabById(this.plugin.manifest.id);
     } catch {
-      new import_obsidian12.Notice("Abre Ajustes \u203A Plugins de la comunidad \u203A NoteLens");
+      new import_obsidian12.Notice(tr("Abre Ajustes \u203A Plugins de la comunidad \u203A NoteLens"));
     }
   }
   getPetPosition() {
@@ -81854,7 +82401,7 @@ ${rows.join("\n")}`);
   }
   deleteDocumentPage(id) {
     if (this.data.pages.length <= 1) {
-      new import_obsidian12.Notice("La libreta debe conservar al menos una p\xE1gina.");
+      new import_obsidian12.Notice(tr("La libreta debe conservar al menos una p\xE1gina."));
       return;
     }
     const index2 = this.data.pages.findIndex((page) => page.id === id);
@@ -81881,7 +82428,7 @@ ${rows.join("\n")}`);
     this.workspaceEl.__refreshBookmarks?.();
     this.refreshTagSummary();
     this.save();
-    new import_obsidian12.Notice("P\xE1gina eliminada. Puedes recuperarla con Ctrl+Z.");
+    new import_obsidian12.Notice(tr("P\xE1gina eliminada. Puedes recuperarla con Ctrl+Z."));
   }
   /**
    * Saves the current view at once, without a dialog in the way: the new
@@ -81958,16 +82505,16 @@ ${rows.join("\n")}`);
         });
       }
       const saved = await this.app.vault.createBinary(path, bytes);
-      new import_obsidian12.Notice(`PDF A4 creado: ${saved.name}`);
+      new import_obsidian12.Notice(tr("PDF A4 creado: {p0}", { p0: saved.name }));
       void this.app.workspace.openLinkText(saved.path, this.file?.path ?? "", true);
     } catch (error) {
       console.error("NoteLens: PDF export failed", error);
-      new import_obsidian12.Notice("No se pudo exportar el PDF A4.");
+      new import_obsidian12.Notice(tr("No se pudo exportar el PDF A4."));
     }
   }
   async exportSharePackage() {
     try {
-      new import_obsidian12.Notice("Preparando paquete editable de NoteLens...");
+      new import_obsidian12.Notice(tr("Preparando paquete editable de NoteLens..."));
       this.syncActivePageMeta();
       const title = this.file?.basename ?? "Pizarra NoteLens";
       const result = await buildSharePackage(this.app, this.data, title);
@@ -81984,10 +82531,10 @@ ${rows.join("\n")}`);
       }
       const saved = await this.app.vault.createBinary(path, result.bytes);
       const skipped = result.skippedAssets.length ? ` (${result.skippedAssets.length} adjunto(s) no disponible(s))` : "";
-      new import_obsidian12.Notice(`Paquete editable creado: ${saved.name}${skipped}`);
+      new import_obsidian12.Notice(tr("Paquete editable creado: {p0}{p1}", { p0: saved.name, p1: skipped }));
     } catch (error) {
       console.error("NoteLens: share export failed", error);
-      new import_obsidian12.Notice("No se pudo crear el paquete para compartir.");
+      new import_obsidian12.Notice(tr("No se pudo crear el paquete para compartir."));
     }
   }
   async importSharePackage() {
@@ -81998,15 +82545,15 @@ ${rows.join("\n")}`);
       const source = picker.files?.[0];
       if (!source) return;
       try {
-        new import_obsidian12.Notice("Importando pizarra editable de NoteLens...");
+        new import_obsidian12.Notice(tr("Importando pizarra editable de NoteLens..."));
         const result = await importSharePackage(this.app, source, this.file?.parent?.path ?? "");
         const missing = result.missingAssets.length ? ` (${result.missingAssets.length} adjunto(s) no se pudieron recuperar)` : "";
-        new import_obsidian12.Notice(`Pizarra importada: ${result.file.basename}${missing}`);
+        new import_obsidian12.Notice(tr("Pizarra importada: {p0}{p1}", { p0: result.file.basename, p1: missing }));
         const leaf = this.app.workspace.getLeaf(true);
         await leaf.openFile(result.file);
       } catch (error) {
         console.error("NoteLens: share import failed", error);
-        new import_obsidian12.Notice("No se pudo importar el paquete de NoteLens.");
+        new import_obsidian12.Notice(tr("No se pudo importar el paquete de NoteLens."));
       }
     };
     picker.click();
@@ -82042,7 +82589,7 @@ ${rows.join("\n")}`);
     }
     const targets = this.translatableSelection();
     if (targets.length === 0) {
-      new import_obsidian12.Notice("Selecciona el cuadro de texto que quieres sustituir.");
+      new import_obsidian12.Notice(tr("Selecciona el cuadro de texto que quieres sustituir."));
       return;
     }
     this.history.push();
@@ -82120,7 +82667,7 @@ ${rows.join("\n")}`);
     el.style.transform = table.rotation ? `rotate(${table.rotation}deg)` : "";
     const header = el.createDiv({ cls: "notelens-table-header" });
     const titleEl = header.createSpan({ cls: "notelens-table-title", text: table.title?.trim() || "Tabla" });
-    titleEl.title = "Doble clic para renombrar la tabla";
+    titleEl.title = tr("Doble clic para renombrar la tabla");
     titleEl.addEventListener("dblclick", (event) => {
       event.stopPropagation();
       this.renameTable(table, titleEl);
@@ -82193,7 +82740,7 @@ ${rows.join("\n")}`);
       offset += widths[col];
       const handle = grid.createDiv({ cls: "notelens-table-col-handle" });
       handle.style.left = `${offset}px`;
-      handle.title = "Arrastra para cambiar el ancho de la columna";
+      handle.title = tr("Arrastra para cambiar el ancho de la columna");
       handle.addEventListener("pointerdown", (event) => this.startTableColumnResize(event, table, col));
     }
     offset = 0;
@@ -82201,11 +82748,11 @@ ${rows.join("\n")}`);
       offset += heights[row];
       const handle = grid.createDiv({ cls: "notelens-table-row-handle" });
       handle.style.top = `${offset}px`;
-      handle.title = "Arrastra para cambiar el alto de la fila";
+      handle.title = tr("Arrastra para cambiar el alto de la fila");
       handle.addEventListener("pointerdown", (event) => this.startTableRowResize(event, table, row));
     }
     const resize = el.createDiv({ cls: "notelens-table-resize" });
-    resize.title = "Redimensionar tabla";
+    resize.title = tr("Redimensionar tabla");
     resize.addEventListener("pointerdown", (event) => this.startTableResize(event, table, el));
     el.addEventListener("dblclick", (event) => {
       if (this.currentTool !== "select") return;
@@ -82221,13 +82768,13 @@ ${rows.join("\n")}`);
   showTableCellMenu(event, table, row, col) {
     const menu = new import_obsidian12.Menu();
     if (row >= 0) {
-      menu.addItem((item) => item.setTitle("Insertar fila arriba").setIcon("arrow-up-to-line").onClick(() => this.insertTableRow(table, row)));
-      menu.addItem((item) => item.setTitle("Insertar fila debajo").setIcon("arrow-down-to-line").onClick(() => this.insertTableRow(table, row + 1)));
-      menu.addItem((item) => item.setTitle("Insertar columna a la izquierda").setIcon("arrow-left-to-line").onClick(() => this.insertTableColumn(table, col)));
-      menu.addItem((item) => item.setTitle("Insertar columna a la derecha").setIcon("arrow-right-to-line").onClick(() => this.insertTableColumn(table, col + 1)));
+      menu.addItem((item) => item.setTitle(tr("Insertar fila arriba")).setIcon("arrow-up-to-line").onClick(() => this.insertTableRow(table, row)));
+      menu.addItem((item) => item.setTitle(tr("Insertar fila debajo")).setIcon("arrow-down-to-line").onClick(() => this.insertTableRow(table, row + 1)));
+      menu.addItem((item) => item.setTitle(tr("Insertar columna a la izquierda")).setIcon("arrow-left-to-line").onClick(() => this.insertTableColumn(table, col)));
+      menu.addItem((item) => item.setTitle(tr("Insertar columna a la derecha")).setIcon("arrow-right-to-line").onClick(() => this.insertTableColumn(table, col + 1)));
       menu.addSeparator();
-      menu.addItem((item) => item.setTitle("Eliminar esta fila").setIcon("minus").onClick(() => this.deleteTableRow(table, row)));
-      menu.addItem((item) => item.setTitle("Eliminar esta columna").setIcon("minus").onClick(() => this.deleteTableColumn(table, col)));
+      menu.addItem((item) => item.setTitle(tr("Eliminar esta fila")).setIcon("minus").onClick(() => this.deleteTableRow(table, row)));
+      menu.addItem((item) => item.setTitle(tr("Eliminar esta columna")).setIcon("minus").onClick(() => this.deleteTableColumn(table, col)));
       menu.addSeparator();
     }
     menu.addItem((item) => item.setTitle(table.header ? "Quitar fila de encabezado" : "Primera fila como encabezado").setIcon("heading").onClick(() => {
@@ -82242,20 +82789,20 @@ ${rows.join("\n")}`);
       this.renderAll();
       this.save();
     }));
-    menu.addItem((item) => item.setTitle("Repartir columnas por igual").setIcon("columns-3").onClick(() => {
+    menu.addItem((item) => item.setTitle(tr("Repartir columnas por igual")).setIcon("columns-3").onClick(() => {
       this.history.push();
       table.colWidths = void 0;
       table.rowHeights = void 0;
       this.renderAll();
       this.save();
     }));
-    menu.addItem((item) => item.setTitle("Renombrar tabla").setIcon("pencil").onClick(() => {
+    menu.addItem((item) => item.setTitle(tr("Renombrar tabla")).setIcon("pencil").onClick(() => {
       const titleEl = this.domLayerEl.querySelector(`[data-id="${table.id}"] .notelens-table-title`);
       if (titleEl) this.renameTable(table, titleEl);
     }));
-    menu.addItem((item) => item.setTitle("Crear gr\xE1fico con estos datos").setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
+    menu.addItem((item) => item.setTitle(tr("Crear gr\xE1fico con estos datos")).setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
     menu.addSeparator();
-    menu.addItem((item) => item.setTitle("Eliminar tabla").setIcon("trash-2").onClick(() => {
+    menu.addItem((item) => item.setTitle(tr("Eliminar tabla")).setIcon("trash-2").onClick(() => {
       this.history.push();
       this.data.tables.remove(table);
       this.renderAll();
@@ -82508,7 +83055,7 @@ ${rows.join("\n")}`);
       e3.preventDefault();
       e3.stopPropagation();
       const menu = new import_obsidian12.Menu();
-      menu.addItem((item) => item.setTitle("Eliminar cuadro de texto").setIcon("trash").onClick(() => {
+      menu.addItem((item) => item.setTitle(tr("Eliminar cuadro de texto")).setIcon("trash").onClick(() => {
         this.history.push();
         this.hideFormatBar();
         el.remove();
@@ -82532,11 +83079,11 @@ ${rows.join("\n")}`);
       editor.addClass("notelens-code-editor");
       editor.setAttr("wrap", "off");
       editor.spellcheck = false;
-      editor.placeholder = "Escribe o pega c\xF3digo. Tab indenta, Ctrl+Enter termina.";
+      editor.placeholder = tr("Escribe o pega c\xF3digo. Tab indenta, Ctrl+Enter termina.");
     }
     if (tb.variant === "math") {
       editor.addClass("notelens-math-editor");
-      editor.placeholder = "Escribe como en la calculadora: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Tambi\xE9n vale LaTeX.";
+      editor.placeholder = tr("Escribe como en la calculadora: x^2/2 + sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Tambi\xE9n vale LaTeX.");
       this.mathPreviewEl = this.domLayerEl.createDiv({ cls: "notelens-math-preview" });
       this.mathPreviewEl.style.left = `${tb.x}px`;
       this.mathPreviewEl.style.top = `${tb.y + (tb.h ?? 60) + 8}px`;
@@ -82667,7 +83214,7 @@ ${rows.join("\n")}`);
     if (tb.variant === "math") {
       const src = tb.text.trim();
       if (!src) {
-        el.createSpan({ cls: "notelens-math-placeholder", text: "F\xF3rmula" });
+        el.createSpan({ cls: "notelens-math-placeholder", text: tr("F\xF3rmula") });
         return;
       }
       el.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
@@ -82728,15 +83275,15 @@ ${rows.join("\n")}`);
     header.createSpan({ cls: "notelens-code-lang", text: CODE_LANGUAGES.find(([id]) => id === lang)?.[1] ?? lang });
     const copy = header.createEl("button", { cls: "notelens-code-copy" });
     (0, import_obsidian12.setIcon)(copy, "copy");
-    copy.title = "Copiar c\xF3digo";
+    copy.title = tr("Copiar c\xF3digo");
     copy.addEventListener("pointerdown", (e3) => e3.stopPropagation());
     copy.addEventListener("click", (e3) => {
       e3.stopPropagation();
-      void navigator.clipboard?.writeText(tb.text).then(() => new import_obsidian12.Notice("C\xF3digo copiado"));
+      void navigator.clipboard?.writeText(tb.text).then(() => new import_obsidian12.Notice(tr("C\xF3digo copiado")));
     });
     const closeCode = header.createEl("button", { cls: "notelens-code-copy" });
     (0, import_obsidian12.setIcon)(closeCode, "x");
-    closeCode.title = "Eliminar bloque";
+    closeCode.title = tr("Eliminar bloque");
     closeCode.addEventListener("pointerdown", (e3) => e3.stopPropagation());
     closeCode.addEventListener("click", (e3) => {
       e3.stopPropagation();
@@ -82748,7 +83295,7 @@ ${rows.join("\n")}`);
     for (let i5 = 1; i5 <= lines.length; i5++) gutter.createDiv({ text: String(i5) });
     const code = body.createEl("code", { cls: "notelens-code-source" });
     if (!tb.text) {
-      code.createSpan({ cls: "notelens-math-placeholder", text: "Bloque de c\xF3digo vac\xEDo" });
+      code.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de c\xF3digo vac\xEDo") });
       return;
     }
     const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : void 0;
@@ -82804,7 +83351,7 @@ ${rows.join("\n")}`);
     preview.empty();
     const src = tb.text.trim();
     if (!src) {
-      preview.createSpan({ cls: "notelens-math-placeholder", text: "Vista previa de la f\xF3rmula" });
+      preview.createSpan({ cls: "notelens-math-placeholder", text: tr("Vista previa de la f\xF3rmula") });
       return;
     }
     preview.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
@@ -82822,11 +83369,11 @@ ${rows.join("\n")}`);
   /** Resize handle and close button every text box carries. */
   attachBoxChrome(el, tb) {
     const resizeHandle = el.createDiv({ cls: "notelens-text-resize" });
-    resizeHandle.title = "Redimensionar";
+    resizeHandle.title = tr("Redimensionar");
     resizeHandle.addEventListener("pointerdown", (e3) => this.startTextResize(e3, tb, el));
     const closeBtn = el.createEl("button", { cls: "notelens-box-close" });
     (0, import_obsidian12.setIcon)(closeBtn, "x");
-    closeBtn.title = "Eliminar";
+    closeBtn.title = tr("Eliminar");
     closeBtn.addEventListener("pointerdown", (e3) => e3.stopPropagation());
     closeBtn.addEventListener("click", (e3) => {
       e3.stopPropagation();
@@ -83038,7 +83585,7 @@ ${rows.join("\n")}`);
     if (!plainText) fontSelect.hide();
     const minusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
     (0, import_obsidian12.setIcon)(minusBtn, "minus");
-    minusBtn.title = "Reducir tama\xF1o";
+    minusBtn.title = tr("Reducir tama\xF1o");
     minusBtn.onclick = () => apply2(() => {
       tb.fontSize = Math.max(10, tb.fontSize - 2);
     });
@@ -83046,12 +83593,12 @@ ${rows.join("\n")}`);
     if (plainText) {
       const translateBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
       (0, import_obsidian12.setIcon)(translateBtn, "languages");
-      translateBtn.title = "Traducir este cuadro";
+      translateBtn.title = tr("Traducir este cuadro");
       translateBtn.onclick = () => this.translateText();
     }
     const plusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
     (0, import_obsidian12.setIcon)(plusBtn, "plus");
-    plusBtn.title = "Aumentar tama\xF1o";
+    plusBtn.title = tr("Aumentar tama\xF1o");
     plusBtn.onclick = () => apply2(() => {
       tb.fontSize = Math.min(96, tb.fontSize + 2);
     });
@@ -83071,7 +83618,7 @@ ${rows.join("\n")}`);
       for (const c5 of STICKY_COLORS) {
         const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color" });
         dot.style.backgroundColor = c5;
-        dot.title = "Color de la nota";
+        dot.title = tr("Color de la nota");
         dot.onclick = () => apply2(() => {
           tb.stickyColor = c5;
         });
@@ -83221,7 +83768,7 @@ ${rows.join("\n")}`);
       palette.appendChild(keys);
     }
     const closeBar = bar.createEl("button", { cls: "notelens-embed-close notelens-format-close is-glyph", text: "\u2715" });
-    closeBar.title = "Terminar de editar (Esc)";
+    closeBar.title = tr("Terminar de editar (Esc)");
     closeBar.onclick = () => this.commitTextEditor();
     const r3 = el.getBoundingClientRect();
     const wr = this.workspaceEl.getBoundingClientRect();
@@ -83347,6 +83894,7 @@ var DEFAULT_SETTINGS = {
   showQuickTags: true,
   showMinimap: false,
   compactUi: false,
+  language: "auto",
   calculatorDegrees: true,
   aiBaseUrl: "http://127.0.0.1:11434",
   aiModel: "",
@@ -83370,6 +83918,7 @@ function normalizeSettings(raw) {
   if (!hex.test(s4.defaultPageColor)) s4.defaultPageColor = DEFAULT_SETTINGS.defaultPageColor;
   if (!hex.test(s4.defaultLineColor)) s4.defaultLineColor = DEFAULT_SETTINGS.defaultLineColor;
   if (s4.penColor !== "auto" && !hex.test(s4.penColor)) s4.penColor = "auto";
+  if (!["auto", "es", "en"].includes(s4.language)) s4.language = "auto";
   if (!["ballpoint", "pencil", "fountain", "marker", "brush"].includes(s4.penStyle)) s4.penStyle = "ballpoint";
   if (typeof s4.aiBaseUrl !== "string" || !/^https?:\/\//i.test(s4.aiBaseUrl)) s4.aiBaseUrl = DEFAULT_SETTINGS.aiBaseUrl;
   if (typeof s4.aiModel !== "string") s4.aiModel = "";
@@ -83424,7 +83973,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.1.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.2.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -83436,34 +83985,40 @@ var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
     const s4 = this.plugin.settings;
     const save = () => void this.plugin.saveSettings();
     const stamp = containerEl.createDiv({ cls: "setting-item-description notelens-build-stamp" });
-    stamp.setText(`NoteLens \xB7 versi\xF3n cargada: ${NOTELENS_BUILD}`);
-    new import_obsidian13.Setting(containerEl).setName("Pizarras nuevas").setHeading();
-    new import_obsidian13.Setting(containerEl).setName("Estilo de p\xE1gina").setDesc("Patr\xF3n de fondo con el que se crean las pizarras nuevas.").addDropdown((d3) => d3.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" }).setValue(s4.defaultBackground).onChange((v4) => {
+    stamp.setText(tr("NoteLens \xB7 versi\xF3n cargada: {p0}", { p0: NOTELENS_BUILD }));
+    new import_obsidian13.Setting(containerEl).setName(tr("Idioma")).setDesc(tr("\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo.")).addDropdown((d3) => d3.addOptions({ auto: tr("Autom\xE1tico"), es: "Espa\xF1ol", en: "English" }).setValue(s4.language).onChange((v4) => {
+      s4.language = v4;
+      setLocale(s4.language);
+      save();
+      this.display();
+    }));
+    new import_obsidian13.Setting(containerEl).setName(tr("Pizarras nuevas")).setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("Estilo de p\xE1gina")).setDesc(tr("Patr\xF3n de fondo con el que se crean las pizarras nuevas.")).addDropdown((d3) => d3.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" }).setValue(s4.defaultBackground).onChange((v4) => {
       s4.defaultBackground = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Margen izquierdo").setDesc("Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina.").addToggle((toggle) => toggle.setValue(s4.defaultMargin).onChange((value) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Margen izquierdo")).setDesc(tr("Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina.")).addToggle((toggle) => toggle.setValue(s4.defaultMargin).onChange((value) => {
       s4.defaultMargin = value;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Tama\xF1o de la cuadr\xEDcula").setDesc("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.").addDropdown((d3) => d3.addOptions({ small: "Peque\xF1a", medium: "Mediana", large: "Grande" }).setValue(s4.defaultGridSize).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Tama\xF1o de la cuadr\xEDcula")).setDesc(tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.")).addDropdown((d3) => d3.addOptions({ small: "Peque\xF1a", medium: "Mediana", large: "Grande" }).setValue(s4.defaultGridSize).onChange((v4) => {
       s4.defaultGridSize = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Color de p\xE1gina").addColorPicker((c5) => c5.setValue(s4.defaultPageColor).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Color de p\xE1gina")).addColorPicker((c5) => c5.setValue(s4.defaultPageColor).onChange((v4) => {
       s4.defaultPageColor = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Color de las l\xEDneas del fondo").addColorPicker((c5) => c5.setValue(s4.defaultLineColor).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Color de las l\xEDneas del fondo")).addColorPicker((c5) => c5.setValue(s4.defaultLineColor).onChange((v4) => {
       s4.defaultLineColor = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Herramientas").setHeading();
-    new import_obsidian13.Setting(containerEl).setName("Grosor del l\xE1piz").setDesc("Grosor inicial en p\xEDxeles.").addSlider((sl) => sl.setLimits(1, 18, 0.5).setValue(s4.penWidth).setDynamicTooltip().onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Herramientas")).setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("Grosor del l\xE1piz")).setDesc(tr("Grosor inicial en p\xEDxeles.")).addSlider((sl) => sl.setLimits(1, 18, 0.5).setValue(s4.penWidth).setDynamicTooltip().onChange((v4) => {
       s4.penWidth = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Color del l\xE1piz").setDesc("Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras.").addToggle((t4) => t4.setTooltip("Autom\xE1tico").setValue(s4.penColor === "auto").onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Color del l\xE1piz")).setDesc(tr("Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras.")).addToggle((t4) => t4.setTooltip(tr("Autom\xE1tico")).setValue(s4.penColor === "auto").onChange((v4) => {
       s4.penColor = v4 ? "auto" : "#1f2937";
       save();
       this.display();
@@ -83474,7 +84029,7 @@ var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
       });
       c5.setDisabled(s4.penColor === "auto");
     });
-    new import_obsidian13.Setting(containerEl).setName("Subrayador").setDesc("Color, grosor y opacidad iniciales.").addColorPicker((c5) => c5.setValue(s4.highlighterColor).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Subrayador")).setDesc(tr("Color, grosor y opacidad iniciales.")).addColorPicker((c5) => c5.setValue(s4.highlighterColor).onChange((v4) => {
       s4.highlighterColor = v4;
       save();
     })).addSlider((sl) => sl.setLimits(8, 48, 2).setValue(s4.highlighterWidth).setDynamicTooltip().onChange((v4) => {
@@ -83484,90 +84039,90 @@ var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
       s4.highlighterOpacity = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Tama\xF1o de texto").addSlider((sl) => sl.setLimits(10, 72, 1).setValue(s4.textSize).setDynamicTooltip().onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Tama\xF1o de texto")).addSlider((sl) => sl.setLimits(10, 72, 1).setValue(s4.textSize).setDynamicTooltip().onChange((v4) => {
       s4.textSize = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Punta del l\xE1piz").setDesc("Trazo con el que empieza la herramienta de l\xE1piz.").addDropdown((d3) => d3.addOptions({ ballpoint: "Bol\xEDgrafo", pencil: "L\xE1piz", fountain: "Pluma", marker: "Rotulador", brush: "Pincel" }).setValue(s4.penStyle).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Punta del l\xE1piz")).setDesc(tr("Trazo con el que empieza la herramienta de l\xE1piz.")).addDropdown((d3) => d3.addOptions({ ballpoint: "Bol\xEDgrafo", pencil: "L\xE1piz", fountain: "Pluma", marker: "Rotulador", brush: "Pincel" }).setValue(s4.penStyle).onChange((v4) => {
       s4.penStyle = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Fuente del texto").setDesc("Tipograf\xEDa con la que se crean los cuadros de texto.").addDropdown((d3) => d3.addOptions({ sans: "Sin remates", serif: "Con remates", rounded: "Redondeada", mono: "Monoespaciada" }).setValue(s4.defaultTextFont).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Fuente del texto")).setDesc(tr("Tipograf\xEDa con la que se crean los cuadros de texto.")).addDropdown((d3) => d3.addOptions({ sans: "Sin remates", serif: "Con remates", rounded: "Redondeada", mono: "Monoespaciada" }).setValue(s4.defaultTextFont).onChange((v4) => {
       s4.defaultTextFont = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Color de las notas adhesivas").setDesc("Papel con el que nace cada posit nuevo.").addDropdown((d3) => d3.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" }).setValue(s4.defaultStickyColor).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Color de las notas adhesivas")).setDesc(tr("Papel con el que nace cada posit nuevo.")).addDropdown((d3) => d3.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" }).setValue(s4.defaultStickyColor).onChange((v4) => {
       s4.defaultStickyColor = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Calculadora en grados").setDesc("Desact\xEDvalo para trabajar en radianes por defecto.").addToggle((t4) => t4.setValue(s4.calculatorDegrees).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Calculadora en grados")).setDesc(tr("Desact\xEDvalo para trabajar en radianes por defecto.")).addToggle((t4) => t4.setValue(s4.calculatorDegrees).onChange((v4) => {
       s4.calculatorDegrees = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Comportamiento").setHeading();
-    new import_obsidian13.Setting(containerEl).setName("La rueda del rat\xF3n hace zoom").setDesc("Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote.").addToggle((t4) => t4.setValue(s4.wheelZooms).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Comportamiento")).setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("La rueda del rat\xF3n hace zoom")).setDesc(tr("Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote.")).addToggle((t4) => t4.setValue(s4.wheelZooms).onChange((v4) => {
       s4.wheelZooms = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Dibujar con el dedo").setDesc("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.").addToggle((t4) => t4.setValue(s4.fingerDraws).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Dibujar con el dedo")).setDesc(tr("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.")).addToggle((t4) => t4.setValue(s4.fingerDraws).onChange((v4) => {
       s4.fingerDraws = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Interfaz").setHeading();
-    new import_obsidian13.Setting(containerEl).setName("Mostrar etiquetas r\xE1pidas").setDesc("La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo.").addToggle((t4) => t4.setValue(s4.showQuickTags).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Interfaz")).setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("Mostrar etiquetas r\xE1pidas")).setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo.")).addToggle((t4) => t4.setValue(s4.showQuickTags).onChange((v4) => {
       s4.showQuickTags = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Minimapa visible al abrir").addToggle((t4) => t4.setValue(s4.showMinimap).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Minimapa visible al abrir")).addToggle((t4) => t4.setValue(s4.showMinimap).onChange((v4) => {
       s4.showMinimap = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Interfaz compacta").setDesc("Botones m\xE1s peque\xF1os y barras m\xE1s estrechas.").addToggle((t4) => t4.setValue(s4.compactUi).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Interfaz compacta")).setDesc(tr("Botones m\xE1s peque\xF1os y barras m\xE1s estrechas.")).addToggle((t4) => t4.setValue(s4.compactUi).onChange((v4) => {
       s4.compactUi = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Ayudante Leen").setHeading();
-    new import_obsidian13.Setting(containerEl).setName("Mostrar a Leen").setDesc("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.").addToggle((t4) => t4.setValue(s4.showAssistantPet).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("Mostrar a Leen")).setDesc(tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.")).addToggle((t4) => t4.setValue(s4.showAssistantPet).onChange((v4) => {
       s4.showAssistantPet = v4;
       save();
       this.display();
     }));
     if (s4.showAssistantPet) {
-      new import_obsidian13.Setting(containerEl).setName("Tama\xF1o de Leen").setDesc("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.").addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s4.petScale).setDynamicTooltip().onChange((v4) => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Tama\xF1o de Leen")).setDesc(tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.")).addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s4.petScale).setDynamicTooltip().onChange((v4) => {
         s4.petScale = v4;
         save();
       }));
-      new import_obsidian13.Setting(containerEl).setName("Bocadillos de Leen").setDesc("El aviso que aparece al pasar el rat\xF3n por encima.").addToggle((t4) => t4.setValue(s4.petBubbles).onChange((v4) => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Bocadillos de Leen")).setDesc(tr("El aviso que aparece al pasar el rat\xF3n por encima.")).addToggle((t4) => t4.setValue(s4.petBubbles).onChange((v4) => {
         s4.petBubbles = v4;
         save();
       }));
-      new import_obsidian13.Setting(containerEl).setName("Devolver a Leen a su sitio").setDesc("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.").addButton((b3) => b3.setButtonText("Restablecer posici\xF3n").onClick(() => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Devolver a Leen a su sitio")).setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")).addButton((b3) => b3.setButtonText(tr("Restablecer posici\xF3n")).onClick(() => {
         s4.petX = null;
         s4.petY = null;
         save();
-        new import_obsidian13.Notice("Leen volver\xE1 a su esquina al reabrir la pizarra");
+        new import_obsidian13.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
       }));
-      new import_obsidian13.Setting(containerEl).setName("Acciones locales").setDesc("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuraci\xF3n.");
-      new import_obsidian13.Setting(containerEl).setName("Servidor del modelo local").setDesc("Solo para la pesta\xF1a opcional \xABChat local\xBB. Las acciones de pizarra no lo necesitan. Si \xABlocalhost\xBB falla, prueba con 127.0.0.1.").addText((t4) => t4.setPlaceholder("http://127.0.0.1:11434").setValue(s4.aiBaseUrl).onChange((v4) => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Acciones locales")).setDesc(tr("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuraci\xF3n."));
+      new import_obsidian13.Setting(containerEl).setName(tr("Servidor del modelo local")).setDesc(tr("Solo para la pesta\xF1a opcional \xABChat local\xBB. Las acciones de pizarra no lo necesitan. Si \xABlocalhost\xBB falla, prueba con 127.0.0.1.")).addText((t4) => t4.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s4.aiBaseUrl).onChange((v4) => {
         s4.aiBaseUrl = v4.trim() || DEFAULT_SETTINGS.aiBaseUrl;
         save();
-      })).addButton((b3) => b3.setButtonText("Probar").onClick(async () => {
+      })).addButton((b3) => b3.setButtonText(tr("Probar")).onClick(async () => {
         const base = s4.aiBaseUrl.replace(/\/+$/, "");
-        b3.setButtonText("Probando\u2026");
+        b3.setButtonText(tr("Probando\u2026"));
         const models = await probeLocalServer(base);
-        b3.setButtonText("Probar");
-        new import_obsidian13.Notice(models === null ? `No hay respuesta en ${base}. \xBFEst\xE1 arrancado el servidor?` : `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6e3);
+        b3.setButtonText(tr("Probar"));
+        new import_obsidian13.Notice(models === null ? tr("No hay respuesta en {p0}. \xBFEst\xE1 arrancado el servidor?", { p0: base }) : `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6e3);
       }));
-      new import_obsidian13.Setting(containerEl).setName("Modelo preferido").setDesc("D\xE9jalo vac\xEDo para que Leen elija el mejor seg\xFAn la memoria de tu equipo.").addText((t4) => t4.setPlaceholder("autom\xE1tico").setValue(s4.aiModel).onChange((v4) => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("D\xE9jalo vac\xEDo para que Leen elija el mejor seg\xFAn la memoria de tu equipo.")).addText((t4) => t4.setPlaceholder(tr("autom\xE1tico")).setValue(s4.aiModel).onChange((v4) => {
         s4.aiModel = v4.trim();
         save();
       }));
-      new import_obsidian13.Setting(containerEl).setName("Usar la pizarra como contexto").setDesc("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.").addToggle((t4) => t4.setValue(s4.aiUseBoardContext).onChange((v4) => {
+      new import_obsidian13.Setting(containerEl).setName(tr("Usar la pizarra como contexto")).setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")).addToggle((t4) => t4.setValue(s4.aiUseBoardContext).onChange((v4) => {
         s4.aiUseBoardContext = v4;
         save();
       }));
     }
-    new import_obsidian13.Setting(containerEl).setName("Traductor").setHeading();
+    new import_obsidian13.Setting(containerEl).setName(tr("Traductor")).setHeading();
     const languages = {
       es: "Espa\xF1ol",
       en: "English",
@@ -83587,22 +84142,22 @@ var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
       ja: "\u65E5\u672C\u8A9E",
       ko: "\uD55C\uAD6D\uC5B4"
     };
-    new import_obsidian13.Setting(containerEl).setName("Traducir solo con el modelo local").setDesc("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.").addToggle((t4) => t4.setValue(s4.translationLocalOnly).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Traducir solo con el modelo local")).setDesc(tr("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.")).addToggle((t4) => t4.setValue(s4.translationLocalOnly).onChange((v4) => {
       s4.translationLocalOnly = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Idioma de la transcripci\xF3n").setDesc("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.").addDropdown((d3) => d3.addOptions(languages).setValue(s4.ocrLanguage).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Idioma de la transcripci\xF3n")).setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.")).addDropdown((d3) => d3.addOptions(languages).setValue(s4.ocrLanguage).onChange((v4) => {
       s4.ocrLanguage = v4;
       save();
     }));
-    new import_obsidian13.Setting(containerEl).setName("Traducir de \u2026 a \u2026").setDesc("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave).").addDropdown((d3) => d3.addOptions(languages).setValue(s4.translateFrom).onChange((v4) => {
+    new import_obsidian13.Setting(containerEl).setName(tr("Traducir de \u2026 a \u2026")).setDesc(tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave).")).addDropdown((d3) => d3.addOptions(languages).setValue(s4.translateFrom).onChange((v4) => {
       s4.translateFrom = v4;
       save();
     })).addDropdown((d3) => d3.addOptions(languages).setValue(s4.translateTo).onChange((v4) => {
       s4.translateTo = v4;
       save();
     }));
-    containerEl.createEl("p", { cls: "setting-item-description", text: "Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora." });
+    containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
   }
 };
 
@@ -83616,18 +84171,19 @@ var OneNotePlugin = class extends import_obsidian14.Plugin {
   }
   async onload() {
     this.settings = normalizeSettings(await this.loadData());
+    setLocale(this.settings.language);
     this.addSettingTab(new NoteLensSettingTab(this.app, this));
     this.registerView(
       VIEW_TYPE_ONENOTE,
       (leaf) => new OneNoteCanvasView(leaf, this)
     );
     this.registerExtensions(["notelens", "onenote"], VIEW_TYPE_ONENOTE);
-    this.addRibbonIcon("pencil", "Nueva pizarra NoteLens", () => {
+    this.addRibbonIcon("pencil", tr("Nueva pizarra NoteLens"), () => {
       void this.createNewOneNoteFile();
     });
     this.addCommand({
       id: "create-notelens-canvas",
-      name: "Crear nueva pizarra NoteLens",
+      name: tr("Crear nueva pizarra NoteLens"),
       callback: () => void this.createNewOneNoteFile()
     });
   }
@@ -83636,6 +84192,7 @@ var OneNotePlugin = class extends import_obsidian14.Plugin {
   }
   async saveSettings() {
     await this.saveData(this.settings);
+    setLocale(this.settings.language);
     for (const board of [...this.openBoards]) {
       try {
         board.refreshFromSettings();

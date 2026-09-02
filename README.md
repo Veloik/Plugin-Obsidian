@@ -79,6 +79,16 @@ vector ink with stylus pressure, real palm rejection, undo/redo, interactive tag
 
 The PDF reader is bundled inside `main.js`; there are no workers or extra files to copy.
 
+### Languages
+
+The interface ships in **English and Spanish**. By default NoteLens follows Obsidian's own
+language setting, and **Settings › NoteLens › Language** forces one of the two. Open boards
+update as soon as you change it.
+
+Translations live in `src/locales/`, keyed by the Spanish source string, and anything a
+catalogue is missing falls back to Spanish instead of showing a raw key. Adding a language
+means adding one file there and one entry in `src/i18n.ts`; contributions are welcome.
+
 ### Privacy
 
 Study actions, vector formula recognition and canvas processing all run locally. Chat and local translation connect only to the server the user configures, normally Ollama or LM Studio on `127.0.0.1`. The web translation fallback is disabled on new installations and is used only when local-only mode is expressly turned off. Embedded videos do load content from the chosen provider.
@@ -116,6 +126,8 @@ src/
   local-intelligence.ts → summaries, tasks, outlines and flashcards without models
   assistant.ts    → local actions and optional local chat
   ui.ts           → bars, pages, bookmarks and context options
+  i18n.ts         → translation, with the Spanish source string as the key
+  locales/        → catalogues; en.ts today, one file per language
 ```
 
 ### License
@@ -197,6 +209,16 @@ tinta vectorial con presión de lápiz óptico, rechazo de palma real, deshacer/
 
 El lector de PDF está incluido en `main.js`; no requiere copiar workers ni archivos adicionales.
 
+### Idiomas
+
+La interfaz está en **español e inglés**. Por defecto NoteLens sigue el idioma de Obsidian, y
+en **Ajustes › NoteLens › Idioma** puedes forzar uno de los dos. Las pizarras abiertas se
+actualizan al momento.
+
+Las traducciones viven en `src/locales/`, indexadas por el texto original en español, y lo que
+falte en un catálogo cae de vuelta al español en lugar de mostrar una clave suelta. Añadir un
+idioma es añadir un archivo ahí y una entrada en `src/i18n.ts`; se aceptan contribuciones.
+
 ### Privacidad
 
 Las acciones de estudio, el reconocimiento vectorial de fórmulas y el procesamiento de la pizarra se ejecutan en local. El chat y la traducción local se conectan únicamente al servidor configurado por el usuario, normalmente Ollama o LM Studio en `127.0.0.1`. La traducción web de respaldo está desactivada en instalaciones nuevas y solo se usa al desactivar expresamente el modo local. Los vídeos incrustados sí cargan contenido del proveedor elegido.
@@ -234,6 +256,8 @@ src/
   local-intelligence.ts → resumen, tareas, esquemas y tarjetas sin modelos
   assistant.ts    → acciones locales y chat local opcional
   ui.ts           → barras, páginas, marcadores y opciones contextuales
+  i18n.ts         → traducción, con el texto español como clave
+  locales/        → catálogos; hoy en.ts, un archivo por idioma
 ```
 
 ### Licencia
@@ -242,5 +266,5 @@ MIT — consulta [LICENSE](LICENSE).
 
 ---
 
-> **Nota sobre el idioma de la interfaz:** los textos del plugin están actualmente en español.
-> **A note on the interface language:** the plugin's own strings are currently in Spanish.
+> **Idioma de la interfaz:** español e inglés, siguiendo el idioma de Obsidian.
+> **Interface language:** English and Spanish, following Obsidian's own setting.

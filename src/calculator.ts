@@ -730,7 +730,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	const renderKeys = (page: string) => {
 		keys.empty();
 		for (const key of pages[page]) {
-			const b = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: key.label });
+			const b = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: tr(key.label) });
 			if (key.title) b.title = key.title;
 			b.onclick = () => { if (key.action) key.action(); else if (key.insert) insertText(key.insert); };
 		}

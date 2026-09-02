@@ -147,7 +147,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	if (embed.kind === "youtube" || embed.kind === "web-video") {
 		const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
 		setIcon(openBtn, "external-link");
-		openBtn.title = tr("Abrir publicaci\\u00f3n original");
+		openBtn.title = tr("Abrir publicación original");
 		openBtn.onclick = (event) => {
 			event.stopPropagation();
 			host.openVaultFile(embed.originalUrl ?? embed.src);
@@ -167,7 +167,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(closeBtn, "x");
 	closeBtn.title = tr("Cerrar y quitar de la pizarra");
-	closeBtn.setAttr("aria-label", "Cerrar y quitar de la pizarra");
+	closeBtn.setAttr("aria-label", tr("Cerrar y quitar de la pizarra"));
 	closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	closeBtn.onclick = (e) => {
 		e.stopPropagation();
@@ -304,7 +304,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	const remove = head.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
 	remove.title = tr("Quitar el enlace de la pizarra");
-	remove.setAttr("aria-label", "Quitar el enlace de la pizarra");
+	remove.setAttr("aria-label", tr("Quitar el enlace de la pizarra"));
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => { e.stopPropagation(); card.remove(); host.onEmbedDeleted(embed); };
 
@@ -355,7 +355,7 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	const remove = card.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(remove, "x");
 	remove.title = tr("Quitar archivo de la pizarra");
-	remove.setAttr("aria-label", "Quitar archivo de la pizarra");
+	remove.setAttr("aria-label", tr("Quitar archivo de la pizarra"));
 	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
 	remove.onclick = (e) => {
 		e.stopPropagation();
@@ -449,7 +449,7 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(delBtn, "x");
 	delBtn.title = tr("Quitar documento de la pizarra");
-	delBtn.setAttr("aria-label", "Quitar documento de la pizarra");
+	delBtn.setAttr("aria-label", tr("Quitar documento de la pizarra"));
 	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {
 		e.stopPropagation();
@@ -561,7 +561,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 	const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
 	setIcon(delBtn, "x");
 	delBtn.title = tr("Quitar imagen de la pizarra");
-	delBtn.setAttr("aria-label", "Quitar imagen de la pizarra");
+	delBtn.setAttr("aria-label", tr("Quitar imagen de la pizarra"));
 	delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 	delBtn.onclick = (e) => {
 		e.stopPropagation();

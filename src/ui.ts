@@ -243,7 +243,7 @@ export function createPanelSearch(
 	const clearButton = row.createEl("button", { cls: "notelens-panel-search-clear" });
 	setIcon(clearButton, "x");
 	clearButton.title = tr("Limpiar búsqueda");
-	clearButton.setAttr("aria-label", "Limpiar búsqueda");
+	clearButton.setAttr("aria-label", tr("Limpiar búsqueda"));
 
 	const notify = () => {
 		clearButton.toggleClass("hidden", !input.value);
@@ -341,7 +341,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 			penBtn.empty();
 			setIcon(penBtn, nib.icon);
 			penBtn.setAttr("data-nib", nib.id);
-			penBtn.title = tr("{p0} (P) — opciones al pulsar de nuevo", { p0: nib.label });
+			penBtn.title = tr("{p0} (P) — opciones al pulsar de nuevo", { p0: tr(nib.label) });
 		}
 	}
 	refreshActive();
@@ -897,7 +897,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	]) {
 		const b = selectModeRow.createEl("button", { cls: "notelens-eraser-mode" });
 		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
-		b.createSpan({ text: mode.label });
+		b.createSpan({ text: tr(mode.label) });
 		b.onclick = () => { host.setSelectionMode(mode.id); refresh(); close(); };
 		selectModeBtns.push([b, mode.id]);
 	}
@@ -937,8 +937,8 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	for (const nib of PEN_STYLES) {
 		const b = nibRow.createEl("button", { cls: "notelens-nib" });
 		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
-		b.createSpan({ text: nib.label });
-		b.title = nib.hint;
+		b.createSpan({ text: tr(nib.label) });
+		b.title = tr(nib.hint);
 		b.onclick = () => { host.setPenStyle(nib.id); refresh(); };
 		nibButtons.push([b, nib.id]);
 	}
@@ -1047,8 +1047,8 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	for (const s of ERASER_SIZES) {
 		const b = eraserRow.createEl("button", { cls: "notelens-eraser-choice" });
 		b.createSpan({ cls: "notelens-eraser-block" });
-		b.createSpan({ cls: "notelens-eraser-size-label", text: s.label });
-		b.title = tr("Goma {p0} ({p1}px)", { p0: s.label, p1: s.value });
+		b.createSpan({ cls: "notelens-eraser-size-label", text: tr(s.label) });
+		b.title = tr("Goma {p0} ({p1}px)", { p0: tr(s.label), p1: s.value });
 		b.onclick = () => { host.setEraserSize(s.value); close(); };
 		eraserBtns.push([b, s.value]);
 	}
@@ -1061,7 +1061,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	]) {
 		const b = eraserModeRow.createEl("button", { cls: "notelens-eraser-mode" });
 		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
-		b.createSpan({ text: mode.label });
+		b.createSpan({ text: tr(mode.label) });
 		b.onclick = () => { host.setEraserMode(mode.id); refresh(); };
 		eraserModeBtns.push([b, mode.id]);
 	}
@@ -1075,7 +1075,8 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	const textBtns: [HTMLElement, number][] = [];
 	for (const s of TEXT_SIZES) {
 		const b = textRow.createEl("button", { cls: "notelens-text-size-choice" });
-		b.createSpan({ text: tr("A") });
+		// A glyph sample for the size preview, not a word: never translated.
+		b.createSpan({ text: "A" });
 		b.style.setProperty("--text-preview-size", `${Math.max(12, Math.min(s, 25))}px`);
 		b.title = `${s}px`;
 		b.onclick = () => { host.setTextSize(s); close(); };
@@ -1084,7 +1085,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipografía") });
 	const fontSelect = textSection.createEl("select", { cls: "notelens-font-select" });
 	for (const font of FONT_OPTIONS) {
-		const option = fontSelect.createEl("option", { text: font.label, value: font.id });
+		const option = fontSelect.createEl("option", { text: tr(font.label), value: font.id });
 		option.style.fontFamily = font.css;
 	}
 	fontSelect.onchange = () => { host.setTextFont(fontSelect.value as CanvasFont); };
@@ -1189,10 +1190,10 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		penOpacityValue.setText(`${Math.round(host.strokeIntensity * 100)}%`);
 		colorInput.value = host.penColorHex;
 		const nib = penStyleById(host.penStyle);
-		penHeading.setText(nib.label);
+		penHeading.setText(tr(nib.label));
 		penHeadingIcon.empty();
 		setIcon(penHeadingIcon, nib.icon);
-		nibHint.setText(nib.hint);
+		nibHint.setText(tr(nib.hint));
 		for (const [b, id] of nibButtons) b.toggleClass("active", id === host.penStyle);
 		if (!panel.hasClass("hidden")) renderPreview();
 		highlighterSlider.value = String(host.highlighterIntensity);
@@ -1229,11 +1230,11 @@ export function createQuickTagsBar(
 	for (const t of QUICK_TAGS) {
 		const chip = bar.createEl("button", { cls: "onenote-tag-chip" });
 		chip.setAttr("data-tag", t.id);
-		chip.title = TAG_HINTS[t.id] ?? t.label;
+		chip.title = tr(TAG_HINTS[t.id] ?? t.label);
 		chip.style.setProperty("--tag-color", t.color);
 		const iconEl = chip.createSpan({ cls: "onenote-tag-icon" });
 		setIcon(iconEl, t.icon);
-		chip.createSpan({ text: t.label });
+		chip.createSpan({ text: tr(t.label) });
 		chip.onclick = () => {
 			setActive(t.id);
 			onPick(t);
@@ -1281,8 +1282,8 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 		});
 		const iconEl = b.createSpan({ cls: "notelens-settings-choice-icon" });
 		setIcon(iconEl, opt.icon);
-		b.createSpan({ cls: "notelens-settings-choice-label", text: opt.label });
-		b.title = opt.label;
+		b.createSpan({ cls: "notelens-settings-choice-label", text: tr(opt.label) });
+		b.title = tr(opt.label);
 		b.onclick = () => {
 			host.setBackground(opt.id);
 			bgRow.querySelectorAll(".notelens-settings-choice").forEach(c => c.removeClass("active"));
@@ -1315,7 +1316,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 		marginToggle.setAttr("aria-checked", host.marginEnabled ? "true" : "false");
 		marginToggle.title = host.marginEnabled ? tr("Ocultar el margen izquierdo") : tr("Mostrar el margen izquierdo");
 	};
-	marginToggle.setAttr("aria-label", "Mostrar margen izquierdo");
+	marginToggle.setAttr("aria-label", tr("Mostrar margen izquierdo"));
 	marginToggle.onclick = (event) => {
 		event.preventDefault();
 		host.setMarginEnabled(!host.marginEnabled);
