@@ -49,9 +49,6 @@ Nothing on the board needs one. A local model is optional and used only for tran
 without quotas, talking to Ollama or LM Studio on your own machine; the settings say which
 model suits the memory you have and report what they found when you test the connection.
 
-Leen, the study assistant, is written but not in this release: the pet, the chat and his
-local actions sit behind a flag in `src/features.ts`.
-
 ### Tags
 
 Important, Question, Key idea, Task and Floating note, one click each. Every tag carries its
@@ -115,10 +112,10 @@ commands, so nobody drew a "2" — and their shapes are still written by hand in
 
 ### Privacy
 
-The study actions, formula recognition and everything drawn on the canvas run locally. Chat
-and local translation talk only to the server you configure, normally Ollama or LM Studio on
-`127.0.0.1`. The web translation fallback is off on new installs and is used only if you turn
-local-only mode off yourself. Embedded videos do load from whichever provider you embedded.
+Formula recognition and everything drawn on the canvas runs locally. Local translation talks
+only to the server you configure, normally Ollama or LM Studio on `127.0.0.1`. The web
+translation fallback is off on new installs and is used only if you turn local-only mode off
+yourself. Embedded videos do load from whichever provider you embedded.
 
 ### Building
 
@@ -217,9 +214,6 @@ Nada de la pizarra lo necesita. El modelo local es opcional y solo se usa para t
 cuotas, hablando con Ollama o LM Studio en tu propio equipo; los ajustes te dicen qué modelo
 encaja con tu memoria y te cuentan qué encontraron al probar la conexión.
 
-Leen, el ayudante de estudio, está escrito pero no va en esta versión: el gato, el chat y sus
-acciones locales quedan tras una bandera en `src/features.ts`.
-
 ### Etiquetas
 
 Importante, Duda, Idea clave, Tarea y Nota flotante, a un clic cada una. Cada etiqueta lleva
@@ -285,11 +279,11 @@ en `src/ink-shapes.ts`.
 
 ### Privacidad
 
-Las acciones de estudio, el reconocimiento de fórmulas y todo lo que se dibuja en el lienzo
-se ejecutan en local. El chat y la traducción local hablan únicamente con el servidor que tú
-configures, normalmente Ollama o LM Studio en `127.0.0.1`. La traducción web de respaldo está
-desactivada en instalaciones nuevas y solo se usa si desactivas tú el modo local. Los vídeos
-incrustados sí cargan del proveedor que hayas incrustado.
+El reconocimiento de fórmulas y todo lo que se dibuja en el lienzo se ejecutan en local. La
+traducción local habla únicamente con el servidor que tú configures, normalmente Ollama o LM
+Studio en `127.0.0.1`. La traducción web de respaldo está desactivada en instalaciones nuevas
+y solo se usa si desactivas tú el modo local. Los vídeos incrustados sí cargan del proveedor
+que hayas incrustado.
 
 ### Compilación
 
