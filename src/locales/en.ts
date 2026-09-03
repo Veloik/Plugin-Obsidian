@@ -729,4 +729,9 @@ export const en: Record<string, string> = {
 	"Responde, pero no tiene ningún modelo. Descarga uno: {p0}": "It answers, but has no models. Download one: {p0}",
 	"Conectado · {p0} modelo(s). Leen usaría «{p1}»: {p2}": "Connected · {p0} model(s). Leen would use “{p1}”: {p2}",
 	"Vacío = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como «{p0}» ({p1}).": "Empty = the best one that fits your memory. Reading what you draw needs a multimodal model, such as “{p0}” ({p1}).",
+	"Sin comprobar. Tu equipo declara {p0} GB de RAM.": "Not checked yet. Your machine reports {p0} GB of RAM.",
+	"Conectado · {p0} modelo(s). Usaría «{p1}»: {p2}": "Connected · {p0} model(s). It would use “{p1}”: {p2}",
+	"Vacío = el mejor que quepa en tu memoria.": "Empty = the best one that fits your memory.",
+	"Un modelo local solo hace falta para la traducción sin cuotas, que es opcional. Nada sale de tu equipo.": "A local model is only needed for quota-free translation, which is optional. Nothing leaves your machine.",
+	"Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.": "Tools and interface change at once on open boards. What sits under “New boards” only affects the ones you create from now on.",
 };

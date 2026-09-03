@@ -61,6 +61,8 @@ interface ParsedExpression {
 	structured: boolean;
 }
 
+import { matchShape } from "./ink-shapes";
+
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
 function boundsOfPoints(points: InkMathPoint[]): Bounds {
@@ -159,6 +161,33 @@ function lineIntersection(a: StrokeInfo, b: StrokeInfo): boolean {
 	return d1 * d2 <= 0 && d3 * d4 <= 0;
 }
 
+/**
+ * Where two straight strokes cross, as a fraction along each (0 = start,
+ * 1 = end), or null when they do not. Endpoints count: a "7" is two strokes
+ * that meet at a corner.
+ */
+function crossingParameters(a: StrokeInfo, b: StrokeInfo): { alongA: number; alongB: number } | null {
+	const p = a.stroke.points[0], p2 = a.stroke.points[a.stroke.points.length - 1];
+	const q = b.stroke.points[0], q2 = b.stroke.points[b.stroke.points.length - 1];
+	if (!p || !p2 || !q || !q2) return null;
+	const rx = p2.x - p.x, ry = p2.y - p.y;
+	const sx = q2.x - q.x, sy = q2.y - q.y;
+	const denominator = rx * sy - ry * sx;
+	if (Math.abs(denominator) < 1e-9) return null;
+	const alongA = ((q.x - p.x) * sy - (q.y - p.y) * sx) / denominator;
+	const alongB = ((q.x - p.x) * ry - (q.y - p.y) * rx) / denominator;
+	if (alongA < -0.02 || alongA > 1.02 || alongB < -0.02 || alongB > 1.02) return null;
+	return { alongA, alongB };
+}
+
+/** A cross, not a corner: both strokes are cut somewhere other than their ends. */
+function crossesInside(a: StrokeInfo, b: StrokeInfo): boolean {
+	const at = crossingParameters(a, b);
+	if (!at) return false;
+	const inside = (t: number) => t > 0.12 && t < 0.88;
+	return inside(at.alongA) && inside(at.alongB);
+}
+
 function hasNonBarInk(strokes: InkMathStroke[]): boolean {
 	return strokes.some(stroke => {
 		const info = strokeInfo(stroke);
@@ -230,12 +259,39 @@ function shouldMerge(a: GlyphGroup, b: GlyphGroup, scale: number): boolean {
 	// Plus, multiplication sign, crossed t and four: their straight marks meet.
 	if (ai.length === 1 && bi.length === 1 && ai[0].straightness > 0.86 && bi[0].straightness > 0.86 && lineIntersection(ai[0], bi[0])) return true;
 
+	// A pen lifted and put back down on the same spot is still one symbol: the
+	// corner of a "7", the flag of a "1", the two strokes of a "4" or a "5".
+	// Without this the bench read a 7 as "-" followed by "/".
+	const ends = (group: GlyphGroup) => group.strokes.flatMap(stroke =>
+		stroke.points.length ? [stroke.points[0], stroke.points[stroke.points.length - 1]] : []);
+	const reach = Math.max(4, scale * 0.16);
+	for (const endA of ends(a)) {
+		for (const endB of ends(b)) {
+			if (pointDistance(endA, endB) < reach) return true;
+		}
+	}
+
+	// The bowl of a "b" leans on its stem without either end meeting the other,
+	// and reading it against the median glyph on the line split the letter in
+	// two whenever the line held smaller symbols. What matters is how close the
+	// ink is compared with the smaller of the two marks.
+	const sizeA = Math.max(a.bounds.w, a.bounds.h);
+	const sizeB = Math.max(b.bounds.w, b.bounds.h);
+	const smaller = Math.min(sizeA, sizeB);
+	if (smaller > 0 && minStrokeDistance(a.strokes, b.strokes) < smaller * 0.14
+		&& overlap(a.bounds.y, a.bounds.bottom, b.bounds.y, b.bounds.bottom) > smaller * 0.3) {
+		return true;
+	}
+
 	// A dot above a narrow body is i or j, not a separate decimal point.
 	const smallA = a.bounds.w < scale * 0.24 && a.bounds.h < scale * 0.24;
 	const smallB = b.bounds.w < scale * 0.24 && b.bounds.h < scale * 0.24;
-	if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a.bounds).x - centre(b.bounds).x) < scale * 0.2) {
+	if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a.bounds).x - centre(b.bounds).x) < scale * 0.28) {
 		const gap = Math.max(0, Math.max(a.bounds.y, b.bounds.y) - Math.min(a.bounds.bottom, b.bounds.bottom));
-		if (gap < scale * 0.42) return true;
+		// Measured against the body the dot sits over, not against the median
+		// glyph: a lone "i" makes the median tiny and the dot was left behind.
+		const body = smallA ? b.bounds.h : a.bounds.h;
+		if (gap < Math.max(scale * 0.42, body * 0.55)) return true;
 	}
 
 	const combined = boundsOfStrokes([...a.strokes, ...b.strokes]);
@@ -420,12 +476,36 @@ function looksLikeRadical(points: InkMathPoint[], b: Bounds): boolean {
  * An integral: tall, narrow and curved, with the top hook to the right of the
  * bottom one. A "1" or an "l" fails the curvature test, a "j" the lean.
  */
+/** True when the stroke passes over itself: the loop of a 6, a 9, an 8 or an e. */
+function selfCrosses(points: InkMathPoint[]): boolean {
+	const segments = Math.min(points.length - 1, 80);
+	const step = Math.max(1, Math.floor((points.length - 1) / segments));
+	const sign = (a: InkMathPoint, b: InkMathPoint, c: InkMathPoint) => Math.sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+	for (let i = 0; i + step < points.length; i += step) {
+		// Neighbouring segments always touch; only distant ones mean a loop.
+		for (let j = i + step * 3; j + step < points.length; j += step) {
+			const [a, b, c, d] = [points[i], points[i + step], points[j], points[j + step]];
+			if (sign(a, b, c) !== sign(a, b, d) && sign(c, d, a) !== sign(c, d, b)) return true;
+		}
+	}
+	return false;
+}
+
 function looksLikeIntegral(info: StrokeInfo, points: InkMathPoint[], b: Bounds): boolean {
 	if (points.length < 6) return false;
 	if (b.h < b.w * 1.9 || b.w < 4) return false;
 	if (info.straightness > 0.82) return false;
 	const first = points[0], last = points[points.length - 1];
 	if (first.y > b.y + b.h * 0.28 || last.y < b.bottom - b.h * 0.28) return false;
+	// An integral is one sweep from top to bottom. A 6 and a 9 are just as tall
+	// and just as curved, and both were being read as integrals. What tells them
+	// apart is the loop: it crosses itself, and it climbs back up. The climb is
+	// the reliable half — a 6 whose loop stops just short of closing still goes
+	// back up to draw it.
+	if (selfCrosses(points)) return false;
+	let climb = 0;
+	for (let i = 1; i < points.length; i++) climb += Math.max(0, points[i - 1].y - points[i].y);
+	if (climb > b.h * 0.3) return false;
 	return first.x > last.x + b.w * 0.3;
 }
 
@@ -441,12 +521,23 @@ function hardGeometry(group: GlyphGroup): { value: string; alternatives: string[
 	if (infos.length === 2 && infos.every(info => isHorizontalLine(info))) {
 		return { value: "=", alternatives: ["=", "-"], confidence: 0.98 };
 	}
-	if (infos.length === 2 && infos.every(info => info.straightness > 0.88) && lineIntersection(infos[0], infos[1])) {
+	// Two straight strokes that really cross, rather than meeting at a corner:
+	// a corner is a "7", a "4" or the flag of a "1", and calling those a cross
+	// read a flagged 1 as "x".
+	if (infos.length === 2 && infos.every(info => info.straightness > 0.88) && crossesInside(infos[0], infos[1])) {
 		const angles = infos.map(info => info.angle);
 		const axisAligned = angles.some(angle => angle < 20) && angles.some(angle => angle > 70);
-		return axisAligned
-			? { value: "+", alternatives: ["+", "t", "4"], confidence: 0.96 }
-			: { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
+		if (!axisAligned) return { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
+		// A "+" is crossed through the middle of both marks; a "t" is crossed
+		// near the top of its stem, with most of the stem hanging below.
+		const vertical = infos[0].angle > 70 ? infos[0] : infos[1];
+		const at = crossingParameters(infos[0], infos[1]);
+		const alongStem = !at ? 0.5 : vertical === infos[0] ? at.alongA : at.alongB;
+		const downwards = vertical.stroke.points[0].y < vertical.stroke.points[vertical.stroke.points.length - 1].y;
+		const fromTop = downwards ? alongStem : 1 - alongStem;
+		return fromTop < 0.36
+			? { value: "t", alternatives: ["t", "+", "7"], confidence: 0.84 }
+			: { value: "+", alternatives: ["+", "t", "4"], confidence: 0.94 };
 	}
 	if (infos.length === 1) {
 		const info = infos[0];
@@ -463,12 +554,19 @@ function hardGeometry(group: GlyphGroup): { value: string; alternatives: string[
 			for (let index = 1; index <= earlyEnd; index++) if (points[index].x > points[maxXIndex].x) maxXIndex = index;
 			const lowerLeftIndex = points.reduce((best, point, index) => index > maxXIndex && point.x < points[best].x ? index : best, Math.min(points.length - 1, maxXIndex + 1));
 			const upperTurn = points[maxXIndex], lowerTurn = points[lowerLeftIndex];
+			// The tail of a 2 runs along the bottom to the right. Without that
+			// test an opening bracket was read as a 2: it also turns right at
+			// the top and ends low, it just never levels out.
+			const tailFrom = points[Math.max(0, Math.floor(points.length * 0.78))];
+			const flatTail = last.x - tailFrom.x > b.w * 0.35
+				&& Math.abs(last.y - tailFrom.y) < b.h * 0.14;
 			const looksLikeTwo = maxXIndex < points.length * 0.7
 				&& lowerLeftIndex > maxXIndex
 				&& upperTurn.y < b.y + b.h * 0.58
 				&& lowerTurn.y > b.y + b.h * 0.48
 				&& last.x > b.x + b.w * 0.68
-				&& last.y > b.y + b.h * 0.68;
+				&& last.y > b.y + b.h * 0.68
+				&& flatTail;
 			if (looksLikeTwo) return { value: "2", alternatives: ["2", "z", "sqrt"], confidence: 0.82 };
 		}
 		if (first && last && pointDistance(first, last) < Math.max(6, info.length * 0.13) && info.length > (b.w + b.h) * 1.35) {
@@ -478,22 +576,50 @@ function hardGeometry(group: GlyphGroup): { value: string; alternatives: string[
 	return null;
 }
 
+/**
+ * Reads one glyph. Geometry decides the shapes that are defined by their
+ * layout (bars, radicals, integrals); otherwise the stroke matcher runs, and
+ * the bitmap templates only break ties between its top answers. Comparing ink
+ * with printed fonts was the primary vote until 2.6.0 and scored 42 % on the
+ * bench, so it is now worth a fifth of a vote.
+ */
 function classifyGlyph(group: GlyphGroup): GlyphResult {
 	const hard = hardGeometry(group);
 	if (hard && hard.confidence >= 0.8) return { ...hard, bounds: group.bounds };
-	const input = maskForStrokes(group.strokes);
+
+	const shapes = matchShape(group.strokes.map(stroke => stroke.points));
 	const scores = new Map<string, number>();
-	for (const candidate of GLYPHS) {
-		const score = Math.min(...templateMasks(candidate.glyph).map(mask => maskDistance(input, mask)));
-		const previous = scores.get(candidate.value);
-		if (previous === undefined || score < previous) scores.set(candidate.value, score);
+	// Lower is better throughout, so a shape score of 1 becomes a distance of 0.
+	for (const match of shapes) scores.set(match.value, 1 - match.score);
+
+	// The templates cannot introduce a symbol the matcher never saw; they only
+	// nudge the order of the ones it did.
+	const contenders = shapes.slice(0, 6).map(match => match.value);
+	if (contenders.length > 1 && canRasterise()) {
+		const input = maskForStrokes(group.strokes);
+		for (const candidate of GLYPHS) {
+			if (!contenders.includes(candidate.value)) continue;
+			const distance = Math.min(...templateMasks(candidate.glyph).map(mask => maskDistance(input, mask)));
+			scores.set(candidate.value, (scores.get(candidate.value) ?? 1) + distance * 0.2);
+		}
 	}
-	if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.045 + (1 - hard.confidence) * 0.18));
+	if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.1 + (1 - hard.confidence) * 0.2));
+
 	const ranked = [...scores.entries()].sort((a, b) => a[1] - b[1]);
 	const best = ranked[0] ?? ["?", 1] as [string, number];
 	const second = ranked[1]?.[1] ?? best[1] + 0.2;
-	const confidence = clamp01(0.28 + (second - best[1]) * 2.8 + (0.24 - best[1]) * 1.6);
+	// Confident when the winner is both close to the ink and clear of the rest.
+	const confidence = clamp01(0.2 + (second - best[1]) * 3.2 + (0.45 - best[1]) * 1.1);
 	return { value: best[0], alternatives: ranked.slice(0, 5).map(entry => entry[0]), confidence, bounds: group.bounds };
+}
+
+/** The templates need a canvas; the node tests and any headless call have none. */
+function canRasterise(): boolean {
+	try {
+		return typeof createEl === "function" && !!createEl("canvas").getContext("2d");
+	} catch {
+		return false;
+	}
 }
 
 function serializeGlyphs(glyphs: GlyphResult[]): ParsedExpression {

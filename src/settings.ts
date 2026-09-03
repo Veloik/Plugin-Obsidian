@@ -3,6 +3,7 @@ import type OneNotePlugin from "./main";
 import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, PenStyle } from "./types";
 import { LocaleSetting, setLocale, tr } from "./i18n";
 import { detectMemoryGb, rankModels, recommendedVisionModel } from "./assistant";
+import { EXPERIMENTAL } from "./features";
 
 /** User preferences: defaults for new boards plus behaviour switches. */
 export interface NoteLensSettings {
@@ -315,6 +316,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.setDesc(tr("Botones más pequeños y barras más estrechas."))
 			.addToggle(t => t.setValue(s.compactUi).onChange(v => { s.compactUi = v; save(); }));
 
+		if (EXPERIMENTAL.assistant) {
 		new Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
 
 		new Setting(containerEl)
@@ -349,13 +351,17 @@ export class NoteLensSettingTab extends PluginSettingTab {
 
 		}
 
+		}
+
 		// The local model is not the pet's: the translator asks the same server,
 		// so these settings stay visible whether or not Leen is on the board.
 		new Setting(containerEl).setName(tr("Modelo local")).setHeading();
 
 		const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
 		aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra → LaTeX se calculan aquí mismo.") });
-		aiIntro.createDiv({ text: tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducción sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") });
+		aiIntro.createDiv({ text: EXPERIMENTAL.assistant
+			? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducción sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.")
+			: tr("Un modelo local solo hace falta para la traducción sin cuotas, que es opcional. Nada sale de tu equipo.") });
 
 		const memory = detectMemoryGb();
 		const suggestion = recommendedVisionModel(memory);
@@ -365,7 +371,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			aiStatus.toggleClass("is-ok", kind === "ok");
 			aiStatus.toggleClass("is-error", kind === "error");
 		};
-		paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM; para chat con dibujos encaja «{p1}».", { p0: memory, p1: suggestion.model }));
+		paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
 
 		new Setting(containerEl)
 			.setName(tr("Servidor"))
@@ -392,12 +398,12 @@ export class NoteLensSettingTab extends PluginSettingTab {
 				// Ranking answers the question the raw list does not: which of
 				// these actually suits this computer.
 				const best = rankModels(models, memory)[0];
-				paintStatus(tr("Conectado · {p0} modelo(s). Leen usaría «{p1}»: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+				paintStatus(tr("Conectado · {p0} modelo(s). Usaría «{p1}»: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
 			}));
 
 		new Setting(containerEl)
 			.setName(tr("Modelo preferido"))
-			.setDesc(tr("Vacío = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como «{p0}» ({p1}).", { p0: suggestion.model, p1: suggestion.why }))
+			.setDesc(tr("Vacío = el mejor que quepa en tu memoria.", {}))
 			.addText(t => t
 				.setPlaceholder(tr("automático"))
 				.setValue(s.aiModel)
@@ -430,6 +436,6 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateFrom).onChange(v => { s.translateFrom = v; save(); }))
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateTo).onChange(v => { s.translateTo = v; save(); }));
 
-		containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.") });
+		containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.") });
 	}
 }

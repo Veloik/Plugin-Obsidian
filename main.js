@@ -1060,20 +1060,20 @@ var require_createWorker = __commonJS({
         action: "load",
         payload: { options: { lstmOnly: lstmOnlyCore, corePath: options.corePath, logging: options.logging } }
       }));
-      const writeText = (path, text, jobId) => startJob(createJob({
+      const writeText = (path2, text, jobId) => startJob(createJob({
         id: jobId,
         action: "FS",
-        payload: { method: "writeFile", args: [path, text] }
+        payload: { method: "writeFile", args: [path2, text] }
       }));
-      const readText = (path, jobId) => startJob(createJob({
+      const readText = (path2, jobId) => startJob(createJob({
         id: jobId,
         action: "FS",
-        payload: { method: "readFile", args: [path, { encoding: "utf8" }] }
+        payload: { method: "readFile", args: [path2, { encoding: "utf8" }] }
       }));
-      const removeFile = (path, jobId) => startJob(createJob({
+      const removeFile = (path2, jobId) => startJob(createJob({
         id: jobId,
         action: "FS",
-        payload: { method: "unlink", args: [path] }
+        payload: { method: "unlink", args: [path2] }
       }));
       const FS = (method, args, jobId) => startJob(createJob({
         id: jobId,
@@ -1397,22 +1397,22 @@ function words(text) {
 function stripMarkup(text) {
   return text.replace(/```[\s\S]*?```/g, (block) => block.replace(/^```[^\n]*\n?|```$/g, "")).replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/^\s{0,3}#{1,6}\s+/gm, "").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/__([^_]+)__/g, "$1").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
-function splitSentences(line) {
+function splitSentences(line2) {
   const boundary = /([.!?;])(\s+)(?=[\p{Lu}\d¿¡])/gu;
   const pieces = [];
   let start = 0;
   let match;
-  while ((match = boundary.exec(line)) !== null) {
-    pieces.push(line.slice(start, match.index + match[1].length));
+  while ((match = boundary.exec(line2)) !== null) {
+    pieces.push(line2.slice(start, match.index + match[1].length));
     start = match.index + match[0].length;
   }
-  pieces.push(line.slice(start));
+  pieces.push(line2.slice(start));
   return pieces;
 }
 function sentenceList(text) {
   const clean = stripMarkup(text);
-  const chunks = clean.split(/\n+/).flatMap(splitSentences).map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]\])\s*/, "").trim()).filter((line) => line.length >= 8);
-  return chunks.map((line, index) => ({ text: line, index, tokens: words(line), score: 0 }));
+  const chunks = clean.split(/\n+/).flatMap(splitSentences).map((line2) => line2.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]\])\s*/, "").trim()).filter((line2) => line2.length >= 8);
+  return chunks.map((line2, index) => ({ text: line2, index, tokens: words(line2), score: 0 }));
 }
 function frequencies(sentences) {
   const counts = /* @__PURE__ */ new Map();
@@ -1476,8 +1476,8 @@ function extractKeyIdeasLocally(text, maximum = 5) {
   return rankedSentences(text).filter((sentence) => /\b(es|son|significa|define|consiste|permite|causa|produce|importante|clave)\b/i.test(sentence.text) || sentence.score > 0.8).filter((sentence, index, all) => all.findIndex((other) => similarity(other, sentence) > 0.76) === index).slice(0, maximum).sort((a3, b3) => a3.index - b3.index).map((sentence) => sentenceCase(sentence.text));
 }
 function tasksFromNotes(text, maximum = 10) {
-  const lines = stripMarkup(text).split(/\n+/).map((line) => line.trim()).filter(Boolean);
-  const explicit = lines.filter((line) => /^[-*•]?\s*\[[ ]\]|\b(todo|tarea|pendiente|hacer|entregar|repasar|revisar|completar|resolver|practicar|estudiar|leer)\b/i.test(line)).map((line) => sentenceCase(line.replace(/^[-*•]?\s*\[[ xX]\]\s*/, "").replace(/^(todo|tarea|pendiente)\s*[:.-]?\s*/i, ""))).filter(Boolean);
+  const lines = stripMarkup(text).split(/\n+/).map((line2) => line2.trim()).filter(Boolean);
+  const explicit = lines.filter((line2) => /^[-*•]?\s*\[[ ]\]|\b(todo|tarea|pendiente|hacer|entregar|repasar|revisar|completar|resolver|practicar|estudiar|leer)\b/i.test(line2)).map((line2) => sentenceCase(line2.replace(/^[-*•]?\s*\[[ xX]\]\s*/, "").replace(/^(todo|tarea|pendiente)\s*[:.-]?\s*/i, ""))).filter(Boolean);
   if (explicit.length) return [...new Set(explicit)].slice(0, maximum);
   const ideas = extractKeyIdeasLocally(text, 3);
   const terms = topTerms(text, 3);
@@ -1490,11 +1490,11 @@ function tasksFromNotes(text, maximum = 10) {
   return generated.slice(0, maximum);
 }
 function outlineLocally(text) {
-  const lines = stripMarkup(text).split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const lines = stripMarkup(text).split(/\n+/).map((line2) => line2.trim()).filter(Boolean);
   const output = [];
   let section = 0;
-  for (const line of lines) {
-    const clean = line.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]\])\s*/, "").trim();
+  for (const line2 of lines) {
+    const clean = line2.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]\])\s*/, "").trim();
     const heading = clean.endsWith(":") || clean.length < 58 && !/[.!?]$/.test(clean);
     if (heading) {
       section++;
@@ -1504,14 +1504,14 @@ function outlineLocally(text) {
     }
     if (output.length >= 16) break;
   }
-  if (output.filter((line) => /^\d+\./.test(line)).length >= 2) return output;
+  if (output.filter((line2) => /^\d+\./.test(line2)).length >= 2) return output;
   return summarizeLocally(text, 7).map((sentence, index) => `${index + 1}. ${sentence}`);
 }
 function flashcardsLocally(text, maximum = 8) {
   const clean = stripMarkup(text);
   const cards = [];
-  for (const line of clean.split(/\n+/).map((value) => value.trim()).filter(Boolean)) {
-    const pair = /^(.{2,70}?)\s*(?::|\s[-–]\s|\s=\s)\s*(.{5,240})$/.exec(line);
+  for (const line2 of clean.split(/\n+/).map((value) => value.trim()).filter(Boolean)) {
+    const pair = /^(.{2,70}?)\s*(?::|\s[-–]\s|\s=\s)\s*(.{5,240})$/.exec(line2);
     if (pair) {
       cards.push(`P: \xBFQu\xE9 es ${pair[1].replace(/[?.:]$/, "")}?
 R: ${sentenceCase(pair[2])}`);
@@ -1535,13 +1535,13 @@ function cleanNotesLocally(text) {
   const seen = /* @__PURE__ */ new Set();
   const output = [];
   for (const raw of stripMarkup(text).split(/\n+/)) {
-    let line = raw.trim().replace(/^\s*[•*]\s*/, "- ").replace(/^\s*[-–—]\s*/, "- ");
-    if (!line) continue;
-    const key2 = normalizeToken(line.replace(/^[-\d.)\s]+/, ""));
+    let line2 = raw.trim().replace(/^\s*[•*]\s*/, "- ").replace(/^\s*[-–—]\s*/, "- ");
+    if (!line2) continue;
+    const key2 = normalizeToken(line2.replace(/^[-\d.)\s]+/, ""));
     if (!key2 || seen.has(key2)) continue;
     seen.add(key2);
-    if (!/^[-\d]/.test(line)) line = sentenceCase(line);
-    output.push(line);
+    if (!/^[-\d]/.test(line2)) line2 = sentenceCase(line2);
+    output.push(line2);
   }
   return output.slice(0, 40);
 }
@@ -1578,6 +1578,255 @@ function runLocalStudyTool(tool, text) {
   }
 }
 
+// src/ink-shapes.ts
+var CLOUD_POINTS = 32;
+function pathLength(points) {
+  let total = 0;
+  for (let i4 = 1; i4 < points.length; i4++) {
+    if (points[i4].id !== points[i4 - 1].id) continue;
+    total += Math.hypot(points[i4].x - points[i4 - 1].x, points[i4].y - points[i4 - 1].y);
+  }
+  return total;
+}
+function resample(points, n) {
+  const interval = pathLength(points) / (n - 1);
+  if (!Number.isFinite(interval) || interval <= 0) {
+    return Array.from({ length: n }, (_3, i4) => ({ ...points[Math.min(i4, points.length - 1)] }));
+  }
+  const out = [{ ...points[0] }];
+  let accumulated = 0;
+  const working = points.map((p3) => ({ ...p3 }));
+  for (let i4 = 1; i4 < working.length; i4++) {
+    if (working[i4].id !== working[i4 - 1].id) {
+      out.push({ ...working[i4] });
+      continue;
+    }
+    const distance = Math.hypot(working[i4].x - working[i4 - 1].x, working[i4].y - working[i4 - 1].y);
+    if (accumulated + distance >= interval) {
+      const ratio = (interval - accumulated) / distance;
+      const inserted = {
+        x: working[i4 - 1].x + ratio * (working[i4].x - working[i4 - 1].x),
+        y: working[i4 - 1].y + ratio * (working[i4].y - working[i4 - 1].y),
+        id: working[i4].id
+      };
+      out.push(inserted);
+      working.splice(i4, 0, { ...inserted });
+      accumulated = 0;
+    } else {
+      accumulated += distance;
+    }
+  }
+  while (out.length < n) out.push({ ...out[out.length - 1] });
+  return out.slice(0, n);
+}
+function scaleAndCentre(points) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p3 of points) {
+    minX = Math.min(minX, p3.x);
+    minY = Math.min(minY, p3.y);
+    maxX = Math.max(maxX, p3.x);
+    maxY = Math.max(maxY, p3.y);
+  }
+  const size = Math.max(maxX - minX, maxY - minY) || 1;
+  const scaled = points.map((p3) => ({ x: (p3.x - minX) / size, y: (p3.y - minY) / size, id: p3.id }));
+  let cx = 0, cy = 0;
+  for (const p3 of scaled) {
+    cx += p3.x;
+    cy += p3.y;
+  }
+  cx /= scaled.length;
+  cy /= scaled.length;
+  return scaled.map((p3) => ({ x: p3.x - cx, y: p3.y - cy, id: p3.id }));
+}
+function toCloud(strokes) {
+  const points = [];
+  strokes.forEach((stroke, id) => {
+    for (const p3 of stroke) points.push({ x: p3.x, y: p3.y, id });
+  });
+  if (points.length < 2) {
+    if (points.length === 0) return null;
+    return Array.from({ length: CLOUD_POINTS }, () => ({ ...points[0] }));
+  }
+  return scaleAndCentre(resample(points, CLOUD_POINTS));
+}
+function cloudDistance(a3, b3, start) {
+  const matched = new Array(b3.length).fill(false);
+  let sum = 0;
+  let i4 = start;
+  do {
+    let best = Infinity;
+    let index = -1;
+    for (let j3 = 0; j3 < b3.length; j3++) {
+      if (matched[j3]) continue;
+      const d3 = Math.hypot(a3[i4].x - b3[j3].x, a3[i4].y - b3[j3].y) + (a3[i4].id === b3[j3].id ? 0 : 0.02);
+      if (d3 < best) {
+        best = d3;
+        index = j3;
+      }
+    }
+    if (index >= 0) matched[index] = true;
+    sum += (1 - (i4 - start + a3.length) % a3.length / a3.length) * best;
+    i4 = (i4 + 1) % a3.length;
+  } while (i4 !== start);
+  return sum;
+}
+function shapeDistance(a3, b3) {
+  const step = Math.max(1, Math.round(a3.length ** 0.5));
+  let best = Infinity;
+  for (let i4 = 0; i4 < a3.length; i4 += step) {
+    best = Math.min(best, cloudDistance(a3, b3, i4), cloudDistance(b3, a3, i4));
+  }
+  return best;
+}
+var TAU = Math.PI * 2;
+function path(controls, perSegment = 6) {
+  if (controls.length < 3) return straight(controls);
+  const pts = [controls[0], ...controls, controls[controls.length - 1]];
+  const out = [];
+  for (let i4 = 1; i4 < pts.length - 2; i4++) {
+    const [p0, p12, p22, p3] = [pts[i4 - 1], pts[i4], pts[i4 + 1], pts[i4 + 2]];
+    for (let s3 = 0; s3 < perSegment; s3++) {
+      const t3 = s3 / perSegment, t22 = t3 * t3, t32 = t22 * t3;
+      out.push([
+        0.5 * (2 * p12[0] + (-p0[0] + p22[0]) * t3 + (2 * p0[0] - 5 * p12[0] + 4 * p22[0] - p3[0]) * t22 + (-p0[0] + 3 * p12[0] - 3 * p22[0] + p3[0]) * t32),
+        0.5 * (2 * p12[1] + (-p0[1] + p22[1]) * t3 + (2 * p0[1] - 5 * p12[1] + 4 * p22[1] - p3[1]) * t22 + (-p0[1] + 3 * p12[1] - 3 * p22[1] + p3[1]) * t32)
+      ]);
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function straight(controls) {
+  const out = [];
+  for (let i4 = 0; i4 < controls.length - 1; i4++) {
+    for (let s3 = 0; s3 < 8; s3++) {
+      const t3 = s3 / 8;
+      out.push([controls[i4][0] + (controls[i4 + 1][0] - controls[i4][0]) * t3, controls[i4][1] + (controls[i4 + 1][1] - controls[i4][1]) * t3]);
+    }
+  }
+  out.push(controls[controls.length - 1]);
+  return out;
+}
+var line = (x1, y12, x22, y22) => straight([[x1, y12], [x22, y22]]);
+var ring = (cx, cy, rx, ry, n = 24) => Array.from({ length: n }, (_3, i4) => {
+  const t3 = (-0.25 + i4 / (n - 1)) * TAU;
+  return [cx + rx * Math.cos(t3), cy + ry * Math.sin(t3)];
+});
+var SHAPES = [
+  ["0", [ring(32, 34, 15, 26)]],
+  ["0", [ring(32, 34, 11, 26)]],
+  ["1", [line(32, 6, 32, 64)]],
+  ["1", [line(18, 16, 32, 6), line(32, 6, 32, 64)]],
+  ["1", [line(18, 16, 32, 6), line(32, 6, 32, 64), line(16, 64, 48, 64)]],
+  ["2", [path([[14, 18], [22, 6], [40, 6], [50, 18], [40, 34], [14, 62], [56, 62]])]],
+  ["3", [path([[16, 10], [38, 4], [52, 16], [38, 30], [28, 32], [42, 34], [56, 48], [40, 64], [16, 60]])]],
+  ["3", [path([[16, 10], [40, 6], [50, 20], [34, 32]]), path([[34, 32], [52, 40], [50, 58], [30, 64], [16, 58]])]],
+  ["4", [line(42, 6, 12, 44), line(12, 44, 58, 44), line(42, 6, 42, 64)]],
+  ["4", [path([[42, 6], [12, 44], [58, 44]]), line(42, 6, 42, 64)]],
+  ["5", [line(52, 8, 20, 8), line(20, 8, 18, 32), path([[18, 32], [40, 28], [54, 42], [42, 62], [18, 58]])]],
+  ["5", [path([[52, 8], [20, 8], [18, 32], [40, 28], [54, 42], [42, 62], [18, 58]])]],
+  ["6", [path([[48, 6], [30, 20], [22, 38], [24, 54], [38, 62], [50, 52], [44, 38], [28, 38], [22, 46]])]],
+  ["7", [line(12, 8, 56, 8), line(56, 8, 26, 64)]],
+  ["7", [path([[12, 8], [56, 8], [26, 64]]), line(20, 36, 46, 36)]],
+  ["8", [path([[36, 6], [24, 14], [38, 26], [48, 38], [38, 60], [22, 50], [34, 30], [44, 16], [36, 6]])]],
+  ["9", [path([[48, 20], [36, 8], [24, 18], [32, 32], [46, 28], [48, 16], [46, 40], [38, 64]])]],
+  ["9", [ring(34, 22, 12, 14), path([[46, 22], [46, 44], [38, 64]])]],
+  ["x", [line(14, 24, 50, 60), line(50, 24, 14, 60)]],
+  ["y", [line(16, 24, 34, 56), line(52, 24, 22, 82)]],
+  ["y", [path([[16, 24], [22, 44], [34, 56], [46, 40], [52, 24]]), path([[52, 24], [40, 60], [22, 82]])]],
+  ["z", [line(14, 26, 54, 26), line(54, 26, 14, 62), line(14, 62, 54, 62)]],
+  ["a", [ring(30, 44, 13, 15), line(44, 28, 44, 62)]],
+  ["a", [path([[46, 34], [32, 28], [20, 40], [26, 56], [42, 56], [46, 40], [44, 28], [44, 62]])]],
+  ["b", [line(16, 4, 16, 60), path([[16, 42], [30, 30], [44, 40], [42, 56], [26, 62], [16, 56]])]],
+  ["c", [path([[48, 30], [34, 24], [22, 34], [22, 50], [34, 62], [48, 56]])]],
+  ["d", [ring(30, 44, 13, 15), line(44, 4, 44, 62)]],
+  ["e", [path([[20, 46], [46, 42], [40, 28], [24, 34], [22, 52], [38, 62], [48, 54]])]],
+  ["f", [path([[46, 14], [36, 6], [26, 18], [24, 44], [20, 76]]), line(14, 34, 44, 34)]],
+  ["g", [ring(30, 42, 13, 14), path([[43, 30], [44, 62], [36, 78], [20, 74]])]],
+  ["h", [line(16, 4, 16, 62), path([[16, 40], [26, 30], [40, 32], [44, 44], [44, 62]])]],
+  ["i", [line(32, 30, 32, 62), line(32, 16, 32, 19)]],
+  ["j", [path([[38, 30], [38, 62], [30, 78], [16, 74]]), line(38, 16, 38, 19)]],
+  ["k", [line(16, 4, 16, 62), line(46, 34, 18, 50), line(22, 46, 48, 62)]],
+  ["l", [line(30, 4, 30, 62)]],
+  ["m", [line(12, 32, 12, 62), path([[12, 40], [20, 30], [28, 32], [30, 42], [30, 62]]), path([[30, 40], [38, 30], [46, 32], [48, 42], [48, 62]])]],
+  ["n", [line(16, 30, 16, 64), path([[16, 40], [26, 28], [40, 30], [44, 42], [44, 64]])]],
+  ["p", [line(16, 30, 16, 80), path([[16, 40], [30, 28], [44, 38], [42, 54], [26, 60], [16, 54]])]],
+  ["q", [ring(30, 42, 13, 14), line(44, 30, 44, 80)]],
+  ["r", [line(18, 30, 18, 62), path([[18, 40], [28, 30], [42, 32]])]],
+  ["s", [path([[46, 34], [32, 26], [22, 34], [34, 44], [44, 52], [32, 62], [18, 56]])]],
+  ["t", [line(32, 6, 32, 62), line(16, 24, 48, 24)]],
+  ["u", [path([[16, 30], [16, 52], [26, 62], [40, 56], [44, 30]]), line(44, 44, 44, 62)]],
+  ["v", [line(14, 28, 32, 62), line(32, 62, 50, 28)]],
+  ["w", [path([[10, 28], [20, 62], [30, 38], [40, 62], [50, 28]])]],
+  ["+", [line(10, 36, 56, 36), line(33, 14, 33, 58)]],
+  ["-", [line(10, 36, 56, 36)]],
+  ["=", [line(10, 28, 56, 28), line(10, 44, 56, 44)]],
+  ["*", [line(16, 20, 48, 52), line(48, 20, 16, 52)]],
+  ["/", [line(50, 8, 18, 62)]],
+  [".", [line(30, 60, 33, 63)]],
+  [",", [line(33, 58, 27, 72)]],
+  ["(", [path([[42, 8], [28, 24], [26, 40], [40, 62]])]],
+  [")", [path([[22, 8], [36, 24], [38, 40], [24, 62]])]],
+  ["[", [line(46, 6, 24, 6), line(24, 6, 24, 62), line(24, 62, 46, 62)]],
+  ["]", [line(22, 6, 44, 6), line(44, 6, 44, 62), line(44, 62, 22, 62)]],
+  ["<", [line(50, 14, 16, 36), line(16, 36, 50, 58)]],
+  [">", [line(18, 14, 52, 36), line(52, 36, 18, 58)]],
+  ["pi", [line(10, 24, 58, 24), path([[24, 24], [21, 44], [18, 62]]), path([[46, 24], [46, 48], [50, 62], [58, 58]])]],
+  ["alpha", [path([[48, 30], [34, 24], [22, 36], [26, 54], [40, 56], [46, 40], [44, 26], [50, 46], [56, 62]])]],
+  ["theta", [ring(32, 34, 14, 28), line(20, 34, 46, 34)]],
+  ["lambda", [line(18, 6, 48, 62), path([[36, 34], [24, 50], [16, 62]])]],
+  ["oo", [path([[20, 34], [10, 44], [20, 54], [34, 44], [48, 34], [58, 44], [48, 54], [34, 44], [20, 34]])]],
+  ["sqrt", [path([[4, 38], [12, 38], [22, 62], [34, 8], [64, 8]])]],
+  ["int", [path([[46, 12], [42, 4], [34, 8], [33, 24], [30, 44], [28, 60], [20, 64], [16, 56]])]],
+  ["sum", [line(56, 6, 14, 6), line(14, 6, 38, 34), line(38, 34, 14, 62), line(14, 62, 56, 62)]],
+  // Most people draw a sigma without lifting the pen, and squarer than the
+  // printed one; both shapes have to be in here or a hand-drawn sum reads as 3.
+  ["sum", [straight([[56, 6], [14, 6], [38, 34], [14, 62], [56, 62]])]],
+  ["sum", [straight([[52, 12], [16, 12], [34, 32], [16, 52], [52, 52]])]]
+];
+var RARE = {
+  alpha: 0.16,
+  theta: 0.16,
+  lambda: 0.16,
+  oo: 0.1,
+  pi: 0.04,
+  j: 0.08,
+  q: 0.08,
+  w: 0.06,
+  z: 0.06,
+  k: 0.05,
+  g: 0.05,
+  e: 0.04,
+  s: 0.04,
+  u: 0.04,
+  v: 0.04,
+  r: 0.04
+};
+var prototypes = null;
+function buildPrototypes() {
+  if (prototypes) return prototypes;
+  prototypes = [];
+  for (const [value, strokes] of SHAPES) {
+    const cloud = toCloud(strokes.map((stroke) => stroke.map(([x4, y3]) => ({ x: x4, y: y3 }))));
+    if (cloud) prototypes.push({ value, cloud, prior: RARE[value] ?? 0 });
+  }
+  return prototypes;
+}
+function prototypeShapes() {
+  return SHAPES.map(([value, strokes]) => ({ value, strokes: strokes.map((stroke) => stroke.map(([x4, y3]) => ({ x: x4, y: y3 }))) }));
+}
+function matchShape(strokes) {
+  const cloud = toCloud(strokes);
+  if (!cloud) return [];
+  const best = /* @__PURE__ */ new Map();
+  for (const prototype of buildPrototypes()) {
+    const distance = shapeDistance(cloud, prototype.cloud) + prototype.prior * 14;
+    const previous = best.get(prototype.value);
+    if (previous === void 0 || distance < previous) best.set(prototype.value, distance);
+  }
+  return [...best.entries()].sort((a3, b3) => a3[1] - b3[1]).map(([value, distance]) => ({ value, score: Math.max(0, 1 - distance / 14) }));
+}
+
 // src/ink-math.ts
 var clamp01 = (value) => Math.max(0, Math.min(1, value));
 function boundsOfPoints(points) {
@@ -1595,7 +1844,7 @@ function boundsOfPoints(points) {
 function boundsOfStrokes(strokes) {
   return boundsOfPoints(strokes.flatMap((stroke) => stroke.points));
 }
-function pathLength(points) {
+function pathLength2(points) {
   let length = 0;
   for (let i4 = 1; i4 < points.length; i4++) length += Math.hypot(points[i4].x - points[i4 - 1].x, points[i4].y - points[i4 - 1].y);
   return length;
@@ -1607,7 +1856,7 @@ function strokeInfo(stroke) {
   const dx = last.x - first.x;
   const dy = last.y - first.y;
   const chord = Math.hypot(dx, dy);
-  const length = Math.max(pathLength(points), chord, 0.01);
+  const length = Math.max(pathLength2(points), chord, 0.01);
   let angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
   if (angle > 90) angle = 180 - angle;
   return { stroke, bounds: boundsOfPoints(points), length, chord, angle, straightness: chord / length };
@@ -1658,6 +1907,25 @@ function lineIntersection(a3, b3) {
   }
   return d12 * d22 <= 0 && d3 * d4 <= 0;
 }
+function crossingParameters(a3, b3) {
+  const p3 = a3.stroke.points[0], p22 = a3.stroke.points[a3.stroke.points.length - 1];
+  const q3 = b3.stroke.points[0], q22 = b3.stroke.points[b3.stroke.points.length - 1];
+  if (!p3 || !p22 || !q3 || !q22) return null;
+  const rx = p22.x - p3.x, ry = p22.y - p3.y;
+  const sx = q22.x - q3.x, sy = q22.y - q3.y;
+  const denominator = rx * sy - ry * sx;
+  if (Math.abs(denominator) < 1e-9) return null;
+  const alongA = ((q3.x - p3.x) * sy - (q3.y - p3.y) * sx) / denominator;
+  const alongB = ((q3.x - p3.x) * ry - (q3.y - p3.y) * rx) / denominator;
+  if (alongA < -0.02 || alongA > 1.02 || alongB < -0.02 || alongB > 1.02) return null;
+  return { alongA, alongB };
+}
+function crossesInside(a3, b3) {
+  const at2 = crossingParameters(a3, b3);
+  if (!at2) return false;
+  const inside = (t3) => t3 > 0.12 && t3 < 0.88;
+  return inside(at2.alongA) && inside(at2.alongB);
+}
 function hasNonBarInk(strokes) {
   return strokes.some((stroke) => {
     const info2 = strokeInfo(stroke);
@@ -1706,11 +1974,25 @@ function shouldMerge(a3, b3, scale) {
     if (widthRatio > 0.58 && xOverlap > Math.min(a3.bounds.w, b3.bounds.w) * 0.55 && verticalGap < Math.max(scale * 1.45, Math.min(a3.bounds.w, b3.bounds.w) * 0.42)) return true;
   }
   if (ai.length === 1 && bi.length === 1 && ai[0].straightness > 0.86 && bi[0].straightness > 0.86 && lineIntersection(ai[0], bi[0])) return true;
+  const ends = (group) => group.strokes.flatMap((stroke) => stroke.points.length ? [stroke.points[0], stroke.points[stroke.points.length - 1]] : []);
+  const reach = Math.max(4, scale * 0.16);
+  for (const endA of ends(a3)) {
+    for (const endB of ends(b3)) {
+      if (pointDistance(endA, endB) < reach) return true;
+    }
+  }
+  const sizeA = Math.max(a3.bounds.w, a3.bounds.h);
+  const sizeB = Math.max(b3.bounds.w, b3.bounds.h);
+  const smaller2 = Math.min(sizeA, sizeB);
+  if (smaller2 > 0 && minStrokeDistance(a3.strokes, b3.strokes) < smaller2 * 0.14 && overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom) > smaller2 * 0.3) {
+    return true;
+  }
   const smallA = a3.bounds.w < scale * 0.24 && a3.bounds.h < scale * 0.24;
   const smallB = b3.bounds.w < scale * 0.24 && b3.bounds.h < scale * 0.24;
-  if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a3.bounds).x - centre(b3.bounds).x) < scale * 0.2) {
+  if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a3.bounds).x - centre(b3.bounds).x) < scale * 0.28) {
     const gap = Math.max(0, Math.max(a3.bounds.y, b3.bounds.y) - Math.min(a3.bounds.bottom, b3.bounds.bottom));
-    if (gap < scale * 0.42) return true;
+    const body = smallA ? b3.bounds.h : a3.bounds.h;
+    if (gap < Math.max(scale * 0.42, body * 0.55)) return true;
   }
   const combined = boundsOfStrokes([...a3.strokes, ...b3.strokes]);
   if (combined.w > scale * 1.55 || combined.h > scale * 1.8) return false;
@@ -1883,12 +2165,28 @@ function looksLikeRadical(points, b3) {
   const tailDrop = Math.abs(last.y - points[peak].y);
   return tailWidth > b3.w * 0.28 && tailDrop < b3.h * 0.3 && last.x > b3.right - b3.w * 0.15;
 }
+function selfCrosses(points) {
+  const segments = Math.min(points.length - 1, 80);
+  const step = Math.max(1, Math.floor((points.length - 1) / segments));
+  const sign = (a3, b3, c3) => Math.sign((b3.x - a3.x) * (c3.y - a3.y) - (b3.y - a3.y) * (c3.x - a3.x));
+  for (let i4 = 0; i4 + step < points.length; i4 += step) {
+    for (let j3 = i4 + step * 3; j3 + step < points.length; j3 += step) {
+      const [a3, b3, c3, d3] = [points[i4], points[i4 + step], points[j3], points[j3 + step]];
+      if (sign(a3, b3, c3) !== sign(a3, b3, d3) && sign(c3, d3, a3) !== sign(c3, d3, b3)) return true;
+    }
+  }
+  return false;
+}
 function looksLikeIntegral(info2, points, b3) {
   if (points.length < 6) return false;
   if (b3.h < b3.w * 1.9 || b3.w < 4) return false;
   if (info2.straightness > 0.82) return false;
   const first = points[0], last = points[points.length - 1];
   if (first.y > b3.y + b3.h * 0.28 || last.y < b3.bottom - b3.h * 0.28) return false;
+  if (selfCrosses(points)) return false;
+  let climb = 0;
+  for (let i4 = 1; i4 < points.length; i4++) climb += Math.max(0, points[i4 - 1].y - points[i4].y);
+  if (climb > b3.h * 0.3) return false;
   return first.x > last.x + b3.w * 0.3;
 }
 function hardGeometry(group) {
@@ -1903,10 +2201,16 @@ function hardGeometry(group) {
   if (infos.length === 2 && infos.every((info2) => isHorizontalLine(info2))) {
     return { value: "=", alternatives: ["=", "-"], confidence: 0.98 };
   }
-  if (infos.length === 2 && infos.every((info2) => info2.straightness > 0.88) && lineIntersection(infos[0], infos[1])) {
+  if (infos.length === 2 && infos.every((info2) => info2.straightness > 0.88) && crossesInside(infos[0], infos[1])) {
     const angles = infos.map((info2) => info2.angle);
     const axisAligned = angles.some((angle) => angle < 20) && angles.some((angle) => angle > 70);
-    return axisAligned ? { value: "+", alternatives: ["+", "t", "4"], confidence: 0.96 } : { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
+    if (!axisAligned) return { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
+    const vertical = infos[0].angle > 70 ? infos[0] : infos[1];
+    const at2 = crossingParameters(infos[0], infos[1]);
+    const alongStem = !at2 ? 0.5 : vertical === infos[0] ? at2.alongA : at2.alongB;
+    const downwards = vertical.stroke.points[0].y < vertical.stroke.points[vertical.stroke.points.length - 1].y;
+    const fromTop = downwards ? alongStem : 1 - alongStem;
+    return fromTop < 0.36 ? { value: "t", alternatives: ["t", "+", "7"], confidence: 0.84 } : { value: "+", alternatives: ["+", "t", "4"], confidence: 0.94 };
   }
   if (infos.length === 1) {
     const info2 = infos[0];
@@ -1920,7 +2224,9 @@ function hardGeometry(group) {
       for (let index = 1; index <= earlyEnd; index++) if (points[index].x > points[maxXIndex].x) maxXIndex = index;
       const lowerLeftIndex = points.reduce((best, point, index) => index > maxXIndex && point.x < points[best].x ? index : best, Math.min(points.length - 1, maxXIndex + 1));
       const upperTurn = points[maxXIndex], lowerTurn = points[lowerLeftIndex];
-      const looksLikeTwo = maxXIndex < points.length * 0.7 && lowerLeftIndex > maxXIndex && upperTurn.y < b3.y + b3.h * 0.58 && lowerTurn.y > b3.y + b3.h * 0.48 && last.x > b3.x + b3.w * 0.68 && last.y > b3.y + b3.h * 0.68;
+      const tailFrom = points[Math.max(0, Math.floor(points.length * 0.78))];
+      const flatTail = last.x - tailFrom.x > b3.w * 0.35 && Math.abs(last.y - tailFrom.y) < b3.h * 0.14;
+      const looksLikeTwo = maxXIndex < points.length * 0.7 && lowerLeftIndex > maxXIndex && upperTurn.y < b3.y + b3.h * 0.58 && lowerTurn.y > b3.y + b3.h * 0.48 && last.x > b3.x + b3.w * 0.68 && last.y > b3.y + b3.h * 0.68 && flatTail;
       if (looksLikeTwo) return { value: "2", alternatives: ["2", "z", "sqrt"], confidence: 0.82 };
     }
     if (first && last && pointDistance(first, last) < Math.max(6, info2.length * 0.13) && info2.length > (b3.w + b3.h) * 1.35) {
@@ -1932,19 +2238,31 @@ function hardGeometry(group) {
 function classifyGlyph(group) {
   const hard = hardGeometry(group);
   if (hard && hard.confidence >= 0.8) return { ...hard, bounds: group.bounds };
-  const input = maskForStrokes(group.strokes);
+  const shapes = matchShape(group.strokes.map((stroke) => stroke.points));
   const scores = /* @__PURE__ */ new Map();
-  for (const candidate of GLYPHS) {
-    const score = Math.min(...templateMasks(candidate.glyph).map((mask) => maskDistance(input, mask)));
-    const previous = scores.get(candidate.value);
-    if (previous === void 0 || score < previous) scores.set(candidate.value, score);
+  for (const match of shapes) scores.set(match.value, 1 - match.score);
+  const contenders = shapes.slice(0, 6).map((match) => match.value);
+  if (contenders.length > 1 && canRasterise()) {
+    const input = maskForStrokes(group.strokes);
+    for (const candidate of GLYPHS) {
+      if (!contenders.includes(candidate.value)) continue;
+      const distance = Math.min(...templateMasks(candidate.glyph).map((mask) => maskDistance(input, mask)));
+      scores.set(candidate.value, (scores.get(candidate.value) ?? 1) + distance * 0.2);
+    }
   }
-  if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.045 + (1 - hard.confidence) * 0.18));
+  if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.1 + (1 - hard.confidence) * 0.2));
   const ranked = [...scores.entries()].sort((a3, b3) => a3[1] - b3[1]);
   const best = ranked[0] ?? ["?", 1];
   const second = ranked[1]?.[1] ?? best[1] + 0.2;
-  const confidence = clamp01(0.28 + (second - best[1]) * 2.8 + (0.24 - best[1]) * 1.6);
+  const confidence = clamp01(0.2 + (second - best[1]) * 3.2 + (0.45 - best[1]) * 1.1);
   return { value: best[0], alternatives: ranked.slice(0, 5).map((entry) => entry[0]), confidence, bounds: group.bounds };
+}
+function canRasterise() {
+  try {
+    return typeof createEl === "function" && !!createEl("canvas").getContext("2d");
+  } catch {
+    return false;
+  }
 }
 function serializeGlyphs(glyphs) {
   if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
@@ -2853,7 +3171,12 @@ var en = {
   "Sin respuesta en {p0}. Arranca el servidor (por ejemplo \xABollama serve\xBB) y vuelve a probar.": "No answer at {p0}. Start the server (\u201Collama serve\u201D, for instance) and try again.",
   "Responde, pero no tiene ning\xFAn modelo. Descarga uno: {p0}": "It answers, but has no models. Download one: {p0}",
   "Conectado \xB7 {p0} modelo(s). Leen usar\xEDa \xAB{p1}\xBB: {p2}": "Connected \xB7 {p0} model(s). Leen would use \u201C{p1}\u201D: {p2}",
-  "Vac\xEDo = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como \xAB{p0}\xBB ({p1}).": "Empty = the best one that fits your memory. Reading what you draw needs a multimodal model, such as \u201C{p0}\u201D ({p1})."
+  "Vac\xEDo = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como \xAB{p0}\xBB ({p1}).": "Empty = the best one that fits your memory. Reading what you draw needs a multimodal model, such as \u201C{p0}\u201D ({p1}).",
+  "Sin comprobar. Tu equipo declara {p0} GB de RAM.": "Not checked yet. Your machine reports {p0} GB of RAM.",
+  "Conectado \xB7 {p0} modelo(s). Usar\xEDa \xAB{p1}\xBB: {p2}": "Connected \xB7 {p0} model(s). It would use \u201C{p1}\u201D: {p2}",
+  "Vac\xEDo = el mejor que quepa en tu memoria.": "Empty = the best one that fits your memory.",
+  "Un modelo local solo hace falta para la traducci\xF3n sin cuotas, que es opcional. Nada sale de tu equipo.": "A local model is only needed for quota-free translation, which is optional. Nothing leaves your machine.",
+  "Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.": "Tools and interface change at once on open boards. What sits under \u201CNew boards\u201D only affects the ones you create from now on."
 };
 
 // src/i18n.ts
@@ -3104,7 +3427,7 @@ var LocalServerManager = class {
         "ollama",
         `${env.LOCALAPPDATA ?? ""}\\Programs\\Ollama\\ollama.exe`,
         `${env.ProgramFiles ?? ""}\\Ollama\\ollama.exe`
-      ].filter((path) => !path.startsWith("\\"));
+      ].filter((path2) => !path2.startsWith("\\"));
     }
     if (platform === "darwin") return ["ollama", "/usr/local/bin/ollama", "/opt/homebrew/bin/ollama", "/Applications/Ollama.app/Contents/Resources/ollama"];
     return ["ollama", "/usr/local/bin/ollama", "/usr/bin/ollama"];
@@ -3149,11 +3472,11 @@ var LocalServerManager = class {
     const base = this.baseUrl();
     const origin = /^https?:\/\/[^/]+/i.exec(base)?.[0] ?? "";
     const headers = { Origin: origin, Referer: `${origin}/` };
-    for (const path of ["/api/tags", "/v1/models"]) {
-      const direct = await nodeRequest(`${base}${path}`, "GET");
+    for (const path2 of ["/api/tags", "/v1/models"]) {
+      const direct = await nodeRequest(`${base}${path2}`, "GET");
       if (direct && direct.status < 400) return true;
       try {
-        const response = await (0, import_obsidian2.requestUrl)({ url: `${base}${path}`, method: "GET", headers, throw: false });
+        const response = await (0, import_obsidian2.requestUrl)({ url: `${base}${path2}`, method: "GET", headers, throw: false });
         if (response.status < 400) return true;
       } catch {
       }
@@ -3358,9 +3681,9 @@ ${context}
       const tip = recommendedVisionModel();
       throw new Error(`El modelo \xAB${model}\xBB no entiende im\xE1genes. Instala uno multimodal con \xAB${tip.pull}\xBB: ${tip.why}.`);
     }
-    const post = async (path, payload2) => {
+    const post = async (path2, payload2) => {
       const body = JSON.stringify(payload2);
-      const direct = await nodeRequest(`${base}${path}`, "POST", body);
+      const direct = await nodeRequest(`${base}${path2}`, "POST", body);
       if (direct) {
         if (direct.status >= 400) throw new Error(this.describeError(direct.status, direct.text, model));
         try {
@@ -3370,7 +3693,7 @@ ${context}
         }
       }
       const response = await (0, import_obsidian2.requestUrl)({
-        url: `${base}${path}`,
+        url: `${base}${path2}`,
         method: "POST",
         headers: this.localHeaders(base, { "Content-Type": "application/json" }),
         body,
@@ -3432,9 +3755,9 @@ ${context}
       },
       { role: "user", content: text }
     ];
-    const path = flavour.kind === "ollama" ? "/api/chat" : "/v1/chat/completions";
+    const path2 = flavour.kind === "ollama" ? "/api/chat" : "/v1/chat/completions";
     const body = JSON.stringify({ model, messages: payload, stream: false });
-    const direct = await nodeRequest(`${base}${path}`, "POST", body);
+    const direct = await nodeRequest(`${base}${path2}`, "POST", body);
     let json = null;
     if (direct && direct.status < 400) {
       try {
@@ -3444,7 +3767,7 @@ ${context}
       }
     } else if (!direct) {
       const response = await (0, import_obsidian2.requestUrl)({
-        url: `${base}${path}`,
+        url: `${base}${path2}`,
         method: "POST",
         headers: this.localHeaders(base, { "Content-Type": "application/json" }),
         body,
@@ -15676,7 +15999,7 @@ function escapeOp(op) {
 function asciiToLatex(src) {
   const text = normalize(src).trim();
   if (!text) return "";
-  return text.split(/\r?\n/).filter((line) => line.trim()).map((line) => new Converter(tokenize2(line)).convert()).join(" \\\\ ");
+  return text.split(/\r?\n/).filter((line2) => line2.trim()).map((line2) => new Converter(tokenize2(line2)).convert()).join(" \\\\ ");
 }
 function toRenderableLatex(src) {
   return looksLikeLatex(src) ? src : asciiToLatex(src);
@@ -17121,24 +17444,24 @@ function safeFileName(value, fallback) {
   const clean = value.replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/^\.+/, "").trim();
   return clean || fallback;
 }
-function fileNameFromPath(path, fallback) {
-  return safeFileName(path.split("/").pop() || "", fallback);
+function fileNameFromPath(path2, fallback) {
+  return safeFileName(path2.split("/").pop() || "", fallback);
 }
-function isRemoteSource(path) {
-  return /^(https?:)?\/\//i.test(path) || /^data:/i.test(path);
+function isRemoteSource(path2) {
+  return /^(https?:)?\/\//i.test(path2) || /^data:/i.test(path2);
 }
-async function ensureParentFolder(app, path) {
-  const parent = path.split("/").slice(0, -1).join("/");
+async function ensureParentFolder(app, path2) {
+  const parent = path2.split("/").slice(0, -1).join("/");
   if (parent && !app.vault.getAbstractFileByPath(parent)) {
     await app.vault.createFolder(parent).catch(() => {
     });
   }
 }
 async function uniquePath(app, rawPath) {
-  const path = (0, import_obsidian5.normalizePath)(rawPath);
-  const slash = path.lastIndexOf("/");
-  const folder = slash >= 0 ? path.slice(0, slash + 1) : "";
-  const name = slash >= 0 ? path.slice(slash + 1) : path;
+  const path2 = (0, import_obsidian5.normalizePath)(rawPath);
+  const slash = path2.lastIndexOf("/");
+  const folder = slash >= 0 ? path2.slice(0, slash + 1) : "";
+  const name = slash >= 0 ? path2.slice(slash + 1) : path2;
   const dot = name.lastIndexOf(".");
   const stem = dot > 0 ? name.slice(0, dot) : name;
   const extension = dot > 0 ? name.slice(dot) : "";
@@ -17224,11 +17547,11 @@ async function importSharePackage(app, source, destinationFolder = "") {
       continue;
     }
     const name = fileNameFromPath(asset.source, "adjunto");
-    let path = await attachmentPathFor(app, name, board.path, folder);
-    path = await uniquePath(app, path);
+    let path2 = await attachmentPathFor(app, name, board.path, folder);
+    path2 = await uniquePath(app, path2);
     try {
-      await ensureParentFolder(app, path);
-      const imported = await app.vault.createBinary(path, ownBuffer(entry));
+      await ensureParentFolder(app, path2);
+      const imported = await app.vault.createBinary(path2, ownBuffer(entry));
       remapped.set(asset.source, imported.path);
     } catch (error) {
       console.error("NoteLens: could not import shared attachment", asset.source, error);
@@ -37182,11 +37505,11 @@ var FontFaceObject = class {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = new Path2D(cmds || "");
+    const path2 = new Path2D(cmds || "");
     if (!this.fontExtraProperties) {
       objs.delete(objId);
     }
-    return this.compiledGlyphs[character] = path;
+    return this.compiledGlyphs[character] = path2;
   }
 };
 var CallbackKind = {
@@ -38830,7 +39153,7 @@ function compileType3Glyph(imgData) {
     return null;
   }
   const steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
-  const path = new Path2D();
+  const path2 = new Path2D();
   for (i4 = 0; count && i4 <= height; i4++) {
     let p3 = i4 * width1;
     const end = p3 + width;
@@ -38840,7 +39163,7 @@ function compileType3Glyph(imgData) {
     if (p3 === end) {
       continue;
     }
-    path.moveTo(p3 % width1, i4);
+    path2.moveTo(p3 % width1, i4);
     const p0 = p3;
     let type = points[p3];
     do {
@@ -38856,7 +39179,7 @@ function compileType3Glyph(imgData) {
         type = pp & 51 * type >> 4;
         points[p3] &= type >> 2 | type << 2;
       }
-      path.lineTo(p3 % width1, p3 / width1 | 0);
+      path2.lineTo(p3 % width1, p3 / width1 | 0);
       if (!points[p3]) {
         --count;
       }
@@ -38869,7 +39192,7 @@ function compileType3Glyph(imgData) {
     c3.save();
     c3.scale(1 / width, -1 / height);
     c3.translate(0, -height);
-    c3.fill(path);
+    c3.fill(path2);
     c3.beginPath();
     c3.restore();
   };
@@ -39795,9 +40118,9 @@ var _CanvasGraphics = class _CanvasGraphics {
       x: x4,
       y: y3,
       fontSize,
-      path
+      path: path2
     } of paths) {
-      newPath.addPath(path, new DOMMatrix(transform).preMultiplySelf(invTransf).translate(x4, y3).scale(fontSize, -fontSize));
+      newPath.addPath(path2, new DOMMatrix(transform).preMultiplySelf(invTransf).translate(x4, y3).scale(fontSize, -fontSize));
     }
     ctx.clip(newPath);
     ctx.beginPath();
@@ -39887,9 +40210,9 @@ var _CanvasGraphics = class _CanvasGraphics {
     const isAddToPathSet = !!(textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG);
     const patternFill = current.patternFill && !font.missingFile;
     const patternStroke = current.patternStroke && !font.missingFile;
-    let path;
+    let path2;
     if (font.disableFontFace || isAddToPathSet || patternFill || patternStroke) {
-      path = font.getPathGenerator(this.commonObjs, character);
+      path2 = font.getPathGenerator(this.commonObjs, character);
     }
     if (font.disableFontFace || patternFill || patternStroke) {
       ctx.save();
@@ -39899,19 +40222,19 @@ var _CanvasGraphics = class _CanvasGraphics {
         if (patternFillTransform) {
           const currentTransform = ctx.getTransform();
           ctx.setTransform(...patternFillTransform);
-          ctx.fill(__privateMethod(this, _CanvasGraphics_instances, getScaledPath_fn).call(this, path, currentTransform, patternFillTransform));
+          ctx.fill(__privateMethod(this, _CanvasGraphics_instances, getScaledPath_fn).call(this, path2, currentTransform, patternFillTransform));
         } else {
-          ctx.fill(path);
+          ctx.fill(path2);
         }
       }
       if (fillStrokeMode === TextRenderingMode.STROKE || fillStrokeMode === TextRenderingMode.FILL_STROKE) {
         if (patternStrokeTransform) {
           const currentTransform = ctx.getTransform();
           ctx.setTransform(...patternStrokeTransform);
-          ctx.stroke(__privateMethod(this, _CanvasGraphics_instances, getScaledPath_fn).call(this, path, currentTransform, patternStrokeTransform));
+          ctx.stroke(__privateMethod(this, _CanvasGraphics_instances, getScaledPath_fn).call(this, path2, currentTransform, patternStrokeTransform));
         } else {
           ctx.lineWidth /= fontSize;
-          ctx.stroke(path);
+          ctx.stroke(path2);
         }
       }
       ctx.restore();
@@ -39930,7 +40253,7 @@ var _CanvasGraphics = class _CanvasGraphics {
         x: x4,
         y: y3,
         fontSize,
-        path
+        path: path2
       });
     }
   }
@@ -40774,9 +41097,9 @@ drawFilter_fn = function() {
     }
   }
 };
-getScaledPath_fn = function(path, currentTransform, transform) {
+getScaledPath_fn = function(path2, currentTransform, transform) {
   const newPath = new Path2D();
-  newPath.addPath(path, new DOMMatrix(transform).invertSelf().multiplySelf(currentTransform));
+  newPath.addPath(path2, new DOMMatrix(transform).invertSelf().multiplySelf(currentTransform));
   return newPath;
 };
 var CanvasGraphics = _CanvasGraphics;
@@ -46883,8 +47206,8 @@ var PopupElement = class {
     p3.dir = dir;
     const lines = str.split(/(?:\r\n?|\n)/);
     for (let i4 = 0, ii = lines.length; i4 < ii; ++i4) {
-      const line = lines[i4];
-      p3.append(document.createTextNode(line));
+      const line2 = lines[i4];
+      p3.append(document.createTextNode(line2));
       if (i4 < ii - 1) {
         p3.append(document.createElement("br"));
       }
@@ -46998,10 +47321,10 @@ makePopupContent_fn = function(text) {
       fontSize: __privateGet(this, _PopupElement_instances, fontSize_get) ? `calc(${__privateGet(this, _PopupElement_instances, fontSize_get)}px * var(--scale-factor))` : ""
     }
   };
-  for (const line of text.split("\n")) {
+  for (const line2 of text.split("\n")) {
     popupLines.push({
       name: "span",
-      value: line,
+      value: line2,
       attributes: lineAttributes
     });
   }
@@ -47101,9 +47424,9 @@ var FreeTextAnnotationElement = class extends AnnotationElement {
       const content = document.createElement("div");
       content.classList.add("annotationTextContent");
       content.setAttribute("role", "comment");
-      for (const line of this.textContent) {
+      for (const line2 of this.textContent) {
         const lineSpan = document.createElement("span");
-        lineSpan.textContent = line;
+        lineSpan.textContent = line2;
         content.append(lineSpan);
       }
       this.container.append(content);
@@ -47132,15 +47455,15 @@ var LineAnnotationElement = class extends AnnotationElement {
       height
     } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height, true);
-    const line = __privateSet(this, _line, this.svgFactory.createElement("svg:line"));
-    line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
-    line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
-    line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
-    line.setAttribute("y2", data.rect[3] - data.lineCoordinates[3]);
-    line.setAttribute("stroke-width", data.borderStyle.width || 1);
-    line.setAttribute("stroke", "transparent");
-    line.setAttribute("fill", "transparent");
-    svg.append(line);
+    const line2 = __privateSet(this, _line, this.svgFactory.createElement("svg:line"));
+    line2.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
+    line2.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
+    line2.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
+    line2.setAttribute("y2", data.rect[3] - data.lineCoordinates[3]);
+    line2.setAttribute("stroke-width", data.borderStyle.width || 1);
+    line2.setAttribute("stroke", "transparent");
+    line2.setAttribute("fill", "transparent");
+    svg.append(line2);
     this.container.append(svg);
     if (!data.popupRef && this.hasPopupData) {
       this._createPopup();
@@ -48117,7 +48440,7 @@ var _FreeTextEditor = class _FreeTextEditor extends AnnotationEditor {
     __privateSet(this, _content, `${bufferBefore.join("\n")}${paste}${bufferAfter.join("\n")}`);
     __privateMethod(this, _FreeTextEditor_instances, setContent_fn).call(this);
     const newRange = new Range();
-    let beforeLength = bufferBefore.reduce((acc, line) => acc + line.length, 0);
+    let beforeLength = bufferBefore.reduce((acc, line2) => acc + line2.length, 0);
     for (const {
       firstChild
     } of this.editorDiv.childNodes) {
@@ -48225,9 +48548,9 @@ var _FreeTextEditor = class _FreeTextEditor extends AnnotationEditor {
     style.fontSize = `calc(${__privateGet(this, _fontSize)}px * var(--scale-factor))`;
     style.color = __privateGet(this, _color2);
     content.replaceChildren();
-    for (const line of __privateGet(this, _content).split("\n")) {
+    for (const line2 of __privateGet(this, _content).split("\n")) {
       const div = document.createElement("div");
-      div.append(line ? document.createTextNode(line) : document.createElement("br"));
+      div.append(line2 ? document.createTextNode(line2) : document.createElement("br"));
       content.append(div);
     }
     const padding = _FreeTextEditor._internalPadding * this.parentScale;
@@ -48333,9 +48656,9 @@ setContent_fn = function() {
   if (!__privateGet(this, _content)) {
     return;
   }
-  for (const line of __privateGet(this, _content).split("\n")) {
+  for (const line2 of __privateGet(this, _content).split("\n")) {
     const div = document.createElement("div");
-    div.append(line ? document.createTextNode(line) : document.createElement("br"));
+    div.append(line2 ? document.createTextNode(line2) : document.createElement("br"));
     this.editorDiv.append(div);
   }
 };
@@ -50810,13 +51133,13 @@ var InkDrawOutliner = class {
     __privateSet(this, _rotation2, rotation);
     __privateSet(this, _thickness3, thickness);
     [x4, y3] = __privateMethod(this, _InkDrawOutliner_instances, normalizePoint_fn).call(this, x4, y3);
-    const line = __privateSet(this, _line2, [NaN, NaN, NaN, NaN, x4, y3]);
+    const line2 = __privateSet(this, _line2, [NaN, NaN, NaN, NaN, x4, y3]);
     __privateSet(this, _points3, [x4, y3]);
     __privateSet(this, _lines, [{
-      line,
+      line: line2,
       points: __privateGet(this, _points3)
     }]);
-    __privateGet(this, _last2).set(line, 0);
+    __privateGet(this, _last2).set(line2, 0);
   }
   updateProperty(name, value) {
     if (name === "stroke-width") {
@@ -50878,7 +51201,7 @@ var InkDrawOutliner = class {
     __privateSet(this, _parentHeight, parentHeight);
     __privateSet(this, _rotation2, rotation);
     [x4, y3] = __privateMethod(this, _InkDrawOutliner_instances, normalizePoint_fn).call(this, x4, y3);
-    const line = __privateSet(this, _line2, [NaN, NaN, NaN, NaN, x4, y3]);
+    const line2 = __privateSet(this, _line2, [NaN, NaN, NaN, NaN, x4, y3]);
     __privateSet(this, _points3, [x4, y3]);
     const last = __privateGet(this, _lines).at(-1);
     if (last) {
@@ -50886,10 +51209,10 @@ var InkDrawOutliner = class {
       last.points = new Float32Array(last.points);
     }
     __privateGet(this, _lines).push({
-      line,
+      line: line2,
       points: __privateGet(this, _points3)
     });
-    __privateGet(this, _last2).set(line, 0);
+    __privateGet(this, _last2).set(line2, 0);
     __privateSet(this, _lastIndex, 0);
     this.toSVGPath();
     return null;
@@ -50919,10 +51242,10 @@ var InkDrawOutliner = class {
     __privateSet(this, _lastSVGPath, "");
     for (let i4 = 0, ii = __privateGet(this, _lines).length; i4 < ii; i4++) {
       const {
-        line,
+        line: line2,
         points
       } = __privateGet(this, _lines)[i4];
-      __privateSet(this, _line2, line);
+      __privateSet(this, _line2, line2);
       __privateSet(this, _points3, points);
       __privateSet(this, _lastIndex, 0);
       this.toSVGPath();
@@ -51047,19 +51370,19 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
   toSVGPath() {
     const buffer = [];
     for (const {
-      line
+      line: line2
     } of __privateGet(this, _lines2)) {
-      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
-      if (line.length === 6) {
+      buffer.push(`M${Outline.svgRound(line2[4])} ${Outline.svgRound(line2[5])}`);
+      if (line2.length === 6) {
         buffer.push("Z");
         continue;
       }
-      if (line.length === 12) {
-        buffer.push(`L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`);
+      if (line2.length === 12) {
+        buffer.push(`L${Outline.svgRound(line2[10])} ${Outline.svgRound(line2[11])}`);
         continue;
       }
-      for (let i4 = 6, ii = line.length; i4 < ii; i4 += 6) {
-        const [c1x, c1y, c2x, c2y, x4, y3] = line.subarray(i4, i4 + 6).map(Outline.svgRound);
+      for (let i4 = 6, ii = line2.length; i4 < ii; i4 += 6) {
+        const [c1x, c1y, c2x, c2y, x4, y3] = line2.subarray(i4, i4 + 6).map(Outline.svgRound);
         buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x4} ${y3}`);
       }
     }
@@ -51117,10 +51440,10 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
         break;
     }
     for (const {
-      line,
+      line: line2,
       points
     } of __privateGet(this, _lines2)) {
-      serializedLines.push(rescaleFn(line, tx, ty, sx, sy, isForCopying ? new Array(line.length) : null));
+      serializedLines.push(rescaleFn(line2, tx, ty, sx, sy, isForCopying ? new Array(line2.length) : null));
       serializedPoints.push(rescaleFn(points, tx, ty, sx, sy, isForCopying ? new Array(points.length) : null));
     }
     return {
@@ -51181,14 +51504,14 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
           lines.push(new Float32Array([NaN, NaN, NaN, NaN, point[0], point[1], NaN, NaN, NaN, NaN, point[2], point[3]]));
           continue;
         }
-        const line = new Float32Array(3 * (len - 2));
-        lines.push(line);
+        const line2 = new Float32Array(3 * (len - 2));
+        lines.push(line2);
         let [x1, y12, x22, y22] = point.subarray(0, 4);
-        line.set([NaN, NaN, NaN, NaN, x1, y12], 0);
+        line2.set([NaN, NaN, NaN, NaN, x1, y12], 0);
         for (let i4 = 4; i4 < len; i4 += 2) {
           const x4 = point[i4];
           const y3 = point[i4 + 1];
-          line.set(Outline.createBezierPoints(x1, y12, x22, y22, x4, y3), (i4 - 2) * 3);
+          line2.set(Outline.createBezierPoints(x1, y12, x22, y22, x4, y3), (i4 - 2) * 3);
           [x1, y12, x22, y22] = [x22, y22, x4, y3];
         }
       }
@@ -51310,10 +51633,10 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
       const tx2 = newX + newWidth / 2 - (x4 + width / 2);
       const ty2 = newY + newHeight / 2 - (y3 + height / 2);
       for (const {
-        line,
+        line: line2,
         points
       } of __privateGet(this, _lines2)) {
-        Outline._translate(line, tx2, ty2, line);
+        Outline._translate(line2, tx2, ty2, line2);
         Outline._translate(points, tx2, ty2, points);
       }
       return {
@@ -51333,10 +51656,10 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
     const ty = -s1y * (y3 + marginY) + newY + marginY;
     if (s1x !== 1 || s1y !== 1 || tx !== 0 || ty !== 0) {
       for (const {
-        line,
+        line: line2,
         points
       } of __privateGet(this, _lines2)) {
-        Outline._rescale(line, tx, ty, s1x, s1y, line);
+        Outline._rescale(line2, tx, ty, s1x, s1y, line2);
         Outline._rescale(points, tx, ty, s1x, s1y, points);
       }
     }
@@ -51358,10 +51681,10 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
     const ty = newY - bbox[1];
     if (__privateGet(this, _parentWidth2) === newParentWidth && __privateGet(this, _parentHeight2) === newParentHeight) {
       for (const {
-        line,
+        line: line2,
         points
       } of __privateGet(this, _lines2)) {
-        Outline._translate(line, tx, ty, line);
+        Outline._translate(line2, tx, ty, line2);
         Outline._translate(points, tx, ty, points);
       }
     } else {
@@ -51370,10 +51693,10 @@ var _InkDrawOutline = class _InkDrawOutline extends Outline {
       __privateSet(this, _parentWidth2, newParentWidth);
       __privateSet(this, _parentHeight2, newParentHeight);
       for (const {
-        line,
+        line: line2,
         points
       } of __privateGet(this, _lines2)) {
-        Outline._rescale(line, tx, ty, sx, sy, line);
+        Outline._rescale(line2, tx, ty, sx, sy, line2);
         Outline._rescale(points, tx, ty, sx, sy, points);
       }
       bbox[2] *= sx;
@@ -51431,11 +51754,11 @@ getBBoxWithNoMargin_fn = function() {
 computeBbox_fn = function() {
   const bbox = __privateSet(this, _bbox2, new Float32Array([Infinity, Infinity, -Infinity, -Infinity]));
   for (const {
-    line
+    line: line2
   } of __privateGet(this, _lines2)) {
-    if (line.length <= 12) {
-      for (let i4 = 4, ii = line.length; i4 < ii; i4 += 6) {
-        const [x4, y3] = line.subarray(i4, i4 + 2);
+    if (line2.length <= 12) {
+      for (let i4 = 4, ii = line2.length; i4 < ii; i4 += 6) {
+        const [x4, y3] = line2.subarray(i4, i4 + 2);
         bbox[0] = Math.min(bbox[0], x4);
         bbox[1] = Math.min(bbox[1], y3);
         bbox[2] = Math.max(bbox[2], x4);
@@ -51443,9 +51766,9 @@ computeBbox_fn = function() {
       }
       continue;
     }
-    let lastX = line[4], lastY = line[5];
-    for (let i4 = 6, ii = line.length; i4 < ii; i4 += 6) {
-      const [c1x, c1y, c2x, c2y, x4, y3] = line.subarray(i4, i4 + 6);
+    let lastX = line2[4], lastY = line2[5];
+    for (let i4 = 6, ii = line2.length; i4 < ii; i4 += 6) {
+      const [c1x, c1y, c2x, c2y, x4, y3] = line2.subarray(i4, i4 + 6);
       Util.bezierBoundingBox(lastX, lastY, c1x, c1y, c2x, c2y, x4, y3, bbox);
       lastX = x4;
       lastY = y3;
@@ -53052,13 +53375,13 @@ var _DrawLayer = class _DrawLayer {
     const root = __privateMethod(this, _DrawLayer_instances, createSVG_fn).call(this);
     const defs = _DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
-    const path = _DrawLayer._svgFactory.createElement("path");
-    defs.append(path);
+    const path2 = _DrawLayer._svgFactory.createElement("path");
+    defs.append(path2);
     const pathId = `path_p${this.pageIndex}_${id}`;
-    path.setAttribute("id", pathId);
-    path.setAttribute("vector-effect", "non-scaling-stroke");
+    path2.setAttribute("id", pathId);
+    path2.setAttribute("vector-effect", "non-scaling-stroke");
     if (isPathUpdatable) {
-      __privateGet(this, _toUpdate).set(id, path);
+      __privateGet(this, _toUpdate).set(id, path2);
     }
     const clipPathId = hasClip ? __privateMethod(this, _DrawLayer_instances, createClipPath_fn).call(this, defs, pathId) : null;
     const use = _DrawLayer._svgFactory.createElement("use");
@@ -53076,11 +53399,11 @@ var _DrawLayer = class _DrawLayer {
     const root = __privateMethod(this, _DrawLayer_instances, createSVG_fn).call(this);
     const defs = _DrawLayer._svgFactory.createElement("defs");
     root.append(defs);
-    const path = _DrawLayer._svgFactory.createElement("path");
-    defs.append(path);
+    const path2 = _DrawLayer._svgFactory.createElement("path");
+    defs.append(path2);
     const pathId = `path_p${this.pageIndex}_${id}`;
-    path.setAttribute("id", pathId);
-    path.setAttribute("vector-effect", "non-scaling-stroke");
+    path2.setAttribute("id", pathId);
+    path2.setAttribute("vector-effect", "non-scaling-stroke");
     let maskId;
     if (mustRemoveSelfIntersections) {
       const mask = _DrawLayer._svgFactory.createElement("mask");
@@ -53128,7 +53451,7 @@ var _DrawLayer = class _DrawLayer {
       root,
       bbox,
       rootClass,
-      path
+      path: path2
     } = properties;
     const element = typeof elementOrId === "number" ? __privateGet(this, _mapping).get(elementOrId) : elementOrId;
     if (!element) {
@@ -53148,10 +53471,10 @@ var _DrawLayer = class _DrawLayer {
         classList.toggle(className, value);
       }
     }
-    if (path) {
+    if (path2) {
       const defs = element.firstChild;
       const pathElement = defs.firstChild;
-      __privateMethod(this, _DrawLayer_instances, updateProperties_fn).call(this, pathElement, path);
+      __privateMethod(this, _DrawLayer_instances, updateProperties_fn).call(this, pathElement, path2);
     }
   }
   updateParent(id, layer) {
@@ -53313,12 +53636,12 @@ function parseChartData(text) {
   const separator = lines.some((l3) => l3.includes(";")) ? ";" : lines.some((l3) => l3.includes("	")) ? "	" : ",";
   let names = null;
   const rows = [];
-  for (const line of lines) {
-    if (line.startsWith("#")) {
-      names = line.slice(1).split(separator).map((s3) => s3.trim()).filter(Boolean);
+  for (const line2 of lines) {
+    if (line2.startsWith("#")) {
+      names = line2.slice(1).split(separator).map((s3) => s3.trim()).filter(Boolean);
       continue;
     }
-    const cells = line.split(separator).map((s3) => s3.trim());
+    const cells = line2.split(separator).map((s3) => s3.trim());
     const values = cells.slice(1).map(toNumber);
     if (cells.length >= 2 && values.every((v3) => Number.isNaN(v3)) && !names) {
       names = cells.slice(1);
@@ -53966,17 +54289,17 @@ async function pickCaptionTrack(host, embed, body, button) {
     }
     try {
       const safeName = file.name.replace(/[\\/:*?"<>|]/g, "-");
-      let path = safeName || `subtitulos-${Date.now()}.vtt`;
+      let path2 = safeName || `subtitulos-${Date.now()}.vtt`;
       try {
-        path = await host.app.fileManager.getAvailablePathForAttachment(path, "");
+        path2 = await host.app.fileManager.getAvailablePathForAttachment(path2, "");
       } catch {
       }
-      const parent = path.split("/").slice(0, -1).join("/");
+      const parent = path2.split("/").slice(0, -1).join("/");
       if (parent && !host.app.vault.getAbstractFileByPath(parent)) {
         await host.app.vault.createFolder(parent).catch(() => {
         });
       }
-      const saved = await host.app.vault.createBinary(path, await file.arrayBuffer());
+      const saved = await host.app.vault.createBinary(path2, await file.arrayBuffer());
       embed.captionSrc = saved.path;
       const video = body.querySelector("video");
       if (video) attachCaptionToVideo(host, embed, video);
@@ -56036,6 +56359,17 @@ var InkEquationModal = class extends import_obsidian11.Modal {
   }
 };
 
+// src/features.ts
+var EXPERIMENTAL = {
+  /**
+   * Leen, the assistant: the pet on the board, his local study actions and
+   * the optional chat with a local model. Held back from the release while
+   * the rest of the board settles; the local model settings stay visible
+   * either way, because the translator speaks to the same server.
+   */
+  assistant: false
+};
+
 // src/ui.ts
 var import_obsidian12 = require("obsidian");
 var QUICK_TAGS = [
@@ -57337,8 +57671,8 @@ function paintPrismTokens(parent, tokens) {
 }
 var LIST_PREFIX = /^(\s*)(?:[•·]|\d+[.)]|→|-->|->|[-–])\s+/;
 var LIST_MARK = { bullet: "\u2022 ", number: "1. ", arrow: "\u2192 ", dash: "- " };
-function listKindOf(line) {
-  const m3 = /^\s*(?:([•·])|(\d+[.)])|(→|-->|->)|([-–]))\s+/.exec(line);
+function listKindOf(line2) {
+  const m3 = /^\s*(?:([•·])|(\d+[.)])|(→|-->|->)|([-–]))\s+/.exec(line2);
   if (!m3) return null;
   return m3[1] ? "bullet" : m3[2] ? "number" : m3[3] ? "arrow" : "dash";
 }
@@ -57352,10 +57686,10 @@ function toggleListPrefix(editor, kind) {
   const lines = value.slice(from, toIdx).split("\n");
   const allHave = lines.every((l3) => !l3.trim() || listKindOf(l3) === kind);
   let counter = 1;
-  const changed = lines.map((line) => {
-    const indent = /^\s*/.exec(line)?.[0] ?? "";
-    const bare = line.replace(LIST_PREFIX, "$1").trimStart();
-    if (!line.trim()) return line;
+  const changed = lines.map((line2) => {
+    const indent = /^\s*/.exec(line2)?.[0] ?? "";
+    const bare = line2.replace(LIST_PREFIX, "$1").trimStart();
+    if (!line2.trim()) return line2;
     if (allHave) return indent + bare;
     const mark = kind === "number" ? `${counter++}. ` : LIST_MARK[kind];
     return indent + mark + bare;
@@ -57367,18 +57701,18 @@ function continueList(editor) {
   const value = editor.value;
   const start = editor.selectionStart;
   const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-  const line = value.slice(lineStart, start);
-  const kind = listKindOf(line);
+  const line2 = value.slice(lineStart, start);
+  const kind = listKindOf(line2);
   if (!kind) return false;
-  const indent = /^\s*/.exec(line)?.[0] ?? "";
-  const body = line.replace(LIST_PREFIX, "").trim();
+  const indent = /^\s*/.exec(line2)?.[0] ?? "";
+  const body = line2.replace(LIST_PREFIX, "").trim();
   if (!body) {
     editor.setRangeText("", lineStart, start, "end");
     return true;
   }
   let mark = LIST_MARK[kind];
   if (kind === "number") {
-    const n = parseInt(/\d+/.exec(line)?.[0] ?? "0", 10);
+    const n = parseInt(/\d+/.exec(line2)?.[0] ?? "0", 10);
     mark = `${n + 1}. `;
   }
   editor.setRangeText("\n" + indent + mark, start, editor.selectionEnd, "end");
@@ -57812,18 +58146,18 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     ws.setAttr("data-bg-tone", isLightColor(this.data.backgroundColor) ? "light" : "dark");
     ws.style.backgroundColor = this.data.backgroundColor || DEFAULT_BG_COLOR;
     const tone = isLightColor(this.data.backgroundColor) ? 0.2 : 0.22;
-    const line = hexToRgba(this.data.lineColor || DEFAULT_LINE_COLOR, tone);
+    const line2 = hexToRgba(this.data.lineColor || DEFAULT_LINE_COLOR, tone);
     const glow = isLightColor(this.data.backgroundColor) ? "linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0))" : "linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0))";
     switch (this.data.background) {
       case "dots":
-        ws.style.backgroundImage = `radial-gradient(${line} 1px, transparent 1.35px), ${glow}`;
+        ws.style.backgroundImage = `radial-gradient(${line2} 1px, transparent 1.35px), ${glow}`;
         break;
       case "grid":
-        ws.style.backgroundImage = `linear-gradient(${line} 1px, transparent 1px), linear-gradient(90deg, ${line} 1px, transparent 1px), ${glow}`;
+        ws.style.backgroundImage = `linear-gradient(${line2} 1px, transparent 1px), linear-gradient(90deg, ${line2} 1px, transparent 1px), ${glow}`;
         break;
       case "lines":
       case "margin":
-        ws.style.backgroundImage = `linear-gradient(${line} 1px, transparent 1px), ${glow}`;
+        ws.style.backgroundImage = `linear-gradient(${line2} 1px, transparent 1px), ${glow}`;
         break;
       default:
         ws.setCssStyles({ backgroundImage: "none" });
@@ -58167,7 +58501,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
     createSettingsPanel(this, this.workspaceEl);
     createNavigationControls(this, this.workspaceEl);
-    if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
+    if (this.assistantWanted()) this.assistant = createAssistantPet(this, this.workspaceEl);
     createBookmarksControl(this, this.workspaceEl);
     createPagesControl(this, this.workspaceEl);
     createFocusModeControl(this, this.workspaceEl);
@@ -58206,7 +58540,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.applySettings();
     this.syncToolbar();
     this.updateBackground();
-    const wanted = this.plugin.settings.showAssistantPet;
+    const wanted = this.assistantWanted();
     if (wanted && !this.assistant) {
       this.assistant = createAssistantPet(this, this.workspaceEl);
     } else if (!wanted && this.assistant) {
@@ -58516,17 +58850,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const buf = await img.arrayBuffer();
       const ext = (img.type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png";
       const fileName = `notelens-img-${Date.now()}.${ext}`;
-      let path = fileName;
+      let path2 = fileName;
       try {
-        path = await this.app.fileManager.getAvailablePathForAttachment(fileName, this.file?.path ?? "");
+        path2 = await this.app.fileManager.getAvailablePathForAttachment(fileName, this.file?.path ?? "");
       } catch {
       }
-      const parent = path.split("/").slice(0, -1).join("/");
+      const parent = path2.split("/").slice(0, -1).join("/");
       if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
-      const tfile = await this.app.vault.createBinary(path, buf);
+      const tfile = await this.app.vault.createBinary(path2, buf);
       this.history.push();
       const c3 = this.getViewportCenterScene();
       const embed = {
@@ -58732,10 +59066,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const inView = () => x4 >= topLeft.x && y3 >= topLeft.y && x4 + w3 <= bottomRight.x && y3 + h3 <= bottomRight.y;
     const startX = x4, startY = y3;
     const stepX = w3 / 2 + 12, stepY = h3 / 2 + 12;
-    for (let ring = 1; ring <= 8; ring++) {
-      for (let dy = -ring; dy <= ring; dy++) {
-        for (let dx = -ring; dx <= ring; dx++) {
-          if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+    for (let ring2 = 1; ring2 <= 8; ring2++) {
+      for (let dy = -ring2; dy <= ring2; dy++) {
+        for (let dx = -ring2; dx <= ring2; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring2) continue;
           x4 = startX + dx * stepX;
           y3 = startY + dy * stepY;
           if (inView() && !overlaps()) return { x: x4, y: y3 };
@@ -60171,17 +60505,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   /** Writes the MP3 next to the board's attachments and drops an audio player on the page. */
   async saveRecording(mp3, seconds) {
     const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 19);
-    let path = `Grabacion_${stamp}.mp3`;
+    let path2 = `Grabacion_${stamp}.mp3`;
     try {
-      path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
+      path2 = await this.app.fileManager.getAvailablePathForAttachment(path2, this.file?.path ?? "");
     } catch {
     }
-    const parent = path.split("/").slice(0, -1).join("/");
+    const parent = path2.split("/").slice(0, -1).join("/");
     if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
       await this.app.vault.createFolder(parent).catch(() => {
       });
     }
-    const saved = await this.app.vault.createBinary(path, mp3);
+    const saved = await this.app.vault.createBinary(path2, mp3);
     this.insertVaultFile(saved);
     new import_obsidian13.Notice(tr("Grabaci\xF3n guardada ({p0} s): {p1}", { p0: Math.round(seconds), p1: saved.name }));
   }
@@ -60437,17 +60771,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const q3 = query.trim().toLowerCase();
     return this.app.vault.getFiles().filter((file) => file.extension.toLowerCase() === "md" && (!q3 || file.path.toLowerCase().includes(q3))).sort((a3, b3) => b3.stat.mtime - a3.stat.mtime).slice(0, q3 ? 60 : 30);
   }
-  openPath(path, newLeaf) {
-    this.openLink(path, newLeaf);
+  openPath(path2, newLeaf) {
+    this.openLink(path2, newLeaf);
   }
-  openLink(path, newLeaf) {
-    if (/^https?:\/\//i.test(path)) {
-      window.open(path, "_blank", "noopener,noreferrer");
+  openLink(path2, newLeaf) {
+    if (/^https?:\/\//i.test(path2)) {
+      window.open(path2, "_blank", "noopener,noreferrer");
       return;
     }
-    const file = this.app.vault.getAbstractFileByPath(path);
+    const file = this.app.vault.getAbstractFileByPath(path2);
     if (!(file instanceof import_obsidian13.TFile)) {
-      void this.app.workspace.openLinkText(path, this.file?.path ?? "", newLeaf);
+      void this.app.workspace.openLinkText(path2, this.file?.path ?? "", newLeaf);
       return;
     }
     void this.saver?.flush(this.data);
@@ -60457,8 +60791,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     void this.saver?.flush(this.data);
     void this.plugin.createNewOneNoteFile();
   }
-  linkPath(path) {
-    const file = this.app.vault.getAbstractFileByPath(path);
+  linkPath(path2) {
+    const file = this.app.vault.getAbstractFileByPath(path2);
     if (file instanceof import_obsidian13.TFile) this.insertVaultFile(file);
   }
   async uploadFileFromDevice() {
@@ -60469,17 +60803,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (!localFile) return;
       try {
         const safeName = localFile.name.replace(/[\\/:*?"<>|]/g, "-");
-        let path = safeName || `notelens-file-${Date.now()}`;
+        let path2 = safeName || `notelens-file-${Date.now()}`;
         try {
-          path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
+          path2 = await this.app.fileManager.getAvailablePathForAttachment(path2, this.file?.path ?? "");
         } catch {
         }
-        const parent = path.split("/").slice(0, -1).join("/");
+        const parent = path2.split("/").slice(0, -1).join("/");
         if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
           await this.app.vault.createFolder(parent).catch(() => {
           });
         }
-        const saved = await this.app.vault.createBinary(path, await localFile.arrayBuffer());
+        const saved = await this.app.vault.createBinary(path2, await localFile.arrayBuffer());
         this.insertVaultFile(saved);
         new import_obsidian13.Notice(tr("Archivo a\xF1adido: {p0}", { p0: saved.name }));
       } catch (error) {
@@ -60543,12 +60877,12 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.selEmbeds.add(embed.id);
     this.renderSelectionBox();
   }
-  openVaultFile(path) {
-    if (/^https?:\/\//i.test(path)) {
-      window.open(path, "_blank", "noopener,noreferrer");
+  openVaultFile(path2) {
+    if (/^https?:\/\//i.test(path2)) {
+      window.open(path2, "_blank", "noopener,noreferrer");
       return;
     }
-    void this.app.workspace.openLinkText(path, this.file?.path ?? "", true);
+    void this.app.workspace.openLinkText(path2, this.file?.path ?? "", true);
   }
   onDragStart() {
     this.history.push();
@@ -61185,6 +61519,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.plugin.settings.aiModel = model;
     void this.plugin.saveSettings();
   }
+  /** Leen is behind a flag until his release; see src/features.ts. */
+  assistantWanted() {
+    return EXPERIMENTAL.assistant && this.plugin.settings.showAssistantPet;
+  }
   get assistantName() {
     return this.plugin.settings.assistantName || "Leen";
   }
@@ -61365,9 +61703,9 @@ ${rows.join("\n")}`);
         const first = stroke.points[0];
         const last = stroke.points[stroke.points.length - 1];
         const chord = Math.hypot(last.x - first.x, last.y - first.y);
-        let path = 0;
-        for (let i4 = 1; i4 < stroke.points.length; i4++) path += Math.hypot(stroke.points[i4].x - stroke.points[i4 - 1].x, stroke.points[i4].y - stroke.points[i4 - 1].y);
-        if (chord > 12 && chord / Math.max(path, 0.01) > 0.94) {
+        let path2 = 0;
+        for (let i4 = 1; i4 < stroke.points.length; i4++) path2 += Math.hypot(stroke.points[i4].x - stroke.points[i4 - 1].x, stroke.points[i4].y - stroke.points[i4 - 1].y);
+        if (chord > 12 && chord / Math.max(path2, 0.01) > 0.94) {
           stroke.points = stroke.points.map((point, index) => {
             const t3 = index / Math.max(1, stroke.points.length - 1);
             return { x: first.x + (last.x - first.x) * t3, y: first.y + (last.y - first.y) * t3, p: point.p };
@@ -61632,17 +61970,17 @@ ${rows.join("\n")}`);
       const bytes = createA4Pdf(page, this.getViewportSceneBounds(), await this.rasterizeFormulas(page));
       const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 19);
       const base = `NoteLens-${stamp}.pdf`;
-      let path = base;
+      let path2 = base;
       try {
-        path = await this.app.fileManager.getAvailablePathForAttachment(base, this.file?.path ?? "");
+        path2 = await this.app.fileManager.getAvailablePathForAttachment(base, this.file?.path ?? "");
       } catch {
       }
-      const parent = path.split("/").slice(0, -1).join("/");
+      const parent = path2.split("/").slice(0, -1).join("/");
       if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
-      const saved = await this.app.vault.createBinary(path, bytes);
+      const saved = await this.app.vault.createBinary(path2, bytes);
       new import_obsidian13.Notice(tr("PDF A4 creado: {p0}", { p0: saved.name }));
       void this.app.workspace.openLinkText(saved.path, this.file?.path ?? "", true);
     } catch (error) {
@@ -61657,17 +61995,17 @@ ${rows.join("\n")}`);
       const title = this.file?.basename ?? "Pizarra NoteLens";
       const result = await buildSharePackage(this.app, this.data, title);
       const name = `${title.replace(/[\\/:*?"<>|]/g, "-") || "Pizarra NoteLens"}.nlshare`;
-      let path = name;
+      let path2 = name;
       try {
-        path = await this.app.fileManager.getAvailablePathForAttachment(name, this.file?.path ?? "");
+        path2 = await this.app.fileManager.getAvailablePathForAttachment(name, this.file?.path ?? "");
       } catch {
       }
-      const parent = path.split("/").slice(0, -1).join("/");
+      const parent = path2.split("/").slice(0, -1).join("/");
       if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
-      const saved = await this.app.vault.createBinary(path, result.bytes);
+      const saved = await this.app.vault.createBinary(path2, result.bytes);
       const skipped = result.skippedAssets.length ? ` (${result.skippedAssets.length} adjunto(s) no disponible(s))` : "";
       new import_obsidian13.Notice(tr("Paquete editable creado: {p0}{p1}", { p0: saved.name, p1: skipped }));
     } catch (error) {
@@ -62462,9 +62800,9 @@ ${rows.join("\n")}`);
     const lineEnd = value.indexOf("\n", end);
     const blockEnd = lineEnd === -1 ? value.length : lineEnd;
     const block = value.slice(lineStart, blockEnd);
-    const changed = block.split("\n").map((line) => {
-      if (outdent) return line.startsWith(unit2) ? line.slice(unit2.length) : line.replace(/^(\t| {1,4})/, "");
-      return unit2 + line;
+    const changed = block.split("\n").map((line2) => {
+      if (outdent) return line2.startsWith(unit2) ? line2.slice(unit2.length) : line2.replace(/^(\t| {1,4})/, "");
+      return unit2 + line2;
     }).join("\n");
     editor.setRangeText(changed, lineStart, blockEnd, "preserve");
     editor.setSelectionRange(lineStart, lineStart + changed.length);
@@ -62474,9 +62812,9 @@ ${rows.join("\n")}`);
     const value = editor.value;
     const start = editor.selectionStart;
     const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-    const line = value.slice(lineStart, start);
-    const indent = /^[\t ]*/.exec(line)?.[0] ?? "";
-    const opens = /[{([:]\s*$/.test(line) ? "    " : "";
+    const line2 = value.slice(lineStart, start);
+    const indent = /^[\t ]*/.exec(line2)?.[0] ?? "";
+    const opens = /[{([:]\s*$/.test(line2) ? "    " : "";
     editor.setRangeText("\n" + indent + opens, start, editor.selectionEnd, "end");
   }
   renderMathSafe(source, display) {
@@ -62507,7 +62845,7 @@ ${rows.join("\n")}`);
     if (!ctx) return tb.w ?? 260;
     ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${this.fontStack(tb.fontFamily ?? "sans")}`;
     let widest = 0;
-    for (const line of tb.text.split("\n")) widest = Math.max(widest, ctx.measureText(line).width);
+    for (const line2 of tb.text.split("\n")) widest = Math.max(widest, ctx.measureText(line2).width);
     return clamp(Math.ceil(widest) + 24, 160, 640);
   }
   /** Resize handle and close button every text box carries. */
@@ -62904,7 +63242,7 @@ ${rows.join("\n")}`);
   }
 };
 function tidyFormulaText(raw) {
-  let value = raw.replace(/\r/g, "").split("\n").map((line) => line.trim()).filter(Boolean).join(" ").replace(/```(?:latex|tex|math)?|```/gi, "").replace(/^\$+|\$+$/g, "").replace(/[\u2212\u2013\u2014]/g, "-").replace(/[\u00D7\u22C5\u00B7]/g, "*").replace(/[\u00F7]/g, "/").replace(/\u221A/g, "sqrt").replace(/\u03C0/g, "pi").replace(/\u2211/g, "sum").replace(/\u222B/g, "int").replace(/\u221E/g, "infty").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (digits) => `^${[...digits].map((digit) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079".indexOf(digit)).join("")}`).replace(/\bO\b/g, "0").replace(/(\d)\s*[lI]\s*(\d)/g, "$1 1 $2").replace(/\s{2,}/g, " ").trim();
+  let value = raw.replace(/\r/g, "").split("\n").map((line2) => line2.trim()).filter(Boolean).join(" ").replace(/```(?:latex|tex|math)?|```/gi, "").replace(/^\$+|\$+$/g, "").replace(/[\u2212\u2013\u2014]/g, "-").replace(/[\u00D7\u22C5\u00B7]/g, "*").replace(/[\u00F7]/g, "/").replace(/\u221A/g, "sqrt").replace(/\u03C0/g, "pi").replace(/\u2211/g, "sum").replace(/\u222B/g, "int").replace(/\u221E/g, "infty").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (digits) => `^${[...digits].map((digit) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079".indexOf(digit)).join("")}`).replace(/\bO\b/g, "0").replace(/(\d)\s*[lI]\s*(\d)/g, "$1 1 $2").replace(/\s{2,}/g, " ").trim();
   value = value.replace(/\b([A-Z])x\*?(\d+)\b/g, (_match, base, exponent) => `${base.toLowerCase()}^${exponent}`);
   for (let i4 = 0; i4 < 3; i4++) {
     value = value.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
@@ -63029,7 +63367,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.5.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.6.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -63137,32 +63475,34 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       s3.compactUi = v3;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
-    new import_obsidian14.Setting(containerEl).setName(tr("Mostrar a Leen")).setDesc(tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.")).addToggle((t3) => t3.setValue(s3.showAssistantPet).onChange((v3) => {
-      s3.showAssistantPet = v3;
-      save();
-      this.display();
-    }));
-    if (s3.showAssistantPet) {
-      new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de Leen")).setDesc(tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.")).addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s3.petScale).setDynamicTooltip().onChange((v3) => {
-        s3.petScale = v3;
+    if (EXPERIMENTAL.assistant) {
+      new import_obsidian14.Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
+      new import_obsidian14.Setting(containerEl).setName(tr("Mostrar a Leen")).setDesc(tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.")).addToggle((t3) => t3.setValue(s3.showAssistantPet).onChange((v3) => {
+        s3.showAssistantPet = v3;
         save();
+        this.display();
       }));
-      new import_obsidian14.Setting(containerEl).setName(tr("Bocadillos de Leen")).setDesc(tr("El aviso que aparece al pasar el rat\xF3n por encima.")).addToggle((t3) => t3.setValue(s3.petBubbles).onChange((v3) => {
-        s3.petBubbles = v3;
-        save();
-      }));
-      new import_obsidian14.Setting(containerEl).setName(tr("Devolver a Leen a su sitio")).setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")).addButton((b3) => b3.setButtonText(tr("Restablecer posici\xF3n")).onClick(() => {
-        s3.petX = null;
-        s3.petY = null;
-        save();
-        new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
-      }));
+      if (s3.showAssistantPet) {
+        new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de Leen")).setDesc(tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.")).addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s3.petScale).setDynamicTooltip().onChange((v3) => {
+          s3.petScale = v3;
+          save();
+        }));
+        new import_obsidian14.Setting(containerEl).setName(tr("Bocadillos de Leen")).setDesc(tr("El aviso que aparece al pasar el rat\xF3n por encima.")).addToggle((t3) => t3.setValue(s3.petBubbles).onChange((v3) => {
+          s3.petBubbles = v3;
+          save();
+        }));
+        new import_obsidian14.Setting(containerEl).setName(tr("Devolver a Leen a su sitio")).setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")).addButton((b3) => b3.setButtonText(tr("Restablecer posici\xF3n")).onClick(() => {
+          s3.petX = null;
+          s3.petY = null;
+          save();
+          new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
+        }));
+      }
     }
     new import_obsidian14.Setting(containerEl).setName(tr("Modelo local")).setHeading();
     const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
     aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra \u2192 LaTeX se calculan aqu\xED mismo.") });
-    aiIntro.createDiv({ text: tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") });
+    aiIntro.createDiv({ text: EXPERIMENTAL.assistant ? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") : tr("Un modelo local solo hace falta para la traducci\xF3n sin cuotas, que es opcional. Nada sale de tu equipo.") });
     const memory = detectMemoryGb();
     const suggestion = recommendedVisionModel(memory);
     const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
@@ -63171,7 +63511,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       aiStatus.toggleClass("is-ok", kind === "ok");
       aiStatus.toggleClass("is-error", kind === "error");
     };
-    paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM; para chat con dibujos encaja \xAB{p1}\xBB.", { p0: memory, p1: suggestion.model }));
+    paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
     new import_obsidian14.Setting(containerEl).setName(tr("Servidor")).setDesc(tr("Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1.")).addText((t3) => t3.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s3.aiBaseUrl).onChange((v3) => {
       s3.aiBaseUrl = v3.trim() || DEFAULT_SETTINGS.aiBaseUrl;
       save();
@@ -63191,9 +63531,9 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
         return;
       }
       const best = rankModels(models, memory)[0];
-      paintStatus(tr("Conectado \xB7 {p0} modelo(s). Leen usar\xEDa \xAB{p1}\xBB: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+      paintStatus(tr("Conectado \xB7 {p0} modelo(s). Usar\xEDa \xAB{p1}\xBB: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("Vac\xEDo = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como \xAB{p0}\xBB ({p1}).", { p0: suggestion.model, p1: suggestion.why })).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("Vac\xEDo = el mejor que quepa en tu memoria.", {})).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
       s3.aiModel = v3.trim();
       save();
     }));
@@ -63236,7 +63576,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       s3.translateTo = v3;
       save();
     }));
-    containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas, la interfaz y Leen cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
+    containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
   }
 };
 
@@ -63307,7 +63647,8 @@ var __assistantTest = {
   recognizeFormula,
   recognizeInkFormula,
   formulaCandidateScore,
-  runLocalStudyTool
+  runLocalStudyTool,
+  prototypeShapes
 };
 /*! Bundled license information:
 

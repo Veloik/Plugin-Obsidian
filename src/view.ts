@@ -24,6 +24,7 @@ import { ChartEditorModal, DEFAULT_CHART, specFromTable } from "./charts";
 import { HOVER_NOTE_BOARD_HEIGHT, HOVER_NOTE_BOARD_WIDTH, HoverNoteContent, HoverNoteModal } from "./hover-note";
 import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
+import { EXPERIMENTAL } from "./features";
 import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
 import { Locale, getLocale, tr } from "./i18n";
@@ -881,7 +882,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		createQuickTagsBar(this.workspaceEl, (tag) => this.onPickTag(tag), () => this.toggleTagSummary());
 		createSettingsPanel(this, this.workspaceEl);
 		createNavigationControls(this, this.workspaceEl);
-		if (this.plugin.settings.showAssistantPet) this.assistant = createAssistantPet(this, this.workspaceEl);
+		if (this.assistantWanted()) this.assistant = createAssistantPet(this, this.workspaceEl);
 		createBookmarksControl(this, this.workspaceEl);
 		createPagesControl(this, this.workspaceEl);
 		createFocusModeControl(this, this.workspaceEl);
@@ -924,7 +925,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.applySettings();
 		this.syncToolbar();
 		this.updateBackground();
-		const wanted = this.plugin.settings.showAssistantPet;
+		const wanted = this.assistantWanted();
 		if (wanted && !this.assistant) {
 			this.assistant = createAssistantPet(this, this.workspaceEl);
 		} else if (!wanted && this.assistant) {
@@ -3995,6 +3996,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	setAiModel(model: string): void {
 		this.plugin.settings.aiModel = model;
 		void this.plugin.saveSettings();
+	}
+
+	/** Leen is behind a flag until his release; see src/features.ts. */
+	private assistantWanted(): boolean {
+		return EXPERIMENTAL.assistant && this.plugin.settings.showAssistantPet;
 	}
 
 	get assistantName(): string { return this.plugin.settings.assistantName || "Leen"; }

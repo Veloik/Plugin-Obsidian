@@ -131,3 +131,73 @@ test("two marks on the same line are not one glyph", () => {
 	const apart = recognizeInkFormula([line(44, -14, 44, -2), line(44, 56, 44, 70)]);
 	assert.equal(apart.tokens.length, 2);
 });
+
+/** A smooth line through control points, the way the bench draws its corpus. */
+function penPath(controls: [number, number][], perSegment = 6): { x: number; y: number }[] {
+	if (controls.length < 3) {
+		return controls.flatMap(([x, y], index) => index === controls.length - 1 ? [{ x, y }] :
+			Array.from({ length: 8 }, (_, s) => ({
+				x: x + (controls[index + 1][0] - x) * s / 8,
+				y: y + (controls[index + 1][1] - y) * s / 8
+			})));
+	}
+	const pts = [controls[0], ...controls, controls[controls.length - 1]];
+	const out: { x: number; y: number }[] = [];
+	for (let i = 1; i < pts.length - 2; i++) {
+		const [p0, p1, p2, p3] = [pts[i - 1], pts[i], pts[i + 1], pts[i + 2]];
+		for (let s = 0; s < perSegment; s++) {
+			const t = s / perSegment, t2 = t * t, t3 = t2 * t;
+			out.push({
+				x: 0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+				y: 0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3)
+			});
+		}
+	}
+	out.push({ x: pts[pts.length - 1][0], y: pts[pts.length - 1][1] });
+	return out;
+}
+
+test("vector ink reads ordinary handwriting, not printed shapes", () => {
+	// Comparing ink with font glyphs read every round shape as "b"; these are
+	// the symbols that failed then, drawn the way a hand draws them.
+	const cases: [string, [number, number][][]][] = [
+		["3", [[[16, 10], [38, 4], [52, 16], [38, 30], [28, 32], [42, 34], [56, 48], [40, 64], [16, 60]]]],
+		["5", [[[52, 8], [20, 8]], [[20, 8], [18, 32]], [[18, 32], [40, 28], [54, 42], [42, 62], [18, 58]]]],
+		["9", [[[48, 20], [36, 8], [24, 18], [32, 32], [46, 28], [48, 16], [46, 40], [38, 64]]]],
+		["c", [[[48, 30], [34, 24], [22, 34], [22, 50], [34, 62], [48, 56]]]],
+		["7", [[[12, 8], [56, 8]], [[56, 8], [26, 64]]]]
+	];
+	for (const [expected, strokes] of cases) {
+		const result = recognizeInkFormula(strokes.map(points => ({ points: penPath(points) })));
+		assert.equal(result.source, expected, `handwritten ${expected} read as ${result.source}`);
+	}
+});
+
+test("a six is not an integral, and a bracket is not a two", () => {
+	// Both were claimed by geometry rules that were too eager: an integral
+	// descends the whole way and a two lands on a base.
+	const six = recognizeInkFormula([{ points: penPath([[48, 6], [30, 20], [22, 38], [24, 54], [38, 62], [50, 52], [44, 38], [28, 38], [22, 46]]) }]);
+	assert.equal(six.source, "6");
+	const bracket = recognizeInkFormula([{ points: penPath([[42, 8], [28, 24], [26, 40], [40, 62]]) }]);
+	assert.equal(bracket.source, "(");
+});
+
+test("strokes that meet at a corner are one symbol", () => {
+	// A seven came out as "-" then "/", and a flagged one as "x", because any
+	// touch counted as a crossing and no touch counted as a join.
+	const seven = recognizeInkFormula([
+		{ points: penPath([[12, 8], [56, 8]]) },
+		{ points: penPath([[56, 8], [26, 64]]) }
+	]);
+	assert.equal(seven.source, "7");
+	const one = recognizeInkFormula([
+		{ points: penPath([[18, 16], [32, 6]]) },
+		{ points: penPath([[32, 6], [32, 64]]) }
+	]);
+	assert.equal(one.source, "1");
+	const tee = recognizeInkFormula([
+		{ points: penPath([[32, 6], [32, 62]]) },
+		{ points: penPath([[16, 24], [48, 24]]) }
+	]);
+	assert.equal(tee.source, "t");
+});

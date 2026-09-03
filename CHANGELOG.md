@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.0
+
+### Fixed
+
+- Handwritten formulas are read properly. The recogniser used to draw the ink into a bitmap and compare it with the same characters rendered in a printed font, which is not what handwriting looks like: on a bench of 38 ordinary symbols and expressions it scored **42 %**, reading every round shape as "b" and a "t" as "+" with 0.96 confidence. It now matches the trajectory of the strokes against a library of how each symbol is actually written ($P point-cloud matching), and scores **100 %** on that bench and **97 %** on the same corpus written smaller, larger, shakier and slanted — variations the work was not tuned against.
+- A "6" and a "9" were read as integrals, an opening bracket as a "2", a "7" as "-" followed by "/", a flagged "1" as "x", and a "t" as "+". An integral descends the whole way and a "2" lands on a base; strokes that meet at a corner are one symbol, and a cross through the top of a stem is a "t", not a "+".
+- The dot of an "i" is part of the letter and no longer becomes a superscript, and the bowl of a "b" no longer splits from its stem when the rest of the line holds smaller symbols.
+
+### Changed
+
+- Leen, the assistant, is held back for a later release: no pet on the board, no chat and no assistant settings. The code stays behind a flag in `src/features.ts`, so it comes back with one boolean. His local study actions (summary, key ideas, revision plan, outline, flashcards, tidy text, arrange selection, polish ink) go with him for now.
+- The local model settings stay, because the translator talks to the same server, and they no longer mention a chat this release does not ship.
+
 ## 2.5.0
 
 ### Fixed
