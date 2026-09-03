@@ -29,7 +29,7 @@ export default class OneNotePlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "create-notelens-canvas",
+			id: "create-canvas",
 			name: tr("Crear nueva pizarra NoteLens"),
 			callback: () => void this.createNewOneNoteFile()
 		});

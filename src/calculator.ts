@@ -1,4 +1,4 @@
-import { setIcon } from "obsidian";
+import { App, setIcon } from "obsidian";
 import { makeDraggable } from "./panels";
 import { tr } from "./i18n";
 
@@ -498,6 +498,8 @@ export function describeNumber(v: number, bases = false): string[] {
 // ---------------------------------------------------------------------------
 
 export interface CalculatorHost {
+	/** The view owning the panel; its vault decides where the position is remembered. */
+	readonly app: App;
 	insertCalculation(expression: string, result: string): void;
 	calculatorUnit: AngleUnit;
 	setCalculatorUnit(unit: AngleUnit): void;
@@ -520,7 +522,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	unitBtn.title = tr("Grados o radianes para las funciones trigonométricas");
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
-	makeDraggable(panel, header, container, "notelens-calculator-pos");
+	makeDraggable(host.app, panel, header, container, "notelens-calculator-pos");
 
 	const display = panel.createDiv({ cls: "notelens-calculator-display" });
 	const input = display.createEl("input", { cls: "notelens-calculator-input" });

@@ -782,7 +782,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		// Rasterise the region: page colour, then images and PDF pages, then ink.
 		const scale = clamp(1800 / Math.max(rect.w, rect.h), 1, 4);
-		const canvas = document.createElement("canvas");
+		const canvas = createEl("canvas");
 		canvas.width = Math.ceil(rect.w * scale);
 		canvas.height = Math.ceil(rect.h * scale);
 		const ctx = canvas.getContext("2d");
@@ -852,7 +852,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	toggleMiniMap(): void {
 		this.miniMapVisible = !this.miniMapVisible;
-		try { localStorage.setItem("notelens-minimap", this.miniMapVisible ? "1" : "0"); } catch { /* storage may be unavailable */ }
+		try { this.app.saveLocalStorage("notelens-minimap", this.miniMapVisible); } catch { /* storage may be unavailable */ }
 		this.miniMapEl?.toggleClass("hidden", !this.miniMapVisible);
 		this.renderMiniMap();
 		this.syncToolbar();
@@ -948,8 +948,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private createMiniMap(): void {
 		try {
-			const stored = localStorage.getItem("notelens-minimap");
-			this.miniMapVisible = stored === null ? this.plugin.settings.showMinimap : stored === "1";
+			const stored = this.app.loadLocalStorage("notelens-minimap") as boolean | null;
+			this.miniMapVisible = stored === null ? this.plugin.settings.showMinimap : stored;
 		} catch { this.miniMapVisible = this.plugin.settings.showMinimap; }
 		const wrap = this.workspaceEl.createDiv({ cls: "notelens-minimap" });
 		wrap.toggleClass("hidden", !this.miniMapVisible);
@@ -1568,9 +1568,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.rubberStart = pt;
 			if (this.selectionMode === "lasso") {
 				this.lassoPoints = [pt];
-				this.lassoEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-				this.lassoEl.setAttribute("class", "onenote-lasso");
-				this.lassoEl.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "polygon"));
+				this.lassoEl = createSvg("svg", { cls: "onenote-lasso" });
+				this.lassoEl.createSvg("polygon");
 				this.domLayerEl.appendChild(this.lassoEl);
 			} else {
 				this.rubberEl = this.domLayerEl.createDiv({ cls: "onenote-rubberband" });
@@ -3001,7 +3000,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			(source, into) => {
 				try {
 					into.appendChild(renderMath(toRenderableLatex(source), true));
-					finishRenderMath();
+					void finishRenderMath();
 				} catch {
 					into.createSpan({ cls: "notelens-math-placeholder", text: tr("No se puede representar todavía") });
 				}
@@ -3233,7 +3232,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	async uploadFileFromDevice(): Promise<void> {
-		const picker = document.createElement("input");
+		const picker = createEl("input");
 		picker.type = "file";
 		picker.onchange = async () => {
 			const localFile = picker.files?.[0];
@@ -3733,7 +3732,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			row.onclick = () => {
 				const pageId = badge.pageId ?? this.data.activePageId;
 				if (pageId !== this.data.activePageId) this.goToDocumentPage(pageId);
-				requestAnimationFrame(() => {
+				window.requestAnimationFrame(() => {
 					this.panToScene(badge.x, badge.y, Math.max(this.data.viewTransform.scale, 1));
 					this.clearSelection(false);
 					this.selBadges.add(badge.id);
@@ -4361,7 +4360,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!bookmark) return;
 		const pageId = bookmark.pageId ?? this.data.activePageId;
 		if (pageId !== this.data.activePageId) this.goToDocumentPage(pageId);
-		requestAnimationFrame(() => this.panToScene(bookmark.x, bookmark.y, bookmark.scale));
+		window.requestAnimationFrame(() => this.panToScene(bookmark.x, bookmark.y, bookmark.scale));
 	}
 
 	private panToScene(sceneX: number, sceneY: number, targetScale = this.data.viewTransform.scale): void {
@@ -4379,13 +4378,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.data.viewTransform.scale = start.scale + (target.scale - start.scale) * eased;
 			this.applyStageTransform();
 			this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
-			if (t < 1) requestAnimationFrame(animate);
+			if (t < 1) window.requestAnimationFrame(animate);
 			else {
 				this.syncToolbar();
 				this.save();
 			}
 		};
-		requestAnimationFrame(animate);
+		window.requestAnimationFrame(animate);
 	}
 
 	async exportA4Pdf(): Promise<void> {
@@ -4435,7 +4434,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	async importSharePackage(): Promise<void> {
-		const picker = document.createElement("input");
+		const picker = createEl("input");
 		picker.type = "file";
 		picker.accept = ".nlshare,application/zip,application/x-notelens";
 		picker.onchange = async () => {
@@ -5057,7 +5056,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// A focus steal in the same click that opened the editor is not
 			// the user leaving: take the focus back instead of committing.
 			if (!next && editor.isConnected && performance.now() - openedAt < 250) {
-				requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus(); });
+				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus(); });
 				return;
 			}
 			this.commitTextEditor();
@@ -5249,7 +5248,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const lineStart = value.lastIndexOf("\n", start - 1) + 1;
 		const line = value.slice(lineStart, start);
 		const indent = /^[\t ]*/.exec(line)?.[0] ?? "";
-		const opens = /[{(\[:]\s*$/.test(line) ? "    " : "";
+		const opens = /[{([:]\s*$/.test(line) ? "    " : "";
 		editor.setRangeText("\n" + indent + opens, start, editor.selectionEnd, "end");
 	}
 
@@ -5257,7 +5256,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		try {
 			return renderMath(source, display);
 		} catch {
-			const fallback = document.createElement("span");
+			const fallback = createEl("span");
 			fallback.className = "notelens-math-error";
 			fallback.textContent = source;
 			return fallback;
@@ -5276,7 +5275,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	/** Width that fits the longest line, like OneNote boxes that grow as you type. */
 	private measureAutoWidth(tb: TextBox): number {
-		const ctx = this.textMeasurer ?? (this.textMeasurer = document.createElement("canvas").getContext("2d"));
+		const ctx = this.textMeasurer ?? (this.textMeasurer = createEl("canvas").getContext("2d"));
 		if (!ctx) return tb.w ?? 260;
 		ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${this.fontStack(tb.fontFamily ?? "sans")}`;
 		let widest = 0;
@@ -5454,7 +5453,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			e.stopPropagation();
 			if (!(e.target instanceof HTMLSelectElement)) e.preventDefault();
 		});
-		bar.addEventListener("change", () => { if (el instanceof HTMLTextAreaElement) el.focus(); });
+		bar.addEventListener("change", () => { if (el.instanceOf(HTMLTextAreaElement)) el.focus(); });
 
 		const apply = (mutate: () => void) => {
 			this.pushEditSession();
@@ -5484,7 +5483,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			mkToggle("align-center", "align-center", "Centrar", () => { tb.align = "center"; });
 			mkToggle("align-right", "align-right", "Alinear a la derecha", () => { tb.align = "right"; });
 			bar.createDiv({ cls: "onenote-divider" });
-			if (el instanceof HTMLTextAreaElement) {
+			if (el.instanceOf(HTMLTextAreaElement)) {
 				const listButton = (icon: string, title: string, kind: ListKind) => {
 					const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 					setIcon(b, icon);
@@ -5569,7 +5568,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		refreshStates();
 
-		if (tb.variant === "math" && el instanceof HTMLTextAreaElement) {
+		if (tb.variant === "math" && el.instanceOf(HTMLTextAreaElement)) {
 			bar.addClass("is-math");
 			const palette = bar.createDiv({ cls: "notelens-math-palette" });
 			// Grouped so a long list stays findable: the tabs swap the keys below.

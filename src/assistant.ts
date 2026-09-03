@@ -501,8 +501,10 @@ export class LocalModelClient {
 			this.lastProbeError = error instanceof Error ? error.message : String(error);
 		}
 		try {
-			const response = await fetch(url, { method: "GET" });
-			if (response.ok) return { status: response.status, json: await response.json() };
+			// Second attempt without the origin headers: some local servers answer the
+			// bare request and reject the annotated one.
+			const response = await requestUrl({ url, method: "GET", throw: false });
+			if (response.status < 400) return { status: response.status, json: response.json };
 			this.lastProbeError = `respondió ${response.status}`;
 		} catch (error) {
 			this.lastProbeError = error instanceof Error ? error.message : String(error);

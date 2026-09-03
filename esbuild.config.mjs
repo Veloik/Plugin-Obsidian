@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
 import process from "process";
-import builtins from "builtin-modules";
+import { builtinModules } from "node:module";
 import fs from "fs";
 import path from "path";
 
@@ -94,7 +94,8 @@ const context = await esbuild.context({
 		"canvg",
 		"html2canvas",
 		"dompurify",
-		...builtins],
+		...builtinModules,
+		...builtinModules.map(name => `node:${name}`)],
 	define: {
 		// A version stamp is deterministic, so rebuilding a release produces the same bundle.
 		__NOTELENS_BUILD__: JSON.stringify(manifest.version)

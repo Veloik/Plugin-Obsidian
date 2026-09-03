@@ -1,4 +1,4 @@
-import { Notice, requestUrl, setIcon } from "obsidian";
+import { App, Notice, requestUrl, setIcon } from "obsidian";
 import { LocalModelClient } from "./assistant";
 import { makeDraggable, shieldPanel } from "./panels";
 import { tr } from "./i18n";
@@ -137,6 +137,8 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 
 export interface TranslatorHost {
+	/** The view owning the panel; its vault decides where the position is remembered. */
+	readonly app: App;
 	/** Local model settings, so translating can run on this computer. */
 	aiBaseUrl: string;
 	aiModel: string;
@@ -164,7 +166,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	header.createSpan({ cls: "notelens-calculator-title", text: tr("Traductor") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
-	makeDraggable(panel, header, container, "notelens-translator-pos");
+	makeDraggable(host.app, panel, header, container, "notelens-translator-pos");
 
 	const languages = panel.createDiv({ cls: "notelens-translator-languages" });
 	const fromSelect = languages.createEl("select", { cls: "dropdown notelens-translator-select" });

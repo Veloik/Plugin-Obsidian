@@ -1,4 +1,4 @@
-import { Notice, setIcon } from "obsidian";
+import { App, Notice, setIcon } from "obsidian";
 import { Mp3Encoder } from "@breezystack/lamejs";
 import { makeDraggable } from "./panels";
 import { tr } from "./i18n";
@@ -9,6 +9,8 @@ import { tr } from "./i18n";
  */
 
 export interface RecorderHost {
+	/** The view owning the panel; its vault decides where the position is remembered. */
+	readonly app: App;
 	/** Stores the MP3 in the vault and places it on the board. */
 	saveRecording(mp3: ArrayBuffer, seconds: number): Promise<void>;
 	/** Optional speech-to-text, where the platform offers it. */
@@ -58,7 +60,7 @@ export async function encodeMp3(recording: Blob, onProgress?: (fraction: number)
 		if (chunk.length) parts.push(chunk);
 		if (onProgress && (offset / block) % 200 === 0) {
 			onProgress(offset / left.length);
-			await new Promise(resolve => setTimeout(resolve, 0));
+			await new Promise(resolve => window.setTimeout(resolve, 0));
 		}
 	}
 	const tail = encoder.flush();
@@ -91,7 +93,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 	header.createSpan({ cls: "notelens-calculator-title", text: tr("Grabadora") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
-	makeDraggable(panel, header, container, "notelens-recorder-pos");
+	makeDraggable(host.app, panel, header, container, "notelens-recorder-pos");
 
 	const status = panel.createDiv({ cls: "notelens-recorder-status", text: tr("Lista. La grabación se guarda como MP3 en la bóveda y aparece en la pizarra.") });
 	const clock = panel.createDiv({ cls: "notelens-recorder-clock", text: "00:00" });
@@ -153,7 +155,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 		let peak = 0;
 		for (const v of data) peak = Math.max(peak, Math.abs(v - 128) / 128);
 		meterFill.style.width = `${Math.min(100, Math.round(peak * 140))}%`;
-		meterFrame = requestAnimationFrame(pumpMeter);
+		meterFrame = window.requestAnimationFrame(pumpMeter);
 	};
 
 	const start = async () => {

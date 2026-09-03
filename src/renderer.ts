@@ -183,7 +183,7 @@ export class CanvasRenderer {
 	 */
 	drawLiveWholeStroke(stroke: Stroke, vt: ViewTransform): void {
 		if (!this.liveBase || this.liveBase.width !== this.canvas.width || this.liveBase.height !== this.canvas.height) {
-			const base = document.createElement("canvas");
+			const base = createEl("canvas");
 			base.width = this.canvas.width;
 			base.height = this.canvas.height;
 			base.getContext("2d")?.drawImage(this.canvas, 0, 0);

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.3.5
+
+### Fixed
+
+- Panel positions and the minimap toggle are remembered per vault, through `App#saveLocalStorage`, instead of in one browser-wide key that every vault shared.
+- The interface language follows Obsidian's own `getLanguage()` rather than reading the `language` key out of localStorage.
+- Timers and animation frames go through `window`, and text areas are recognised with `instanceOf`, so the board behaves in a popped-out window.
+- An image pasted as a `data:` URL is decoded directly instead of being fetched, and the assistant's second probe of a local model uses `requestUrl` like the first.
+
+### Changed
+
+- `minAppVersion` is 1.8.7, the release that added `getLanguage` and the per-vault storage helpers. Anyone older keeps 2.3.4 through versions.json.
+- Elements come from Obsidian's `createEl` and `createSvg` helpers, and the build reads the Node built-ins from `node:module` instead of a dependency.
+
 ## 2.3.4
 
 ### Changed

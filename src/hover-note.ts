@@ -143,7 +143,7 @@ export class HoverNoteModal extends Modal {
 					const drawn = !row.hasClass("is-drawn");
 					if (!drawn) { handwriting.clear(); item.sketch = undefined; }
 					applyStepMode(drawn);
-					if (!drawn) requestAnimationFrame(() => input.focus());
+					if (!drawn) window.requestAnimationFrame(() => input.focus());
 					updateChecklistProgress();
 				};
 				applyStepMode(!!item.sketch);
@@ -172,7 +172,7 @@ export class HoverNoteModal extends Modal {
 					if (!this.checklist.length) this.checklist.push({ id: genId("task_item"), text: "", done: false });
 					renderChecklist(next ?? this.checklist[0].id);
 				};
-				if (item.id === focusId) requestAnimationFrame(() => input.focus());
+				if (item.id === focusId) window.requestAnimationFrame(() => input.focus());
 			}
 			updateChecklistProgress();
 		};
@@ -508,10 +508,24 @@ export class HoverNoteModal extends Modal {
 		};
 		const fileFromDataUrl = async (src: string): Promise<File | null> => {
 			if (!src.startsWith("data:image/")) return null;
-			const response = await fetch(src);
-			const blob = await response.blob();
-			const extension = (blob.type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png";
-			return new File([blob], `portapapeles-${Date.now()}.${extension}`, { type: blob.type || "image/png" });
+			// Decoded here rather than fetched: a data: URL carries its own bytes, and
+			// asking the network layer for them is both slower and a request Obsidian
+			// would rather we did not make.
+			const comma = src.indexOf(",");
+			if (comma < 0) return null;
+			const header = src.slice(5, comma);
+			const type = header.split(";")[0] || "image/png";
+			const payload = src.slice(comma + 1);
+			let bytes: Uint8Array<ArrayBuffer>;
+			try {
+				const binary = header.includes("base64") ? atob(payload) : decodeURIComponent(payload);
+				bytes = new Uint8Array(new ArrayBuffer(binary.length));
+				for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+			} catch {
+				return null;
+			}
+			const extension = (type.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/gi, "") || "png";
+			return new File([new Blob([bytes], { type })], `portapapeles-${Date.now()}.${extension}`, { type });
 		};
 		const readClipboardImages = async () => {
 			try {
@@ -575,7 +589,7 @@ export class HoverNoteModal extends Modal {
 
 		const exportSketch = (): string | undefined => {
 			if (!this.baseImage && !this.strokes.length) return undefined;
-			const output = document.createElement("canvas");
+			const output = createEl("canvas");
 			output.width = canvas.width;
 			output.height = canvas.height;
 			const outputContext = output.getContext("2d");
@@ -618,9 +632,9 @@ export class HoverNoteModal extends Modal {
 			sketchPane.style.display = mode === "sketch" ? "" : "none";
 			if (mode === "text") {
 				const target = this.taskMode ? checklistList?.querySelector(".notelens-task-checklist-input") as HTMLInputElement | null : area;
-				requestAnimationFrame(() => (target ?? area).focus());
+				window.requestAnimationFrame(() => (target ?? area).focus());
 			}
-			else requestAnimationFrame(() => { redraw(); canvas.focus({ preventScroll: true }); });
+			else window.requestAnimationFrame(() => { redraw(); canvas.focus({ preventScroll: true }); });
 		};
 		tabText.onclick = () => showMode("text");
 		tabSketch.onclick = () => showMode("sketch");
@@ -647,7 +661,7 @@ export class HoverNoteModal extends Modal {
 		let src = source;
 		const encode = (maxEdge: number, quality: number): string => {
 			const scale = Math.min(1, maxEdge / Math.max(node.naturalWidth, node.naturalHeight));
-			const output = document.createElement("canvas");
+			const output = createEl("canvas");
 			output.width = Math.max(1, Math.round(node.naturalWidth * scale));
 			output.height = Math.max(1, Math.round(node.naturalHeight * scale));
 			output.getContext("2d")?.drawImage(node, 0, 0, output.width, output.height);
@@ -810,7 +824,7 @@ class StepPad {
 		const bottom = Math.min(height, maxY + pad + 1);
 		const cropW = Math.max(1, right - left);
 		const cropH = Math.max(1, bottom - top);
-		const out = document.createElement("canvas");
+		const out = createEl("canvas");
 		// Saved at CSS size: the image then renders at exactly the size it was
 		// written, instead of being scaled by the screen's pixel ratio.
 		out.width = Math.max(1, Math.round(cropW / this.dpr));

@@ -1,4 +1,4 @@
-import { TFile, setIcon } from "obsidian";
+import { App, TFile, setIcon } from "obsidian";
 import { makeDraggable, shieldPanel } from "./panels";
 import { tr } from "./i18n";
 
@@ -10,6 +10,8 @@ import { tr } from "./i18n";
 export const BOARD_EXTENSIONS = ["notelens", "onenote"];
 
 export interface NavigatorHost {
+	/** The view owning the panel; its vault decides where the position is remembered. */
+	readonly app: App;
 	currentPath: string | null;
 	listBoards(): TFile[];
 	listNotes(query: string): TFile[];
@@ -31,7 +33,7 @@ export function createNavigatorPanel(host: NavigatorHost, container: HTMLElement
 	header.createSpan({ cls: "notelens-calculator-title", text: tr("Pizarras y notas") });
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
-	makeDraggable(panel, header, container, "notelens-navigator-pos");
+	makeDraggable(host.app, panel, header, container, "notelens-navigator-pos");
 
 	const boardsHead = panel.createDiv({ cls: "notelens-navigator-section" });
 	boardsHead.createSpan({ cls: "notelens-panel-label", text: tr("Pizarras") });

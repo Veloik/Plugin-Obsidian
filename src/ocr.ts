@@ -123,7 +123,7 @@ async function getMathWorker(onProgress?: (message: string) => void): Promise<Wo
  * luminance threshold turned into a solid black rectangle.
  */
 function prepareForMath(source: HTMLCanvasElement): HTMLCanvasElement {
-	const scratch = document.createElement("canvas");
+	const scratch = createEl("canvas");
 	scratch.width = Math.max(1, source.width);
 	scratch.height = Math.max(1, source.height);
 	const scratchCtx = scratch.getContext("2d", { willReadFrequently: true });
@@ -174,7 +174,7 @@ function prepareForMath(source: HTMLCanvasElement): HTMLCanvasElement {
 	}
 	if (maxX < minX) return scratch;
 
-	const binary = document.createElement("canvas");
+	const binary = createEl("canvas");
 	binary.width = scratch.width;
 	binary.height = scratch.height;
 	const binaryCtx = binary.getContext("2d");
@@ -195,7 +195,7 @@ function prepareForMath(source: HTMLCanvasElement): HTMLCanvasElement {
 	const target = 1400;
 	const scale = Math.min(4, Math.max(1.4, target / Math.max(cropW, cropH)));
 	const outerPad = 36;
-	const out = document.createElement("canvas");
+	const out = createEl("canvas");
 	out.width = Math.round(cropW * scale) + outerPad * 2;
 	out.height = Math.round(cropH * scale) + outerPad * 2;
 	const outCtx = out.getContext("2d");
@@ -258,7 +258,7 @@ function cropCanvas(source: HTMLCanvasElement, x: number, y: number, w: number, 
 	x = Math.max(0, Math.floor(x)); y = Math.max(0, Math.floor(y));
 	w = Math.min(source.width - x, Math.ceil(w)); h = Math.min(source.height - y, Math.ceil(h));
 	if (w < 5 || h < 5) return null;
-	const out = document.createElement("canvas");
+	const out = createEl("canvas");
 	out.width = w; out.height = h;
 	const ctx = out.getContext("2d", { willReadFrequently: true });
 	if (!ctx) return null;

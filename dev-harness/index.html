@@ -68,6 +68,8 @@
       openLinkText: () => {},
       activeLeaf: null
     },
+    loadLocalStorage: (key) => { try { return JSON.parse(localStorage.getItem("harness:" + key) ?? "null"); } catch { return null; } },
+    saveLocalStorage: (key, value) => { try { localStorage.setItem("harness:" + key, JSON.stringify(value)); } catch {} },
     fileManager: { getAvailablePathForAttachment: async (n) => "attachments/" + n },
     metadataCache: { getFirstLinkpathDest: () => null }
   };

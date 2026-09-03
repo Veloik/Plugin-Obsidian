@@ -295,7 +295,7 @@ export class InkEquationModal extends Modal {
 				status.setText(vector.detail);
 
 				// White page, thick black ink: what the recogniser handles best.
-				const shot = document.createElement("canvas");
+				const shot = createEl("canvas");
 				shot.width = canvas.width;
 				shot.height = canvas.height;
 				const shotCtx = shot.getContext("2d");

@@ -28,6 +28,8 @@
 	P.getAttr = function (k) { return this.getAttribute(k); };
 	P.detach = function () { this.remove(); };
 	P.setCssStyles = function (styles) { for (const k in styles) this.style[k] = styles[k]; };
+	P.createSvg = function (tag, o) { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); if (typeof o === "string") el.setAttribute("class", o); else if (o && o.cls) el.setAttribute("class", Array.isArray(o.cls) ? o.cls.join(" ") : o.cls); this.appendChild(el); return el; };
+	Node.prototype.instanceOf = function (type) { return this instanceof type; };
 	P.setCssProps = function (props) { for (const k in props) this.style.setProperty(k, props[k]); };
 	P.appendText = function (t) { this.appendChild(document.createTextNode(t)); return this; };
 	P.show = function () { this.style.display = ""; };
@@ -38,6 +40,7 @@
 	window.createDiv = (o) => applyOpts(document.createElement("div"), o);
 	window.createEl = (t, o) => applyOpts(document.createElement(t), o);
 	window.createSpan = (o) => applyOpts(document.createElement("span"), o);
+	window.createSvg = (tag, o) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); if (typeof o === "string") el.setAttribute("class", o); else if (o && o.cls) el.setAttribute("class", Array.isArray(o.cls) ? o.cls.join(" ") : o.cls); return el; };
 	window.activeWindow = window;
 	window.activeDocument = document;
 
@@ -100,7 +103,7 @@
 		PluginSettingTab, SettingTab, renderMath, finishRenderMath, loadMathJax, loadPrism,
 		Plugin, Component, View, FileView, ItemView: View, Modal, FuzzySuggestModal, Setting, Menu, MenuItem, Notice, TFile, TFolder: class {}, TAbstractFile: class {},
 		WorkspaceLeaf: class {}, App: class {}, setIcon, normalizePath: (p) => p.replace(/\\/g, "/").replace(/\/+/g, "/"),
-		requestUrl: async (opts) => { const o = typeof opts === "string" ? { url: opts } : opts; const r = await fetch(o.url, { method: o.method || "GET", headers: o.headers, body: o.body }); const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {} if (r.status >= 400 && o.throw !== false) throw new Error("Request failed, status " + r.status); return { status: r.status, text, json, headers: {} }; }, Platform: { isMobile: false, isDesktop: true }, debounce: (f) => f, moment: null
+		requestUrl: async (opts) => { const o = typeof opts === "string" ? { url: opts } : opts; const r = await fetch(o.url, { method: o.method || "GET", headers: o.headers, body: o.body }); const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {} if (r.status >= 400 && o.throw !== false) throw new Error("Request failed, status " + r.status); return { status: r.status, text, json, headers: {} }; }, Platform: { isMobile: false, isDesktop: true, isMacOS: false, isIosApp: false }, getLanguage: () => "es", debounce: (f) => f, moment: null
 	};
 	window.__TFile = TFile;
 })();

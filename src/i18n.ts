@@ -5,6 +5,8 @@
  * produces and a Spanish install returns it untouched. Anything a catalogue is
  * missing falls back to the Spanish original instead of showing a raw key.
  */
+
+import { getLanguage } from "obsidian";
 import { en } from "./locales/en";
 
 export type Locale = "es" | "en";
@@ -29,7 +31,7 @@ let active: Locale = SOURCE_LOCALE;
 export function detectLocale(): Locale {
 	let stored: string | null = null;
 	try {
-		stored = window.localStorage.getItem("language");
+		stored = getLanguage();
 	} catch {
 		stored = null;
 	}

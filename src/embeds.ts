@@ -229,7 +229,7 @@ function attachCaptionToVideo(host: EmbedHost, embed: Embed, video: HTMLVideoEle
 }
 
 async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement, button: HTMLElement): Promise<void> {
-	const picker = document.createElement("input");
+	const picker = createEl("input");
 	picker.type = "file";
 	picker.accept = ".vtt,text/vtt";
 	picker.onchange = async () => {
@@ -240,7 +240,7 @@ async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement
 			return;
 		}
 		try {
-			const safeName = file.name.replace(/[\\/:*?\"<>|]/g, "-");
+			const safeName = file.name.replace(/[\\/:*?"<>|]/g, "-");
 			let path = safeName || `subtitulos-${Date.now()}.vtt`;
 			try {
 				path = await (host.app.fileManager as any).getAvailablePathForAttachment(path, "");

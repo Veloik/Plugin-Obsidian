@@ -1,8 +1,10 @@
+import { App } from "obsidian";
+
 /**
  * Shared behaviour for the floating panels (calculator, translator, …):
  * drag by a handle, stay inside the workspace, remember where they were left.
  */
-export function makeDraggable(panel: HTMLElement, handle: HTMLElement, container: HTMLElement, storageKey: string): void {
+export function makeDraggable(app: App, panel: HTMLElement, handle: HTMLElement, container: HTMLElement, storageKey: string): void {
 	handle.addClass("notelens-draggable");
 	const applyPosition = (left: number, top: number) => {
 		const maxLeft = Math.max(0, container.clientWidth - panel.offsetWidth);
@@ -12,8 +14,8 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, container
 		panel.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
 	};
 	try {
-		const saved = JSON.parse(localStorage.getItem(storageKey) ?? "null") as { x: number; y: number } | null;
-		if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) requestAnimationFrame(() => applyPosition(saved.x, saved.y));
+		const saved = app.loadLocalStorage(storageKey) as { x: number; y: number } | null;
+		if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) window.requestAnimationFrame(() => applyPosition(saved.x, saved.y));
 	} catch { /* storage may be unavailable */ }
 	handle.addEventListener("pointerdown", (e) => {
 		if ((e.target as HTMLElement).closest("button, input, select, textarea")) return;
@@ -31,7 +33,7 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, container
 			window.removeEventListener("pointermove", onMove, { capture: true });
 			window.removeEventListener("pointerup", onUp, { capture: true });
 			panel.removeClass("is-dragging");
-			try { localStorage.setItem(storageKey, JSON.stringify({ x: parseFloat(panel.style.left), y: parseFloat(panel.style.top) })); } catch { /* ignore */ }
+			try { app.saveLocalStorage(storageKey, { x: parseFloat(panel.style.left), y: parseFloat(panel.style.top) }); } catch { /* ignore */ }
 		};
 		window.addEventListener("pointermove", onMove, { capture: true });
 		window.addEventListener("pointerup", onUp, { capture: true });

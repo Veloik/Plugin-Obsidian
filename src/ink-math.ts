@@ -295,7 +295,7 @@ function cropMask(source: HTMLCanvasElement): Mask {
 	}
 	if (maxX < minX) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: 1, density: 0 };
 	const w = maxX - minX + 1, h = maxY - minY + 1;
-	const fit = document.createElement("canvas");
+	const fit = createEl("canvas");
 	fit.width = fit.height = MASK_SIZE;
 	const out = fit.getContext("2d", { willReadFrequently: true });
 	if (!out) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: w / h, density: 0 };
@@ -315,7 +315,7 @@ function cropMask(source: HTMLCanvasElement): Mask {
 }
 
 function maskForStrokes(strokes: InkMathStroke[]): Mask {
-	const canvas = document.createElement("canvas");
+	const canvas = createEl("canvas");
 	canvas.width = canvas.height = 120;
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return cropMask(canvas);
@@ -344,7 +344,7 @@ function templateMasks(glyph: string): Mask[] {
 	if (cached) return cached;
 	const fonts = ["Segoe Print", "Comic Sans MS", "Arial", "Georgia"];
 	const masks = fonts.map(font => {
-		const canvas = document.createElement("canvas");
+		const canvas = createEl("canvas");
 		canvas.width = canvas.height = 120;
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return cropMask(canvas);
@@ -540,7 +540,7 @@ function combine(parts: ParsedExpression[]): ParsedExpression {
 	const useful = parts.filter(part => part.source.trim());
 	if (!useful.length) return { source: "", tokens: [], confidence: 0, structured: false };
 	return {
-		source: useful.map(part => part.source).join(" ").replace(/\s+([,.)\]])/g, "$1").replace(/([(\[])\s+/g, "$1"),
+		source: useful.map(part => part.source).join(" ").replace(/\s+([,.)\]])/g, "$1").replace(/([([])\s+/g, "$1"),
 		tokens: useful.flatMap(part => part.tokens),
 		confidence: useful.reduce((sum, part) => sum + part.confidence, 0) / useful.length,
 		structured: useful.some(part => part.structured)
@@ -712,14 +712,14 @@ export function formulaCandidateScore(source: string): number {
 	const value = source.trim();
 	if (!value) return -100;
 	let score = Math.min(18, value.length * 0.45);
-	const valid = value.match(/[A-Za-z0-9+\-=/*^_().,<>\[\]{}|!\\]/g)?.length ?? 0;
+	const valid = value.match(/[A-Za-z0-9+\-=/*^_().,<>[\]{}|!\\]/g)?.length ?? 0;
 	score += valid / value.length * 12;
 	score += (value.match(/[=+\-/*^_]|\\(?:frac|sqrt|sum|int)/g) ?? []).length * 1.7;
 	if (/\\frac\{[^{}]+\}\{[^{}]+\}/.test(value)) score += 7;
 	if (/\^(?:\([^()]+\)|\{[^{}]+\}|[0-9])/.test(value)) score += 3;
 	if (/[?]{2,}|[_^]\s*$|[+\-=/*]{3,}/.test(value)) score -= 8;
 	if (/\b[A-Za-z]{7,}\b/.test(value)) score -= 3;
-	const opens = (value.match(/[({\[]/g) ?? []).length;
+	const opens = (value.match(/[({[]/g) ?? []).length;
 	const closes = (value.match(/[)}\]]/g) ?? []).length;
 	score -= Math.abs(opens - closes) * 2;
 	return score;
