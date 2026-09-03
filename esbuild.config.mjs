@@ -29,6 +29,37 @@ const rawPdfWorkerPlugin = {
 	}
 };
 
+// jsPDF's "pdfobjectnewwindow" output mode opens a window and injects PDFObject
+// from a CDN. NoteLens draws its PDFs with the vector API and never asks for that
+// mode, but bundling it ships the ability to fetch and run remote code, which is
+// what the community review flags. The case is cut here, at build time, so the
+// published main.js cannot do it at all. The var declarations stay behind: the
+// next case reuses h, and var is hoisted whether or not the throw is reached.
+const JSPDF_CASE = 'case"pdfobjectnewwindow":';
+const JSPDF_NEXT_CASE = 'case"pdfjsnewwindow":';
+const JSPDF_REPLACEMENT = JSPDF_CASE
+	+ 'var a,s,u,c,l,h;'
+	+ 'throw new Error("NoteLens does not bundle the pdfobjectnewwindow output of jsPDF, which loads PDFObject from a CDN.");';
+
+let jsPdfPatched = false;
+const jsPdfNoRemoteViewerPlugin = {
+	name: "notelens-jspdf-no-remote-viewer",
+	setup(build) {
+		build.onLoad({ filter: /jspdf[\\/]dist[\\/]jspdf\.es(\.min)?\.js$/ }, async (args) => {
+			const source = await fs.promises.readFile(args.path, "utf8");
+			const start = source.indexOf(JSPDF_CASE);
+			const end = source.indexOf(JSPDF_NEXT_CASE, start);
+			if (start < 0 || end < 0) throw new Error("jsPDF changed shape: its pdfobjectnewwindow case is no longer where this patch expects it.");
+			jsPdfPatched = true;
+			return { contents: source.slice(0, start) + JSPDF_REPLACEMENT + source.slice(end), loader: "js" };
+		});
+		// A patch that silently stops matching would put the CDN loader back in the bundle.
+		build.onEnd(() => {
+			if (!jsPdfPatched) throw new Error("The jsPDF patch never ran: check the path it resolves to.");
+		});
+	}
+};
+
 function configuredPluginDir() {
 	if (process.env.NOTELENS_PLUGIN_DIR?.trim()) return process.env.NOTELENS_PLUGIN_DIR.trim();
 	const localConfig = "notelens.dev.json";
@@ -73,7 +104,7 @@ const context = await esbuild.context({
 	logLevel: "info",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	plugins: [rawPdfWorkerPlugin],
+	plugins: [rawPdfWorkerPlugin, jsPdfNoRemoteViewerPlugin],
 	outfile: "main.js",
 });
 

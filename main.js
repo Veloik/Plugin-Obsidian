@@ -23569,19 +23569,8 @@ function E(e) {
         }
         return "data:application/pdf;filename=" + encodeURIComponent(e3.filename) + ";base64," + r3;
       case "pdfobjectnewwindow":
-        if ("[object Window]" === Object.prototype.toString.call(i3)) {
-          var a4 = "https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js", s4 = !e3.pdfObjectUrl;
-          s4 || (a4 = e3.pdfObjectUrl);
-          var u4 = i3.open();
-          if (null !== u4) {
-            var c4 = Ie3(u4), l3 = c4.document.createElement("script"), h3 = this;
-            l3.src = a4, s4 && (l3.integrity = "sha512-4ze/a9/4jqu+tX9dfOqJYSvyYd5M6qum/3HpCLr+/Jqf0whc37VUbkpNGHR7/8pSnCFw47T1fmIpwBV7UySh3g==", l3.crossOrigin = "anonymous"), l3.onload = function() {
-              u4.PDFObject.embed(h3.output("dataurlstring"), e3);
-            }, c4.body.appendChild(l3);
-          }
-          return u4;
-        }
-        throw new Error("The option pdfobjectnewwindow just works in a browser-environment.");
+        var a4, s4, u4, c4, l3, h3;
+        throw new Error("NoteLens does not bundle the pdfobjectnewwindow output of jsPDF, which loads PDFObject from a CDN.");
       case "pdfjsnewwindow":
         if ("[object Window]" === Object.prototype.toString.call(i3)) {
           var f4 = e3.pdfJsUrl || "examples/PDF.js/web/viewer.html", p4 = i3.open();
@@ -62347,7 +62336,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.3.3" : "desconocida";
+var NOTELENS_BUILD = true ? "2.3.4" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

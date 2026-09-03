@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.4
+
+### Changed
+
+- The published bundle can no longer create a `<script>` element. jsPDF's `pdfobjectnewwindow` output mode opens a window and loads PDFObject from a CDN; NoteLens draws its PDFs with the vector API and never asks for that mode, so the build removes the branch and the release validator fails if any dependency brings a script injection back.
+
 ## 2.3.3
 
 ### Changed

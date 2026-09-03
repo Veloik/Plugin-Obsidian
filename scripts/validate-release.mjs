@@ -22,5 +22,10 @@ const bundle = readFileSync("main.js", "utf8");
 assert.ok(bundle.includes(`NoteLens ${manifest.version}`) || bundle.includes(`\"${manifest.version}\"`), "bundle has no release version stamp");
 assert.doesNotMatch(bundle, /(?:[A-Za-z]:\\Users\\|\/Users\/)[^\s"']+/i, "bundle contains a developer home path");
 assert.doesNotMatch(bundle, /sourceMappingURL=data:/, "production bundle contains an inline source map");
+// The community review fails a bundle that can inject a <script>. Nothing in
+// NoteLens does, and the build strips the one path in jsPDF that did, so a
+// reappearance means a dependency brought its own back.
+assert.doesNotMatch(bundle, /createElement\(\s*['"`]script['"`]\s*\)/, "bundle creates a <script> element");
+assert.ok(bundle.includes("does not bundle the pdfobjectnewwindow"), "the jsPDF remote-viewer patch did not reach the bundle");
 
 console.log(`Release ${manifest.version} validated: main.js, manifest.json and styles.css are ready.`);
