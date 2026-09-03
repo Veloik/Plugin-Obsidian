@@ -5,15 +5,16 @@ import { toRenderableLatex } from "./asciimath";
 import { buildSharePackage, importSharePackage as importShareArchive } from "./exchange";
 import { TranslationSource, createTranslatorPanel } from "./translator";
 import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
+import { RasterImage, rasterizeMath } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer } from "./renderer";
 import { HistoryManager } from "./history";
 import { PersistenceManager } from "./persistence";
 import {
 	Badge, CanvasFont, CanvasTable, DocumentPage, Embed, EmbedKind, OneNoteDocument, PenStyle, Shape, ShapeKind, Stroke, TextBox, ViewportBookmark,
-	ChartData, StrokePoint, createDocumentPage, createEmptyDocument, genId, migrateDocument
+	ChartData, createDocumentPage, createEmptyDocument, genId, migrateDocument
 } from "./types";
-import { clamp, distPointToSegment, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha } from "./tools";
+import { clamp, cutStrokeAround, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha } from "./tools";
 import { EmbedHost, ImagePickModal, NoteOrBoardPickModal, PdfModeModal, PdfPickModal, VaultFilePickModal, VideoInsertModal, renderEmbedFrame } from "./embeds";
 import { createNavigatorPanel, isBoardFile } from "./navigator";
 import { recognizeFormula, recognizeImage } from "./ocr";
@@ -288,6 +289,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private isShaping = false;
 	private currentShape: Shape | null = null;
 	private isErasing = false;
+	/** Erasing with the back of the stylus, whatever tool is selected. */
+	private tipErasing = false;
 	private erasedAny = false;
 	private eraseHistoryPushed = false;
 	private assistant: { toggle: () => void; isOpen: () => boolean; destroy: () => void; refresh: () => void } | null = null;
@@ -380,6 +383,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const el = this.domLayerEl.querySelector(`[data-id="${tb.id}"]`) as HTMLElement | null;
 				if (el && el !== this.activeTextSourceEl) {
 					this.paintTextContent(el, tb);
+					this.syncFittedSize(el, tb);
 					this.attachBoxChrome(el, tb);
 				}
 			}
@@ -1553,9 +1557,22 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.startPan(e);
 			return;
 		}
-		if (e.button !== 0) return;
+		// The back of a stylus is its eraser (button 5), whatever tool is selected.
+		const tipErase = e.pointerType === "pen" && e.button === 5;
+		if (e.button !== 0 && !tipErase) return;
 
 		const pt = this.getSceneCoords(e.clientX, e.clientY);
+
+		if (tipErase || this.currentTool === "eraser") {
+			this.isErasing = true;
+			this.tipErasing = tipErase;
+			if (tipErase) this.updateEraserCursor(e);
+			this.eraserCursorEl?.addClass("is-active");
+			this.erasedAny = false;
+			this.eraseHistoryPushed = false;
+			this.eraseAt(pt.x, pt.y);
+			return;
+		}
 
 		// Select tool: drag inside the selection moves it; otherwise rubber-band.
 		if (this.currentTool === "select") {
@@ -1605,15 +1622,6 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			};
 			this.data.shapes.push(this.currentShape);
 			this.save();
-			return;
-		}
-
-		if (this.currentTool === "eraser") {
-			this.isErasing = true;
-			this.eraserCursorEl?.addClass("is-active");
-			this.erasedAny = false;
-			this.eraseHistoryPushed = false;
-			this.eraseAt(pt.x, pt.y);
 			return;
 		}
 
@@ -1755,6 +1763,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.isErasing) {
 			this.isErasing = false;
 			this.eraserCursorEl?.removeClass("is-active");
+			if (this.tipErasing) {
+				this.tipErasing = false;
+				this.hideEraserCursor();
+			}
 			if (this.erasedAny) this.save();
 		}
 	}
@@ -1836,42 +1848,29 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	/**
-	 * Partial eraser: every stroke under the eraser loses the points it touches
-	 * and the remaining pieces live on as separate strokes, so you can cut a
-	 * line in two or trim its end instead of losing the whole thing.
+	 * Partial eraser: every stroke under the eraser loses exactly the part the
+	 * circle covers, split where the circle crosses it, and the remaining pieces
+	 * live on as separate strokes. A straight line drawn with Shift has only two
+	 * points, so dropping touched points used to delete it whole.
 	 */
 	private erasePartialAt(x: number, y: number, radius: number): void {
 		const next: Stroke[] = [];
 		let changed = false;
 		for (const stroke of this.pageStrokes) {
-			const pts = stroke.points;
-			const reach = radius + stroke.width / 2;
-			const hit = new Array<boolean>(pts.length).fill(false);
-			let any = false;
-			for (let i = 0; i < pts.length; i++) {
-				if (Math.hypot(pts[i].x - x, pts[i].y - y) <= reach) { hit[i] = true; any = true; }
-				if (i < pts.length - 1 && distPointToSegment(x, y, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y) <= reach) {
-					hit[i] = true; hit[i + 1] = true; any = true;
-				}
-			}
-			if (!any) { next.push(stroke); continue; }
+			const pieces = cutStrokeAround(stroke.points, x, y, radius + stroke.width / 2);
+			if (!pieces) { next.push(stroke); continue; }
 			changed = true;
-			let run: StrokePoint[] = [];
-			const flush = () => {
-				if (run.length >= 2) next.push({ ...stroke, id: genId("stroke"), points: run });
-				run = [];
-			};
-			for (let i = 0; i < pts.length; i++) {
-				if (hit[i]) flush(); else run.push(pts[i]);
-			}
-			flush();
+			for (const points of pieces) next.push({ ...stroke, id: genId("stroke"), points });
 		}
-		if (!changed) return;
+		// A shape has no pieces to keep: touching it removes it, as in OneNote.
+		const shape = this.pageShapes.find(item => this.pointHitsShape(item, x, y, radius));
+		if (!changed && !shape) return;
 		if (!this.eraseHistoryPushed) {
 			this.history.push();
 			this.eraseHistoryPushed = true;
 		}
-		this.data.strokes = [...this.data.strokes.filter(stroke => !this.belongsToActivePage(stroke)), ...next];
+		if (changed) this.data.strokes = [...this.data.strokes.filter(stroke => !this.belongsToActivePage(stroke)), ...next];
+		if (shape) this.data.shapes.remove(shape);
 		this.erasedAny = true;
 		this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
 	}
@@ -3030,7 +3029,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			id: genId("text"), pageId: this.data.activePageId, x: at.x, y: at.y,
 			text: source, fontSize: this.textSize,
 			color: isLightColor(this.data.backgroundColor) ? "#111827" : "#f8fafc",
-			w: 320, h: 60, fontFamily: this.textFont, variant: "math"
+			w: 320, h: 60, fontFamily: this.textFont, variant: "math", autoWidth: true
 		};
 		this.data.texts.push(formula);
 		this.renderTextBox(formula);
@@ -4064,7 +4063,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					id: genId("text"), pageId: this.data.activePageId, x: at.x, y: at.y,
 					text: body.slice(0, 400), fontSize: this.textSize,
 					color: isLightColor(this.data.backgroundColor) ? "#111827" : "#f8fafc",
-					w: 320, h: 60, fontFamily: this.textFont, variant: "math"
+					w: 320, h: 60, fontFamily: this.textFont, variant: "math", autoWidth: true
 				};
 				this.data.texts.push(formula);
 				this.renderTextBox(formula);
@@ -4387,9 +4386,27 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		window.requestAnimationFrame(animate);
 	}
 
+	/**
+	 * Pictures of every formula on the page, taken from the boxes on screen, in
+	 * ink colour: the export page is white whatever the board looks like.
+	 */
+	private async rasterizeFormulas(doc: OneNoteDocument): Promise<Map<string, RasterImage>> {
+		const out = new Map<string, RasterImage>();
+		for (const tb of doc.texts) {
+			if (tb.variant !== "math") continue;
+			const box = this.domLayerEl.querySelector<HTMLElement>(`.notelens-math-block[data-id="${tb.id}"]`);
+			const math = box?.querySelector<HTMLElement>("mjx-container");
+			if (!math) continue;
+			const image = await rasterizeMath(math, "#111827");
+			if (image) out.set(tb.id, { ...image, dx: math.offsetLeft, dy: math.offsetTop });
+		}
+		return out;
+	}
+
 	async exportA4Pdf(): Promise<void> {
 		try {
-			const bytes = createA4Pdf(this.activePageDocument(), this.getViewportSceneBounds());
+			const page = this.activePageDocument();
+			const bytes = createA4Pdf(page, this.getViewportSceneBounds(), await this.rasterizeFormulas(page));
 			const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 			const base = `NoteLens-${stamp}.pdf`;
 			let path = base;
@@ -4934,6 +4951,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.setAttr("role", "textbox");
 		this.paintTextContent(el, tb);
 		this.applyTextStyles(el, tb);
+		this.syncFittedSize(el, tb);
 
 		this.attachBoxChrome(el, tb);
 
@@ -5006,6 +5024,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		editor.style.left = `${tb.x}px`;
 		editor.style.top = `${tb.y}px`;
 		this.applyTextStyles(editor, tb);
+		if (tb.variant === "math") {
+			editor.style.width = `${Math.max(320, tb.w ?? 320)}px`;
+			this.refreshMathPreview(tb);
+		}
 		editor.style.height = `${Math.max(tb.h ?? 48, editor.scrollHeight + 4)}px`;
 		el.setCssStyles({ visibility: "hidden" });
 		this.activeTextEditor = editor;
@@ -5116,6 +5138,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		tb.text = editor.value;
 		this.applyTextStyles(source, tb);
 		this.paintTextContent(source, tb);
+		this.syncFittedSize(source, tb);
 		if (tb.variant === "code") {
 			// A code block hugs its lines instead of keeping the editor's spare height.
 			source.setCssStyles({ minHeight: "" });
@@ -5345,7 +5368,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.updateTextPlacementHint(e);
 			return;
 		}
-		if (this.currentTool === "eraser" && overPage && !typing && !this.isPanning) {
+		if ((this.currentTool === "eraser" || this.isErasing) && overPage && !typing && !this.isPanning) {
 			this.hideTextPlacementHint();
 			this.updateEraserCursor(e);
 			return;
@@ -5415,8 +5438,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			el.style.setProperty("--sticky-tilt", `${stickyTilt(tb.id)}deg`);
 		}
 		el.style.fontFamily = this.fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
-		el.style.width = tb.w ? `${tb.w}px` : "";
-		el.style.minHeight = tb.h ? `${tb.h}px` : "";
+		// A formula grows with what it shows unless the user resized it by hand.
+		const fitsContent = tb.variant === "math" && tb.autoWidth !== false;
+		el.style.width = fitsContent ? "max-content" : tb.w ? `${tb.w}px` : "";
+		el.style.minHeight = tb.h && !fitsContent ? `${tb.h}px` : "";
+	}
+
+	/** Records the size a content-fitted box took, so selection and export see its real bounds. */
+	private syncFittedSize(el: HTMLElement, tb: TextBox): void {
+		if (tb.variant !== "math" || tb.autoWidth === false) return;
+		if (el.offsetWidth > 0) tb.w = el.offsetWidth;
+		if (el.offsetHeight > 0) tb.h = el.offsetHeight;
 	}
 
 	private fontStack(font: CanvasFont): string {

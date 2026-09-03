@@ -1,0 +1,11 @@
+import { build } from "esbuild";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+const dir = mkdtempSync(path.join(tmpdir(), "notelens-am-"));
+const out = path.join(dir, "asciimath.mjs");
+await build({ entryPoints: ["src/asciimath.ts"], bundle: true, format: "esm", platform: "node", outfile: out, logLevel: "silent" });
+const { toRenderableLatex } = await import(pathToFileURL(out).href);
+for (const s of process.argv.slice(2)) console.log(JSON.stringify(s), "=>", toRenderableLatex(s));
+rmSync(dir, { recursive: true, force: true });

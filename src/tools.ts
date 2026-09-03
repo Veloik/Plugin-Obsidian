@@ -66,6 +66,61 @@ function strokeHit(stroke: Stroke, x: number, y: number, slop: number): boolean 
  * Returns the index of the topmost stroke under the point, or -1.
  * Slop is expressed in scene units.
  */
+/**
+ * Cuts the part of a polyline that lies inside a circle, the way a real
+ * eraser rubs out only what it touches. Segments are split where they cross
+ * the circle, so a two-point straight line loses a gap instead of its whole
+ * self. Returns the surviving pieces, or null when nothing was touched.
+ */
+export function cutStrokeAround(points: StrokePoint[], cx: number, cy: number, r: number): StrokePoint[][] | null {
+	if (points.length === 0) return null;
+	if (points.length === 1) return Math.hypot(points[0].x - cx, points[0].y - cy) <= r ? [] : null;
+	const pieces: StrokePoint[][] = [];
+	let run: StrokePoint[] = [];
+	let touched = false;
+	const flush = () => { if (run.length >= 2) pieces.push(run); run = []; };
+	const lerp = (a: StrokePoint, b: StrokePoint, t: number): StrokePoint => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, p: a.p + (b.p - a.p) * t });
+	for (let i = 0; i < points.length - 1; i++) {
+		const a = points[i];
+		const b = points[i + 1];
+		const span = circleSegmentSpan(a, b, cx, cy, r);
+		if (!span) {
+			if (run.length === 0) run.push(a);
+			run.push(b);
+			continue;
+		}
+		touched = true;
+		const [t0, t1] = span;
+		if (t0 > 0) {
+			if (run.length === 0) run.push(a);
+			run.push(lerp(a, b, t0));
+		}
+		flush();
+		if (t1 < 1) run.push(lerp(a, b, t1), b);
+	}
+	flush();
+	return touched ? pieces : null;
+}
+
+/** Parameter range [t0, t1] of segment a→b inside the circle, or null when it misses. */
+function circleSegmentSpan(a: StrokePoint, b: StrokePoint, cx: number, cy: number, r: number): [number, number] | null {
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	const fx = a.x - cx;
+	const fy = a.y - cy;
+	const quad = dx * dx + dy * dy;
+	if (quad === 0) return Math.hypot(fx, fy) <= r ? [0, 1] : null;
+	const lin = 2 * (fx * dx + fy * dy);
+	const cons = fx * fx + fy * fy - r * r;
+	const disc = lin * lin - 4 * quad * cons;
+	if (disc < 0) return null;
+	const root = Math.sqrt(disc);
+	const t0 = (-lin - root) / (2 * quad);
+	const t1 = (-lin + root) / (2 * quad);
+	if (t1 < 0 || t0 > 1) return null;
+	return [Math.max(0, t0), Math.min(1, t1)];
+}
+
 export function hitTestStrokes(strokes: Stroke[], x: number, y: number, slop = 8): number {
 	for (let i = strokes.length - 1; i >= 0; i--) {
 		if (strokeHit(strokes[i], x, y, slop)) return i;

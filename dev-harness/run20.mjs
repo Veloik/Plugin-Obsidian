@@ -37,7 +37,7 @@ await tool("select"); await tool("select"); await sleep(100); await shot(page, "
 // background / settings button
 await page.click(".notelens-settings-btn"); await sleep(120); await shot(page, "07-settings"); await esc();
 // insert dialogs
-for (const [title, name] of [["Insertar gráfico", "08-chart-dialog"], ["Enlazar", "09-link-dialog"], ["Insertar fórmula", "10-math-dialog"]]) {
+for (const [title, name] of [["Insertar gráfico", "08-chart-dialog"], ["Enlazar", "09-link-dialog"], ["Insertar ecuación", "10-math-dialog"]]) {
 	await clean();
 	await page.click(`.notelens-insert-dock button[title^='${title}']`); await sleep(250); await shot(page, name);
 	await page.evaluate(() => document.querySelectorAll(".modal-container").forEach(m => m.remove())); await esc();

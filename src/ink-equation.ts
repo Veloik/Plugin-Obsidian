@@ -97,6 +97,12 @@ export class InkEquationModal extends Modal {
 			{ label: "√x", value: "\\sqrt{x}", select: [6, 7] },
 			{ label: "∫", value: "\\int_{a}^{b} f(x)\\,dx", select: [6, 7] },
 			{ label: "Σ", value: "\\sum_{i=1}^{n}", select: [6, 9] },
+			{ label: "lim", value: "\\lim_{x \\to 0}", select: [6, 12] },
+			{ label: "|x|", value: "\\left|x\\right|", select: [6, 7] },
+			{ label: "(ⁿₖ)", value: "\\binom{n}{k}", select: [7, 8] },
+			{ label: "[□]", value: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", select: [17, 18] },
+			{ label: "{…", value: "\\begin{cases} a & x \\ge 0 \\\\ b & x < 0 \\end{cases}", select: [15, 16] },
+			{ label: "vec", value: "\\vec{x}", select: [5, 6] },
 			{ label: "π", value: "\\pi", select: [0, 3] }
 		];
 		for (const item of structureItems) {

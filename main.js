@@ -14975,6 +14975,7 @@ var SYMBOLS = {
   "~=": "\\approx",
   "~~": "\\approx",
   "==": "\\equiv",
+  ":=": ":=",
   "...": "\\ldots",
   "*": "\\cdot",
   "**": "\\ast",
@@ -15007,7 +15008,6 @@ var SYMBOLS = {
   CC: "\\mathbb{C}",
   deg: "^{\\circ}",
   "%": "\\%",
-  "|": "|",
   prop: "\\propto",
   perp: "\\perp",
   parallel: "\\parallel",
@@ -15019,12 +15019,122 @@ var SYMBOLS = {
   emptyset: "\\emptyset",
   cdots: "\\cdots",
   vdots: "\\vdots",
-  ddots: "\\ddots"
+  ddots: "\\ddots",
+  ohm: "\\Omega"
 };
+var UNICODE = {
+  "\u03C0": " pi ",
+  "\u221A": " sqrt ",
+  "\u222B": " int ",
+  "\u222E": " oint ",
+  "\u2211": " sum ",
+  "\u220F": " prod ",
+  "\u221E": " oo ",
+  "\u2264": " <= ",
+  "\u2265": " >= ",
+  "\u2260": " != ",
+  "\u2248": " ~= ",
+  "\u2261": " == ",
+  "\u2192": " -> ",
+  "\u21D2": " => ",
+  "\u21D4": " <=> ",
+  "\u2194": " <=> ",
+  "\xB1": " +- ",
+  "\u2213": " -+ ",
+  "\xD7": " xx ",
+  "\xB7": " * ",
+  "\u22C5": " * ",
+  "\u2219": " * ",
+  "\xF7": " -: ",
+  "\u2212": " - ",
+  "\u2013": " - ",
+  "\u2202": " del ",
+  "\u2207": " grad ",
+  "\u2208": " in ",
+  "\u2209": " notin ",
+  "\u2282": " sub ",
+  "\u2283": " sup ",
+  "\u222A": " uu ",
+  "\u2229": " nn ",
+  "\u2200": " AA ",
+  "\u2203": " EE ",
+  "\u211D": " RR ",
+  "\u2115": " NN ",
+  "\u2124": " ZZ ",
+  "\u211A": " QQ ",
+  "\u2102": " CC ",
+  "\u2205": " emptyset ",
+  "\u2026": " ... ",
+  "\u2032": "'",
+  "\u2033": "''",
+  "\xB0": " deg ",
+  "\u2220": " angle ",
+  "\u22A5": " perp ",
+  "\u2225": " parallel ",
+  "\u221D": " prop ",
+  "\u2113": " ell ",
+  "\u0127": " hbar ",
+  "\u2234": " therefore ",
+  "\u2235": " because ",
+  "\xAC": " not ",
+  "\u2227": " and ",
+  "\u2228": " or ",
+  "\u03B1": " alpha ",
+  "\u03B2": " beta ",
+  "\u03B3": " gamma ",
+  "\u03B4": " delta ",
+  "\u03B5": " epsilon ",
+  "\u03B6": " zeta ",
+  "\u03B7": " eta ",
+  "\u03B8": " theta ",
+  "\u03B9": " iota ",
+  "\u03BA": " kappa ",
+  "\u03BB": " lambda ",
+  "\u03BC": " mu ",
+  "\u03BD": " nu ",
+  "\u03BE": " xi ",
+  "\u03C1": " rho ",
+  "\u03C3": " sigma ",
+  "\u03C4": " tau ",
+  "\u03C5": " upsilon ",
+  "\u03C6": " phi ",
+  "\u03D5": " phi ",
+  "\u03C7": " chi ",
+  "\u03C8": " psi ",
+  "\u03C9": " omega ",
+  "\u0393": " Gamma ",
+  "\u0394": " Delta ",
+  "\u0398": " Theta ",
+  "\u039B": " Lambda ",
+  "\u039E": " Xi ",
+  "\u03A0": " Pi ",
+  "\u03A3": " Sigma ",
+  "\u03A6": " Phi ",
+  "\u03A8": " Psi ",
+  "\u03A9": " Omega "
+};
+var COMBINING = { "\u0304": "bar", "\u0305": "bar", "\u0302": "hat", "\u0307": "dot", "\u0308": "ddot", "\u0303": "tilde", "\u20D7": "vec" };
 var FUNCTIONS2 = ["sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "ln", "log", "exp", "det", "dim", "max", "min", "gcd", "lcm", "mod", "sup", "inf", "arg"];
 var UNARY = { sqrt: "\\sqrt", abs: "abs", vec: "\\vec", hat: "\\hat", bar: "\\bar", dot: "\\dot", ddot: "\\ddot", tilde: "\\tilde", ul: "\\underline", bb: "\\mathbf", cal: "\\mathcal", floor: "floor", ceil: "ceil", norm: "norm" };
 var BINARY = { frac: "frac", root: "root", overset: "overset", underset: "underset", color: "color" };
-var MULTI_OPS = ["<=>", "+-", "-+", "->", "=>", "<=", ">=", "!=", "~=", "~~", "==", "...", "**", "-:"];
+var MULTI_OPS = ["<=>", "+-", "-+", "->", "=>", "<=", ">=", "!=", "~=", "~~", "==", ":=", "...", "**", "-:"];
+function isKnownWord(w3) {
+  return w3 in SYMBOLS || GREEK.includes(w3) || FUNCTIONS2.includes(w3) || w3 in UNARY || w3 in BINARY || w3 === "text" || w3 === "matrix";
+}
+function isDifferential(w3) {
+  return w3.length === 2 && w3[0] === "d" && /[a-zA-Z]/.test(w3[1]) && !isKnownWord(w3);
+}
+var SUPERSCRIPTS = "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079\u207A\u207B\u207F\u2071";
+var SUBSCRIPTS = "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089\u208A\u208B";
+var SUPER_TO_ASCII = "0123456789+-ni";
+var SUB_TO_ASCII = "0123456789+-";
+function normalize(src) {
+  let out = src.replace(new RegExp(`[${SUPERSCRIPTS}]+`, "g"), (run) => `^(${[...run].map((ch) => SUPER_TO_ASCII[SUPERSCRIPTS.indexOf(ch)]).join("")})`).replace(new RegExp(`[${SUBSCRIPTS}]+`, "g"), (run) => `_(${[...run].map((ch) => SUB_TO_ASCII[SUBSCRIPTS.indexOf(ch)]).join("")})`);
+  for (const [mark, accent] of Object.entries(COMBINING)) {
+    out = out.replace(new RegExp(`([A-Za-z])${mark}`, "g"), ` ${accent} $1 `);
+  }
+  return out.replace(/[^\x00-\x7f]/g, (ch) => UNICODE[ch] ?? ch);
+}
 function tokenize2(src) {
   const out = [];
   let i4 = 0;
@@ -15059,7 +15169,7 @@ function tokenize2(src) {
     const word = /^[a-zA-Z]+/.exec(src.slice(i4));
     if (word) {
       let w3 = word[0];
-      while (w3.length > 1 && !(w3 in SYMBOLS) && !GREEK.includes(w3) && !FUNCTIONS2.includes(w3) && !(w3 in UNARY) && !(w3 in BINARY) && w3 !== "text" && w3 !== "matrix") w3 = w3.slice(0, -1);
+      while (w3.length > 1 && !isKnownWord(w3) && !isDifferential(w3)) w3 = w3.slice(0, -1);
       out.push({ kind: "id", value: w3 });
       i4 += w3.length;
       continue;
@@ -15095,14 +15205,32 @@ var Converter = class {
     this.toks = toks;
     this.pos = 0;
   }
+  /** The whole line: expressions separated by commas, stray closers kept as text. */
   convert() {
-    return this.sequence(() => this.pos >= this.toks.length);
+    const parts = [];
+    while (this.pos < this.toks.length) {
+      const chunk = this.sequence(() => false);
+      if (chunk) parts.push(chunk);
+      const t3 = this.peek();
+      if (t3?.kind === "comma") {
+        this.take();
+        parts.push(",");
+      } else if (t3?.kind === "close") {
+        this.take();
+        parts.push(t3.value === "}" ? "\\}" : t3.value);
+      }
+    }
+    return tidy(parts.join(" "));
   }
-  peek() {
-    return this.toks[this.pos];
+  peek(offset = 0) {
+    return this.toks[this.pos + offset];
   }
   take() {
     return this.toks[this.pos++];
+  }
+  peekIsOp(value, offset = 0) {
+    const t3 = this.peek(offset);
+    return t3?.kind === "op" && t3.value === value;
   }
   /** A run of expressions until `stop` says so (end of input, closing bracket or comma). */
   sequence(stop) {
@@ -15117,7 +15245,7 @@ var Converter = class {
   /** intermediate ('/' intermediate)* — a/b becomes \frac{a}{b}. */
   fraction() {
     let left = this.intermediate();
-    while (this.peek()?.kind === "op" && this.peek().value === "/") {
+    while (this.peekIsOp("/")) {
       this.take();
       const right = this.intermediate();
       left = `\\frac{${strip(left)}}{${strip(right)}}`;
@@ -15130,18 +15258,23 @@ var Converter = class {
     let sub = null;
     let sup = null;
     for (let i4 = 0; i4 < 2; i4++) {
-      const t3 = this.peek();
-      if (t3?.kind === "op" && t3.value === "_" && sub === null) {
+      if (this.peekIsOp("_") && sub === null) {
         this.take();
-        sub = strip(this.simple());
-      } else if (t3?.kind === "op" && t3.value === "^" && sup === null) {
+        sub = this.script();
+      } else if (this.peekIsOp("^") && sup === null) {
         this.take();
-        sup = strip(this.simple());
+        sup = this.script();
       } else break;
     }
     if (sub !== null) base += `_{${sub}}`;
     if (sup !== null) base += `^{${sup}}`;
     return base;
+  }
+  /** Argument of ^ or _: a sign in front travels with it, so e^-x is e^{-x}. */
+  script() {
+    let sign = "";
+    if (this.peekIsOp("-") || this.peekIsOp("+")) sign = this.take().value;
+    return sign + strip(this.simple());
   }
   simple() {
     const t3 = this.take();
@@ -15150,7 +15283,7 @@ var Converter = class {
       case "num":
         return t3.value;
       case "text":
-        return `\\text{${t3.value}}`;
+        return this.spacedText(t3.value);
       case "comma":
         return ",";
       case "open":
@@ -15158,10 +15291,35 @@ var Converter = class {
       case "close":
         return "";
       case "op":
+        if (t3.value === "|") return this.bars();
         return SYMBOLS[t3.value] ?? (t3.value === "'" ? "'" : escapeOp(t3.value));
       case "id":
         return this.word(t3.value);
     }
+  }
+  /** Words need air around them in maths mode, where the source spaces vanish. */
+  spacedText(value) {
+    const next = this.peek();
+    const followed = next && next.kind !== "close" && next.kind !== "comma";
+    return `\\text{${value}}${followed ? "\\;" : ""}`;
+  }
+  /**
+   * A `|` opens an absolute value when it follows nothing, an operator, a
+   * bracket or a comma, and closes one when it follows an operand; that is how
+   * | |x| - 1 | nests and |x| + |y| pairs up, while {x | x > 0} stays a bar.
+   */
+  bars() {
+    if (this.barCloses(this.pos - 1)) return "|";
+    const inner = this.sequence(() => this.peekIsOp("|") && this.barCloses(this.pos));
+    if (this.peekIsOp("|")) {
+      this.take();
+      return `\\left|${inner}\\right|`;
+    }
+    return `\\left|${inner}\\right.`;
+  }
+  barCloses(index) {
+    const prev = this.toks[index - 1];
+    return !!prev && prev.kind !== "op" && prev.kind !== "open" && prev.kind !== "comma";
   }
   word(w3) {
     if (w3 in SYMBOLS) return SYMBOLS[w3];
@@ -15175,7 +15333,7 @@ var Converter = class {
       const next = this.peek();
       if (next?.kind === "open") {
         this.take();
-        return `\\text{${this.rawUntilClose(next.value)}}`;
+        return this.spacedText(this.rawUntilClose(next.value));
       }
       return "\\text";
     }
@@ -15212,28 +15370,44 @@ var Converter = class {
     }
     return w3;
   }
-  /** Bracketed group; [[a,b],[c,d]] becomes a matrix. */
+  /** Cells separated by commas up to a closing bracket, which is consumed. */
+  cells() {
+    const cells = [];
+    for (; ; ) {
+      cells.push(this.sequence(() => false));
+      if (this.peek()?.kind === "comma") {
+        this.take();
+        continue;
+      }
+      break;
+    }
+    if (this.peek()?.kind === "close") this.take();
+    return cells;
+  }
+  /** Bracketed group; [[a,b],[c,d]] is a matrix, ((n),(k)) a binomial, {(a,b),(c,d):} cases. */
   group(open2) {
-    const close = open2 === "(" ? ")" : open2 === "[" ? "]" : "}";
     if (open2 === "[" && this.peek()?.kind === "open" && this.peek().value === "[") {
       const rows = [];
       while (this.peek()?.kind === "open" && this.peek().value === "[") {
         this.take();
-        const cells = [];
-        for (; ; ) {
-          cells.push(this.sequence(() => false));
-          if (this.peek()?.kind === "comma") {
-            this.take();
-            continue;
-          }
-          break;
-        }
-        if (this.peek()?.kind === "close") this.take();
-        rows.push(cells);
+        rows.push(this.cells());
         if (this.peek()?.kind === "comma") this.take();
       }
       if (this.peek()?.kind === "close") this.take();
       return `\\begin{pmatrix} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{pmatrix}`;
+    }
+    if (open2 === "{" && this.peek()?.kind === "open" && this.peek().value === "(") {
+      const rows = [];
+      while (this.peek()?.kind === "open" && this.peek().value === "(") {
+        this.take();
+        rows.push(this.cells());
+        if (this.peek()?.kind === "comma") this.take();
+      }
+      const cases = this.peekIsOp(":") && this.peek(1)?.kind === "close";
+      if (cases) this.take();
+      if (this.peek()?.kind === "close") this.take();
+      if (cases) return `\\begin{cases} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{cases}`;
+      return `\\{${rows.map((r) => `\\left(${r.join(", ")}\\right)`).join(", ")}\\}`;
     }
     const parts = [];
     for (; ; ) {
@@ -15245,11 +15419,15 @@ var Converter = class {
       }
       break;
     }
-    if (this.peek()?.kind === "close") this.take();
+    const closer = this.peek()?.kind === "close" ? this.take().value : "";
+    if (open2 === "(" && parts.length === 3 && parts[1] === "," && isParenthesised(parts[0]) && isParenthesised(parts[2])) {
+      return `\\binom{${strip(parts[0])}}{${strip(parts[2])}}`;
+    }
     const inner = parts.join(" ").replace(/\s+,\s+/g, ", ");
-    if (open2 === "{") return `\\{${inner}\\}`;
-    const l3 = open2 === "(" ? "(" : "[";
-    return `\\left${l3}${inner}\\right${close === ")" ? ")" : "]"}`;
+    if (open2 === "{" && (closer === "}" || closer === "")) return `\\{${inner}\\}`;
+    const left = open2 === "(" ? "(" : open2 === "[" ? "[" : "\\{";
+    const right = closer === ")" ? ")" : closer === "]" ? "]" : closer === "}" ? "\\}" : ".";
+    return `\\left${left}${inner}\\right${right}`;
   }
   rawUntilClose(open2) {
     const close = open2 === "(" ? ")" : open2 === "[" ? "]" : "}";
@@ -15262,9 +15440,15 @@ var Converter = class {
     return words2.join(" ");
   }
 };
+function isParenthesised(value) {
+  return /^\\left\(.*\\right\)$/.test(value.trim());
+}
 function strip(value) {
   const m3 = /^\\left\((.*)\\right\)$/.exec(value.trim());
   return m3 ? m3[1].trim() : value.trim();
+}
+function tidy(value) {
+  return value.replace(/\s+(['!])/g, "$1").replace(/\s+,/g, ",").replace(/,(?=\S)/g, ", ");
 }
 function escapeOp(op) {
   if (op === "&") return "\\&";
@@ -15274,7 +15458,7 @@ function escapeOp(op) {
   return op;
 }
 function asciiToLatex(src) {
-  const text = src.trim();
+  const text = normalize(src).trim();
   if (!text) return "";
   return text.split(/\r?\n/).filter((line) => line.trim()).map((line) => new Converter(tokenize2(line)).convert()).join(" \\\\ ");
 }
@@ -30002,6 +30186,10 @@ var A4_SCENE_H = 1123;
 var A4_W_MM = 210;
 var A4_H_MM = 297;
 var SCENE_TO_MM = A4_W_MM / A4_SCENE_W;
+function ink(color) {
+  const luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
+  return luminance > 0.8 ? { r: 17, g: 24, b: 39 } : color;
+}
 function rgb(color, fallback = { r: 15, g: 23, b: 42 }) {
   const hex = /^#([0-9a-f]{6})$/i.exec(color);
   if (hex) return {
@@ -30104,7 +30292,7 @@ function colorAlpha(color) {
 function drawStroke(pdf, page, stroke) {
   const bound = strokeBounds(stroke);
   if (!bound || !intersects(bound, page) || stroke.points.length < 2) return;
-  const c3 = rgb(stroke.color, { r: 31, g: 41, b: 55 });
+  const c3 = ink(rgb(stroke.color, { r: 31, g: 41, b: 55 }));
   pdf.setDrawColor(c3.r, c3.g, c3.b);
   pdf.setLineWidth(Math.max(0.2, stroke.width * SCENE_TO_MM));
   const alpha = colorAlpha(stroke.color);
@@ -30126,7 +30314,7 @@ function drawShape(pdf, page, shape) {
   const [x4, y3] = pagePoint(page, shape.x, shape.y);
   const w3 = shape.w * SCENE_TO_MM;
   const h3 = shape.h * SCENE_TO_MM;
-  const outline = rgb(shape.color);
+  const outline = ink(rgb(shape.color));
   pdf.setDrawColor(outline.r, outline.g, outline.b);
   pdf.setLineWidth(Math.max(0.2, shape.width * SCENE_TO_MM));
   const fill2 = shape.fill && shape.kind !== "line" && shape.kind !== "arrow" && (shape.fillOpacity ?? 0) > 0 ? blend(shape.fill, shape.fillOpacity ?? 0) : null;
@@ -30153,12 +30341,17 @@ function drawShape(pdf, page, shape) {
     }
   }
 }
-function drawText(pdf, page, doc) {
+function drawText(pdf, page, doc, formulas) {
   for (const text of doc.texts) {
     const box = { x: text.x, y: text.y, w: text.w ?? 260, h: text.h ?? text.fontSize * 1.5 };
     if (!intersects(box, page) || !text.text.trim()) continue;
     const [x4, y3] = pagePoint(page, text.x, text.y);
-    const color = rgb(text.color, { r: 17, g: 24, b: 39 });
+    const formula = text.variant === "math" ? formulas.get(text.id) : void 0;
+    if (formula) {
+      pdf.addImage(formula.dataUrl, "PNG", x4 + (formula.dx ?? 0) * SCENE_TO_MM, y3 + (formula.dy ?? 0) * SCENE_TO_MM, formula.width * SCENE_TO_MM, formula.height * SCENE_TO_MM);
+      continue;
+    }
+    const color = ink(rgb(text.color, { r: 17, g: 24, b: 39 }));
     if (text.stickyColor) {
       const sticky = rgb(text.stickyColor, { r: 255, g: 242, b: 168 });
       pdf.setFillColor(sticky.r, sticky.g, sticky.b);
@@ -30230,7 +30423,7 @@ function drawBadgesAndEmbeds(pdf, page, doc) {
     pdf.text((embed.originalUrl ?? embed.src).split("/").pop() || embed.kind, x4 + 2, y3 + 5);
   }
 }
-function createA4Pdf(doc, fallback) {
+function createA4Pdf(doc, fallback, formulas = /* @__PURE__ */ new Map()) {
   const content = getCanvasContentBounds(doc, fallback);
   const startX = Math.floor(content.x / A4_SCENE_W) * A4_SCENE_W;
   const startY = Math.floor(content.y / A4_SCENE_H) * A4_SCENE_H;
@@ -30248,7 +30441,7 @@ function createA4Pdf(doc, fallback) {
     for (const stroke of doc.strokes) if (stroke.type === "highlighter") drawStroke(pdf, page, stroke);
     for (const stroke of doc.strokes) if (stroke.type !== "highlighter") drawStroke(pdf, page, stroke);
     for (const shape of doc.shapes) drawShape(pdf, page, shape);
-    drawText(pdf, page, doc);
+    drawText(pdf, page, doc, formulas);
     drawTables(pdf, page, doc);
     drawBadgesAndEmbeds(pdf, page, doc);
     pdf.setFont("helvetica", "normal");
@@ -30257,6 +30450,115 @@ function createA4Pdf(doc, fallback) {
     pdf.text(`NoteLens - ${index + 1}/${pages.length}`, A4_W_MM - 29, A4_H_MM - 7);
   }
   return pdf.output("arraybuffer");
+}
+
+// src/dom-raster.ts
+function px(value) {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+}
+function pseudoContent(style) {
+  const raw = style.content;
+  if (!raw || raw === "none" || raw === "normal") return "";
+  const m3 = /^"([\s\S]*)"$|^'([\s\S]*)'$/.exec(raw);
+  return m3 ? (m3[1] ?? m3[2]).replace(/\\([0-9a-fA-F]{1,6}) ?/g, (_3, hex) => String.fromCodePoint(parseInt(hex, 16))).replace(/\\(.)/g, "$1") : "";
+}
+function fontOf(style) {
+  return `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+}
+function drawBorders(style, x4, y3, w3, h3, frame2) {
+  const { ctx } = frame2;
+  const top = style.borderTopStyle !== "none" ? px(style.borderTopWidth) : 0;
+  const bottom = style.borderBottomStyle !== "none" ? px(style.borderBottomWidth) : 0;
+  const left = style.borderLeftStyle !== "none" ? px(style.borderLeftWidth) : 0;
+  const right = style.borderRightStyle !== "none" ? px(style.borderRightWidth) : 0;
+  if (top > 0) ctx.fillRect(x4, y3, w3, top);
+  if (bottom > 0) ctx.fillRect(x4, y3 + h3 - bottom, w3, bottom);
+  if (left > 0) ctx.fillRect(x4, y3, left, h3);
+  if (right > 0) ctx.fillRect(x4 + w3 - right, y3, right, h3);
+}
+function drawGlyph(el, x4, y3, w3, h3, frame2) {
+  const before = getComputedStyle(el, "::before");
+  const text = el.textContent?.trim() || pseudoContent(before);
+  if (!text) return;
+  const style = el.textContent?.trim() ? getComputedStyle(el) : before;
+  const { ctx } = frame2;
+  ctx.font = fontOf(style);
+  ctx.textBaseline = "alphabetic";
+  const ascent = px(style.paddingTop);
+  const descent = px(style.paddingBottom);
+  const parent = el.parentElement;
+  const stretchy = parent?.tagName === "MJX-EXT" ? parent.parentElement?.tagName : "";
+  if (stretchy === "MJX-STRETCHY-V" && ascent + descent > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x4, y3, w3, h3);
+    ctx.clip();
+    ctx.translate(x4, y3);
+    ctx.scale(1, h3 / (ascent + descent));
+    ctx.fillText(text, 0, ascent);
+    ctx.restore();
+    return;
+  }
+  if (stretchy === "MJX-STRETCHY-H") {
+    const natural = ctx.measureText(text).width || 1;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x4, y3, w3, h3);
+    ctx.clip();
+    ctx.translate(x4, y3);
+    ctx.scale(w3 / natural, 1);
+    ctx.fillText(text, 0, ascent || h3 * 0.8);
+    ctx.restore();
+    return;
+  }
+  ctx.fillText(text, x4, y3 + (ascent || h3 * 0.8));
+}
+function paint(el, frame2) {
+  const tag = el.tagName;
+  if (tag === "MJX-ASSISTIVE-MML" || tag === "SCRIPT" || tag === "STYLE") return;
+  const style = getComputedStyle(el);
+  if (style.display === "none" || style.visibility === "hidden") return;
+  const rect = el.getBoundingClientRect();
+  const x4 = (rect.left - frame2.originX) / frame2.zoom;
+  const y3 = (rect.top - frame2.originY) / frame2.zoom;
+  const w3 = rect.width / frame2.zoom;
+  const h3 = rect.height / frame2.zoom;
+  drawBorders(style, x4, y3, w3, h3, frame2);
+  if (tag === "MJX-C") {
+    drawGlyph(el, x4, y3, w3, h3, frame2);
+    return;
+  }
+  for (const node of Array.from(el.childNodes)) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      paint(node, frame2);
+    } else if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) {
+      frame2.ctx.font = fontOf(style);
+      frame2.ctx.textBaseline = "alphabetic";
+      frame2.ctx.fillText(node.textContent, x4, y3 + (px(style.paddingTop) || h3 * 0.8));
+    }
+  }
+}
+async function rasterizeMath(root, color, scale = 3) {
+  try {
+    await document.fonts?.ready;
+    const width = Math.ceil(root.offsetWidth);
+    const height = Math.ceil(root.offsetHeight);
+    if (!width || !height) return null;
+    const origin = root.getBoundingClientRect();
+    const canvas = createEl("canvas");
+    canvas.width = Math.ceil(width * scale);
+    canvas.height = Math.ceil(height * scale);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = color;
+    paint(root, { ctx, originX: origin.left, originY: origin.top, zoom: origin.width / width || 1 });
+    return { dataUrl: canvas.toDataURL("image/png"), width, height };
+  } catch {
+    return null;
+  }
 }
 
 // src/renderer.ts
@@ -30752,14 +31054,14 @@ function isLightColor(hex) {
   const b3 = n & 255;
   return (0.2126 * r + 0.7152 * g3 + 0.0722 * b3) / 255 > 0.55;
 }
-function distPointToSegment(px, py, ax, ay, bx, by) {
+function distPointToSegment(px2, py, ax, ay, bx, by) {
   const dx = bx - ax;
   const dy = by - ay;
   const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) return Math.hypot(px - ax, py - ay);
-  let t3 = ((px - ax) * dx + (py - ay) * dy) / lenSq;
+  if (lenSq === 0) return Math.hypot(px2 - ax, py - ay);
+  let t3 = ((px2 - ax) * dx + (py - ay) * dy) / lenSq;
   t3 = clamp(t3, 0, 1);
-  return Math.hypot(px - (ax + t3 * dx), py - (ay + t3 * dy));
+  return Math.hypot(px2 - (ax + t3 * dx), py - (ay + t3 * dy));
 }
 function strokeHit(stroke, x4, y3, slop) {
   const threshold = stroke.width / 2 + slop;
@@ -30773,6 +31075,55 @@ function strokeHit(stroke, x4, y3, slop) {
     }
   }
   return false;
+}
+function cutStrokeAround(points, cx, cy, r) {
+  if (points.length === 0) return null;
+  if (points.length === 1) return Math.hypot(points[0].x - cx, points[0].y - cy) <= r ? [] : null;
+  const pieces = [];
+  let run = [];
+  let touched = false;
+  const flush = () => {
+    if (run.length >= 2) pieces.push(run);
+    run = [];
+  };
+  const lerp = (a3, b3, t3) => ({ x: a3.x + (b3.x - a3.x) * t3, y: a3.y + (b3.y - a3.y) * t3, p: a3.p + (b3.p - a3.p) * t3 });
+  for (let i4 = 0; i4 < points.length - 1; i4++) {
+    const a3 = points[i4];
+    const b3 = points[i4 + 1];
+    const span = circleSegmentSpan(a3, b3, cx, cy, r);
+    if (!span) {
+      if (run.length === 0) run.push(a3);
+      run.push(b3);
+      continue;
+    }
+    touched = true;
+    const [t0, t12] = span;
+    if (t0 > 0) {
+      if (run.length === 0) run.push(a3);
+      run.push(lerp(a3, b3, t0));
+    }
+    flush();
+    if (t12 < 1) run.push(lerp(a3, b3, t12), b3);
+  }
+  flush();
+  return touched ? pieces : null;
+}
+function circleSegmentSpan(a3, b3, cx, cy, r) {
+  const dx = b3.x - a3.x;
+  const dy = b3.y - a3.y;
+  const fx = a3.x - cx;
+  const fy = a3.y - cy;
+  const quad = dx * dx + dy * dy;
+  if (quad === 0) return Math.hypot(fx, fy) <= r ? [0, 1] : null;
+  const lin = 2 * (fx * dx + fy * dy);
+  const cons = fx * fx + fy * fy - r * r;
+  const disc = lin * lin - 4 * quad * cons;
+  if (disc < 0) return null;
+  const root = Math.sqrt(disc);
+  const t0 = (-lin - root) / (2 * quad);
+  const t12 = (-lin + root) / (2 * quad);
+  if (t12 < 0 || t0 > 1) return null;
+  return [Math.max(0, t0), Math.min(1, t12)];
 }
 function hitTestStrokes(strokes, x4, y3, slop = 8) {
   for (let i4 = strokes.length - 1; i4 >= 0; i4--) {
@@ -53072,8 +53423,8 @@ function mountChartFrame(host, layer, embed) {
   };
   const body = frame2.createDiv({ cls: "notelens-embed-body notelens-chart-body" });
   const canvas = body.createEl("canvas", { cls: "notelens-chart-canvas" });
-  const paint = () => drawChart(canvas, spec, Math.max(120, embed.w), Math.max(80, embed.h - 32));
-  paint();
+  const paint2 = () => drawChart(canvas, spec, Math.max(120, embed.w), Math.max(80, embed.h - 32));
+  paint2();
   const observer = new ResizeObserver(() => {
     if (frame2.isConnected) drawChart(canvas, spec, Math.max(120, frame2.clientWidth), Math.max(80, frame2.clientHeight - 32));
     else observer.disconnect();
@@ -54453,7 +54804,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       this.loadedImages.set(image.id, node);
       return node.complete ? node : null;
     };
-    const paint = (target, context, includeImages, includeSelection) => {
+    const paint2 = (target, context, includeImages, includeSelection) => {
       context.setTransform(1, 0, 0, 1, 0, 0);
       context.clearRect(0, 0, target.width, target.height);
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -54485,7 +54836,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     };
     const redraw = () => {
       if (!ctx) return;
-      paint(canvas, ctx, true, this.boardTool === "select");
+      paint2(canvas, ctx, true, this.boardTool === "select");
       board.setAttr("data-board-tool", this.boardTool);
       board.toggleClass("has-image-selection", !!this.selectedImageId && this.boardTool === "select");
       hint.toggleClass("hidden-hint", !!this.baseImage || this.strokes.length > 0 || this.images.length > 0);
@@ -54766,7 +55117,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       output.height = canvas.height;
       const outputContext = output.getContext("2d");
       if (!outputContext) return void 0;
-      paint(output, outputContext, false, false);
+      paint2(output, outputContext, false, false);
       return output.toDataURL("image/png");
     };
     const footer = contentEl.createDiv({ cls: "notelens-hover-note-footer" });
@@ -55003,11 +55354,11 @@ var import_obsidian11 = require("obsidian");
 var BOARD_W = 620;
 var BOARD_H = 300;
 var InkEquationModal = class extends import_obsidian11.Modal {
-  constructor(app, initial, onSubmit, renderFormula, tidy, readFromBoard) {
+  constructor(app, initial, onSubmit, renderFormula, tidy2, readFromBoard) {
     super(app);
     this.onSubmit = onSubmit;
     this.renderFormula = renderFormula;
-    this.tidy = tidy;
+    this.tidy = tidy2;
     this.readFromBoard = readFromBoard;
     this.strokes = [];
     this.redoStack = [];
@@ -55070,6 +55421,12 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       { label: "\u221Ax", value: "\\sqrt{x}", select: [6, 7] },
       { label: "\u222B", value: "\\int_{a}^{b} f(x)\\,dx", select: [6, 7] },
       { label: "\u03A3", value: "\\sum_{i=1}^{n}", select: [6, 9] },
+      { label: "lim", value: "\\lim_{x \\to 0}", select: [6, 12] },
+      { label: "|x|", value: "\\left|x\\right|", select: [6, 7] },
+      { label: "(\u207F\u2096)", value: "\\binom{n}{k}", select: [7, 8] },
+      { label: "[\u25A1]", value: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", select: [17, 18] },
+      { label: "{\u2026", value: "\\begin{cases} a & x \\ge 0 \\\\ b & x < 0 \\end{cases}", select: [15, 16] },
+      { label: "vec", value: "\\vec{x}", select: [5, 6] },
       { label: "\u03C0", value: "\\pi", select: [0, 3] }
     ];
     for (const item of structureItems) {
@@ -56751,6 +57108,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.isShaping = false;
     this.currentShape = null;
     this.isErasing = false;
+    /** Erasing with the back of the stylus, whatever tool is selected. */
+    this.tipErasing = false;
     this.erasedAny = false;
     this.eraseHistoryPushed = false;
     this.assistant = null;
@@ -56943,6 +57302,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         const el = this.domLayerEl.querySelector(`[data-id="${tb.id}"]`);
         if (el && el !== this.activeTextSourceEl) {
           this.paintTextContent(el, tb);
+          this.syncFittedSize(el, tb);
           this.attachBoxChrome(el, tb);
         }
       }
@@ -57222,17 +57582,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       return this.getSceneCoords(clientX, clientY);
     }
     const rect = this.workspaceEl.getBoundingClientRect();
-    const px = clientX - rect.left;
+    const px2 = clientX - rect.left;
     const py = clientY - rect.top;
     const radians = this.rulerState.angle * Math.PI / 180;
     const dx = Math.cos(radians);
     const dy = Math.sin(radians);
-    const toPointerX = px - this.rulerState.x;
+    const toPointerX = px2 - this.rulerState.x;
     const toPointerY = py - this.rulerState.y;
     const projected = clamp(toPointerX * dx + toPointerY * dy, 0, this.rulerState.length);
     const snapX = this.rulerState.x + projected * dx;
     const snapY = this.rulerState.y + projected * dy;
-    if (Math.hypot(px - snapX, py - snapY) > 18) return this.getSceneCoords(clientX, clientY);
+    if (Math.hypot(px2 - snapX, py - snapY) > 18) return this.getSceneCoords(clientX, clientY);
     return this.getSceneCoords(rect.left + snapX, rect.top + snapY);
   }
   getMiniMapVisible() {
@@ -58022,8 +58382,19 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.startPan(e);
       return;
     }
-    if (e.button !== 0) return;
+    const tipErase = e.pointerType === "pen" && e.button === 5;
+    if (e.button !== 0 && !tipErase) return;
     const pt2 = this.getSceneCoords(e.clientX, e.clientY);
+    if (tipErase || this.currentTool === "eraser") {
+      this.isErasing = true;
+      this.tipErasing = tipErase;
+      if (tipErase) this.updateEraserCursor(e);
+      this.eraserCursorEl?.addClass("is-active");
+      this.erasedAny = false;
+      this.eraseHistoryPushed = false;
+      this.eraseAt(pt2.x, pt2.y);
+      return;
+    }
     if (this.currentTool === "select") {
       if (e.altKey) {
         this.startPan(e);
@@ -58075,14 +58446,6 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       };
       this.data.shapes.push(this.currentShape);
       this.save();
-      return;
-    }
-    if (this.currentTool === "eraser") {
-      this.isErasing = true;
-      this.eraserCursorEl?.addClass("is-active");
-      this.erasedAny = false;
-      this.eraseHistoryPushed = false;
-      this.eraseAt(pt2.x, pt2.y);
       return;
     }
     if (this.currentTool === "pen" || this.currentTool === "highlighter") {
@@ -58208,6 +58571,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (this.isErasing) {
       this.isErasing = false;
       this.eraserCursorEl?.removeClass("is-active");
+      if (this.tipErasing) {
+        this.tipErasing = false;
+        this.hideEraserCursor();
+      }
       if (this.erasedAny) this.save();
     }
   }
@@ -58281,51 +58648,31 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
   }
   /**
-   * Partial eraser: every stroke under the eraser loses the points it touches
-   * and the remaining pieces live on as separate strokes, so you can cut a
-   * line in two or trim its end instead of losing the whole thing.
+   * Partial eraser: every stroke under the eraser loses exactly the part the
+   * circle covers, split where the circle crosses it, and the remaining pieces
+   * live on as separate strokes. A straight line drawn with Shift has only two
+   * points, so dropping touched points used to delete it whole.
    */
   erasePartialAt(x4, y3, radius) {
     const next = [];
     let changed = false;
     for (const stroke of this.pageStrokes) {
-      const pts = stroke.points;
-      const reach = radius + stroke.width / 2;
-      const hit = new Array(pts.length).fill(false);
-      let any = false;
-      for (let i4 = 0; i4 < pts.length; i4++) {
-        if (Math.hypot(pts[i4].x - x4, pts[i4].y - y3) <= reach) {
-          hit[i4] = true;
-          any = true;
-        }
-        if (i4 < pts.length - 1 && distPointToSegment(x4, y3, pts[i4].x, pts[i4].y, pts[i4 + 1].x, pts[i4 + 1].y) <= reach) {
-          hit[i4] = true;
-          hit[i4 + 1] = true;
-          any = true;
-        }
-      }
-      if (!any) {
+      const pieces = cutStrokeAround(stroke.points, x4, y3, radius + stroke.width / 2);
+      if (!pieces) {
         next.push(stroke);
         continue;
       }
       changed = true;
-      let run = [];
-      const flush = () => {
-        if (run.length >= 2) next.push({ ...stroke, id: genId("stroke"), points: run });
-        run = [];
-      };
-      for (let i4 = 0; i4 < pts.length; i4++) {
-        if (hit[i4]) flush();
-        else run.push(pts[i4]);
-      }
-      flush();
+      for (const points of pieces) next.push({ ...stroke, id: genId("stroke"), points });
     }
-    if (!changed) return;
+    const shape = this.pageShapes.find((item) => this.pointHitsShape(item, x4, y3, radius));
+    if (!changed && !shape) return;
     if (!this.eraseHistoryPushed) {
       this.history.push();
       this.eraseHistoryPushed = true;
     }
-    this.data.strokes = [...this.data.strokes.filter((stroke) => !this.belongsToActivePage(stroke)), ...next];
+    if (changed) this.data.strokes = [...this.data.strokes.filter((stroke) => !this.belongsToActivePage(stroke)), ...next];
+    if (shape) this.data.shapes.remove(shape);
     this.erasedAny = true;
     this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
   }
@@ -58495,8 +58842,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (rotation) {
         const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
         const rad = rotation * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad);
-        for (const [px, py] of [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]]) {
-          const qx = cx + (px - cx) * cos - (py - cy) * sin, qy = cy + (px - cx) * sin + (py - cy) * cos;
+        for (const [px2, py] of [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]]) {
+          const qx = cx + (px2 - cx) * cos - (py - cy) * sin, qy = cy + (px2 - cx) * sin + (py - cy) * cos;
           minX = Math.min(minX, qx);
           minY = Math.min(minY, qy);
           maxX = Math.max(maxX, qx);
@@ -58513,7 +58860,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const bounds = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
     return {
       ...bounds,
-      contains: (px, py) => px >= bounds.x && px <= bounds.x + bounds.w && py >= bounds.y && py <= bounds.y + bounds.h
+      contains: (px2, py) => px2 >= bounds.x && px2 <= bounds.x + bounds.w && py >= bounds.y && py <= bounds.y + bounds.h
     };
   }
   renderSelectionBox() {
@@ -59518,7 +59865,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       w: 320,
       h: 60,
       fontFamily: this.textFont,
-      variant: "math"
+      variant: "math",
+      autoWidth: true
     };
     this.data.texts.push(formula);
     this.renderTextBox(formula);
@@ -60529,7 +60877,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
           w: 320,
           h: 60,
           fontFamily: this.textFont,
-          variant: "math"
+          variant: "math",
+          autoWidth: true
         };
         this.data.texts.push(formula);
         this.renderTextBox(formula);
@@ -60865,9 +61214,26 @@ ${rows.join("\n")}`);
     };
     window.requestAnimationFrame(animate);
   }
+  /**
+   * Pictures of every formula on the page, taken from the boxes on screen, in
+   * ink colour: the export page is white whatever the board looks like.
+   */
+  async rasterizeFormulas(doc) {
+    const out = /* @__PURE__ */ new Map();
+    for (const tb of doc.texts) {
+      if (tb.variant !== "math") continue;
+      const box = this.domLayerEl.querySelector(`.notelens-math-block[data-id="${tb.id}"]`);
+      const math = box?.querySelector("mjx-container");
+      if (!math) continue;
+      const image = await rasterizeMath(math, "#111827");
+      if (image) out.set(tb.id, { ...image, dx: math.offsetLeft, dy: math.offsetTop });
+    }
+    return out;
+  }
   async exportA4Pdf() {
     try {
-      const bytes = createA4Pdf(this.activePageDocument(), this.getViewportSceneBounds());
+      const page = this.activePageDocument();
+      const bytes = createA4Pdf(page, this.getViewportSceneBounds(), await this.rasterizeFormulas(page));
       const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").slice(0, 19);
       const base = `NoteLens-${stamp}.pdf`;
       let path = base;
@@ -61409,6 +61775,7 @@ ${rows.join("\n")}`);
     el.setAttr("role", "textbox");
     this.paintTextContent(el, tb);
     this.applyTextStyles(el, tb);
+    this.syncFittedSize(el, tb);
     this.attachBoxChrome(el, tb);
     el.addEventListener("pointerdown", (e) => {
       if (this.currentTool === "select" && e.button === 0) {
@@ -61469,6 +61836,10 @@ ${rows.join("\n")}`);
     editor.style.left = `${tb.x}px`;
     editor.style.top = `${tb.y}px`;
     this.applyTextStyles(editor, tb);
+    if (tb.variant === "math") {
+      editor.style.width = `${Math.max(320, tb.w ?? 320)}px`;
+      this.refreshMathPreview(tb);
+    }
     editor.style.height = `${Math.max(tb.h ?? 48, editor.scrollHeight + 4)}px`;
     el.setCssStyles({ visibility: "hidden" });
     this.activeTextEditor = editor;
@@ -61570,6 +61941,7 @@ ${rows.join("\n")}`);
     tb.text = editor.value;
     this.applyTextStyles(source, tb);
     this.paintTextContent(source, tb);
+    this.syncFittedSize(source, tb);
     if (tb.variant === "code") {
       source.setCssStyles({ minHeight: "" });
       tb.h = Math.max(72, source.offsetHeight);
@@ -61801,7 +62173,7 @@ ${rows.join("\n")}`);
       this.updateTextPlacementHint(e);
       return;
     }
-    if (this.currentTool === "eraser" && overPage && !typing && !this.isPanning) {
+    if ((this.currentTool === "eraser" || this.isErasing) && overPage && !typing && !this.isPanning) {
       this.hideTextPlacementHint();
       this.updateEraserCursor(e);
       return;
@@ -61863,8 +62235,15 @@ ${rows.join("\n")}`);
       el.style.setProperty("--sticky-tilt", `${stickyTilt(tb.id)}deg`);
     }
     el.style.fontFamily = this.fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
-    el.style.width = tb.w ? `${tb.w}px` : "";
-    el.style.minHeight = tb.h ? `${tb.h}px` : "";
+    const fitsContent = tb.variant === "math" && tb.autoWidth !== false;
+    el.style.width = fitsContent ? "max-content" : tb.w ? `${tb.w}px` : "";
+    el.style.minHeight = tb.h && !fitsContent ? `${tb.h}px` : "";
+  }
+  /** Records the size a content-fitted box took, so selection and export see its real bounds. */
+  syncFittedSize(el, tb) {
+    if (tb.variant !== "math" || tb.autoWidth === false) return;
+    if (el.offsetWidth > 0) tb.w = el.offsetWidth;
+    if (el.offsetHeight > 0) tb.h = el.offsetHeight;
   }
   fontStack(font) {
     switch (font) {
@@ -62349,7 +62728,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.3.5" : "desconocida";
+var NOTELENS_BUILD = true ? "2.4.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

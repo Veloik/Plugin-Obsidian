@@ -3358,6 +3358,7 @@
    MATH (LaTeX via MathJax)
    -------------------------------------------------------------------------- */
 .notelens-math-block {
+  min-width: 120px;
   padding: 10px 14px;
   border: 1px solid rgba(167, 139, 250, 0.32);
   border-radius: 6px;
@@ -3367,6 +3368,9 @@
 
 .notelens-math-block mjx-container,
 .notelens-math-preview mjx-container { margin: 0 !important; }
+
+/* A box the user shrank by hand scrolls its formula instead of cutting it. */
+.notelens-math-block mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 
 .notelens-math-placeholder { color: rgba(203, 213, 225, 0.55); font-style: italic; }
 .notelens-math-error { color: #fca5a5; font-family: var(--font-monospace); }

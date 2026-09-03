@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.4.0
+
+### Added
+
+- The easy notation understands what students actually type: `e^-x` and `10^-3` keep the sign in the exponent, `d/dx` and `dy/dx` are the fractions they mean, `((n),(k))` is a binomial, `{(x, x>=0), (-x, x<0):}` is a piecewise function, `[0, 1)` keeps its round end, `|x| + |y|` pairs its bars, `f'(x)` and `n!` sit on their operand, and `x_1, x_2, ..., x_n` no longer loses everything after the first comma. Symbols from a maths keyboard (π √ ∫ ∑ ≤ ≠ → ∞ ± × · ÷ ∂ ∈ ∀ ∃ ℝ α…ω, x², a₁, x̄, x̂) are read as their spelled-out forms.
+- A formula box grows with its content instead of cutting a wide formula at 320 px, and the live preview appears the moment editing starts, not after the first keystroke.
+- PDF export draws every formula as the picture the board shows, in ink colour, instead of writing its source. Text and ink that are near white on a dark board come out dark on the white page, where they used to vanish.
+- The back of a stylus erases (button 5) whatever tool is selected, with the eraser pointer shown while it does.
+- The equation dialog offers limits, absolute value, binomials, matrices, cases and vectors as one-tap structures.
+
+### Fixed
+
+- The partial eraser cuts a stroke exactly where the circle crosses it instead of dropping the touched points, so a straight line drawn with Shift (two points) loses a gap instead of disappearing. Shapes touched in partial mode are removed, as in OneNote.
+
 ## 2.3.5
 
 ### Fixed

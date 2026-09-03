@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { RasterImage } from "./dom-raster";
 import { OneNoteDocument, Shape, Stroke } from "./types";
 
 export interface SceneBounds { x: number; y: number; w: number; h: number; }
@@ -10,6 +11,17 @@ const A4_H_MM = 297;
 const SCENE_TO_MM = A4_W_MM / A4_SCENE_W;
 
 interface Rgb { r: number; g: number; b: number; }
+
+/**
+ * Colour for something drawn on the white page. Boards are dark by default,
+ * so their ink is near white; printed as is it would vanish, which is what
+ * happened to every note exported from a dark board. Anything that light
+ * becomes the same dark grey the light theme uses.
+ */
+function ink(color: Rgb): Rgb {
+	const luminance = (0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b) / 255;
+	return luminance > 0.8 ? { r: 17, g: 24, b: 39 } : color;
+}
 
 function rgb(color: string, fallback: Rgb = { r: 15, g: 23, b: 42 }): Rgb {
 	const hex = /^#([0-9a-f]{6})$/i.exec(color);
@@ -122,7 +134,7 @@ function colorAlpha(color: string): number {
 function drawStroke(pdf: jsPDF, page: SceneBounds, stroke: Stroke): void {
 	const bound = strokeBounds(stroke);
 	if (!bound || !intersects(bound, page) || stroke.points.length < 2) return;
-	const c = rgb(stroke.color, { r: 31, g: 41, b: 55 });
+	const c = ink(rgb(stroke.color, { r: 31, g: 41, b: 55 }));
 	pdf.setDrawColor(c.r, c.g, c.b);
 	pdf.setLineWidth(Math.max(0.2, stroke.width * SCENE_TO_MM));
 	// Highlighter and translucent ink keep their opacity on paper too.
@@ -146,7 +158,7 @@ function drawShape(pdf: jsPDF, page: SceneBounds, shape: Shape): void {
 	const [x, y] = pagePoint(page, shape.x, shape.y);
 	const w = shape.w * SCENE_TO_MM;
 	const h = shape.h * SCENE_TO_MM;
-	const outline = rgb(shape.color);
+	const outline = ink(rgb(shape.color));
 	pdf.setDrawColor(outline.r, outline.g, outline.b);
 	pdf.setLineWidth(Math.max(0.2, shape.width * SCENE_TO_MM));
 	const fill = shape.fill && shape.kind !== "line" && shape.kind !== "arrow" && (shape.fillOpacity ?? 0) > 0
@@ -176,12 +188,19 @@ function drawShape(pdf: jsPDF, page: SceneBounds, shape: Shape): void {
 	}
 }
 
-function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument): void {
+function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument, formulas: Map<string, RasterImage>): void {
 	for (const text of doc.texts) {
 		const box = { x: text.x, y: text.y, w: text.w ?? 260, h: text.h ?? text.fontSize * 1.5 };
 		if (!intersects(box, page) || !text.text.trim()) continue;
 		const [x, y] = pagePoint(page, text.x, text.y);
-		const color = rgb(text.color, { r: 17, g: 24, b: 39 });
+		// A typeset formula goes in as the picture the board shows; its source
+		// is only written when the browser could not produce one.
+		const formula = text.variant === "math" ? formulas.get(text.id) : undefined;
+		if (formula) {
+			pdf.addImage(formula.dataUrl, "PNG", x + (formula.dx ?? 0) * SCENE_TO_MM, y + (formula.dy ?? 0) * SCENE_TO_MM, formula.width * SCENE_TO_MM, formula.height * SCENE_TO_MM);
+			continue;
+		}
+		const color = ink(rgb(text.color, { r: 17, g: 24, b: 39 }));
 		if (text.stickyColor) {
 			const sticky = rgb(text.stickyColor, { r: 255, g: 242, b: 168 });
 			pdf.setFillColor(sticky.r, sticky.g, sticky.b);
@@ -257,7 +276,7 @@ function drawBadgesAndEmbeds(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument
 }
 
 /** Generates a print-ready PDF made of A4 pages aligned to the infinite canvas. */
-export function createA4Pdf(doc: OneNoteDocument, fallback: SceneBounds): ArrayBuffer {
+export function createA4Pdf(doc: OneNoteDocument, fallback: SceneBounds, formulas: Map<string, RasterImage> = new Map()): ArrayBuffer {
 	const content = getCanvasContentBounds(doc, fallback);
 	const startX = Math.floor(content.x / A4_SCENE_W) * A4_SCENE_W;
 	const startY = Math.floor(content.y / A4_SCENE_H) * A4_SCENE_H;
@@ -275,7 +294,7 @@ export function createA4Pdf(doc: OneNoteDocument, fallback: SceneBounds): ArrayB
 		for (const stroke of doc.strokes) if (stroke.type === "highlighter") drawStroke(pdf, page, stroke);
 		for (const stroke of doc.strokes) if (stroke.type !== "highlighter") drawStroke(pdf, page, stroke);
 		for (const shape of doc.shapes) drawShape(pdf, page, shape);
-		drawText(pdf, page, doc);
+		drawText(pdf, page, doc, formulas);
 		drawTables(pdf, page, doc);
 		drawBadgesAndEmbeds(pdf, page, doc);
 		pdf.setFont("helvetica", "normal");

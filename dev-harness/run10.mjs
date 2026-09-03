@@ -33,7 +33,7 @@ const curve = (x0, y0, w, h, n = 20) => Array.from({ length: n }, (_, i) => [x0 
 const tool = async (id) => { await page.click(`.onenote-ribbon-dock [data-tool="${id}"]`); await sleep(60); };
 
 // --- math box with easy notation, auto converted
-await page.click(".notelens-insert-dock button[title^='Insertar fórmula']");
+await page.click(".notelens-insert-dock button[title^='Insertar ecuación']");
 await sleep(150);
 await page.keyboard.type("x = (-b +- sqrt(b^2-4ac))/(2a)");
 await sleep(300);

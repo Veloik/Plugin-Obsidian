@@ -55,7 +55,7 @@ console.log("texts after code with content:", await page.evaluate(() => __view.d
 await page.keyboard.down("Control"); await page.keyboard.press("f"); await page.keyboard.up("Control"); await sleep(150); await shot(page, "04-search"); await esc();
 
 // 5. math bar layout
-await clean(); await page.click(".notelens-insert-dock button[title^='Insertar fórmula']"); await sleep(250);
+await clean(); await page.click(".notelens-insert-dock button[title^='Insertar ecuación']"); await sleep(250);
 await page.keyboard.type("x^2/2 + sqrt(x)"); await sleep(200); await shot(page, "05-math-bar"); await esc();
 
 // 6. recorder labels
