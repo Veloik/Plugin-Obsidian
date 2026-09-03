@@ -129,18 +129,31 @@ export class InkEquationModal extends Modal {
 
 		const showCandidates = (recognition: InkMathRecognition) => {
 			candidates.empty();
-			const uncertain = recognition.tokens.filter(token => token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1).slice(0, 7);
+			// Unknown glyphs come first: those are the ones the reader refused to
+			// name, and the ones the user most needs to fix.
+			const doubtful = recognition.tokens.filter(token => token.unknown
+				|| (token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1));
+			const uncertain = [...doubtful].sort((a, b) => Number(!!b.unknown) - Number(!!a.unknown)).slice(0, 7);
 			candidates.toggleClass("hidden", uncertain.length === 0);
 			if (!uncertain.length) return;
-			candidates.createSpan({ cls: "notelens-ink-candidates-label", text: tr("Revisar") });
+			candidates.createSpan({
+				cls: "notelens-ink-candidates-label",
+				text: uncertain.some(token => token.unknown) ? tr("Sin reconocer") : tr("Revisar")
+			});
 			let searchFrom = 0;
 			for (const token of uncertain) {
 				const tokenStart = input.value.indexOf(token.value, searchFrom);
 				if (tokenStart >= 0) searchFrom = tokenStart + token.value.length;
 				const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
-				for (const alternative of token.alternatives) select.createEl("option", { value: alternative, text: alternative });
+				select.toggleClass("is-unknown", !!token.unknown);
+				// The value it holds has to be among the options or the select
+				// renders empty, which is what an unknown "?" did.
+				const options = [token.value, ...token.alternatives.filter(alternative => alternative !== token.value)];
+				for (const alternative of options) select.createEl("option", { value: alternative, text: alternative });
 				select.value = token.value;
-				select.title = tr("Confianza {p0}%. Elige el símbolo correcto.", { p0: Math.round(token.confidence * 100) });
+				select.title = token.unknown
+					? tr("No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.")
+					: tr("Confianza {p0}%. Elige el símbolo correcto.", { p0: Math.round(token.confidence * 100) });
 				select.onchange = () => {
 					if (tokenStart < 0) return;
 					input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
@@ -335,10 +348,23 @@ export class InkEquationModal extends Modal {
 				// the normal pen flow immediate and still covers uncommon letters.
 				if (vector.confidence < 0.78 || /\?/.test(vector.source)) {
 					const ocr = await recognizeFormula(shot, message => status.setText(message));
-					text = pickFormulaCandidate([
-						{ source: vector.source, bonus: vector.confidence * 8 },
-						{ source: ocr, bonus: 1.5 }
-					]);
+					if (vector.unknown > 0) {
+						// A symbol the stroke reader refused to name is not a symbol the
+						// image reader gets to name unannounced: it read a spiral as "9".
+						// The guess is offered instead, next to the "?" it belongs to.
+						const guess = this.tidy(ocr).trim();
+						if (guess && guess.length <= 2) {
+							for (const token of vector.tokens) {
+								if (token.unknown && !token.alternatives.includes(guess)) token.alternatives.unshift(guess);
+							}
+						}
+						text = vector.source;
+					} else {
+						text = pickFormulaCandidate([
+							{ source: vector.source, bonus: vector.confidence * 8 },
+							{ source: ocr, bonus: 1.5 }
+						]);
+					}
 				}
 				const tidied = this.tidy(text);
 				if (tidied && (!editedByUser || input.value === lastAutomatic || !input.value.trim())) {
@@ -348,7 +374,9 @@ export class InkEquationModal extends Modal {
 					editedByUser = false;
 					drawPreview();
 					showCandidates(vector);
-					status.setText(vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los símbolos dudosos aparecen debajo."));
+					status.setText(vector.unknown > 0
+					? vector.detail
+					: vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los símbolos dudosos aparecen debajo."));
 				} else {
 					status.setText(tidied ? tr("He respetado tu corrección manual.") : tr("No he reconocido nada todavía; sigue escribiendo o usa las estructuras."));
 				}

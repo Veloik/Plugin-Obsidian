@@ -734,4 +734,11 @@ export const en: Record<string, string> = {
 	"Vacío = el mejor que quepa en tu memoria.": "Empty = the best one that fits your memory.",
 	"Un modelo local solo hace falta para la traducción sin cuotas, que es opcional. Nada sale de tu equipo.": "A local model is only needed for quota-free translation, which is optional. Nothing leaves your machine.",
 	"Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.": "Tools and interface change at once on open boards. What sits under “New boards” only affects the ones you create from now on.",
+	"Sin tinta": "No ink",
+	"No reconozco {p0} símbolo(s): están como «?». Elige debajo o escríbelo a mano.": "I cannot read {p0} symbol(s): they show as “?”. Pick one below, or write it again.",
+	"Estructura matemática detectada · {p0}%": "Mathematical structure detected · {p0}%",
+	"{p0} símbolo(s) por revisar · {p1}%": "{p0} symbol(s) to check · {p1}%",
+	"Lectura vectorial · {p0}%": "Vector reading · {p0}%",
+	"Sin reconocer": "Not recognised",
+	"No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again.",
 };

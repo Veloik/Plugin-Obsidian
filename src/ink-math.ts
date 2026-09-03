@@ -22,12 +22,16 @@ export interface InkMathToken {
 	value: string;
 	alternatives: string[];
 	confidence: number;
+	/** Nothing in the library looked like this; the value is "?" and a guess. */
+	unknown?: boolean;
 }
 
 export interface InkMathRecognition {
 	source: string;
 	confidence: number;
 	tokens: InkMathToken[];
+	/** Glyphs the reader could not name. They appear as "?" in the source. */
+	unknown: number;
 	/** A short explanation suitable for the recognition status line. */
 	detail: string;
 }
@@ -52,6 +56,8 @@ interface StrokeInfo {
 
 interface GlyphResult extends InkMathToken {
 	bounds: Bounds;
+	/** Nothing in the library matched; see REJECT_DISTANCE. */
+	unknown?: boolean;
 }
 
 interface ParsedExpression {
@@ -61,7 +67,8 @@ interface ParsedExpression {
 	structured: boolean;
 }
 
-import { matchShape } from "./ink-shapes";
+import { REJECT_DISTANCE, matchShape } from "./ink-shapes";
+import { tr } from "./i18n";
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
 
@@ -246,8 +253,12 @@ function shouldMerge(a: GlyphGroup, b: GlyphGroup, scale: number): boolean {
 	const ai = a.strokes.map(strokeInfo), bi = b.strokes.map(strokeInfo);
 	const xOverlap = overlap(a.bounds.x, a.bounds.right, b.bounds.x, b.bounds.right);
 	const yOverlap = overlap(a.bounds.y, a.bounds.bottom, b.bounds.y, b.bounds.bottom);
-	const aHoriz = ai.length === 1 && isHorizontalLine(ai[0]);
-	const bHoriz = bi.length === 1 && isHorizontalLine(bi[0]);
+	// Flat rather than straight: the two marks of an approximately-equals are
+	// wavy, and requiring them to be straight left ≈ as two separate glyphs.
+	const flat = (group: GlyphGroup, infos: StrokeInfo[]) =>
+		infos.length === 1 && (isHorizontalLine(infos[0]) || (group.bounds.w > 8 && group.bounds.h < group.bounds.w * 0.42));
+	const aHoriz = flat(a, ai);
+	const bHoriz = flat(b, bi);
 
 	// Equals: two similarly sized horizontal marks directly above each other.
 	if (aHoriz && bHoriz) {
@@ -588,6 +599,20 @@ function classifyGlyph(group: GlyphGroup): GlyphResult {
 	if (hard && hard.confidence >= 0.8) return { ...hard, bounds: group.bounds };
 
 	const shapes = matchShape(group.strokes.map(stroke => stroke.points));
+	// Nothing in the library is close: answer honestly instead of naming the
+	// least unlike letter, which is what made a drawing come out as "b". A
+	// geometric guess that was not sure enough to answer on its own does not
+	// rescue it either — that is how a heart came out as "0", since a heart is
+	// a closed loop and the closed-loop rule claims those.
+	if (!shapes.length || shapes[0].distance > REJECT_DISTANCE) {
+		return {
+			value: "?",
+			alternatives: [...(hard ? [hard.value] : []), ...shapes.slice(0, 4).map(match => match.value)],
+			confidence: 0.1,
+			bounds: group.bounds,
+			unknown: true
+		};
+	}
 	const scores = new Map<string, number>();
 	// Lower is better throughout, so a shape score of 1 becomes a distance of 0.
 	for (const match of shapes) scores.set(match.value, 1 - match.score);
@@ -620,6 +645,11 @@ function canRasterise(): boolean {
 	} catch {
 		return false;
 	}
+}
+
+/** Turns a read glyph into the token the caller reviews. */
+function toToken(glyph: GlyphResult): InkMathToken {
+	return { value: glyph.value, alternatives: glyph.alternatives, confidence: glyph.confidence, unknown: glyph.unknown };
 }
 
 function serializeGlyphs(glyphs: GlyphResult[]): ParsedExpression {
@@ -659,7 +689,7 @@ function serializeGlyphs(glyphs: GlyphResult[]): ParsedExpression {
 		previous = glyph;
 	}
 	const confidence = glyphs.reduce((sum, glyph) => sum + glyph.confidence, 0) / glyphs.length;
-	return { source, tokens: glyphs.map(({ value, alternatives, confidence }) => ({ value, alternatives, confidence })), confidence, structured: false };
+	return { source, tokens: glyphs.map(toToken), confidence, structured: false };
 }
 
 function combine(parts: ParsedExpression[]): ParsedExpression {
@@ -821,16 +851,21 @@ export function recognizeInkFormula(strokes: InkMathStroke[]): InkMathRecognitio
 	const clean = strokes
 		.map(stroke => ({ ...stroke, points: stroke.points.filter(point => Number.isFinite(point.x) && Number.isFinite(point.y)) }))
 		.filter(stroke => stroke.points.length > 0);
-	if (!clean.length) return { source: "", confidence: 0, tokens: [], detail: "Sin tinta" };
+	if (!clean.length) return { source: "", confidence: 0, tokens: [], unknown: 0, detail: tr("Sin tinta") };
 	const parsed = parseExpression(clean);
-	const uncertain = parsed.tokens.filter(token => token.confidence < 0.56).length;
+	const unknown = parsed.tokens.filter(token => token.unknown).length;
+	const uncertain = parsed.tokens.filter(token => !token.unknown && token.confidence < 0.56).length;
 	const confidence = clamp01(parsed.confidence + (parsed.structured ? 0.08 : 0));
-	const detail = parsed.structured
-		? `Estructura matemática detectada · ${Math.round(confidence * 100)}%`
-		: uncertain
-			? `${uncertain} símbolo${uncertain === 1 ? "" : "s"} por revisar · ${Math.round(confidence * 100)}%`
-			: `Lectura vectorial · ${Math.round(confidence * 100)}%`;
-	return { source: parsed.source.trim(), confidence, tokens: parsed.tokens, detail };
+	// An unrecognised glyph is said out loud. Reporting a percentage for a
+	// symbol nobody recognised is exactly the invention this avoids.
+	const detail = unknown
+		? tr("No reconozco {p0} símbolo(s): están como «?». Elige debajo o escríbelo a mano.", { p0: unknown })
+		: parsed.structured
+			? tr("Estructura matemática detectada · {p0}%", { p0: Math.round(confidence * 100) })
+			: uncertain
+				? tr("{p0} símbolo(s) por revisar · {p1}%", { p0: uncertain, p1: Math.round(confidence * 100) })
+				: tr("Lectura vectorial · {p0}%", { p0: Math.round(confidence * 100) });
+	return { source: parsed.source.trim(), confidence, tokens: parsed.tokens, unknown, detail };
 }
 
 /** Scores OCR/vector candidates without requiring a language model. */

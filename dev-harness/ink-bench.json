@@ -1,0 +1,359 @@
+[
+ {
+  "label": "0#1",
+  "expected": "0",
+  "got": "0",
+  "confidence": 0.88,
+  "alternatives": [
+   "0delc"
+  ]
+ },
+ {
+  "label": "1#1",
+  "expected": "1",
+  "got": "1",
+  "confidence": 0.86,
+  "alternatives": [
+   "1lt"
+  ]
+ },
+ {
+  "label": "1#2",
+  "expected": "1",
+  "got": "1",
+  "confidence": 0.9,
+  "alternatives": [
+   "1li"
+  ]
+ },
+ {
+  "label": "2#1",
+  "expected": "2",
+  "got": "2",
+  "confidence": 0.92,
+  "alternatives": [
+   "2sumdel"
+  ]
+ },
+ {
+  "label": "3#1",
+  "expected": "3",
+  "got": "3",
+  "confidence": 0.88,
+  "alternatives": [
+   "3del8"
+  ]
+ },
+ {
+  "label": "4#1",
+  "expected": "4",
+  "got": "4",
+  "confidence": 0.98,
+  "alternatives": [
+   "4Delta!="
+  ]
+ },
+ {
+  "label": "5#1",
+  "expected": "5",
+  "got": "5",
+  "confidence": 1,
+  "alternatives": [
+   "5delin"
+  ]
+ },
+ {
+  "label": "6#1",
+  "expected": "6",
+  "got": "6",
+  "confidence": 0.9,
+  "alternatives": [
+   "6bh"
+  ]
+ },
+ {
+  "label": "7#1",
+  "expected": "7",
+  "got": "7",
+  "confidence": 1,
+  "alternatives": [
+   "7grady"
+  ]
+ },
+ {
+  "label": "8#1",
+  "expected": "8",
+  "got": "8",
+  "confidence": 0.77,
+  "alternatives": [
+   "8del0"
+  ]
+ },
+ {
+  "label": "9#1",
+  "expected": "9",
+  "got": "9",
+  "confidence": 0.9,
+  "alternatives": [
+   "9t1"
+  ]
+ },
+ {
+  "label": "x#1",
+  "expected": "x",
+  "got": "x",
+  "confidence": 0.82,
+  "alternatives": [
+   "x*+"
+  ]
+ },
+ {
+  "label": "y#1",
+  "expected": "y",
+  "got": "y",
+  "confidence": 1,
+  "alternatives": [
+   "ymu7"
+  ]
+ },
+ {
+  "label": "a#1",
+  "expected": "a",
+  "got": "a",
+  "confidence": 1,
+  "alternatives": [
+   "a0Delta"
+  ]
+ },
+ {
+  "label": "b#1",
+  "expected": "b",
+  "got": "b",
+  "confidence": 0.7,
+  "alternatives": [
+   "bhDelta"
+  ]
+ },
+ {
+  "label": "n#1",
+  "expected": "n",
+  "got": "n",
+  "confidence": 1,
+  "alternatives": [
+   "ninp"
+  ]
+ },
+ {
+  "label": "t#1",
+  "expected": "t",
+  "got": "t",
+  "confidence": 0.84,
+  "alternatives": [
+   "t+7"
+  ]
+ },
+ {
+  "label": "+#1",
+  "expected": "+",
+  "got": "+",
+  "confidence": 0.94,
+  "alternatives": [
+   "+t4"
+  ]
+ },
+ {
+  "label": "-#1",
+  "expected": "-",
+  "got": "-",
+  "confidence": 0.97,
+  "alternatives": [
+   "-="
+  ]
+ },
+ {
+  "label": "=#1",
+  "expected": "=",
+  "got": "=",
+  "confidence": 0.98,
+  "alternatives": [
+   "=-"
+  ]
+ },
+ {
+  "label": "(#1",
+  "expected": "(",
+  "got": "(",
+  "confidence": 0.94,
+  "alternatives": [
+   "(l1"
+  ]
+ },
+ {
+  "label": ")#1",
+  "expected": ")",
+  "got": ")",
+  "confidence": 0.92,
+  "alternatives": [
+   ")l1"
+  ]
+ },
+ {
+  "label": "sqrt#1",
+  "expected": "sqrt",
+  "got": "sqrt",
+  "confidence": 0.9,
+  "alternatives": [
+   "sqrtvr"
+  ]
+ },
+ {
+  "label": "int#1",
+  "expected": "int",
+  "got": "int",
+  "confidence": 0.86,
+  "alternatives": [
+   "intjf"
+  ]
+ },
+ {
+  "label": "sum#1",
+  "expected": "sum",
+  "got": "sum",
+  "confidence": 1,
+  "alternatives": [
+   "sumint3"
+  ]
+ },
+ {
+  "label": "pi#1",
+  "expected": "pi",
+  "got": "pi",
+  "confidence": 0.77,
+  "alternatives": [
+   "pixxn"
+  ]
+ },
+ {
+  "label": "c#1",
+  "expected": "c",
+  "got": "c",
+  "confidence": 0.87,
+  "alternatives": [
+   "c0in"
+  ]
+ },
+ {
+  "label": "o#1",
+  "expected": "o",
+  "got": "0",
+  "confidence": 0.6,
+  "alternatives": [
+   "0in2"
+  ]
+ },
+ {
+  "label": "i#1",
+  "expected": "i",
+  "got": "i",
+  "confidence": 0.68,
+  "alternatives": [
+   "il1"
+  ]
+ },
+ {
+  "label": "d#1",
+  "expected": "d",
+  "got": "d",
+  "confidence": 1,
+  "alternatives": [
+   "d4+-"
+  ]
+ },
+ {
+  "label": "m#1",
+  "expected": "m",
+  "got": "m",
+  "confidence": 1,
+  "alternatives": [
+   "mn!="
+  ]
+ },
+ {
+  "label": "x+1",
+  "expected": "x+1",
+  "got": "x+ 1",
+  "confidence": 0.89,
+  "alternatives": [
+   "x*+",
+   "+t4",
+   "1li"
+  ]
+ },
+ {
+  "label": "2x",
+  "expected": "2x",
+  "got": "2x",
+  "confidence": 0.88,
+  "alternatives": [
+   "2sumdel",
+   "x*+"
+  ]
+ },
+ {
+  "label": "x=5",
+  "expected": "x=5",
+  "got": "x= 5",
+  "confidence": 0.93,
+  "alternatives": [
+   "x*+",
+   "=-",
+   "5delin"
+  ]
+ },
+ {
+  "label": "a+b",
+  "expected": "a+b",
+  "got": "a +b",
+  "confidence": 0.88,
+  "alternatives": [
+   "a0grad",
+   "+t4",
+   "bhmu"
+  ]
+ },
+ {
+  "label": "(x+1)",
+  "expected": "(x+1)",
+  "got": "(x+ 1)",
+  "confidence": 0.92,
+  "alternatives": [
+   "(l1",
+   "x*+",
+   "+t4",
+   "1li"
+  ]
+ },
+ {
+  "label": "2n+3",
+  "expected": "2n+3",
+  "got": "2n+3",
+  "confidence": 0.94,
+  "alternatives": [
+   "2sumdel",
+   "ninp",
+   "+t4",
+   "3del0"
+  ]
+ },
+ {
+  "label": "x-7",
+  "expected": "x-7",
+  "got": "x-7",
+  "confidence": 0.93,
+  "alternatives": [
+   "x*+",
+   "-=",
+   "7grady"
+  ]
+ }
+]

@@ -29,7 +29,17 @@ export interface ShapeMatch {
 	value: string;
 	/** 0..1, from the cloud distance. */
 	score: number;
+	/** The raw cloud distance: 0 is identical, and past REJECT_DISTANCE it is a guess. */
+	distance: number;
 }
+
+/**
+ * How far a match can sit and still be believed. Measured, not guessed: ten
+ * shapes the library does not contain (a spiral, a heart, a house, ≈, ∇, a
+ * scribble) match at 1.62 and up, while every symbol it knows matches at 1.26
+ * or better. Anything past this is reported as unknown rather than answered.
+ */
+export const REJECT_DISTANCE = 1.45;
 
 /** Points per cloud. 32 is the number $P was tuned on and it is fast enough. */
 const CLOUD_POINTS = 32;
@@ -273,6 +283,20 @@ const SHAPES: [string, Pt[][]][] = [
 	["theta", [ring(32, 34, 14, 28), line(20, 34, 46, 34)]],
 	["lambda", [line(18, 6, 48, 62), path([[36, 34], [24, 50], [16, 62]])]],
 	["oo", [path([[20, 34], [10, 44], [20, 54], [34, 44], [48, 34], [58, 44], [48, 54], [34, 44], [20, 34]])]],
+	// Written often enough to belong here: the honesty test found people drawing
+	// them and the reader having nothing to offer.
+	["~~", [path([[10, 28], [20, 22], [30, 32], [40, 26]]), path([[10, 44], [20, 38], [30, 48], [40, 42]])]],
+	["!=", [line(10, 28, 54, 28), line(10, 44, 54, 44), line(40, 14, 24, 58)]],
+	["+-", [line(10, 30, 56, 30), line(33, 8, 33, 52), line(10, 60, 56, 60)]],
+	["-:", [line(10, 36, 56, 36), line(32, 20, 34, 22), line(32, 50, 34, 52)]],
+	["xx", [line(16, 20, 48, 52), line(48, 20, 16, 52)]],
+	["del", [path([[46, 16], [34, 8], [24, 18], [34, 30], [46, 38], [42, 56], [26, 60], [16, 50]])]],
+	["Delta", [line(32, 8, 12, 60), line(12, 60, 52, 60), line(52, 60, 32, 8)]],
+	["grad", [line(12, 10, 52, 10), line(52, 10, 32, 60), line(32, 60, 12, 10)]],
+	["in", [path([[48, 22], [28, 20], [18, 34], [28, 50], [48, 48]]), line(22, 34, 42, 34)]],
+	["<=", [line(50, 12, 16, 32), line(16, 32, 50, 50), line(16, 60, 50, 60)]],
+	[">=", [line(18, 12, 52, 32), line(52, 32, 18, 50), line(18, 60, 52, 60)]],
+	["mu", [line(14, 28, 16, 78), path([[16, 50], [22, 60], [34, 58], [40, 46], [40, 28]]), line(40, 46, 46, 60)]],
 	["sqrt", [path([[4, 38], [12, 38], [22, 62], [34, 8], [64, 8]])]],
 	["int", [path([[46, 12], [42, 4], [34, 8], [33, 24], [30, 44], [28, 60], [20, 64], [16, 56]])]],
 	["sum", [line(56, 6, 14, 6), line(14, 6, 38, 34), line(38, 34, 14, 62), line(14, 62, 56, 62)]],
@@ -326,5 +350,5 @@ export function matchShape(strokes: { x: number; y: number }[][]): ShapeMatch[] 
 	// means nothing in the library looks like this.
 	return [...best.entries()]
 		.sort((a, b) => a[1] - b[1])
-		.map(([value, distance]) => ({ value, score: Math.max(0, 1 - distance / 14) }));
+		.map(([value, distance]) => ({ value, distance, score: Math.max(0, 1 - distance / 14) }));
 }

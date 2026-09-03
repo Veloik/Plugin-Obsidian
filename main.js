@@ -1579,6 +1579,7 @@ function runLocalStudyTool(tool, text) {
 }
 
 // src/ink-shapes.ts
+var REJECT_DISTANCE = 1.45;
 var CLOUD_POINTS = 32;
 function pathLength(points) {
   let total = 0;
@@ -1776,6 +1777,20 @@ var SHAPES = [
   ["theta", [ring(32, 34, 14, 28), line(20, 34, 46, 34)]],
   ["lambda", [line(18, 6, 48, 62), path([[36, 34], [24, 50], [16, 62]])]],
   ["oo", [path([[20, 34], [10, 44], [20, 54], [34, 44], [48, 34], [58, 44], [48, 54], [34, 44], [20, 34]])]],
+  // Written often enough to belong here: the honesty test found people drawing
+  // them and the reader having nothing to offer.
+  ["~~", [path([[10, 28], [20, 22], [30, 32], [40, 26]]), path([[10, 44], [20, 38], [30, 48], [40, 42]])]],
+  ["!=", [line(10, 28, 54, 28), line(10, 44, 54, 44), line(40, 14, 24, 58)]],
+  ["+-", [line(10, 30, 56, 30), line(33, 8, 33, 52), line(10, 60, 56, 60)]],
+  ["-:", [line(10, 36, 56, 36), line(32, 20, 34, 22), line(32, 50, 34, 52)]],
+  ["xx", [line(16, 20, 48, 52), line(48, 20, 16, 52)]],
+  ["del", [path([[46, 16], [34, 8], [24, 18], [34, 30], [46, 38], [42, 56], [26, 60], [16, 50]])]],
+  ["Delta", [line(32, 8, 12, 60), line(12, 60, 52, 60), line(52, 60, 32, 8)]],
+  ["grad", [line(12, 10, 52, 10), line(52, 10, 32, 60), line(32, 60, 12, 10)]],
+  ["in", [path([[48, 22], [28, 20], [18, 34], [28, 50], [48, 48]]), line(22, 34, 42, 34)]],
+  ["<=", [line(50, 12, 16, 32), line(16, 32, 50, 50), line(16, 60, 50, 60)]],
+  [">=", [line(18, 12, 52, 32), line(52, 32, 18, 50), line(18, 60, 52, 60)]],
+  ["mu", [line(14, 28, 16, 78), path([[16, 50], [22, 60], [34, 58], [40, 46], [40, 28]]), line(40, 46, 46, 60)]],
   ["sqrt", [path([[4, 38], [12, 38], [22, 62], [34, 8], [64, 8]])]],
   ["int", [path([[46, 12], [42, 4], [34, 8], [33, 24], [30, 44], [28, 60], [20, 64], [16, 56]])]],
   ["sum", [line(56, 6, 14, 6), line(14, 6, 38, 34), line(38, 34, 14, 62), line(14, 62, 56, 62)]],
@@ -1824,623 +1839,7 @@ function matchShape(strokes) {
     const previous = best.get(prototype.value);
     if (previous === void 0 || distance < previous) best.set(prototype.value, distance);
   }
-  return [...best.entries()].sort((a3, b3) => a3[1] - b3[1]).map(([value, distance]) => ({ value, score: Math.max(0, 1 - distance / 14) }));
-}
-
-// src/ink-math.ts
-var clamp01 = (value) => Math.max(0, Math.min(1, value));
-function boundsOfPoints(points) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const point of points) {
-    minX = Math.min(minX, point.x);
-    minY = Math.min(minY, point.y);
-    maxX = Math.max(maxX, point.x);
-    maxY = Math.max(maxY, point.y);
-  }
-  if (!Number.isFinite(minX)) minX = minY = maxX = maxY = 0;
-  const w3 = Math.max(0.5, maxX - minX), h3 = Math.max(0.5, maxY - minY);
-  return { x: minX, y: minY, w: w3, h: h3, right: minX + w3, bottom: minY + h3 };
-}
-function boundsOfStrokes(strokes) {
-  return boundsOfPoints(strokes.flatMap((stroke) => stroke.points));
-}
-function pathLength2(points) {
-  let length = 0;
-  for (let i4 = 1; i4 < points.length; i4++) length += Math.hypot(points[i4].x - points[i4 - 1].x, points[i4].y - points[i4 - 1].y);
-  return length;
-}
-function strokeInfo(stroke) {
-  const points = stroke.points;
-  const first = points[0] ?? { x: 0, y: 0 };
-  const last = points[points.length - 1] ?? first;
-  const dx = last.x - first.x;
-  const dy = last.y - first.y;
-  const chord = Math.hypot(dx, dy);
-  const length = Math.max(pathLength2(points), chord, 0.01);
-  let angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
-  if (angle > 90) angle = 180 - angle;
-  return { stroke, bounds: boundsOfPoints(points), length, chord, angle, straightness: chord / length };
-}
-function median(values) {
-  if (!values.length) return 0;
-  const sorted = [...values].sort((a3, b3) => a3 - b3);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
-function overlap(a0, a1, b0, b12) {
-  return Math.max(0, Math.min(a1, b12) - Math.max(a0, b0));
-}
-function centre(bounds) {
-  return { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 };
-}
-function pointDistance(a3, b3) {
-  return Math.hypot(a3.x - b3.x, a3.y - b3.y);
-}
-function minStrokeDistance(a3, b3) {
-  let best = Infinity;
-  for (const sa2 of a3) {
-    const stepA = Math.max(1, Math.floor(sa2.points.length / 24));
-    for (let ai = 0; ai < sa2.points.length; ai += stepA) {
-      for (const sb of b3) {
-        const stepB = Math.max(1, Math.floor(sb.points.length / 24));
-        for (let bi = 0; bi < sb.points.length; bi += stepB) best = Math.min(best, pointDistance(sa2.points[ai], sb.points[bi]));
-      }
-    }
-  }
-  return best;
-}
-function isHorizontalLine(info2) {
-  return info2.straightness > 0.91 && info2.angle < 13 && info2.bounds.w > Math.max(8, info2.bounds.h * 3.2);
-}
-function isVerticalLine(info2) {
-  return info2.straightness > 0.91 && info2.angle > 76 && info2.bounds.h > Math.max(8, info2.bounds.w * 3.2);
-}
-function lineIntersection(a3, b3) {
-  const p3 = a3.stroke.points[0], p22 = a3.stroke.points[a3.stroke.points.length - 1];
-  const q3 = b3.stroke.points[0], q22 = b3.stroke.points[b3.stroke.points.length - 1];
-  if (!p3 || !p22 || !q3 || !q22) return false;
-  const cross = (u3, v3, w3) => (v3.x - u3.x) * (w3.y - u3.y) - (v3.y - u3.y) * (w3.x - u3.x);
-  const d12 = cross(p3, p22, q3), d22 = cross(p3, p22, q22), d3 = cross(q3, q22, p3), d4 = cross(q3, q22, p22);
-  const eps = 1e-6;
-  if (Math.abs(d12) < eps && Math.abs(d22) < eps && Math.abs(d3) < eps && Math.abs(d4) < eps) {
-    return overlap(a3.bounds.x, a3.bounds.right, b3.bounds.x, b3.bounds.right) >= 0 && overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom) >= 0 && minStrokeDistance([a3.stroke], [b3.stroke]) < Math.max(a3.bounds.h, a3.bounds.w) * 0.35;
-  }
-  return d12 * d22 <= 0 && d3 * d4 <= 0;
-}
-function crossingParameters(a3, b3) {
-  const p3 = a3.stroke.points[0], p22 = a3.stroke.points[a3.stroke.points.length - 1];
-  const q3 = b3.stroke.points[0], q22 = b3.stroke.points[b3.stroke.points.length - 1];
-  if (!p3 || !p22 || !q3 || !q22) return null;
-  const rx = p22.x - p3.x, ry = p22.y - p3.y;
-  const sx = q22.x - q3.x, sy = q22.y - q3.y;
-  const denominator = rx * sy - ry * sx;
-  if (Math.abs(denominator) < 1e-9) return null;
-  const alongA = ((q3.x - p3.x) * sy - (q3.y - p3.y) * sx) / denominator;
-  const alongB = ((q3.x - p3.x) * ry - (q3.y - p3.y) * rx) / denominator;
-  if (alongA < -0.02 || alongA > 1.02 || alongB < -0.02 || alongB > 1.02) return null;
-  return { alongA, alongB };
-}
-function crossesInside(a3, b3) {
-  const at2 = crossingParameters(a3, b3);
-  if (!at2) return false;
-  const inside = (t3) => t3 > 0.12 && t3 < 0.88;
-  return inside(at2.alongA) && inside(at2.alongB);
-}
-function hasNonBarInk(strokes) {
-  return strokes.some((stroke) => {
-    const info2 = strokeInfo(stroke);
-    return !isHorizontalLine(info2) || info2.bounds.h > 3.5;
-  });
-}
-function findFraction(strokes) {
-  if (strokes.length < 3) return null;
-  const all = boundsOfStrokes(strokes);
-  const infos = strokes.map(strokeInfo);
-  let best = null;
-  for (const info2 of infos) {
-    if (!isHorizontalLine(info2) || info2.bounds.w < Math.max(18, all.w * 0.12)) continue;
-    const barY = info2.bounds.y + info2.bounds.h / 2;
-    const padX = Math.max(5, info2.bounds.w * 0.06);
-    const candidates = strokes.filter((stroke) => stroke !== info2.stroke);
-    const numerator = candidates.filter((stroke) => {
-      const b3 = boundsOfPoints(stroke.points);
-      return centre(b3).y < barY - 1 && overlap(b3.x, b3.right, info2.bounds.x - padX, info2.bounds.right + padX) > 0;
-    });
-    const denominator = candidates.filter((stroke) => {
-      const b3 = boundsOfPoints(stroke.points);
-      return centre(b3).y > barY + 1 && overlap(b3.x, b3.right, info2.bounds.x - padX, info2.bounds.right + padX) > 0;
-    });
-    if (!numerator.length || !denominator.length || !hasNonBarInk(numerator) || !hasNonBarInk(denominator)) continue;
-    const inside = /* @__PURE__ */ new Set([...numerator, ...denominator, info2.stroke]);
-    const left = candidates.filter((stroke) => !inside.has(stroke) && centre(boundsOfPoints(stroke.points)).x < info2.bounds.x);
-    const right = candidates.filter((stroke) => !inside.has(stroke) && centre(boundsOfPoints(stroke.points)).x > info2.bounds.right);
-    const numBounds = boundsOfStrokes(numerator), denBounds = boundsOfStrokes(denominator);
-    const coverage = Math.min(numBounds.w, denBounds.w) / Math.max(info2.bounds.w, 1);
-    const balance = 1 - Math.min(1, Math.abs(numBounds.w - denBounds.w) / Math.max(info2.bounds.w, 1));
-    const score = info2.bounds.w / Math.max(all.w, 1) + coverage * 0.8 + balance * 0.25;
-    if (!best || score > best.score) best = { bar: info2.stroke, left, numerator, denominator, right, score };
-  }
-  return best;
-}
-function shouldMerge(a3, b3, scale) {
-  const ai = a3.strokes.map(strokeInfo), bi = b3.strokes.map(strokeInfo);
-  const xOverlap = overlap(a3.bounds.x, a3.bounds.right, b3.bounds.x, b3.bounds.right);
-  const yOverlap = overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom);
-  const aHoriz = ai.length === 1 && isHorizontalLine(ai[0]);
-  const bHoriz = bi.length === 1 && isHorizontalLine(bi[0]);
-  if (aHoriz && bHoriz) {
-    const widthRatio = Math.min(a3.bounds.w, b3.bounds.w) / Math.max(a3.bounds.w, b3.bounds.w);
-    const verticalGap = Math.max(0, Math.max(a3.bounds.y, b3.bounds.y) - Math.min(a3.bounds.bottom, b3.bounds.bottom));
-    if (widthRatio > 0.58 && xOverlap > Math.min(a3.bounds.w, b3.bounds.w) * 0.55 && verticalGap < Math.max(scale * 1.45, Math.min(a3.bounds.w, b3.bounds.w) * 0.42)) return true;
-  }
-  if (ai.length === 1 && bi.length === 1 && ai[0].straightness > 0.86 && bi[0].straightness > 0.86 && lineIntersection(ai[0], bi[0])) return true;
-  const ends = (group) => group.strokes.flatMap((stroke) => stroke.points.length ? [stroke.points[0], stroke.points[stroke.points.length - 1]] : []);
-  const reach = Math.max(4, scale * 0.16);
-  for (const endA of ends(a3)) {
-    for (const endB of ends(b3)) {
-      if (pointDistance(endA, endB) < reach) return true;
-    }
-  }
-  const sizeA = Math.max(a3.bounds.w, a3.bounds.h);
-  const sizeB = Math.max(b3.bounds.w, b3.bounds.h);
-  const smaller2 = Math.min(sizeA, sizeB);
-  if (smaller2 > 0 && minStrokeDistance(a3.strokes, b3.strokes) < smaller2 * 0.14 && overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom) > smaller2 * 0.3) {
-    return true;
-  }
-  const smallA = a3.bounds.w < scale * 0.24 && a3.bounds.h < scale * 0.24;
-  const smallB = b3.bounds.w < scale * 0.24 && b3.bounds.h < scale * 0.24;
-  if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a3.bounds).x - centre(b3.bounds).x) < scale * 0.28) {
-    const gap = Math.max(0, Math.max(a3.bounds.y, b3.bounds.y) - Math.min(a3.bounds.bottom, b3.bounds.bottom));
-    const body = smallA ? b3.bounds.h : a3.bounds.h;
-    if (gap < Math.max(scale * 0.42, body * 0.55)) return true;
-  }
-  const combined = boundsOfStrokes([...a3.strokes, ...b3.strokes]);
-  if (combined.w > scale * 1.55 || combined.h > scale * 1.8) return false;
-  if (xOverlap > Math.min(a3.bounds.w, b3.bounds.w) * 0.18 && yOverlap > 0) return minStrokeDistance(a3.strokes, b3.strokes) < scale * 0.22;
-  return minStrokeDistance(a3.strokes, b3.strokes) < Math.max(3.5, scale * 0.1);
-}
-function groupGlyphs(strokes) {
-  let groups = strokes.map((stroke) => ({ strokes: [stroke], bounds: boundsOfPoints(stroke.points) }));
-  const scale = Math.max(12, median(groups.map((group) => Math.max(group.bounds.h, Math.min(group.bounds.w, group.bounds.h * 1.4)))));
-  let changed = true;
-  while (changed) {
-    changed = false;
-    outer: for (let i4 = 0; i4 < groups.length; i4++) {
-      for (let j3 = i4 + 1; j3 < groups.length; j3++) {
-        if (!shouldMerge(groups[i4], groups[j3], scale)) continue;
-        const strokes2 = [...groups[i4].strokes, ...groups[j3].strokes];
-        groups[i4] = { strokes: strokes2, bounds: boundsOfStrokes(strokes2) };
-        groups.splice(j3, 1);
-        changed = true;
-        break outer;
-      }
-    }
-  }
-  return groups.sort((a3, b3) => a3.bounds.x - b3.bounds.x || a3.bounds.y - b3.bounds.y);
-}
-var MASK_SIZE = 42;
-var templateCache = /* @__PURE__ */ new Map();
-var GLYPHS = [
-  ...[..."0123456789"].map((glyph) => ({ glyph, value: glyph })),
-  ...[..."xyzabcnmtefghijkopqrsuv"].map((glyph) => ({ glyph, value: glyph })),
-  ...[..."()[]<>"].map((glyph) => ({ glyph, value: glyph })),
-  { glyph: "+", value: "+" },
-  { glyph: "\u2212", value: "-" },
-  { glyph: "=", value: "=" },
-  { glyph: "/", value: "/" },
-  { glyph: "\xD7", value: "*" },
-  { glyph: ".", value: "." },
-  { glyph: ",", value: "," },
-  { glyph: "\u221A", value: "sqrt" },
-  { glyph: "\u03C0", value: "pi" },
-  { glyph: "\u222B", value: "int" },
-  { glyph: "\u03A3", value: "sum" }
-];
-function cropMask(source) {
-  const ctx = source.getContext("2d", { willReadFrequently: true });
-  if (!ctx) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: 1, density: 0 };
-  const data = ctx.getImageData(0, 0, source.width, source.height).data;
-  let minX = source.width, minY = source.height, maxX = -1, maxY = -1;
-  for (let y3 = 0; y3 < source.height; y3++) for (let x4 = 0; x4 < source.width; x4++) {
-    const i4 = (y3 * source.width + x4) * 4;
-    if (data[i4 + 3] > 40 && data[i4] + data[i4 + 1] + data[i4 + 2] < 700) {
-      minX = Math.min(minX, x4);
-      minY = Math.min(minY, y3);
-      maxX = Math.max(maxX, x4);
-      maxY = Math.max(maxY, y3);
-    }
-  }
-  if (maxX < minX) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: 1, density: 0 };
-  const w3 = maxX - minX + 1, h3 = maxY - minY + 1;
-  const fit = createEl("canvas");
-  fit.width = fit.height = MASK_SIZE;
-  const out = fit.getContext("2d", { willReadFrequently: true });
-  if (!out) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: w3 / h3, density: 0 };
-  const padding = 4;
-  const scale = Math.min((MASK_SIZE - padding * 2) / w3, (MASK_SIZE - padding * 2) / h3);
-  const dw = w3 * scale, dh = h3 * scale;
-  out.clearRect(0, 0, MASK_SIZE, MASK_SIZE);
-  out.drawImage(source, minX, minY, w3, h3, (MASK_SIZE - dw) / 2, (MASK_SIZE - dh) / 2, dw, dh);
-  const normalized = out.getImageData(0, 0, MASK_SIZE, MASK_SIZE).data;
-  const pixels = new Uint8Array(MASK_SIZE * MASK_SIZE);
-  let count = 0;
-  for (let i4 = 0; i4 < pixels.length; i4++) {
-    const at2 = i4 * 4;
-    if (normalized[at2 + 3] > 45 && normalized[at2] + normalized[at2 + 1] + normalized[at2 + 2] < 710) {
-      pixels[i4] = 1;
-      count++;
-    }
-  }
-  return { pixels, aspect: w3 / Math.max(h3, 1), density: count / pixels.length };
-}
-function maskForStrokes(strokes) {
-  const canvas = createEl("canvas");
-  canvas.width = canvas.height = 120;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return cropMask(canvas);
-  const bounds = boundsOfStrokes(strokes);
-  const pad = 12;
-  const scale = Math.min((canvas.width - pad * 2) / Math.max(bounds.w, 1), (canvas.height - pad * 2) / Math.max(bounds.h, 1));
-  ctx.strokeStyle = "#000";
-  ctx.fillStyle = "#000";
-  ctx.lineWidth = 4;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  for (const stroke of strokes) {
-    if (!stroke.points.length) continue;
-    ctx.beginPath();
-    const first = stroke.points[0];
-    ctx.moveTo(pad + (first.x - bounds.x) * scale, pad + (first.y - bounds.y) * scale);
-    for (let i4 = 1; i4 < stroke.points.length; i4++) ctx.lineTo(pad + (stroke.points[i4].x - bounds.x) * scale, pad + (stroke.points[i4].y - bounds.y) * scale);
-    if (stroke.points.length === 1) ctx.arc(pad + (first.x - bounds.x) * scale, pad + (first.y - bounds.y) * scale, 2, 0, Math.PI * 2);
-    stroke.points.length === 1 ? ctx.fill() : ctx.stroke();
-  }
-  return cropMask(canvas);
-}
-function templateMasks(glyph) {
-  const cached = templateCache.get(glyph);
-  if (cached) return cached;
-  const fonts = ["Segoe Print", "Comic Sans MS", "Arial", "Georgia"];
-  const masks = fonts.map((font) => {
-    const canvas = createEl("canvas");
-    canvas.width = canvas.height = 120;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return cropMask(canvas);
-    ctx.fillStyle = "#000";
-    ctx.font = `${font === "Georgia" ? "italic " : ""}86px ${font}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(glyph, 60, 63);
-    return cropMask(canvas);
-  });
-  templateCache.set(glyph, masks);
-  return masks;
-}
-function distanceField(mask) {
-  const size = MASK_SIZE;
-  const field = new Float32Array(mask.length);
-  for (let i4 = 0; i4 < mask.length; i4++) field[i4] = mask[i4] ? 0 : 999;
-  for (let y3 = 0; y3 < size; y3++) for (let x4 = 0; x4 < size; x4++) {
-    const i4 = y3 * size + x4;
-    if (x4) field[i4] = Math.min(field[i4], field[i4 - 1] + 1);
-    if (y3) field[i4] = Math.min(field[i4], field[i4 - size] + 1);
-    if (x4 && y3) field[i4] = Math.min(field[i4], field[i4 - size - 1] + 1.414);
-    if (x4 + 1 < size && y3) field[i4] = Math.min(field[i4], field[i4 - size + 1] + 1.414);
-  }
-  for (let y3 = size - 1; y3 >= 0; y3--) for (let x4 = size - 1; x4 >= 0; x4--) {
-    const i4 = y3 * size + x4;
-    if (x4 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + 1] + 1);
-    if (y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size] + 1);
-    if (x4 + 1 < size && y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size + 1] + 1.414);
-    if (x4 && y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size - 1] + 1.414);
-  }
-  return field;
-}
-function directedDistance(from, toField) {
-  let total = 0, count = 0;
-  for (let i4 = 0; i4 < from.length; i4++) if (from[i4]) {
-    total += Math.min(toField[i4], 12);
-    count++;
-  }
-  return count ? total / count : 12;
-}
-function maskDistance(a3, b3) {
-  const spatial = (directedDistance(a3.pixels, distanceField(b3.pixels)) + directedDistance(b3.pixels, distanceField(a3.pixels))) / (2 * MASK_SIZE);
-  const aspect = Math.abs(Math.log(Math.max(0.08, a3.aspect) / Math.max(0.08, b3.aspect))) * 0.14;
-  const density = Math.abs(a3.density - b3.density) * 0.45;
-  return spatial + aspect + density;
-}
-function looksLikeRadical(points, b3) {
-  if (points.length < 8 || b3.h < 8 || b3.w < 8) return false;
-  let vertex = 0;
-  for (let i4 = 1; i4 < points.length; i4++) if (points[i4].y > points[vertex].y) vertex = i4;
-  const position = vertex / (points.length - 1);
-  if (position < 0.08 || position > 0.75) return false;
-  if (points[vertex].y < b3.y + b3.h * 0.6) return false;
-  let peak = vertex;
-  for (let i4 = vertex; i4 < points.length; i4++) if (points[i4].y < points[peak].y) peak = i4;
-  if (peak <= vertex || points[peak].y > b3.y + b3.h * 0.35) return false;
-  const last = points[points.length - 1];
-  const tailWidth = last.x - points[peak].x;
-  const tailDrop = Math.abs(last.y - points[peak].y);
-  return tailWidth > b3.w * 0.28 && tailDrop < b3.h * 0.3 && last.x > b3.right - b3.w * 0.15;
-}
-function selfCrosses(points) {
-  const segments = Math.min(points.length - 1, 80);
-  const step = Math.max(1, Math.floor((points.length - 1) / segments));
-  const sign = (a3, b3, c3) => Math.sign((b3.x - a3.x) * (c3.y - a3.y) - (b3.y - a3.y) * (c3.x - a3.x));
-  for (let i4 = 0; i4 + step < points.length; i4 += step) {
-    for (let j3 = i4 + step * 3; j3 + step < points.length; j3 += step) {
-      const [a3, b3, c3, d3] = [points[i4], points[i4 + step], points[j3], points[j3 + step]];
-      if (sign(a3, b3, c3) !== sign(a3, b3, d3) && sign(c3, d3, a3) !== sign(c3, d3, b3)) return true;
-    }
-  }
-  return false;
-}
-function looksLikeIntegral(info2, points, b3) {
-  if (points.length < 6) return false;
-  if (b3.h < b3.w * 1.9 || b3.w < 4) return false;
-  if (info2.straightness > 0.82) return false;
-  const first = points[0], last = points[points.length - 1];
-  if (first.y > b3.y + b3.h * 0.28 || last.y < b3.bottom - b3.h * 0.28) return false;
-  if (selfCrosses(points)) return false;
-  let climb = 0;
-  for (let i4 = 1; i4 < points.length; i4++) climb += Math.max(0, points[i4 - 1].y - points[i4].y);
-  if (climb > b3.h * 0.3) return false;
-  return first.x > last.x + b3.w * 0.3;
-}
-function hardGeometry(group) {
-  const infos = group.strokes.map(strokeInfo);
-  const b3 = group.bounds;
-  if (b3.w < 4 && b3.h < 4) return { value: ".", alternatives: [".", ","], confidence: 0.95 };
-  if (infos.length === 1 && infos[0].straightness > 0.93) {
-    if (isHorizontalLine(infos[0])) return { value: "-", alternatives: ["-", "="], confidence: 0.97 };
-    if (isVerticalLine(infos[0])) return { value: "1", alternatives: ["1", "l", "i"], confidence: 0.9 };
-    if (infos[0].angle > 25 && infos[0].angle < 68) return { value: "/", alternatives: ["/", "1"], confidence: 0.82 };
-  }
-  if (infos.length === 2 && infos.every((info2) => isHorizontalLine(info2))) {
-    return { value: "=", alternatives: ["=", "-"], confidence: 0.98 };
-  }
-  if (infos.length === 2 && infos.every((info2) => info2.straightness > 0.88) && crossesInside(infos[0], infos[1])) {
-    const angles = infos.map((info2) => info2.angle);
-    const axisAligned = angles.some((angle) => angle < 20) && angles.some((angle) => angle > 70);
-    if (!axisAligned) return { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
-    const vertical = infos[0].angle > 70 ? infos[0] : infos[1];
-    const at2 = crossingParameters(infos[0], infos[1]);
-    const alongStem = !at2 ? 0.5 : vertical === infos[0] ? at2.alongA : at2.alongB;
-    const downwards = vertical.stroke.points[0].y < vertical.stroke.points[vertical.stroke.points.length - 1].y;
-    const fromTop = downwards ? alongStem : 1 - alongStem;
-    return fromTop < 0.36 ? { value: "t", alternatives: ["t", "+", "7"], confidence: 0.84 } : { value: "+", alternatives: ["+", "t", "4"], confidence: 0.94 };
-  }
-  if (infos.length === 1) {
-    const info2 = infos[0];
-    const first = info2.stroke.points[0], last = info2.stroke.points[info2.stroke.points.length - 1];
-    const points = info2.stroke.points;
-    if (looksLikeRadical(points, b3)) return { value: "sqrt", alternatives: ["sqrt", "v", "r"], confidence: 0.9 };
-    if (looksLikeIntegral(info2, points, b3)) return { value: "int", alternatives: ["int", "j", "f"], confidence: 0.86 };
-    if (points.length >= 5 && first && last) {
-      const earlyEnd = Math.max(1, points.length - 2);
-      let maxXIndex = 0;
-      for (let index = 1; index <= earlyEnd; index++) if (points[index].x > points[maxXIndex].x) maxXIndex = index;
-      const lowerLeftIndex = points.reduce((best, point, index) => index > maxXIndex && point.x < points[best].x ? index : best, Math.min(points.length - 1, maxXIndex + 1));
-      const upperTurn = points[maxXIndex], lowerTurn = points[lowerLeftIndex];
-      const tailFrom = points[Math.max(0, Math.floor(points.length * 0.78))];
-      const flatTail = last.x - tailFrom.x > b3.w * 0.35 && Math.abs(last.y - tailFrom.y) < b3.h * 0.14;
-      const looksLikeTwo = maxXIndex < points.length * 0.7 && lowerLeftIndex > maxXIndex && upperTurn.y < b3.y + b3.h * 0.58 && lowerTurn.y > b3.y + b3.h * 0.48 && last.x > b3.x + b3.w * 0.68 && last.y > b3.y + b3.h * 0.68 && flatTail;
-      if (looksLikeTwo) return { value: "2", alternatives: ["2", "z", "sqrt"], confidence: 0.82 };
-    }
-    if (first && last && pointDistance(first, last) < Math.max(6, info2.length * 0.13) && info2.length > (b3.w + b3.h) * 1.35) {
-      return { value: "0", alternatives: ["0", "o", "6", "9"], confidence: 0.72 };
-    }
-  }
-  return null;
-}
-function classifyGlyph(group) {
-  const hard = hardGeometry(group);
-  if (hard && hard.confidence >= 0.8) return { ...hard, bounds: group.bounds };
-  const shapes = matchShape(group.strokes.map((stroke) => stroke.points));
-  const scores = /* @__PURE__ */ new Map();
-  for (const match of shapes) scores.set(match.value, 1 - match.score);
-  const contenders = shapes.slice(0, 6).map((match) => match.value);
-  if (contenders.length > 1 && canRasterise()) {
-    const input = maskForStrokes(group.strokes);
-    for (const candidate of GLYPHS) {
-      if (!contenders.includes(candidate.value)) continue;
-      const distance = Math.min(...templateMasks(candidate.glyph).map((mask) => maskDistance(input, mask)));
-      scores.set(candidate.value, (scores.get(candidate.value) ?? 1) + distance * 0.2);
-    }
-  }
-  if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.1 + (1 - hard.confidence) * 0.2));
-  const ranked = [...scores.entries()].sort((a3, b3) => a3[1] - b3[1]);
-  const best = ranked[0] ?? ["?", 1];
-  const second = ranked[1]?.[1] ?? best[1] + 0.2;
-  const confidence = clamp01(0.2 + (second - best[1]) * 3.2 + (0.45 - best[1]) * 1.1);
-  return { value: best[0], alternatives: ranked.slice(0, 5).map((entry) => entry[0]), confidence, bounds: group.bounds };
-}
-function canRasterise() {
-  try {
-    return typeof createEl === "function" && !!createEl("canvas").getContext("2d");
-  } catch {
-    return false;
-  }
-}
-function serializeGlyphs(glyphs) {
-  if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
-  const heights = glyphs.map((glyph) => glyph.bounds.h).filter((height) => height > 2);
-  const normalHeight = Math.max(8, median(heights));
-  const main = glyphs.filter((glyph) => glyph.bounds.h >= normalHeight * 0.72);
-  const baseline = median((main.length ? main : glyphs).map((glyph) => centre(glyph.bounds).y));
-  let source = "";
-  let previous = null;
-  for (let i4 = 0; i4 < glyphs.length; i4++) {
-    const glyph = glyphs[i4];
-    const c3 = centre(glyph.bounds);
-    const isSmall = glyph.bounds.h < normalHeight * 0.9;
-    const gap = previous ? glyph.bounds.x - previous.bounds.right : 0;
-    const spaced = previous && gap > normalHeight * 0.46;
-    if (spaced) source += " ";
-    if (previous && isSmall && c3.y < baseline - normalHeight * 0.2) {
-      const supers = [glyph.value];
-      while (i4 + 1 < glyphs.length) {
-        const next = glyphs[i4 + 1];
-        if (next.bounds.h >= normalHeight * 0.8 || centre(next.bounds).y >= baseline - normalHeight * 0.16) break;
-        supers.push(next.value);
-        i4++;
-      }
-      source += `^{${supers.join("")}}`;
-    } else if (previous && isSmall && c3.y > baseline + normalHeight * 0.25) {
-      const subs = [glyph.value];
-      while (i4 + 1 < glyphs.length) {
-        const next = glyphs[i4 + 1];
-        if (next.bounds.h >= normalHeight * 0.8 || centre(next.bounds).y <= baseline + normalHeight * 0.18) break;
-        subs.push(next.value);
-        i4++;
-      }
-      source += `_{${subs.join("")}}`;
-    } else {
-      source += glyph.value;
-    }
-    previous = glyph;
-  }
-  const confidence = glyphs.reduce((sum, glyph) => sum + glyph.confidence, 0) / glyphs.length;
-  return { source, tokens: glyphs.map(({ value, alternatives, confidence: confidence2 }) => ({ value, alternatives, confidence: confidence2 })), confidence, structured: false };
-}
-function combine(parts) {
-  const useful = parts.filter((part) => part.source.trim());
-  if (!useful.length) return { source: "", tokens: [], confidence: 0, structured: false };
-  return {
-    source: useful.map((part) => part.source).join(" ").replace(/\s+([,.)\]])/g, "$1").replace(/([([])\s+/g, "$1"),
-    tokens: useful.flatMap((part) => part.tokens),
-    confidence: useful.reduce((sum, part) => sum + part.confidence, 0) / useful.length,
-    structured: useful.some((part) => part.structured)
-  };
-}
-var DOMINANT_VALUES = /* @__PURE__ */ new Set(["sqrt", "sum", "int"]);
-function findDominant(glyphs) {
-  for (let index = 0; index < glyphs.length; index++) {
-    const dominant = glyphs[index];
-    if (!DOMINANT_VALUES.has(dominant.value) || dominant.confidence < 0.45) continue;
-    const d3 = dominant.bounds;
-    const scale = Math.max(10, d3.h);
-    const others = glyphs.filter((_3, i4) => i4 !== index);
-    const left = others.filter((glyph) => centre(glyph.bounds).x < centre(d3).x && glyph.bounds.right <= d3.x + scale * 0.2);
-    const rest = others.filter((glyph) => !left.includes(glyph));
-    if (dominant.value === "sqrt") {
-      const inside = [];
-      const right2 = [];
-      for (const glyph of rest) {
-        const b3 = glyph.bounds;
-        const vertical = overlap(b3.y, b3.bottom, d3.y, d3.bottom) / Math.max(1, Math.min(b3.h, d3.h));
-        const covered = b3.x < d3.right;
-        const justAfter = !right2.length && b3.x < d3.right + scale * 0.55;
-        if (vertical > 0.3 && (covered || justAfter && !inside.length)) inside.push(glyph);
-        else right2.push(glyph);
-      }
-      if (!inside.length) continue;
-      return { kind: "sqrt", left, inside, above: [], below: [], right: right2 };
-    }
-    const reach = dominant.value === "int" ? scale * 0.9 : scale * 0.7;
-    const above = [];
-    const below = [];
-    const right = [];
-    for (const glyph of rest) {
-      const b3 = glyph.bounds;
-      const c3 = centre(b3);
-      const inWindow = c3.x > d3.x - scale * 0.5 && c3.x < d3.right + reach;
-      if (inWindow && b3.bottom < d3.y + d3.h * 0.2) above.push(glyph);
-      else if (inWindow && b3.y > d3.bottom - d3.h * 0.2) below.push(glyph);
-      else right.push(glyph);
-    }
-    if (!above.length && !below.length) continue;
-    return { kind: dominant.value === "int" ? "int" : "sum", left, inside: [], above, below, right };
-  }
-  return null;
-}
-function parseRegion(glyphs, depth) {
-  if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
-  return parseExpression(glyphs.flatMap((glyph) => glyph.strokes), depth + 1);
-}
-function buildDominant(split, depth) {
-  const left = parseRegion(split.left, depth);
-  const right = parseRegion(split.right, depth);
-  let middle;
-  if (split.kind === "sqrt") {
-    const inside = parseRegion(split.inside, depth);
-    middle = {
-      source: `\\sqrt{${inside.source || "?"}}`,
-      tokens: inside.tokens,
-      confidence: (inside.confidence || 0.35) * 0.92 + 0.06,
-      structured: true
-    };
-  } else {
-    const above = parseRegion(split.above, depth);
-    const below = parseRegion(split.below, depth);
-    const command = split.kind === "sum" ? "\\sum" : "\\int";
-    let source = command;
-    if (below.source) source += `_{${below.source}}`;
-    if (above.source) source += `^{${above.source}}`;
-    const parts = [above, below].filter((part) => part.source);
-    middle = {
-      source,
-      tokens: [...below.tokens, ...above.tokens],
-      confidence: parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length) * 0.9 + 0.08,
-      structured: true
-    };
-  }
-  return combine([left, middle, right]);
-}
-function parseExpression(strokes, depth = 0) {
-  if (!strokes.length) return { source: "", tokens: [], confidence: 0, structured: false };
-  if (depth < 3) {
-    const fraction = findFraction(strokes);
-    if (fraction) {
-      const left = parseExpression(fraction.left, depth + 1);
-      const numerator = parseExpression(fraction.numerator, depth + 1);
-      const denominator = parseExpression(fraction.denominator, depth + 1);
-      const right = parseExpression(fraction.right, depth + 1);
-      const middle = {
-        source: `\\frac{${numerator.source || "?"}}{${denominator.source || "?"}}`,
-        tokens: [...numerator.tokens, ...denominator.tokens],
-        confidence: Math.min(numerator.confidence || 0.35, denominator.confidence || 0.35) * 0.9 + 0.09,
-        structured: true
-      };
-      return combine([left, middle, right]);
-    }
-  }
-  const glyphs = groupGlyphs(strokes).map((group) => ({ ...classifyGlyph(group), strokes: group.strokes }));
-  if (depth < 3) {
-    const dominant = findDominant(glyphs);
-    if (dominant) return buildDominant(dominant, depth);
-  }
-  return serializeGlyphs(glyphs);
-}
-function recognizeInkFormula(strokes) {
-  const clean = strokes.map((stroke) => ({ ...stroke, points: stroke.points.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y)) })).filter((stroke) => stroke.points.length > 0);
-  if (!clean.length) return { source: "", confidence: 0, tokens: [], detail: "Sin tinta" };
-  const parsed = parseExpression(clean);
-  const uncertain = parsed.tokens.filter((token) => token.confidence < 0.56).length;
-  const confidence = clamp01(parsed.confidence + (parsed.structured ? 0.08 : 0));
-  const detail = parsed.structured ? `Estructura matem\xE1tica detectada \xB7 ${Math.round(confidence * 100)}%` : uncertain ? `${uncertain} s\xEDmbolo${uncertain === 1 ? "" : "s"} por revisar \xB7 ${Math.round(confidence * 100)}%` : `Lectura vectorial \xB7 ${Math.round(confidence * 100)}%`;
-  return { source: parsed.source.trim(), confidence, tokens: parsed.tokens, detail };
-}
-function formulaCandidateScore(source) {
-  const value = source.trim();
-  if (!value) return -100;
-  let score = Math.min(18, value.length * 0.45);
-  const valid = value.match(/[A-Za-z0-9+\-=/*^_().,<>[\]{}|!\\]/g)?.length ?? 0;
-  score += valid / value.length * 12;
-  score += (value.match(/[=+\-/*^_]|\\(?:frac|sqrt|sum|int)/g) ?? []).length * 1.7;
-  if (/\\frac\{[^{}]+\}\{[^{}]+\}/.test(value)) score += 7;
-  if (/\^(?:\([^()]+\)|\{[^{}]+\}|[0-9])/.test(value)) score += 3;
-  if (/[?]{2,}|[_^]\s*$|[+\-=/*]{3,}/.test(value)) score -= 8;
-  if (/\b[A-Za-z]{7,}\b/.test(value)) score -= 3;
-  const opens = (value.match(/[({[]/g) ?? []).length;
-  const closes = (value.match(/[)}\]]/g) ?? []).length;
-  score -= Math.abs(opens - closes) * 2;
-  return score;
-}
-function pickFormulaCandidate(candidates) {
-  return candidates.filter((candidate) => candidate.source.trim()).sort((a3, b3) => formulaCandidateScore(b3.source) + (b3.bonus ?? 0) - formulaCandidateScore(a3.source) - (a3.bonus ?? 0))[0]?.source.trim() ?? "";
+  return [...best.entries()].sort((a3, b3) => a3[1] - b3[1]).map(([value, distance]) => ({ value, distance, score: Math.max(0, 1 - distance / 14) }));
 }
 
 // src/i18n.ts
@@ -3176,7 +2575,14 @@ var en = {
   "Conectado \xB7 {p0} modelo(s). Usar\xEDa \xAB{p1}\xBB: {p2}": "Connected \xB7 {p0} model(s). It would use \u201C{p1}\u201D: {p2}",
   "Vac\xEDo = el mejor que quepa en tu memoria.": "Empty = the best one that fits your memory.",
   "Un modelo local solo hace falta para la traducci\xF3n sin cuotas, que es opcional. Nada sale de tu equipo.": "A local model is only needed for quota-free translation, which is optional. Nothing leaves your machine.",
-  "Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.": "Tools and interface change at once on open boards. What sits under \u201CNew boards\u201D only affects the ones you create from now on."
+  "Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.": "Tools and interface change at once on open boards. What sits under \u201CNew boards\u201D only affects the ones you create from now on.",
+  "Sin tinta": "No ink",
+  "No reconozco {p0} s\xEDmbolo(s): est\xE1n como \xAB?\xBB. Elige debajo o escr\xEDbelo a mano.": "I cannot read {p0} symbol(s): they show as \u201C?\u201D. Pick one below, or write it again.",
+  "Estructura matem\xE1tica detectada \xB7 {p0}%": "Mathematical structure detected \xB7 {p0}%",
+  "{p0} s\xEDmbolo(s) por revisar \xB7 {p1}%": "{p0} symbol(s) to check \xB7 {p1}%",
+  "Lectura vectorial \xB7 {p0}%": "Vector reading \xB7 {p0}%",
+  "Sin reconocer": "Not recognised",
+  "No he reconocido este s\xEDmbolo. Elige uno de los parecidos, o escr\xEDbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again."
 };
 
 // src/i18n.ts
@@ -3214,6 +2620,636 @@ function fill(text, params) {
 function tr(message, params) {
   if (active === SOURCE_LOCALE) return fill(message, params);
   return fill(CATALOGUES[active][message] ?? message, params);
+}
+
+// src/ink-math.ts
+var clamp01 = (value) => Math.max(0, Math.min(1, value));
+function boundsOfPoints(points) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+  if (!Number.isFinite(minX)) minX = minY = maxX = maxY = 0;
+  const w3 = Math.max(0.5, maxX - minX), h3 = Math.max(0.5, maxY - minY);
+  return { x: minX, y: minY, w: w3, h: h3, right: minX + w3, bottom: minY + h3 };
+}
+function boundsOfStrokes(strokes) {
+  return boundsOfPoints(strokes.flatMap((stroke) => stroke.points));
+}
+function pathLength2(points) {
+  let length = 0;
+  for (let i4 = 1; i4 < points.length; i4++) length += Math.hypot(points[i4].x - points[i4 - 1].x, points[i4].y - points[i4 - 1].y);
+  return length;
+}
+function strokeInfo(stroke) {
+  const points = stroke.points;
+  const first = points[0] ?? { x: 0, y: 0 };
+  const last = points[points.length - 1] ?? first;
+  const dx = last.x - first.x;
+  const dy = last.y - first.y;
+  const chord = Math.hypot(dx, dy);
+  const length = Math.max(pathLength2(points), chord, 0.01);
+  let angle = Math.abs(Math.atan2(dy, dx) * 180 / Math.PI);
+  if (angle > 90) angle = 180 - angle;
+  return { stroke, bounds: boundsOfPoints(points), length, chord, angle, straightness: chord / length };
+}
+function median(values) {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a3, b3) => a3 - b3);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+function overlap(a0, a1, b0, b12) {
+  return Math.max(0, Math.min(a1, b12) - Math.max(a0, b0));
+}
+function centre(bounds) {
+  return { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 };
+}
+function pointDistance(a3, b3) {
+  return Math.hypot(a3.x - b3.x, a3.y - b3.y);
+}
+function minStrokeDistance(a3, b3) {
+  let best = Infinity;
+  for (const sa2 of a3) {
+    const stepA = Math.max(1, Math.floor(sa2.points.length / 24));
+    for (let ai = 0; ai < sa2.points.length; ai += stepA) {
+      for (const sb of b3) {
+        const stepB = Math.max(1, Math.floor(sb.points.length / 24));
+        for (let bi = 0; bi < sb.points.length; bi += stepB) best = Math.min(best, pointDistance(sa2.points[ai], sb.points[bi]));
+      }
+    }
+  }
+  return best;
+}
+function isHorizontalLine(info2) {
+  return info2.straightness > 0.91 && info2.angle < 13 && info2.bounds.w > Math.max(8, info2.bounds.h * 3.2);
+}
+function isVerticalLine(info2) {
+  return info2.straightness > 0.91 && info2.angle > 76 && info2.bounds.h > Math.max(8, info2.bounds.w * 3.2);
+}
+function lineIntersection(a3, b3) {
+  const p3 = a3.stroke.points[0], p22 = a3.stroke.points[a3.stroke.points.length - 1];
+  const q3 = b3.stroke.points[0], q22 = b3.stroke.points[b3.stroke.points.length - 1];
+  if (!p3 || !p22 || !q3 || !q22) return false;
+  const cross = (u3, v3, w3) => (v3.x - u3.x) * (w3.y - u3.y) - (v3.y - u3.y) * (w3.x - u3.x);
+  const d12 = cross(p3, p22, q3), d22 = cross(p3, p22, q22), d3 = cross(q3, q22, p3), d4 = cross(q3, q22, p22);
+  const eps = 1e-6;
+  if (Math.abs(d12) < eps && Math.abs(d22) < eps && Math.abs(d3) < eps && Math.abs(d4) < eps) {
+    return overlap(a3.bounds.x, a3.bounds.right, b3.bounds.x, b3.bounds.right) >= 0 && overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom) >= 0 && minStrokeDistance([a3.stroke], [b3.stroke]) < Math.max(a3.bounds.h, a3.bounds.w) * 0.35;
+  }
+  return d12 * d22 <= 0 && d3 * d4 <= 0;
+}
+function crossingParameters(a3, b3) {
+  const p3 = a3.stroke.points[0], p22 = a3.stroke.points[a3.stroke.points.length - 1];
+  const q3 = b3.stroke.points[0], q22 = b3.stroke.points[b3.stroke.points.length - 1];
+  if (!p3 || !p22 || !q3 || !q22) return null;
+  const rx = p22.x - p3.x, ry = p22.y - p3.y;
+  const sx = q22.x - q3.x, sy = q22.y - q3.y;
+  const denominator = rx * sy - ry * sx;
+  if (Math.abs(denominator) < 1e-9) return null;
+  const alongA = ((q3.x - p3.x) * sy - (q3.y - p3.y) * sx) / denominator;
+  const alongB = ((q3.x - p3.x) * ry - (q3.y - p3.y) * rx) / denominator;
+  if (alongA < -0.02 || alongA > 1.02 || alongB < -0.02 || alongB > 1.02) return null;
+  return { alongA, alongB };
+}
+function crossesInside(a3, b3) {
+  const at2 = crossingParameters(a3, b3);
+  if (!at2) return false;
+  const inside = (t3) => t3 > 0.12 && t3 < 0.88;
+  return inside(at2.alongA) && inside(at2.alongB);
+}
+function hasNonBarInk(strokes) {
+  return strokes.some((stroke) => {
+    const info2 = strokeInfo(stroke);
+    return !isHorizontalLine(info2) || info2.bounds.h > 3.5;
+  });
+}
+function findFraction(strokes) {
+  if (strokes.length < 3) return null;
+  const all = boundsOfStrokes(strokes);
+  const infos = strokes.map(strokeInfo);
+  let best = null;
+  for (const info2 of infos) {
+    if (!isHorizontalLine(info2) || info2.bounds.w < Math.max(18, all.w * 0.12)) continue;
+    const barY = info2.bounds.y + info2.bounds.h / 2;
+    const padX = Math.max(5, info2.bounds.w * 0.06);
+    const candidates = strokes.filter((stroke) => stroke !== info2.stroke);
+    const numerator = candidates.filter((stroke) => {
+      const b3 = boundsOfPoints(stroke.points);
+      return centre(b3).y < barY - 1 && overlap(b3.x, b3.right, info2.bounds.x - padX, info2.bounds.right + padX) > 0;
+    });
+    const denominator = candidates.filter((stroke) => {
+      const b3 = boundsOfPoints(stroke.points);
+      return centre(b3).y > barY + 1 && overlap(b3.x, b3.right, info2.bounds.x - padX, info2.bounds.right + padX) > 0;
+    });
+    if (!numerator.length || !denominator.length || !hasNonBarInk(numerator) || !hasNonBarInk(denominator)) continue;
+    const inside = /* @__PURE__ */ new Set([...numerator, ...denominator, info2.stroke]);
+    const left = candidates.filter((stroke) => !inside.has(stroke) && centre(boundsOfPoints(stroke.points)).x < info2.bounds.x);
+    const right = candidates.filter((stroke) => !inside.has(stroke) && centre(boundsOfPoints(stroke.points)).x > info2.bounds.right);
+    const numBounds = boundsOfStrokes(numerator), denBounds = boundsOfStrokes(denominator);
+    const coverage = Math.min(numBounds.w, denBounds.w) / Math.max(info2.bounds.w, 1);
+    const balance = 1 - Math.min(1, Math.abs(numBounds.w - denBounds.w) / Math.max(info2.bounds.w, 1));
+    const score = info2.bounds.w / Math.max(all.w, 1) + coverage * 0.8 + balance * 0.25;
+    if (!best || score > best.score) best = { bar: info2.stroke, left, numerator, denominator, right, score };
+  }
+  return best;
+}
+function shouldMerge(a3, b3, scale) {
+  const ai = a3.strokes.map(strokeInfo), bi = b3.strokes.map(strokeInfo);
+  const xOverlap = overlap(a3.bounds.x, a3.bounds.right, b3.bounds.x, b3.bounds.right);
+  const yOverlap = overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom);
+  const flat = (group, infos) => infos.length === 1 && (isHorizontalLine(infos[0]) || group.bounds.w > 8 && group.bounds.h < group.bounds.w * 0.42);
+  const aHoriz = flat(a3, ai);
+  const bHoriz = flat(b3, bi);
+  if (aHoriz && bHoriz) {
+    const widthRatio = Math.min(a3.bounds.w, b3.bounds.w) / Math.max(a3.bounds.w, b3.bounds.w);
+    const verticalGap = Math.max(0, Math.max(a3.bounds.y, b3.bounds.y) - Math.min(a3.bounds.bottom, b3.bounds.bottom));
+    if (widthRatio > 0.58 && xOverlap > Math.min(a3.bounds.w, b3.bounds.w) * 0.55 && verticalGap < Math.max(scale * 1.45, Math.min(a3.bounds.w, b3.bounds.w) * 0.42)) return true;
+  }
+  if (ai.length === 1 && bi.length === 1 && ai[0].straightness > 0.86 && bi[0].straightness > 0.86 && lineIntersection(ai[0], bi[0])) return true;
+  const ends = (group) => group.strokes.flatMap((stroke) => stroke.points.length ? [stroke.points[0], stroke.points[stroke.points.length - 1]] : []);
+  const reach = Math.max(4, scale * 0.16);
+  for (const endA of ends(a3)) {
+    for (const endB of ends(b3)) {
+      if (pointDistance(endA, endB) < reach) return true;
+    }
+  }
+  const sizeA = Math.max(a3.bounds.w, a3.bounds.h);
+  const sizeB = Math.max(b3.bounds.w, b3.bounds.h);
+  const smaller2 = Math.min(sizeA, sizeB);
+  if (smaller2 > 0 && minStrokeDistance(a3.strokes, b3.strokes) < smaller2 * 0.14 && overlap(a3.bounds.y, a3.bounds.bottom, b3.bounds.y, b3.bounds.bottom) > smaller2 * 0.3) {
+    return true;
+  }
+  const smallA = a3.bounds.w < scale * 0.24 && a3.bounds.h < scale * 0.24;
+  const smallB = b3.bounds.w < scale * 0.24 && b3.bounds.h < scale * 0.24;
+  if ((smallA || smallB) && xOverlap > 0 && Math.abs(centre(a3.bounds).x - centre(b3.bounds).x) < scale * 0.28) {
+    const gap = Math.max(0, Math.max(a3.bounds.y, b3.bounds.y) - Math.min(a3.bounds.bottom, b3.bounds.bottom));
+    const body = smallA ? b3.bounds.h : a3.bounds.h;
+    if (gap < Math.max(scale * 0.42, body * 0.55)) return true;
+  }
+  const combined = boundsOfStrokes([...a3.strokes, ...b3.strokes]);
+  if (combined.w > scale * 1.55 || combined.h > scale * 1.8) return false;
+  if (xOverlap > Math.min(a3.bounds.w, b3.bounds.w) * 0.18 && yOverlap > 0) return minStrokeDistance(a3.strokes, b3.strokes) < scale * 0.22;
+  return minStrokeDistance(a3.strokes, b3.strokes) < Math.max(3.5, scale * 0.1);
+}
+function groupGlyphs(strokes) {
+  let groups = strokes.map((stroke) => ({ strokes: [stroke], bounds: boundsOfPoints(stroke.points) }));
+  const scale = Math.max(12, median(groups.map((group) => Math.max(group.bounds.h, Math.min(group.bounds.w, group.bounds.h * 1.4)))));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer: for (let i4 = 0; i4 < groups.length; i4++) {
+      for (let j3 = i4 + 1; j3 < groups.length; j3++) {
+        if (!shouldMerge(groups[i4], groups[j3], scale)) continue;
+        const strokes2 = [...groups[i4].strokes, ...groups[j3].strokes];
+        groups[i4] = { strokes: strokes2, bounds: boundsOfStrokes(strokes2) };
+        groups.splice(j3, 1);
+        changed = true;
+        break outer;
+      }
+    }
+  }
+  return groups.sort((a3, b3) => a3.bounds.x - b3.bounds.x || a3.bounds.y - b3.bounds.y);
+}
+var MASK_SIZE = 42;
+var templateCache = /* @__PURE__ */ new Map();
+var GLYPHS = [
+  ...[..."0123456789"].map((glyph) => ({ glyph, value: glyph })),
+  ...[..."xyzabcnmtefghijkopqrsuv"].map((glyph) => ({ glyph, value: glyph })),
+  ...[..."()[]<>"].map((glyph) => ({ glyph, value: glyph })),
+  { glyph: "+", value: "+" },
+  { glyph: "\u2212", value: "-" },
+  { glyph: "=", value: "=" },
+  { glyph: "/", value: "/" },
+  { glyph: "\xD7", value: "*" },
+  { glyph: ".", value: "." },
+  { glyph: ",", value: "," },
+  { glyph: "\u221A", value: "sqrt" },
+  { glyph: "\u03C0", value: "pi" },
+  { glyph: "\u222B", value: "int" },
+  { glyph: "\u03A3", value: "sum" }
+];
+function cropMask(source) {
+  const ctx = source.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: 1, density: 0 };
+  const data = ctx.getImageData(0, 0, source.width, source.height).data;
+  let minX = source.width, minY = source.height, maxX = -1, maxY = -1;
+  for (let y3 = 0; y3 < source.height; y3++) for (let x4 = 0; x4 < source.width; x4++) {
+    const i4 = (y3 * source.width + x4) * 4;
+    if (data[i4 + 3] > 40 && data[i4] + data[i4 + 1] + data[i4 + 2] < 700) {
+      minX = Math.min(minX, x4);
+      minY = Math.min(minY, y3);
+      maxX = Math.max(maxX, x4);
+      maxY = Math.max(maxY, y3);
+    }
+  }
+  if (maxX < minX) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: 1, density: 0 };
+  const w3 = maxX - minX + 1, h3 = maxY - minY + 1;
+  const fit = createEl("canvas");
+  fit.width = fit.height = MASK_SIZE;
+  const out = fit.getContext("2d", { willReadFrequently: true });
+  if (!out) return { pixels: new Uint8Array(MASK_SIZE * MASK_SIZE), aspect: w3 / h3, density: 0 };
+  const padding = 4;
+  const scale = Math.min((MASK_SIZE - padding * 2) / w3, (MASK_SIZE - padding * 2) / h3);
+  const dw = w3 * scale, dh = h3 * scale;
+  out.clearRect(0, 0, MASK_SIZE, MASK_SIZE);
+  out.drawImage(source, minX, minY, w3, h3, (MASK_SIZE - dw) / 2, (MASK_SIZE - dh) / 2, dw, dh);
+  const normalized = out.getImageData(0, 0, MASK_SIZE, MASK_SIZE).data;
+  const pixels = new Uint8Array(MASK_SIZE * MASK_SIZE);
+  let count = 0;
+  for (let i4 = 0; i4 < pixels.length; i4++) {
+    const at2 = i4 * 4;
+    if (normalized[at2 + 3] > 45 && normalized[at2] + normalized[at2 + 1] + normalized[at2 + 2] < 710) {
+      pixels[i4] = 1;
+      count++;
+    }
+  }
+  return { pixels, aspect: w3 / Math.max(h3, 1), density: count / pixels.length };
+}
+function maskForStrokes(strokes) {
+  const canvas = createEl("canvas");
+  canvas.width = canvas.height = 120;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return cropMask(canvas);
+  const bounds = boundsOfStrokes(strokes);
+  const pad = 12;
+  const scale = Math.min((canvas.width - pad * 2) / Math.max(bounds.w, 1), (canvas.height - pad * 2) / Math.max(bounds.h, 1));
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = "#000";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (const stroke of strokes) {
+    if (!stroke.points.length) continue;
+    ctx.beginPath();
+    const first = stroke.points[0];
+    ctx.moveTo(pad + (first.x - bounds.x) * scale, pad + (first.y - bounds.y) * scale);
+    for (let i4 = 1; i4 < stroke.points.length; i4++) ctx.lineTo(pad + (stroke.points[i4].x - bounds.x) * scale, pad + (stroke.points[i4].y - bounds.y) * scale);
+    if (stroke.points.length === 1) ctx.arc(pad + (first.x - bounds.x) * scale, pad + (first.y - bounds.y) * scale, 2, 0, Math.PI * 2);
+    stroke.points.length === 1 ? ctx.fill() : ctx.stroke();
+  }
+  return cropMask(canvas);
+}
+function templateMasks(glyph) {
+  const cached = templateCache.get(glyph);
+  if (cached) return cached;
+  const fonts = ["Segoe Print", "Comic Sans MS", "Arial", "Georgia"];
+  const masks = fonts.map((font) => {
+    const canvas = createEl("canvas");
+    canvas.width = canvas.height = 120;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return cropMask(canvas);
+    ctx.fillStyle = "#000";
+    ctx.font = `${font === "Georgia" ? "italic " : ""}86px ${font}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(glyph, 60, 63);
+    return cropMask(canvas);
+  });
+  templateCache.set(glyph, masks);
+  return masks;
+}
+function distanceField(mask) {
+  const size = MASK_SIZE;
+  const field = new Float32Array(mask.length);
+  for (let i4 = 0; i4 < mask.length; i4++) field[i4] = mask[i4] ? 0 : 999;
+  for (let y3 = 0; y3 < size; y3++) for (let x4 = 0; x4 < size; x4++) {
+    const i4 = y3 * size + x4;
+    if (x4) field[i4] = Math.min(field[i4], field[i4 - 1] + 1);
+    if (y3) field[i4] = Math.min(field[i4], field[i4 - size] + 1);
+    if (x4 && y3) field[i4] = Math.min(field[i4], field[i4 - size - 1] + 1.414);
+    if (x4 + 1 < size && y3) field[i4] = Math.min(field[i4], field[i4 - size + 1] + 1.414);
+  }
+  for (let y3 = size - 1; y3 >= 0; y3--) for (let x4 = size - 1; x4 >= 0; x4--) {
+    const i4 = y3 * size + x4;
+    if (x4 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + 1] + 1);
+    if (y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size] + 1);
+    if (x4 + 1 < size && y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size + 1] + 1.414);
+    if (x4 && y3 + 1 < size) field[i4] = Math.min(field[i4], field[i4 + size - 1] + 1.414);
+  }
+  return field;
+}
+function directedDistance(from, toField) {
+  let total = 0, count = 0;
+  for (let i4 = 0; i4 < from.length; i4++) if (from[i4]) {
+    total += Math.min(toField[i4], 12);
+    count++;
+  }
+  return count ? total / count : 12;
+}
+function maskDistance(a3, b3) {
+  const spatial = (directedDistance(a3.pixels, distanceField(b3.pixels)) + directedDistance(b3.pixels, distanceField(a3.pixels))) / (2 * MASK_SIZE);
+  const aspect = Math.abs(Math.log(Math.max(0.08, a3.aspect) / Math.max(0.08, b3.aspect))) * 0.14;
+  const density = Math.abs(a3.density - b3.density) * 0.45;
+  return spatial + aspect + density;
+}
+function looksLikeRadical(points, b3) {
+  if (points.length < 8 || b3.h < 8 || b3.w < 8) return false;
+  let vertex = 0;
+  for (let i4 = 1; i4 < points.length; i4++) if (points[i4].y > points[vertex].y) vertex = i4;
+  const position = vertex / (points.length - 1);
+  if (position < 0.08 || position > 0.75) return false;
+  if (points[vertex].y < b3.y + b3.h * 0.6) return false;
+  let peak = vertex;
+  for (let i4 = vertex; i4 < points.length; i4++) if (points[i4].y < points[peak].y) peak = i4;
+  if (peak <= vertex || points[peak].y > b3.y + b3.h * 0.35) return false;
+  const last = points[points.length - 1];
+  const tailWidth = last.x - points[peak].x;
+  const tailDrop = Math.abs(last.y - points[peak].y);
+  return tailWidth > b3.w * 0.28 && tailDrop < b3.h * 0.3 && last.x > b3.right - b3.w * 0.15;
+}
+function selfCrosses(points) {
+  const segments = Math.min(points.length - 1, 80);
+  const step = Math.max(1, Math.floor((points.length - 1) / segments));
+  const sign = (a3, b3, c3) => Math.sign((b3.x - a3.x) * (c3.y - a3.y) - (b3.y - a3.y) * (c3.x - a3.x));
+  for (let i4 = 0; i4 + step < points.length; i4 += step) {
+    for (let j3 = i4 + step * 3; j3 + step < points.length; j3 += step) {
+      const [a3, b3, c3, d3] = [points[i4], points[i4 + step], points[j3], points[j3 + step]];
+      if (sign(a3, b3, c3) !== sign(a3, b3, d3) && sign(c3, d3, a3) !== sign(c3, d3, b3)) return true;
+    }
+  }
+  return false;
+}
+function looksLikeIntegral(info2, points, b3) {
+  if (points.length < 6) return false;
+  if (b3.h < b3.w * 1.9 || b3.w < 4) return false;
+  if (info2.straightness > 0.82) return false;
+  const first = points[0], last = points[points.length - 1];
+  if (first.y > b3.y + b3.h * 0.28 || last.y < b3.bottom - b3.h * 0.28) return false;
+  if (selfCrosses(points)) return false;
+  let climb = 0;
+  for (let i4 = 1; i4 < points.length; i4++) climb += Math.max(0, points[i4 - 1].y - points[i4].y);
+  if (climb > b3.h * 0.3) return false;
+  return first.x > last.x + b3.w * 0.3;
+}
+function hardGeometry(group) {
+  const infos = group.strokes.map(strokeInfo);
+  const b3 = group.bounds;
+  if (b3.w < 4 && b3.h < 4) return { value: ".", alternatives: [".", ","], confidence: 0.95 };
+  if (infos.length === 1 && infos[0].straightness > 0.93) {
+    if (isHorizontalLine(infos[0])) return { value: "-", alternatives: ["-", "="], confidence: 0.97 };
+    if (isVerticalLine(infos[0])) return { value: "1", alternatives: ["1", "l", "i"], confidence: 0.9 };
+    if (infos[0].angle > 25 && infos[0].angle < 68) return { value: "/", alternatives: ["/", "1"], confidence: 0.82 };
+  }
+  if (infos.length === 2 && infos.every((info2) => isHorizontalLine(info2))) {
+    return { value: "=", alternatives: ["=", "-"], confidence: 0.98 };
+  }
+  if (infos.length === 2 && infos.every((info2) => info2.straightness > 0.88) && crossesInside(infos[0], infos[1])) {
+    const angles = infos.map((info2) => info2.angle);
+    const axisAligned = angles.some((angle) => angle < 20) && angles.some((angle) => angle > 70);
+    if (!axisAligned) return { value: "x", alternatives: ["x", "*", "+"], confidence: 0.82 };
+    const vertical = infos[0].angle > 70 ? infos[0] : infos[1];
+    const at2 = crossingParameters(infos[0], infos[1]);
+    const alongStem = !at2 ? 0.5 : vertical === infos[0] ? at2.alongA : at2.alongB;
+    const downwards = vertical.stroke.points[0].y < vertical.stroke.points[vertical.stroke.points.length - 1].y;
+    const fromTop = downwards ? alongStem : 1 - alongStem;
+    return fromTop < 0.36 ? { value: "t", alternatives: ["t", "+", "7"], confidence: 0.84 } : { value: "+", alternatives: ["+", "t", "4"], confidence: 0.94 };
+  }
+  if (infos.length === 1) {
+    const info2 = infos[0];
+    const first = info2.stroke.points[0], last = info2.stroke.points[info2.stroke.points.length - 1];
+    const points = info2.stroke.points;
+    if (looksLikeRadical(points, b3)) return { value: "sqrt", alternatives: ["sqrt", "v", "r"], confidence: 0.9 };
+    if (looksLikeIntegral(info2, points, b3)) return { value: "int", alternatives: ["int", "j", "f"], confidence: 0.86 };
+    if (points.length >= 5 && first && last) {
+      const earlyEnd = Math.max(1, points.length - 2);
+      let maxXIndex = 0;
+      for (let index = 1; index <= earlyEnd; index++) if (points[index].x > points[maxXIndex].x) maxXIndex = index;
+      const lowerLeftIndex = points.reduce((best, point, index) => index > maxXIndex && point.x < points[best].x ? index : best, Math.min(points.length - 1, maxXIndex + 1));
+      const upperTurn = points[maxXIndex], lowerTurn = points[lowerLeftIndex];
+      const tailFrom = points[Math.max(0, Math.floor(points.length * 0.78))];
+      const flatTail = last.x - tailFrom.x > b3.w * 0.35 && Math.abs(last.y - tailFrom.y) < b3.h * 0.14;
+      const looksLikeTwo = maxXIndex < points.length * 0.7 && lowerLeftIndex > maxXIndex && upperTurn.y < b3.y + b3.h * 0.58 && lowerTurn.y > b3.y + b3.h * 0.48 && last.x > b3.x + b3.w * 0.68 && last.y > b3.y + b3.h * 0.68 && flatTail;
+      if (looksLikeTwo) return { value: "2", alternatives: ["2", "z", "sqrt"], confidence: 0.82 };
+    }
+    if (first && last && pointDistance(first, last) < Math.max(6, info2.length * 0.13) && info2.length > (b3.w + b3.h) * 1.35) {
+      return { value: "0", alternatives: ["0", "o", "6", "9"], confidence: 0.72 };
+    }
+  }
+  return null;
+}
+function classifyGlyph(group) {
+  const hard = hardGeometry(group);
+  if (hard && hard.confidence >= 0.8) return { ...hard, bounds: group.bounds };
+  const shapes = matchShape(group.strokes.map((stroke) => stroke.points));
+  if (!shapes.length || shapes[0].distance > REJECT_DISTANCE) {
+    return {
+      value: "?",
+      alternatives: [...hard ? [hard.value] : [], ...shapes.slice(0, 4).map((match) => match.value)],
+      confidence: 0.1,
+      bounds: group.bounds,
+      unknown: true
+    };
+  }
+  const scores = /* @__PURE__ */ new Map();
+  for (const match of shapes) scores.set(match.value, 1 - match.score);
+  const contenders = shapes.slice(0, 6).map((match) => match.value);
+  if (contenders.length > 1 && canRasterise()) {
+    const input = maskForStrokes(group.strokes);
+    for (const candidate of GLYPHS) {
+      if (!contenders.includes(candidate.value)) continue;
+      const distance = Math.min(...templateMasks(candidate.glyph).map((mask) => maskDistance(input, mask)));
+      scores.set(candidate.value, (scores.get(candidate.value) ?? 1) + distance * 0.2);
+    }
+  }
+  if (hard) scores.set(hard.value, Math.min(scores.get(hard.value) ?? Infinity, 0.1 + (1 - hard.confidence) * 0.2));
+  const ranked = [...scores.entries()].sort((a3, b3) => a3[1] - b3[1]);
+  const best = ranked[0] ?? ["?", 1];
+  const second = ranked[1]?.[1] ?? best[1] + 0.2;
+  const confidence = clamp01(0.2 + (second - best[1]) * 3.2 + (0.45 - best[1]) * 1.1);
+  return { value: best[0], alternatives: ranked.slice(0, 5).map((entry) => entry[0]), confidence, bounds: group.bounds };
+}
+function canRasterise() {
+  try {
+    return typeof createEl === "function" && !!createEl("canvas").getContext("2d");
+  } catch {
+    return false;
+  }
+}
+function toToken(glyph) {
+  return { value: glyph.value, alternatives: glyph.alternatives, confidence: glyph.confidence, unknown: glyph.unknown };
+}
+function serializeGlyphs(glyphs) {
+  if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
+  const heights = glyphs.map((glyph) => glyph.bounds.h).filter((height) => height > 2);
+  const normalHeight = Math.max(8, median(heights));
+  const main = glyphs.filter((glyph) => glyph.bounds.h >= normalHeight * 0.72);
+  const baseline = median((main.length ? main : glyphs).map((glyph) => centre(glyph.bounds).y));
+  let source = "";
+  let previous = null;
+  for (let i4 = 0; i4 < glyphs.length; i4++) {
+    const glyph = glyphs[i4];
+    const c3 = centre(glyph.bounds);
+    const isSmall = glyph.bounds.h < normalHeight * 0.9;
+    const gap = previous ? glyph.bounds.x - previous.bounds.right : 0;
+    const spaced = previous && gap > normalHeight * 0.46;
+    if (spaced) source += " ";
+    if (previous && isSmall && c3.y < baseline - normalHeight * 0.2) {
+      const supers = [glyph.value];
+      while (i4 + 1 < glyphs.length) {
+        const next = glyphs[i4 + 1];
+        if (next.bounds.h >= normalHeight * 0.8 || centre(next.bounds).y >= baseline - normalHeight * 0.16) break;
+        supers.push(next.value);
+        i4++;
+      }
+      source += `^{${supers.join("")}}`;
+    } else if (previous && isSmall && c3.y > baseline + normalHeight * 0.25) {
+      const subs = [glyph.value];
+      while (i4 + 1 < glyphs.length) {
+        const next = glyphs[i4 + 1];
+        if (next.bounds.h >= normalHeight * 0.8 || centre(next.bounds).y <= baseline + normalHeight * 0.18) break;
+        subs.push(next.value);
+        i4++;
+      }
+      source += `_{${subs.join("")}}`;
+    } else {
+      source += glyph.value;
+    }
+    previous = glyph;
+  }
+  const confidence = glyphs.reduce((sum, glyph) => sum + glyph.confidence, 0) / glyphs.length;
+  return { source, tokens: glyphs.map(toToken), confidence, structured: false };
+}
+function combine(parts) {
+  const useful = parts.filter((part) => part.source.trim());
+  if (!useful.length) return { source: "", tokens: [], confidence: 0, structured: false };
+  return {
+    source: useful.map((part) => part.source).join(" ").replace(/\s+([,.)\]])/g, "$1").replace(/([([])\s+/g, "$1"),
+    tokens: useful.flatMap((part) => part.tokens),
+    confidence: useful.reduce((sum, part) => sum + part.confidence, 0) / useful.length,
+    structured: useful.some((part) => part.structured)
+  };
+}
+var DOMINANT_VALUES = /* @__PURE__ */ new Set(["sqrt", "sum", "int"]);
+function findDominant(glyphs) {
+  for (let index = 0; index < glyphs.length; index++) {
+    const dominant = glyphs[index];
+    if (!DOMINANT_VALUES.has(dominant.value) || dominant.confidence < 0.45) continue;
+    const d3 = dominant.bounds;
+    const scale = Math.max(10, d3.h);
+    const others = glyphs.filter((_3, i4) => i4 !== index);
+    const left = others.filter((glyph) => centre(glyph.bounds).x < centre(d3).x && glyph.bounds.right <= d3.x + scale * 0.2);
+    const rest = others.filter((glyph) => !left.includes(glyph));
+    if (dominant.value === "sqrt") {
+      const inside = [];
+      const right2 = [];
+      for (const glyph of rest) {
+        const b3 = glyph.bounds;
+        const vertical = overlap(b3.y, b3.bottom, d3.y, d3.bottom) / Math.max(1, Math.min(b3.h, d3.h));
+        const covered = b3.x < d3.right;
+        const justAfter = !right2.length && b3.x < d3.right + scale * 0.55;
+        if (vertical > 0.3 && (covered || justAfter && !inside.length)) inside.push(glyph);
+        else right2.push(glyph);
+      }
+      if (!inside.length) continue;
+      return { kind: "sqrt", left, inside, above: [], below: [], right: right2 };
+    }
+    const reach = dominant.value === "int" ? scale * 0.9 : scale * 0.7;
+    const above = [];
+    const below = [];
+    const right = [];
+    for (const glyph of rest) {
+      const b3 = glyph.bounds;
+      const c3 = centre(b3);
+      const inWindow = c3.x > d3.x - scale * 0.5 && c3.x < d3.right + reach;
+      if (inWindow && b3.bottom < d3.y + d3.h * 0.2) above.push(glyph);
+      else if (inWindow && b3.y > d3.bottom - d3.h * 0.2) below.push(glyph);
+      else right.push(glyph);
+    }
+    if (!above.length && !below.length) continue;
+    return { kind: dominant.value === "int" ? "int" : "sum", left, inside: [], above, below, right };
+  }
+  return null;
+}
+function parseRegion(glyphs, depth) {
+  if (!glyphs.length) return { source: "", tokens: [], confidence: 0, structured: false };
+  return parseExpression(glyphs.flatMap((glyph) => glyph.strokes), depth + 1);
+}
+function buildDominant(split, depth) {
+  const left = parseRegion(split.left, depth);
+  const right = parseRegion(split.right, depth);
+  let middle;
+  if (split.kind === "sqrt") {
+    const inside = parseRegion(split.inside, depth);
+    middle = {
+      source: `\\sqrt{${inside.source || "?"}}`,
+      tokens: inside.tokens,
+      confidence: (inside.confidence || 0.35) * 0.92 + 0.06,
+      structured: true
+    };
+  } else {
+    const above = parseRegion(split.above, depth);
+    const below = parseRegion(split.below, depth);
+    const command = split.kind === "sum" ? "\\sum" : "\\int";
+    let source = command;
+    if (below.source) source += `_{${below.source}}`;
+    if (above.source) source += `^{${above.source}}`;
+    const parts = [above, below].filter((part) => part.source);
+    middle = {
+      source,
+      tokens: [...below.tokens, ...above.tokens],
+      confidence: parts.reduce((sum, part) => sum + part.confidence, 0) / Math.max(1, parts.length) * 0.9 + 0.08,
+      structured: true
+    };
+  }
+  return combine([left, middle, right]);
+}
+function parseExpression(strokes, depth = 0) {
+  if (!strokes.length) return { source: "", tokens: [], confidence: 0, structured: false };
+  if (depth < 3) {
+    const fraction = findFraction(strokes);
+    if (fraction) {
+      const left = parseExpression(fraction.left, depth + 1);
+      const numerator = parseExpression(fraction.numerator, depth + 1);
+      const denominator = parseExpression(fraction.denominator, depth + 1);
+      const right = parseExpression(fraction.right, depth + 1);
+      const middle = {
+        source: `\\frac{${numerator.source || "?"}}{${denominator.source || "?"}}`,
+        tokens: [...numerator.tokens, ...denominator.tokens],
+        confidence: Math.min(numerator.confidence || 0.35, denominator.confidence || 0.35) * 0.9 + 0.09,
+        structured: true
+      };
+      return combine([left, middle, right]);
+    }
+  }
+  const glyphs = groupGlyphs(strokes).map((group) => ({ ...classifyGlyph(group), strokes: group.strokes }));
+  if (depth < 3) {
+    const dominant = findDominant(glyphs);
+    if (dominant) return buildDominant(dominant, depth);
+  }
+  return serializeGlyphs(glyphs);
+}
+function recognizeInkFormula(strokes) {
+  const clean = strokes.map((stroke) => ({ ...stroke, points: stroke.points.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y)) })).filter((stroke) => stroke.points.length > 0);
+  if (!clean.length) return { source: "", confidence: 0, tokens: [], unknown: 0, detail: tr("Sin tinta") };
+  const parsed = parseExpression(clean);
+  const unknown = parsed.tokens.filter((token) => token.unknown).length;
+  const uncertain = parsed.tokens.filter((token) => !token.unknown && token.confidence < 0.56).length;
+  const confidence = clamp01(parsed.confidence + (parsed.structured ? 0.08 : 0));
+  const detail = unknown ? tr("No reconozco {p0} s\xEDmbolo(s): est\xE1n como \xAB?\xBB. Elige debajo o escr\xEDbelo a mano.", { p0: unknown }) : parsed.structured ? tr("Estructura matem\xE1tica detectada \xB7 {p0}%", { p0: Math.round(confidence * 100) }) : uncertain ? tr("{p0} s\xEDmbolo(s) por revisar \xB7 {p1}%", { p0: uncertain, p1: Math.round(confidence * 100) }) : tr("Lectura vectorial \xB7 {p0}%", { p0: Math.round(confidence * 100) });
+  return { source: parsed.source.trim(), confidence, tokens: parsed.tokens, unknown, detail };
+}
+function formulaCandidateScore(source) {
+  const value = source.trim();
+  if (!value) return -100;
+  let score = Math.min(18, value.length * 0.45);
+  const valid = value.match(/[A-Za-z0-9+\-=/*^_().,<>[\]{}|!\\]/g)?.length ?? 0;
+  score += valid / value.length * 12;
+  score += (value.match(/[=+\-/*^_]|\\(?:frac|sqrt|sum|int)/g) ?? []).length * 1.7;
+  if (/\\frac\{[^{}]+\}\{[^{}]+\}/.test(value)) score += 7;
+  if (/\^(?:\([^()]+\)|\{[^{}]+\}|[0-9])/.test(value)) score += 3;
+  if (/[?]{2,}|[_^]\s*$|[+\-=/*]{3,}/.test(value)) score -= 8;
+  if (/\b[A-Za-z]{7,}\b/.test(value)) score -= 3;
+  const opens = (value.match(/[({[]/g) ?? []).length;
+  const closes = (value.match(/[)}\]]/g) ?? []).length;
+  score -= Math.abs(opens - closes) * 2;
+  return score;
+}
+function pickFormulaCandidate(candidates) {
+  return candidates.filter((candidate) => candidate.source.trim()).sort((a3, b3) => formulaCandidateScore(b3.source) + (b3.bonus ?? 0) - formulaCandidateScore(a3.source) - (a3.bonus ?? 0))[0]?.source.trim() ?? "";
 }
 
 // src/assistant.ts
@@ -56110,18 +56146,24 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     drawPreview();
     const showCandidates = (recognition) => {
       candidates.empty();
-      const uncertain = recognition.tokens.filter((token) => token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1).slice(0, 7);
+      const doubtful = recognition.tokens.filter((token) => token.unknown || token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1);
+      const uncertain = [...doubtful].sort((a3, b3) => Number(!!b3.unknown) - Number(!!a3.unknown)).slice(0, 7);
       candidates.toggleClass("hidden", uncertain.length === 0);
       if (!uncertain.length) return;
-      candidates.createSpan({ cls: "notelens-ink-candidates-label", text: tr("Revisar") });
+      candidates.createSpan({
+        cls: "notelens-ink-candidates-label",
+        text: uncertain.some((token) => token.unknown) ? tr("Sin reconocer") : tr("Revisar")
+      });
       let searchFrom = 0;
       for (const token of uncertain) {
         const tokenStart = input.value.indexOf(token.value, searchFrom);
         if (tokenStart >= 0) searchFrom = tokenStart + token.value.length;
         const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
-        for (const alternative of token.alternatives) select.createEl("option", { value: alternative, text: alternative });
+        select.toggleClass("is-unknown", !!token.unknown);
+        const options = [token.value, ...token.alternatives.filter((alternative) => alternative !== token.value)];
+        for (const alternative of options) select.createEl("option", { value: alternative, text: alternative });
         select.value = token.value;
-        select.title = tr("Confianza {p0}%. Elige el s\xEDmbolo correcto.", { p0: Math.round(token.confidence * 100) });
+        select.title = token.unknown ? tr("No he reconocido este s\xEDmbolo. Elige uno de los parecidos, o escr\xEDbelo otra vez.") : tr("Confianza {p0}%. Elige el s\xEDmbolo correcto.", { p0: Math.round(token.confidence * 100) });
         select.onchange = () => {
           if (tokenStart < 0) return;
           input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
@@ -56325,10 +56367,20 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         }
         if (vector.confidence < 0.78 || /\?/.test(vector.source)) {
           const ocr = await recognizeFormula(shot, (message) => status.setText(message));
-          text = pickFormulaCandidate([
-            { source: vector.source, bonus: vector.confidence * 8 },
-            { source: ocr, bonus: 1.5 }
-          ]);
+          if (vector.unknown > 0) {
+            const guess = this.tidy(ocr).trim();
+            if (guess && guess.length <= 2) {
+              for (const token of vector.tokens) {
+                if (token.unknown && !token.alternatives.includes(guess)) token.alternatives.unshift(guess);
+              }
+            }
+            text = vector.source;
+          } else {
+            text = pickFormulaCandidate([
+              { source: vector.source, bonus: vector.confidence * 8 },
+              { source: ocr, bonus: 1.5 }
+            ]);
+          }
         }
         const tidied = this.tidy(text);
         if (tidied && (!editedByUser || input.value === lastAutomatic || !input.value.trim())) {
@@ -56338,7 +56390,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           editedByUser = false;
           drawPreview();
           showCandidates(vector);
-          status.setText(vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo."));
+          status.setText(vector.unknown > 0 ? vector.detail : vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo."));
         } else {
           status.setText(tidied ? tr("He respetado tu correcci\xF3n manual.") : tr("No he reconocido nada todav\xEDa; sigue escribiendo o usa las estructuras."));
         }
@@ -63367,7 +63419,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.6.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.6.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -63648,7 +63700,8 @@ var __assistantTest = {
   recognizeInkFormula,
   formulaCandidateScore,
   runLocalStudyTool,
-  prototypeShapes
+  prototypeShapes,
+  matchShape
 };
 /*! Bundled license information:
 

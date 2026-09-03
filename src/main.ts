@@ -4,7 +4,7 @@ import { OneNoteCanvasView, VIEW_TYPE_ONENOTE, tidyFormulaText } from "./view";
 import { disposePdfWorker } from "./embeds";
 import { recognizeFormula } from "./ocr";
 import { formulaCandidateScore, recognizeInkFormula } from "./ink-math";
-import { prototypeShapes } from "./ink-shapes";
+import { matchShape, prototypeShapes } from "./ink-shapes";
 import { runLocalStudyTool } from "./local-intelligence";
 import { DocumentDefaults, createEmptyDocument } from "./types";
 import { DEFAULT_SETTINGS, NoteLensSettingTab, NoteLensSettings, normalizeSettings } from "./settings";
@@ -83,5 +83,5 @@ export default class OneNotePlugin extends Plugin {
 // Exposed for the dev harness so the ranking helpers can be tested directly.
 export const __assistantTest = {
 	rankModels, recommendedVisionModel, parseAssistantActions, visionOptionsFor, VISION_CATALOGUE,
-	tidyFormulaText, recognizeFormula, recognizeInkFormula, formulaCandidateScore, runLocalStudyTool, prototypeShapes
+	tidyFormulaText, recognizeFormula, recognizeInkFormula, formulaCandidateScore, runLocalStudyTool, prototypeShapes, matchShape
 };

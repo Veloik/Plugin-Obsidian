@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.6.1
+
+### Fixed
+
+- The formula reader no longer invents a symbol it does not know. Every match had a winner however badly it fitted, so anything outside the library came out as whichever letter was least unlike it. The line between knowing and guessing is measured, not assumed: ten shapes the library does not contain (a spiral, a heart, a house, a star, a scribble) match at 1.62 and worse, while every symbol it knows matches at 1.26 or better. Past that line the glyph is reported as unknown, written as `?` in the notation, and its nearest guesses are offered for you to pick.
+- The image reader was inventing too: asked about a symbol the stroke reader had refused to name, it read a spiral as "9" and replaced the `?` without a word. Its answer is now offered as one more candidate instead of taken as the truth.
+- A weak geometric guess no longer rescues an unknown shape. A heart is a closed loop, and the closed-loop rule was claiming it as a zero.
+- The review dropdown showed empty for an unknown symbol, because the `?` it held was not among its own options.
+
+### Added
+
+- Thirteen symbols the honesty test found people writing and the library did not have: ≈ ≠ ± ÷ × ∂ Δ ∇ ∈ ≤ ≥ μ, and the two marks of ≈ are now read as one symbol rather than two dashes.
+
 ## 2.6.0
 
 ### Fixed

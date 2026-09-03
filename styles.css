@@ -5536,3 +5536,11 @@ span.notelens-assistant-name {
 /* The board's `.hidden` rule is scoped to .onenote-workspace; a modal is not
    inside it, so the class did nothing here and both panes showed at once. */
 .notelens-ink-equation .hidden { display: none; }
+
+/* A symbol the reader could not name: it must look unresolved, not like a
+   choice already made. */
+.notelens-ink-candidate.is-unknown {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  font-weight: 700;
+}
