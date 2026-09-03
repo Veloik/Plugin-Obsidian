@@ -1,4 +1,4 @@
-import { FileView, Menu, Notice, TFile, WorkspaceLeaf, finishRenderMath, loadMathJax, loadPrism, renderMath, setIcon } from "obsidian";
+import { FileView, Menu, Notice, Platform, TFile, WorkspaceLeaf, finishRenderMath, loadMathJax, loadPrism, renderMath, setIcon } from "obsidian";
 import { AngleUnit, createCalculatorPanel } from "./calculator";
 import { createRecorderPanel } from "./recorder";
 import { toRenderableLatex } from "./asciimath";
@@ -523,7 +523,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				ws.style.backgroundImage = `linear-gradient(${line} 1px, transparent 1px), ${glow}`;
 				break;
 			default:
-				ws.style.backgroundImage = "none";
+				ws.setCssStyles({ backgroundImage: "none" });
 		}
 
 		this.updateMarginLine();
@@ -558,8 +558,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const { x, y, scale } = this.data.viewTransform;
 		const size = GRID_CELLS[this.data.gridSize ?? "medium"] * scale;
 		if (this.data.background === "blank") {
-			this.workspaceEl.style.backgroundSize = "";
-			this.workspaceEl.style.backgroundPosition = "";
+			this.workspaceEl.setCssStyles({ backgroundSize: "", backgroundPosition: "" });
 		} else if (this.data.background === "lines" || this.data.background === "margin") {
 			this.workspaceEl.style.backgroundSize = `100% ${size}px, 100% 100%`;
 			this.workspaceEl.style.backgroundPosition = `${x}px ${y}px, 0 0`;
@@ -737,8 +736,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				e.stopPropagation();
 				const r = wsRect();
 				start = { x: e.clientX - r.left, y: e.clientY - r.top };
-				box.style.display = "block";
-				box.style.left = `${start.x}px`; box.style.top = `${start.y}px`; box.style.width = "0px"; box.style.height = "0px";
+				box.setCssStyles({ display: "block", left: `${start.x}px`, top: `${start.y}px`, width: "0px", height: "0px" });
 			});
 			overlay.addEventListener("pointermove", (e) => {
 				if (!start) return;
@@ -3384,7 +3382,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.setAttr("data-id", badge.id);
 		el.style.left = `${badge.x}px`;
 		el.style.top = `${badge.y}px`;
-		el.style.transformOrigin = "top left";
+		el.setCssStyles({ transformOrigin: "top left" });
 		el.style.transform = `scale(${badge.scale ?? 1})`;
 		el.style.setProperty("--tag-color", tag.color);
 		el.setAttr("data-tag", badge.tagId);
@@ -3804,11 +3802,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					handwriting.src = item.sketch;
 					handwriting.alt = item.text || "Paso escrito a mano";
 					// Inline, so a stale stylesheet can never let the ink spill out of the card.
-					handwriting.style.display = "block";
-					handwriting.style.width = "auto";
-					handwriting.style.height = "auto";
-					handwriting.style.maxWidth = "100%";
-					handwriting.style.maxHeight = "68px";
+					handwriting.setCssStyles({ display: "block", width: "auto", height: "auto", maxWidth: "100%", maxHeight: "68px" });
 				} else {
 					row.createSpan({ text: item.text });
 				}
@@ -3979,7 +3973,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.createTextBoxAt(at.x, at.y);
 		const editor = this.activeTextEditor;
 		if (!editor) return;
-		const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+		const isMac = Platform.isMacOS || Platform.isIosApp;
 		const shortcut = isMac ? "pulsa Fn dos veces (o Control dos veces)" : "pulsa Win+H";
 		const hint = this.domLayerEl.createDiv({ cls: "notelens-dictation-hint" });
 		setIcon(hint.createSpan(), "mic");
@@ -5014,7 +5008,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		editor.style.top = `${tb.y}px`;
 		this.applyTextStyles(editor, tb);
 		editor.style.height = `${Math.max(tb.h ?? 48, editor.scrollHeight + 4)}px`;
-		el.style.visibility = "hidden";
+		el.setCssStyles({ visibility: "hidden" });
 		this.activeTextEditor = editor;
 		this.activeTextSourceEl = el;
 		const openedAt = performance.now();
@@ -5030,7 +5024,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				tb.w = this.measureAutoWidth(tb);
 				editor.style.width = `${tb.w}px`;
 			}
-			editor.style.height = "auto";
+			editor.setCssStyles({ height: "auto" });
 			tb.h = Math.max(48, editor.scrollHeight + 4);
 			editor.style.height = `${tb.h}px`;
 			this.save();
@@ -5082,7 +5076,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.mathPreviewEl?.remove();
 		this.mathPreviewEl = null;
 		editor.remove();
-		source.style.visibility = "";
+		source.setCssStyles({ visibility: "" });
 		this.editSessionPushed = false;
 		this.hideFormatBar();
 		if (!tb) return;
@@ -5125,7 +5119,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.paintTextContent(source, tb);
 		if (tb.variant === "code") {
 			// A code block hugs its lines instead of keeping the editor's spare height.
-			source.style.minHeight = "";
+			source.setCssStyles({ minHeight: "" });
 			tb.h = Math.max(72, source.offsetHeight);
 			source.style.minHeight = `${tb.h}px`;
 		}

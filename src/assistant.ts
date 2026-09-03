@@ -741,8 +741,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		const top = Math.min(Math.max(saved.y * bounds.height - height / 2, 6), Math.max(6, bounds.height - height - 6));
 		pet.style.left = `${left}px`;
 		pet.style.top = `${top}px`;
-		pet.style.right = "auto";
-		pet.style.bottom = "auto";
+		pet.setCssStyles({ right: "auto", bottom: "auto" });
 		if (open) placePanelNearPet();
 	};
 
@@ -763,8 +762,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 			const top = Math.min(Math.max(move.clientY - bounds.top - grabY, 6), bounds.height - size.height - 6);
 			pet.style.left = `${left}px`;
 			pet.style.top = `${top}px`;
-			pet.style.right = "auto";
-			pet.style.bottom = "auto";
+			pet.setCssStyles({ right: "auto", bottom: "auto" });
 			if (open) placePanelNearPet();
 		};
 		const onUp = () => {
@@ -1323,8 +1321,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		top = Math.min(Math.max(top, 8), Math.max(8, bounds.height - height - 8));
 		panel.style.left = `${left}px`;
 		panel.style.top = `${top}px`;
-		panel.style.right = "auto";
-		panel.style.bottom = "auto";
+		panel.setCssStyles({ right: "auto", bottom: "auto" });
 		// The arrow sits on the edge facing the cat: on the panel's right when
 		// the panel ended up to his left, and vice versa.
 		panel.toggleClass("points-left", left < petLeft);

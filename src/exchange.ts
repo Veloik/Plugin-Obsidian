@@ -1,5 +1,5 @@
 import { App, TFile, normalizePath } from "obsidian";
-import JSZip from "jszip";
+import { Zippable, strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { OneNoteDocument, migrateDocument } from "./types";
 import { tr } from "./i18n";
 
@@ -32,6 +32,11 @@ export interface ShareImportResult {
 	file: TFile;
 	assetCount: number;
 	missingAssets: string[];
+}
+
+/** fflate returns views into one shared buffer; the vault API needs a buffer of its own. */
+function ownBuffer(view: Uint8Array): ArrayBuffer {
+	return view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer;
 }
 
 function safeFileName(value: string, fallback: string): string {
@@ -70,7 +75,7 @@ async function uniquePath(app: App, rawPath: string): Promise<string> {
 
 /** Creates a portable, editable NoteLens package with every locally available attachment. */
 export async function buildSharePackage(app: App, document: OneNoteDocument, title: string): Promise<ShareBuildResult> {
-	const zip = new JSZip();
+	const files: Zippable = {};
 	const assets: PackageAsset[] = [];
 	const added = new Set<string>();
 	const skippedAssets: string[] = [];
@@ -84,7 +89,7 @@ export async function buildSharePackage(app: App, document: OneNoteDocument, tit
 			return;
 		}
 		const entry = `assets/${String(assets.length + 1).padStart(3, "0")}-${fileNameFromPath(file.path, "adjunto")}`;
-		zip.file(entry, await app.vault.readBinary(file));
+		files[entry] = new Uint8Array(await app.vault.readBinary(file));
 		assets.push({ source, entry });
 	};
 
@@ -101,9 +106,9 @@ export async function buildSharePackage(app: App, document: OneNoteDocument, tit
 		document,
 		assets
 	};
-	zip.file("notelens.json", JSON.stringify(manifest));
+	files["notelens.json"] = strToU8(JSON.stringify(manifest));
 	return {
-		bytes: await zip.generateAsync({ type: "arraybuffer", compression: "DEFLATE", compressionOptions: { level: 6 } }),
+		bytes: ownBuffer(zipSync(files, { level: 6 })),
 		assetCount: assets.length,
 		skippedAssets
 	};
@@ -137,10 +142,10 @@ async function attachmentPathFor(app: App, name: string, boardPath: string, fall
 
 /** Imports a package as a new editable canvas, keeping its bundled files in the recipient's vault. */
 export async function importSharePackage(app: App, source: File, destinationFolder = ""): Promise<ShareImportResult> {
-	const zip = await JSZip.loadAsync(await source.arrayBuffer());
-	const manifestEntry = zip.file("notelens.json");
+	const entries = unzipSync(new Uint8Array(await source.arrayBuffer()));
+	const manifestEntry = entries["notelens.json"];
 	if (!manifestEntry) throw new Error("No se encontró el documento de NoteLens dentro del paquete.");
-	const manifest = parsePackage(JSON.parse(await manifestEntry.async("text")));
+	const manifest = parsePackage(JSON.parse(strFromU8(manifestEntry)));
 	const folder = destinationFolder.replace(/^\/+|\/+$/g, "");
 	const boardName = safeFileName(manifest.title, "Pizarra importada").replace(/\.(notelens|onenote)$/i, "");
 	const boardPath = await uniquePath(app, `${folder ? `${folder}/` : ""}${boardName}.notelens`);
@@ -150,7 +155,7 @@ export async function importSharePackage(app: App, source: File, destinationFold
 	const remapped = new Map<string, string>();
 	const missingAssets: string[] = [];
 	for (const asset of manifest.assets) {
-		const entry = zip.file(asset.entry);
+		const entry = entries[asset.entry];
 		if (!entry) {
 			missingAssets.push(asset.source);
 			continue;
@@ -160,7 +165,7 @@ export async function importSharePackage(app: App, source: File, destinationFold
 		path = await uniquePath(app, path);
 		try {
 			await ensureParentFolder(app, path);
-			const imported = await app.vault.createBinary(path, await entry.async("arraybuffer"));
+			const imported = await app.vault.createBinary(path, ownBuffer(entry));
 			remapped.set(asset.source, imported.path);
 		} catch (error) {
 			console.error("NoteLens: could not import shared attachment", asset.source, error);

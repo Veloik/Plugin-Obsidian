@@ -50,10 +50,29 @@ function stripMarkup(text: string): string {
 		.trim();
 }
 
+/**
+ * Cuts a line after .!?; when what follows starts a new sentence. Written as a
+ * forward scan rather than a split on a lookbehind: iOS before 16.4 cannot parse
+ * lookbehind at all, and the whole file would fail to load there.
+ */
+function splitSentences(line: string): string[] {
+	const boundary = /([.!?;])(\s+)(?=[\p{Lu}\d¿¡])/gu;
+	const pieces: string[] = [];
+	let start = 0;
+	let match: RegExpExecArray | null;
+	while ((match = boundary.exec(line)) !== null) {
+		pieces.push(line.slice(start, match.index + match[1].length));
+		start = match.index + match[0].length;
+	}
+	pieces.push(line.slice(start));
+	return pieces;
+}
+
 function sentenceList(text: string): Sentence[] {
 	const clean = stripMarkup(text);
 	const chunks = clean
-		.split(/\n+|(?<=[.!?;])\s+(?=[\p{Lu}\d¿¡])/u)
+		.split(/\n+/)
+		.flatMap(splitSentences)
 		.map(line => line.replace(/^\s*(?:[-*•]|\d+[.)]|\[[ xX]\])\s*/, "").trim())
 		.filter(line => line.length >= 8);
 	return chunks.map((line, index) => ({ text: line, index, tokens: words(line), score: 0 }));

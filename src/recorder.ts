@@ -134,7 +134,7 @@ export function createRecorderPanel(host: RecorderHost, container: HTMLElement):
 		if (timer !== null) window.clearInterval(timer);
 		timer = null;
 		cancelAnimationFrame(meterFrame);
-		meterFill.style.width = "0%";
+		meterFill.setCssStyles({ width: "0%" });
 		stream?.getTracks().forEach(track => track.stop());
 		stream = null;
 		void audioContext?.close();

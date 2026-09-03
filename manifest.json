@@ -1,8 +1,8 @@
 {
   "id": "notelens",
   "name": "NoteLens",
-  "version": "2.3.2",
-  "minAppVersion": "1.0.0",
+  "version": "2.3.3",
+  "minAppVersion": "1.4.0",
   "description": "Infinite whiteboard with pressure-sensitive stylus ink, smart tags, PDFs and interactive videos on the canvas.",
   "author": "JotaTito",
   "authorUrl": "https://github.com/Veloik",

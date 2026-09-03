@@ -57,6 +57,12 @@ const context = await esbuild.context({
 		"@lezer/common",
 		"@lezer/highlight",
 		"@lezer/lr",
+		// jsPDF reaches for these three with a dynamic import inside html(), which
+		// NoteLens never calls: it draws the PDF with the vector API. Bundling them
+		// dragged in core-js and ~880 KB of dead code, polyfills included.
+		"canvg",
+		"html2canvas",
+		"dompurify",
 		...builtins],
 	define: {
 		// A version stamp is deterministic, so rebuilding a release produces the same bundle.

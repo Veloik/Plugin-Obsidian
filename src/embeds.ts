@@ -500,7 +500,7 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 			canvas.style.width = `${embed.w}px`;
 			canvas.style.height = `${cssHeight}px`;
 			const holder = canvas.parentElement;
-			if (holder) holder.style.height = "";
+			if (holder) holder.setCssStyles({ height: "" });
 
 			const ctx = canvas.getContext("2d");
 			if (ctx) await page.render({ canvasContext: ctx, viewport }).promise;

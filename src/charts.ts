@@ -414,7 +414,7 @@ export class ChartEditorModal extends Modal {
 				this.spec[key] = v.trim() === "" || !Number.isFinite(n) ? undefined : n;
 				redraw();
 			});
-			t.inputEl.style.width = "80px";
+			t.inputEl.setCssStyles({ width: "80px" });
 		});
 		numberField(numberField(new Setting(contentEl).setName(tr("Rango x (funciones y dispersión)")), "xMin", "mín"), "xMax", "máx");
 		numberField(numberField(new Setting(contentEl).setName(tr("Rango y (vacío = automático)")), "yMin", "mín"), "yMax", "máx");

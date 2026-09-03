@@ -7,8 +7,7 @@ export function makeDraggable(panel: HTMLElement, handle: HTMLElement, container
 	const applyPosition = (left: number, top: number) => {
 		const maxLeft = Math.max(0, container.clientWidth - panel.offsetWidth);
 		const maxTop = Math.max(0, container.clientHeight - panel.offsetHeight);
-		panel.style.right = "auto";
-		panel.style.bottom = "auto";
+		panel.setCssStyles({ right: "auto", bottom: "auto" });
 		panel.style.left = `${Math.min(Math.max(0, left), maxLeft)}px`;
 		panel.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
 	};

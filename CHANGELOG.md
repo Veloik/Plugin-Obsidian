@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.3.3
+
+### Changed
+
+- `minAppVersion` is now 1.4.0, the release that introduced the newest API the plugin calls (`Vault.createFolder` returning the folder). It was declared as 1.0.0, which promised more compatibility than the code delivers.
+- Dynamic styles go through `setCssStyles` instead of assigning `element.style` directly, at the 27 sites the community review pointed at.
+- Sentences are split by scanning forward for the boundary rather than by a regular expression with a lookbehind, which iOS before 16.4 cannot even parse: the whole file failed to load there.
+- The macOS check uses Obsidian's `Platform` instead of reading `navigator.platform`.
+- Share packages are zipped with fflate instead of JSZip, and jsPDF's optional `html()` dependencies (canvg, html2canvas, dompurify) are no longer bundled. NoteLens never calls that path, and dragging it in cost 880 KB of dead code and six legacy `<script>` polyfills that made the review flag the bundle.
+
 ## 2.3.2
 
 ### Changed

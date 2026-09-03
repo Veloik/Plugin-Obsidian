@@ -27,6 +27,9 @@
 	P.setAttr = function (k, v) { if (v == null) this.removeAttribute(k); else this.setAttribute(k, String(v)); return this; };
 	P.getAttr = function (k) { return this.getAttribute(k); };
 	P.detach = function () { this.remove(); };
+	P.setCssStyles = function (styles) { for (const k in styles) this.style[k] = styles[k]; };
+	P.setCssProps = function (props) { for (const k in props) this.style.setProperty(k, props[k]); };
+	P.appendText = function (t) { this.appendChild(document.createTextNode(t)); return this; };
 	P.show = function () { this.style.display = ""; };
 	P.hide = function () { this.style.display = "none"; };
 	DocumentFragment.prototype.createEl = P.createEl;
