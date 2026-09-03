@@ -18,6 +18,8 @@
  * that must stay apart.
  */
 
+import { HANDWRITTEN_SHAPES } from "./ink-prototypes-odbl";
+
 export interface ShapePoint {
 	x: number;
 	y: number;
@@ -34,12 +36,39 @@ export interface ShapeMatch {
 }
 
 /**
- * How far a match can sit and still be believed. Measured, not guessed: ten
- * shapes the library does not contain (a spiral, a heart, a house, ≈, ∇, a
- * scribble) match at 1.62 and up, while every symbol it knows matches at 1.26
- * or better. Anything past this is reported as unknown rather than answered.
+ * How far a match can sit and still be believed. Measured on single symbols:
+ * every one the library knows lands at 1.26 or better (median 0.09), and the
+ * first thing it does not know lands at 1.28.
  */
-export const REJECT_DISTANCE = 1.45;
+export const REJECT_DISTANCE = 1.2;
+
+/**
+ * The second half of the test. A recognised symbol has one answer standing
+ * clear of the rest — a handwritten 9 beats the runner-up by 0.72 — while ink
+ * the library cannot name has several equally mediocre answers: a spiral
+ * offers * at 1.34 and ∂ at 1.40. A poor best with nothing behind it is a
+ * guess, whatever its absolute distance.
+ */
+export const AMBIGUOUS_BEST = 0.85;
+
+/**
+ * How close the whole ink has to be for it to be one symbol rather than an
+ * expression. Recognised symbols match at 0.09 on average and 0.38 at the
+ * ninth decile, while a written expression compared against a single prototype
+ * lands above 1.5. Kept well down that range because the cost of being wrong
+ * is asymmetric: reading "2x" as one symbol loses the expression entirely.
+ */
+export const WHOLE_SYMBOL_DISTANCE = 0.35;
+export const AMBIGUOUS_MARGIN = 0.1;
+
+/** True when the ranked matches do not add up to an answer. */
+export function shouldReject(matches: ShapeMatch[]): boolean {
+	if (!matches.length) return true;
+	const best = matches[0].distance;
+	if (best > REJECT_DISTANCE) return true;
+	const second = matches[1]?.distance ?? best + 1;
+	return best > AMBIGUOUS_BEST && second - best < AMBIGUOUS_MARGIN;
+}
 
 /** Points per cloud. 32 is the number $P was tuned on and it is fast enough. */
 const CLOUD_POINTS = 32;
@@ -154,6 +183,49 @@ export function shapeDistance(a: ShapePoint[], b: ShapePoint[]): number {
 }
 
 // ---------------------------------------------------------------------------
+// A cheap sieve
+// ---------------------------------------------------------------------------
+
+/** Cells across the grid a signature counts points into. */
+const GRID = 4;
+
+/**
+ * How the points spread over a 4×4 grid, plus the shape's aspect ratio. Two
+ * clouds that are nothing alike differ here already, at seventeen subtractions
+ * instead of twelve thousand.
+ */
+export function signatureOf(cloud: ShapePoint[]): Float32Array {
+	const signature = new Float32Array(GRID * GRID + 1);
+	let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+	for (const p of cloud) {
+		minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+		maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+	}
+	const w = maxX - minX || 1e-6;
+	const h = maxY - minY || 1e-6;
+	for (const p of cloud) {
+		const cx = Math.min(GRID - 1, Math.floor((p.x - minX) / w * GRID));
+		const cy = Math.min(GRID - 1, Math.floor((p.y - minY) / h * GRID));
+		signature[cy * GRID + cx] += 1 / cloud.length;
+	}
+	// Aspect, so a minus sign is sieved out when the ink is a vertical bar.
+	signature[GRID * GRID] = Math.min(2, w / h) / 2;
+	return signature;
+}
+
+function signatureDistance(a: Float32Array, b: Float32Array): number {
+	let total = 0;
+	for (let i = 0; i < a.length; i++) total += Math.abs(a[i] - b[i]);
+	return total;
+}
+
+/** Prototypes that survive the sieve and get a real comparison. */
+const SHORTLIST = 150;
+
+/** Examples of a symbol averaged into its score; see the note on imbalance. */
+const VOTES = 3;
+
+// ---------------------------------------------------------------------------
 // The prototypes
 // ---------------------------------------------------------------------------
 
@@ -209,6 +281,7 @@ const ring = (cx: number, cy: number, rx: number, ry: number, n = 24): Pt[] =>
 interface Prototype {
 	value: string;
 	cloud: ShapePoint[];
+	signature: Float32Array;
 	/** How often the symbol turns up in a student's formula, 0..1. */
 	prior: number;
 }
@@ -312,25 +385,67 @@ const SHAPES: [string, Pt[][]][] = [
  * theta, and "a" beats "alpha". These are nudges, not decisions — a clear
  * match still wins against a common symbol that does not fit.
  */
+/**
+ * How much to add to a symbol's distance before comparing it with the others,
+ * in the same units as the cloud distance (REJECT_DISTANCE is 1.45). It is a
+ * prior, not a veto: a clear match still beats a common symbol that does not
+ * fit. What it prevents is a shape being read as a set-theory operator merely
+ * because nothing more ordinary was closer.
+ *
+ * Anything not listed is free: digits, the usual variables, and the arithmetic
+ * a student writes on every line.
+ */
 const RARE: Record<string, number> = {
-	alpha: 0.16, theta: 0.16, lambda: 0.16, oo: 0.1, pi: 0.04,
-	j: 0.08, q: 0.08, w: 0.06, z: 0.06, k: 0.05, g: 0.05, e: 0.04, s: 0.04, u: 0.04, v: 0.04, r: 0.04
+	// Greek, written now and then
+	alpha: 0.14, beta: 0.2, gamma: 0.2, delta: 0.18, epsilon: 0.2, theta: 0.16,
+	lambda: 0.18, mu: 0.2, rho: 0.22, sigma: 0.22, tau: 0.22, phi: 0.2,
+	omega: 0.22, Delta: 0.18, Omega: 0.24, pi: 0.06,
+	// Operators and relations that do turn up in schoolwork
+	oo: 0.12, del: 0.14, grad: 0.2, "~~": 0.12, "!=": 0.1, "+-": 0.08,
+	"xx": 0.12, "-:": 0.12, "<=": 0.08, ">=": 0.08, "==": 0.2, "->": 0.14,
+	"=>": 0.2, "<=>": 0.24, prop: 0.26, perp: 0.24, parallel: 0.24, angle: 0.24,
+	// Set theory and blackboard bold: real symbols, rarely in a hand-written line
+	in: 0.22, notin: 0.26, sub: 0.28, sube: 0.28, uu: 0.28, nn: 0.28,
+	emptyset: 0.3, AA: 0.24, EE: 0.24, RR: 0.26, NN: 0.28, ZZ: 0.28, QQ: 0.3,
+	prod: 0.26,
+	// Latin letters that are rare as maths variables
+	j: 0.1, q: 0.1, w: 0.08, z: 0.06, k: 0.06, g: 0.06, e: 0.05, s: 0.05,
+	u: 0.05, v: 0.05, r: 0.05
 };
+
 let prototypes: Prototype[] | null = null;
+
+/** "x y,x y;x y,…" back into strokes. See ink-prototypes-odbl.ts. */
+function parseShape(packed: string): { x: number; y: number }[][] {
+	return packed.split(";").map(stroke => stroke.split(",").map(point => {
+		const [x, y] = point.split(" ");
+		return { x: Number(x), y: Number(y) };
+	}));
+}
 
 function buildPrototypes(): Prototype[] {
 	if (prototypes) return prototypes;
 	prototypes = [];
 	for (const [value, strokes] of SHAPES) {
 		const cloud = toCloud(strokes.map(stroke => stroke.map(([x, y]) => ({ x, y }))));
-		if (cloud) prototypes.push({ value, cloud, prior: RARE[value] ?? 0 });
+		if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
+	}
+	// Real handwriting for the maths symbols, from the Detexify/Hand-TeX data.
+	// One person drawing a sigma once is a guess; 260 people drawing it is what
+	// a sigma looks like.
+	for (const [value, packed] of HANDWRITTEN_SHAPES) {
+		const cloud = toCloud(parseShape(packed));
+		if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
 	}
 	return prototypes;
 }
 
 /** The prototypes as drawn, so the harness can render and check them. */
 export function prototypeShapes(): { value: string; strokes: { x: number; y: number }[][] }[] {
-	return SHAPES.map(([value, strokes]) => ({ value, strokes: strokes.map(stroke => stroke.map(([x, y]) => ({ x, y }))) }));
+	return [
+		...SHAPES.map(([value, strokes]) => ({ value, strokes: strokes.map(stroke => stroke.map(([x, y]) => ({ x, y }))) })),
+		...HANDWRITTEN_SHAPES.map(([value, packed]) => ({ value, strokes: parseShape(packed) }))
+	];
 }
 
 /**
@@ -340,11 +455,38 @@ export function prototypeShapes(): { value: string; strokes: { x: number; y: num
 export function matchShape(strokes: { x: number; y: number }[][]): ShapeMatch[] {
 	const cloud = toCloud(strokes);
 	if (!cloud) return [];
+	const signature = signatureOf(cloud);
+	const all = buildPrototypes();
+	// Rank by signature, keep the plausible ones, and only then do the work.
+	// Every symbol keeps at least one candidate so the sieve cannot hide an
+	// answer entirely — it decides the order, never the outcome.
+	const seen = new Set<string>();
+	const shortlist = all
+		.map((prototype, index) => ({ index, rough: signatureDistance(signature, prototype.signature) }))
+		.sort((a, b) => a.rough - b.rough)
+		.filter((entry, position) => {
+			const value = all[entry.index].value;
+			if (position < SHORTLIST) { seen.add(value); return true; }
+			if (seen.has(value)) return false;
+			seen.add(value);
+			return true;
+		});
+	// Every distance a symbol offered, not just its best one.
+	const perSymbol = new Map<string, number[]>();
+	for (const { index } of shortlist) {
+		const prototype = all[index];
+		const distance = shapeDistance(cloud, prototype.cloud) + prototype.prior;
+		const list = perSymbol.get(prototype.value);
+		if (list) list.push(distance);
+		else perSymbol.set(prototype.value, [distance]);
+	}
 	const best = new Map<string, number>();
-	for (const prototype of buildPrototypes()) {
-		const distance = shapeDistance(cloud, prototype.cloud) + prototype.prior * 14;
-		const previous = best.get(prototype.value);
-		if (previous === undefined || distance < previous) best.set(prototype.value, distance);
+	for (const [value, distances] of perSymbol) {
+		distances.sort((a, b) => a - b);
+		// The mean of the three closest, so a symbol with sixty-four examples
+		// cannot win on the luckiest of them against one with a single example.
+		const take = distances.slice(0, VOTES);
+		best.set(value, take.reduce((total, d) => total + d, 0) / take.length);
 	}
 	// The cloud distance of a good match is around 2-5 for 32 points; 12 and up
 	// means nothing in the library looks like this.

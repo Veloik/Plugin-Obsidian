@@ -43,18 +43,14 @@ through untouched. `$x^2$` inside any text box is typeset in place.
 Exporting to PDF draws each formula as it appears on the board, not as its source, and
 lightens nothing: white ink on a dark board comes out dark on the white page.
 
-### Study tools that need no model
+### Local model
 
-Leen, the assistant, opens on a panel of actions that run on your own machine with no API,
-no account and no model at all: summary, key ideas, revision plan, outline, flashcards and
-tidying up text. They use the current selection, or the whole page when nothing is selected.
-Two more act on the canvas itself: arranging the selected objects on a grid, and polishing
-ink — smoothing strokes while keeping their pressure and straightening the lines you meant
-to be straight.
+Nothing on the board needs one. A local model is optional and used only for translating
+without quotas, talking to Ollama or LM Studio on your own machine; the settings say which
+model suits the memory you have and report what they found when you test the connection.
 
-A local model is optional and only two things use it: chatting with Leen and translating
-without quotas. Both talk to Ollama or LM Studio on your own machine; the settings say which
-model would be picked for the memory you have, and can install and start the server for you.
+Leen, the study assistant, is written but not in this release: the pet, the chat and his
+local actions sit behind a flag in `src/features.ts`.
 
 ### Tags
 
@@ -102,6 +98,21 @@ Translations live in `src/locales/`, keyed by the Spanish source string, so a mi
 falls back to Spanish rather than showing a raw key. Adding a language is one file there and
 one line in `src/i18n.ts`.
 
+### Handwriting data
+
+Maths symbols are recognised by comparing your strokes with shapes people
+actually drew: 64 examples of each, taken from the
+[Hand-TeX](https://github.com/VoxelCubes/Hand-TeX) database, which extends the
+[Detexify](https://github.com/kirel/detexify-data) training data. Both are
+published under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/),
+and so is `src/ink-prototypes-odbl.ts`, the file generated from them. The rest
+of NoteLens stays MIT; no Hand-TeX code is used, only its published data.
+
+Regenerate that file with `python dev-harness/build-prototypes.py handtex.db`.
+Digits and Latin letters are not in it — Detexify collected drawings of LaTeX
+commands, so nobody drew a "2" — and their shapes are still written by hand in
+`src/ink-shapes.ts`.
+
 ### Privacy
 
 The study actions, formula recognition and everything drawn on the canvas run locally. Chat
@@ -144,6 +155,9 @@ src/
   ink-equation.ts       the equation dialog, by hand or typed
   math-palette.ts       the symbol palette both editors share
   asciimath.ts          calculator notation to LaTeX
+  ink-shapes.ts         stroke matching, and the hand-written shapes
+  ink-prototypes-odbl.ts  symbol shapes from real handwriting (ODbL)
+  features.ts           what is written but not shipped yet
   dom-raster.ts         typeset formulas to PNG, for the PDF export
   local-intelligence.ts summaries, tasks, outlines, flashcards, no models
   assistant.ts          local actions and the optional local chat
@@ -197,18 +211,14 @@ Al exportar a PDF cada fórmula se dibuja como se ve en la pizarra, no como su c
 y nada se pierde por el color: la tinta blanca de una pizarra oscura sale oscura sobre el
 papel.
 
-### Herramientas de estudio que no necesitan modelo
+### Modelo local
 
-Leen, el ayudante, abre primero un panel de acciones que se calculan en tu equipo sin API,
-sin cuenta y sin ningún modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas y
-limpieza de texto. Usan la selección actual o la página entera si no hay nada seleccionado.
-Otras dos actúan sobre el lienzo: ordenar los objetos seleccionados en una cuadrícula y
-pulir la tinta, que suaviza los trazos conservando la presión y endereza las líneas que
-querías rectas.
+Nada de la pizarra lo necesita. El modelo local es opcional y solo se usa para traducir sin
+cuotas, hablando con Ollama o LM Studio en tu propio equipo; los ajustes te dicen qué modelo
+encaja con tu memoria y te cuentan qué encontraron al probar la conexión.
 
-El modelo local es opcional y solo lo usan dos cosas: el chat con Leen y la traducción sin
-cuotas. Ambas hablan con Ollama o LM Studio en tu propio equipo; los ajustes te dicen qué
-modelo encaja con la memoria que tienes, y pueden instalar y arrancar el servidor por ti.
+Leen, el ayudante de estudio, está escrito pero no va en esta versión: el gato, el chat y sus
+acciones locales quedan tras una bandera en `src/features.ts`.
 
 ### Etiquetas
 
@@ -256,6 +266,22 @@ Idioma puedes forzar uno de los dos, y las pizarras abiertas se actualizan al mo
 Las traducciones viven en `src/locales/`, indexadas por el texto original en español, así que
 lo que falte cae de vuelta al español en lugar de mostrar una clave suelta. Añadir un idioma
 es un archivo ahí y una línea en `src/i18n.ts`.
+
+### Datos de escritura a mano
+
+Los símbolos matemáticos se reconocen comparando tus trazos con formas que
+dibujó gente de verdad: 64 ejemplos de cada uno, tomados de la base de datos
+[Hand-TeX](https://github.com/VoxelCubes/Hand-TeX), que amplía los datos de
+entrenamiento de [Detexify](https://github.com/kirel/detexify-data). Las dos se
+publican bajo la [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/),
+y también el archivo que se genera a partir de ellas,
+`src/ink-prototypes-odbl.ts`. El resto de NoteLens sigue siendo MIT; no se usa
+nada del código de Hand-TeX, solo sus datos publicados.
+
+Ese archivo se regenera con `python dev-harness/build-prototypes.py handtex.db`.
+Los dígitos y las letras latinas no están ahí —Detexify recogía dibujos de
+comandos LaTeX, así que nadie dibujó un «2»— y sus formas siguen escritas a mano
+en `src/ink-shapes.ts`.
 
 ### Privacidad
 

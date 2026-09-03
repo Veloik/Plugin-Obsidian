@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.7.0
+
+### Added
+
+- Maths symbols are recognised from handwriting people actually produced. The shapes used to be drawn by one person guessing what a sigma looks like; they now come from the Hand-TeX database (221,263 samples, extending Detexify's), 64 examples of each symbol. Measured on 1,282 real samples the builder never saw, recognition of maths symbols went from **5 %** to **44 %**.
+- Fifty-three symbols backed by that data: ∫ ∑ ∏ ∂ ∇ ∞ ≈ ≠ ± ∓ × ÷ ≤ ≥ ∈ ∉ ⊂ ⊆ ∪ ∩ ∅ ∀ ∃ ⇒ ⇔ ≡ ∝ ⊥ ∥ ∠ → · √ ℝ ℕ ℤ ℚ and the Greek alphabet.
+
+### Fixed
+
+- Several strokes that make one symbol are no longer cut apart. A ≡ was read as a fraction of two dashes, a ± as a fraction, a ⊥ as "-1" and a ∥ as "11": when the parser has had to cut ink up and is unsure, and the whole thing matches a symbol far better than the pieces did, the symbol wins.
+- Symbols with many examples no longer beat symbols with few on numbers alone. Averaging the three closest examples of each symbol, rather than taking its single luckiest one, stopped a "0" reading as ∂ and a heart as ∇.
+
+### Changed
+
+- A signature (how the strokes spread over a 4×4 grid, plus the aspect ratio) sieves the shape library before the real comparison runs. That is what makes a library twenty times larger affordable: 46 ms per symbol rather than 500.
+- `src/ink-prototypes-odbl.ts` carries the Open Database License and its attribution; the rest of NoteLens stays MIT. No Hand-TeX code (GPL-3.0) is used, only its published data.
+
 ## 2.6.1
 
 ### Fixed

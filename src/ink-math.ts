@@ -67,7 +67,7 @@ interface ParsedExpression {
 	structured: boolean;
 }
 
-import { REJECT_DISTANCE, matchShape } from "./ink-shapes";
+import { WHOLE_SYMBOL_DISTANCE, matchShape, shouldReject } from "./ink-shapes";
 import { tr } from "./i18n";
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
@@ -604,7 +604,7 @@ function classifyGlyph(group: GlyphGroup): GlyphResult {
 	// geometric guess that was not sure enough to answer on its own does not
 	// rescue it either — that is how a heart came out as "0", since a heart is
 	// a closed loop and the closed-loop rule claims those.
-	if (!shapes.length || shapes[0].distance > REJECT_DISTANCE) {
+	if (shouldReject(shapes)) {
 		return {
 			value: "?",
 			alternatives: [...(hard ? [hard.value] : []), ...shapes.slice(0, 4).map(match => match.value)],
@@ -853,6 +853,29 @@ export function recognizeInkFormula(strokes: InkMathStroke[]): InkMathRecognitio
 		.filter(stroke => stroke.points.length > 0);
 	if (!clean.length) return { source: "", confidence: 0, tokens: [], unknown: 0, detail: tr("Sin tinta") };
 	const parsed = parseExpression(clean);
+
+	// Several strokes can be one symbol — ≡, ±, ≤, ∈, ⊥ and ∥ all are — and the
+	// parser's job is the opposite one, cutting ink into glyphs. When it has cut
+	// and is unsure, and the whole thing matches a symbol far better than the
+	// pieces did, the symbol is the better reading. ≡ was coming out as a
+	// fraction of two dashes and ⊥ as "-1".
+	if (parsed.tokens.length > 1 && clean.length <= 4 && parsed.confidence < 0.82) {
+		const whole = matchShape(clean.map(stroke => stroke.points));
+		if (whole.length && whole[0].distance < WHOLE_SYMBOL_DISTANCE) {
+			const token: InkMathToken = {
+				value: whole[0].value,
+				alternatives: whole.slice(0, 5).map(match => match.value),
+				confidence: clamp01(0.95 - whole[0].distance)
+			};
+			return {
+				source: whole[0].value,
+				confidence: token.confidence,
+				tokens: [token],
+				unknown: 0,
+				detail: tr("Símbolo reconocido · {p0}%", { p0: Math.round(token.confidence * 100) })
+			};
+		}
+	}
 	const unknown = parsed.tokens.filter(token => token.unknown).length;
 	const uncertain = parsed.tokens.filter(token => !token.unknown && token.confidence < 0.56).length;
 	const confidence = clamp01(parsed.confidence + (parsed.structured ? 0.08 : 0));

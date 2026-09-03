@@ -48,7 +48,9 @@ const distanceOf = (strokeList) => page.evaluate((s) => {
 
 console.log("=== símbolos que la biblioteca conoce ===");
 const known = [];
-for (const c of CASES.filter(c => !c.label.includes("+") && !c.label.includes("="))) {
+// Single symbols only: the distance of a whole expression to one prototype
+// means nothing.
+for (const c of CASES.filter(c => c.label.includes("#"))) {
 	const top = await distanceOf(c.strokes);
 	known.push(top[0].distance);
 	console.log(`  ${c.label.padEnd(8)} ${top.map(t => `${t.value}:${t.distance}`).join("  ")}`);

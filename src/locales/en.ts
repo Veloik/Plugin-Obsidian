@@ -741,4 +741,5 @@ export const en: Record<string, string> = {
 	"Lectura vectorial · {p0}%": "Vector reading · {p0}%",
 	"Sin reconocer": "Not recognised",
 	"No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again.",
+	"Símbolo reconocido · {p0}%": "Symbol recognised · {p0}%",
 };
