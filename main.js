@@ -84142,7 +84142,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.3.1" : "desconocida";
+var NOTELENS_BUILD = true ? "2.3.2" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

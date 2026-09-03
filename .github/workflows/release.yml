@@ -6,6 +6,9 @@ on:
 
 permissions:
   contents: write
+  # Provenance: the attestation is signed with the run's OIDC identity.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -21,6 +24,12 @@ jobs:
         run: |
           node -e "const m = require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) { throw new Error('The tag must match the manifest version, which is ' + m.version); }"
       - run: npm run release:check
+      - name: Attest that the assets were built from this source
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
       - name: Publish standard Obsidian assets
         env:
           GH_TOKEN: ${{ github.token }}

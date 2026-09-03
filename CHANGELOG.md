@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3.2
+
+### Changed
+
+- The release workflow attests the provenance of `main.js` and `styles.css`, so anyone installing them can verify cryptographically that they were built from this source.
+
 ## 2.3.1
 
 ### Changed
