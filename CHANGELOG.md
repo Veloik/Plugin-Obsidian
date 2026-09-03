@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.5.0
+
+### Fixed
+
+- The English interface is actually in English. Around 200 strings reached the screen through helpers and data tables — tool panel headings, grid sizes, table controls, the whole symbol palette, the format bar, tag hints and cards, page and bookmark names, the calculator's memory keys and keypad tabs, and every one of Leen's local actions — so they never passed through the translator. A new audit boots the board in English, opens every panel and dialog and reports what is still Spanish; it now reports nothing.
+- The eraser's mode cards and the selection tool's shared one CSS class, so restyling one silently restyled the other. They share a named card style now.
+
+### Added
+
+- The equation dialog has two ways in, side by side: write it by hand, or type it with the full palette of about eighty symbols grouped by subject. Both feed the same notation and the same live preview, so a formula can be started with the pen and finished on the keyboard. The palette lives in one file that the formula box's format bar reads too; it used to be a second copy of the same table.
+- The eraser panel shows what it is about to do: a stroke with the eraser sitting on it, whole in one mode and cut in the other, and sizes drawn as the discs they really are instead of four identical pictures of an eraser. Each mode says in a line what it does.
+- The local model has its own settings section that says plainly what needs it (chat and quota-free translation) and what does not (every board action). Testing the server reports what it found and which model it would pick for the memory this machine has, and keeps it on screen instead of firing a Notice that disappears.
+
+### Changed
+
+- The local model settings no longer hide when Leen is turned off: the translator asks the same server and was losing its configuration with him.
+- The README reads like a person wrote it.
+
 ## 2.4.0
 
 ### Added

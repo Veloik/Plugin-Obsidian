@@ -626,10 +626,10 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		b.title = title;
 		b.onclick = () => { action(); refreshMemory(); preview(); };
 	};
-	memKey("MC", "Borrar memoria", () => { env.memory = 0; });
-	memKey("MR", "Insertar la memoria (también puedes escribir M)", () => insertText("M"));
-	memKey("M+", "Sumar el resultado actual a la memoria", () => { env.memory += currentValue(); });
-	memKey("M−", "Restar el resultado actual de la memoria", () => { env.memory -= currentValue(); });
+	memKey("MC", tr("Borrar memoria"), () => { env.memory = 0; });
+	memKey("MR", tr("Insertar la memoria (también puedes escribir M)"), () => insertText("M"));
+	memKey("M+", tr("Sumar el resultado actual a la memoria"), () => { env.memory += currentValue(); });
+	memKey("M−", tr("Restar el resultado actual de la memoria"), () => { env.memory -= currentValue(); });
 	refreshMemory();
 
 	const varsEl = panel.createDiv({ cls: "notelens-calculator-vars" });
@@ -733,13 +733,14 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 		keys.empty();
 		for (const key of pages[page]) {
 			const b = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: tr(key.label) });
-			if (key.title) b.title = key.title;
+			if (key.title) b.title = tr(key.title);
 			b.onclick = () => { if (key.action) key.action(); else if (key.insert) insertText(key.insert); };
 		}
-		for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.textContent === page);
+		for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.getAttribute("data-page") === page);
 	};
 	for (const page of Object.keys(pages)) {
-		const tab = tabs.createEl("button", { cls: "notelens-calculator-tab", text: page });
+		const tab = tabs.createEl("button", { cls: "notelens-calculator-tab", text: tr(page) });
+		tab.setAttr("data-page", page);
 		tab.onclick = () => renderKeys(page);
 	}
 	renderKeys("Básica");

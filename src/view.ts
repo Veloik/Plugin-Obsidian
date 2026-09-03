@@ -2,6 +2,7 @@ import { FileView, Menu, Notice, Platform, TFile, WorkspaceLeaf, finishRenderMat
 import { AngleUnit, createCalculatorPanel } from "./calculator";
 import { createRecorderPanel } from "./recorder";
 import { toRenderableLatex } from "./asciimath";
+import { MATH_GROUPS, insertMathSnippet } from "./math-palette";
 import { buildSharePackage, importSharePackage as importShareArchive } from "./exchange";
 import { TranslationSource, createTranslatorPanel } from "./translator";
 import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
@@ -333,7 +334,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	override getViewType(): string { return VIEW_TYPE_ONENOTE; }
-	override getDisplayText(): string { return this.file ? this.file.basename : "Pizarra NoteLens"; }
+	override getDisplayText(): string { return this.file ? this.file.basename : tr("Pizarra NoteLens"); }
 	override getIcon(): string { return "pencil"; }
 
 	// ------------------------------------------------------------------
@@ -629,7 +630,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const mode = this.rulerEl.querySelector(".notelens-ruler-mode") as HTMLElement | null;
 		if (mode) {
 			const angle = ((Math.round(this.rulerState.angle) % 360) + 360) % 360;
-			mode.setText(isProtractor ? tr("Ángulos {p0}°", { p0: angle }) : "Regla");
+			mode.setText(isProtractor ? tr("Ángulos {p0}°", { p0: angle }) : tr("Regla"));
 			mode.setAttr("aria-label", mode.textContent || "Regla");
 		}
 	}
@@ -839,18 +840,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// Photographs/PDF pages need OCR. Pure board ink only needs it when the
 			// geometry pass is uncertain, keeping the common route near-instant.
 			if (paintedMedia > 0 || (!directFormula && regionStrokes.length > 0 && vector.confidence < 0.78)) {
-				onProgress(paintedMedia > 0 ? "Leyendo la fórmula de la imagen…" : "Verificando símbolos dudosos…");
+				onProgress(paintedMedia > 0 ? tr("Leyendo la fórmula de la imagen…") : tr("Verificando símbolos dudosos…"));
 				const ocr = await recognizeFormula(canvas, onProgress);
 				if (ocr) candidates.push({ source: ocr, bonus: 1.5 });
 			}
 			recognized = pickFormulaCandidate(candidates);
 			onProgress(recognized ? (directFormula ? "Fórmula recuperada desde la pizarra." : vector.detail) : "");
 		} else if (painted > 0) {
-			onProgress("Preparando el reconocimiento…");
+			onProgress(tr("Preparando el reconocimiento…"));
 			recognized = await recognizeImage(canvas, langCode, onProgress);
 		}
 		const parts = [...typed, recognized].filter(p => p.trim());
-		onProgress(parts.length ? "Texto capturado." : "");
+		onProgress(parts.length ? tr("Texto capturado.") : "");
 		return parts.join("\n\n");
 	}
 
@@ -2106,7 +2107,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const action = (icon: string, title: string, run: () => void) => {
 			const button = bar.createEl("button", { cls: "notelens-selection-action" });
 			setIcon(button, icon);
-			button.title = title;
+			button.title = tr(title);
 			button.addEventListener("click", (event) => { event.stopPropagation(); run(); });
 		};
 		action("copy", "Duplicar (Ctrl+D)", () => this.duplicateSelection());
@@ -3368,7 +3369,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.syncToolbar();
 		};
 
-		const dialogTitle = tag.id === "tag_hover" ? "Nueva nota flotante" : `Nueva etiqueta: ${defaultTitle}`;
+		const dialogTitle = tag.id === "tag_hover" ? tr("Nueva nota flotante") : tr("Nueva etiqueta: {p0}", { p0: defaultTitle });
 		new HoverNoteModal(this.app, dialogTitle, { title: defaultTitle, text: "" }, (content) => {
 			if (content) place(content);
 		}, tag.id === "tag_hover" ? undefined : "Añade el contexto de esta etiqueta. También puedes dibujar o adjuntar imágenes desde Pizarra.", tag.id === "tag_todo").open();
@@ -3568,7 +3569,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private editBadgeNote(badge: Badge): void {
 		const tag = quickTagById(badge.tagId);
 		const fallbackTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
-		const title = badge.tagId === "tag_hover" ? "Editar nota flotante" : `Editar etiqueta: ${fallbackTitle}`;
+		const title = badge.tagId === "tag_hover" ? tr("Editar nota flotante") : tr("Editar etiqueta: {p0}", { p0: fallbackTitle });
 		new HoverNoteModal(this.app, title, { title: badge.title ?? fallbackTitle, text: badge.tooltip ?? "", sketch: badge.sketch, images: badge.images, checklist: badge.checklist }, (content) => {
 			if (!content) return;
 			this.history.push();
@@ -3782,8 +3783,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			tag_star: "Importante",
 			tag_question: badge.done ? "Duda resuelta" : "Duda pendiente",
 			tag_idea: "Idea clave",
-			tag_todo: badge.done ? "Tarea hecha" : "Tarea pendiente",
-			tag_hover: badge.sketch && !badge.tooltip ? "Nota dibujada" : "Nota flotante"
+			tag_todo: badge.done ? tr("Tarea hecha") : tr("Tarea pendiente"),
+			tag_hover: badge.sketch && !badge.tooltip ? tr("Nota dibujada") : tr("Nota flotante")
 		};
 		head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tag.label });
 		if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
@@ -3804,7 +3805,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				} else {
 					row.createSpan({ text: item.text });
 				}
-				row.title = item.done ? "Marcar este paso como pendiente" : "Marcar solo este paso como hecho";
+				row.title = item.done ? tr("Marcar este paso como pendiente") : tr("Marcar solo este paso como hecho");
 				row.addEventListener("pointerdown", (event) => event.stopPropagation());
 				row.addEventListener("click", (event) => {
 					event.stopPropagation();
@@ -3815,7 +3816,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const allDone = completed === checklist.length;
 			const bulk = el.createEl("button", { cls: "onenote-top-tooltip-bulk" });
 			setIcon(bulk.createSpan(), allDone ? "circle" : "check-check");
-			bulk.createSpan({ text: allDone ? "Marcar todos como pendientes" : "Marcar todos como hechos" });
+			bulk.createSpan({ text: allDone ? tr("Marcar todos como pendientes") : tr("Marcar todos como hechos") });
 			bulk.addEventListener("pointerdown", (event) => event.stopPropagation());
 			bulk.addEventListener("click", (event) => {
 				event.stopPropagation();
@@ -3838,18 +3839,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			if (badge.sketch) {
 				const drawing = preview.createEl("img", { cls: "onenote-top-tooltip-drawing" });
 				drawing.src = badge.sketch;
-				drawing.alt = "Trazos de la nota";
+				drawing.alt = tr("Trazos de la nota");
 			}
 		}
 		if (badge.tooltip) {
 			el.createDiv({ cls: "onenote-top-tooltip-body", text: badge.tooltip });
 		} else if (!badge.sketch && !images.length && !checklist.length) {
 			const hints: Record<string, string> = {
-				tag_star: "Vuelve aquí al repasar. Doble clic para anotar por qué es importante.",
-				tag_question: badge.done ? "Ya está resuelta." : "Pregúntalo en clase o búscalo. Clic para marcarla resuelta.",
-				tag_idea: "El concepto que hay que recordar. Doble clic para resumirlo.",
-				tag_todo: badge.done ? "Completada." : "Clic para marcarla hecha. Doble clic para añadir pasos.",
-				tag_hover: "Doble clic para escribir o dibujar la nota."
+				tag_star: tr("Vuelve aquí al repasar. Doble clic para anotar por qué es importante."),
+				tag_question: badge.done ? tr("Ya está resuelta.") : tr("Pregúntalo en clase o búscalo. Clic para marcarla resuelta."),
+				tag_idea: tr("El concepto que hay que recordar. Doble clic para resumirlo."),
+				tag_todo: badge.done ? tr("Completada.") : tr("Clic para marcarla hecha. Doble clic para añadir pasos."),
+				tag_hover: tr("Doble clic para escribir o dibujar la nota.")
 			};
 			const near = this.badgeContext(badge);
 			el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? `Junto a: «${near}»` : (hints[badge.tagId] ?? "") });
@@ -4144,7 +4145,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	runBoardUtility(utility: BoardUtility): string {
 		if (utility === "polish-ink") {
 			const strokes = this.pageStrokes.filter(stroke => this.selStrokes.has(stroke.id));
-			if (!strokes.length) return "Selecciona uno o varios trazos para pulir la tinta";
+			if (!strokes.length) return tr("Selecciona uno o varios trazos para pulir la tinta");
 			this.history.push();
 			for (const stroke of strokes) {
 				if (stroke.points.length < 3) continue;
@@ -4188,7 +4189,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		for (const text of this.pageTexts) if (this.selTexts.has(text.id)) items.push({ x: text.x, y: text.y, w: text.w ?? 260, h: text.h ?? 60, move: (x, y) => { text.x = x; text.y = y; } });
 		for (const table of this.pageTables) if (this.selTables.has(table.id)) items.push({ x: table.x, y: table.y, w: table.w, h: table.h, move: (x, y) => { table.x = x; table.y = y; } });
 		for (const embed of this.pageEmbeds) if (this.selEmbeds.has(embed.id)) items.push({ x: embed.x, y: embed.y, w: embed.w, h: embed.h, move: (x, y) => { embed.x = x; embed.y = y; } });
-		if (items.length < 2) return "Selecciona al menos dos objetos para ordenarlos";
+		if (items.length < 2) return tr("Selecciona al menos dos objetos para ordenarlos");
 
 		this.history.push();
 		items.sort((a, b) => a.y - b.y || a.x - b.x);
@@ -4231,14 +4232,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	getDocumentPages(): DocumentPage[] { return this.data.pages; }
 	getActivePageId(): string { return this.data.activePageId; }
 	getPageTitle(id = this.data.activePageId): string {
-		return this.data.pages.find(page => page.id === id)?.title ?? "Página";
+		return this.data.pages.find(page => page.id === id)?.title ?? tr("Página");
 	}
 
 	addDocumentPage(): void {
 		this.commitTextEditor();
 		this.syncActivePageMeta();
 		this.history.push();
-		const page = createDocumentPage(`Página ${this.data.pages.length + 1}`, {
+		const page = createDocumentPage(tr("Página {p0}", { p0: this.data.pages.length + 1 }), {
 			background: this.data.background,
 			marginEnabled: this.marginEnabled,
 			backgroundColor: this.data.backgroundColor,
@@ -4327,7 +4328,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * bookmark opens in the list with its name selected so typing renames it.
 	 */
 	addViewportBookmark(): void {
-		const label = `Sección ${this.data.bookmarks.length + 1}`;
+		const label = tr("Sección {p0}", { p0: this.data.bookmarks.length + 1 });
 		const c = this.getViewportCenterScene();
 		this.history.push();
 		const bookmark: ViewportBookmark = { id: genId("bookmark"), pageId: this.data.activePageId, label, x: c.x, y: c.y, scale: this.data.viewTransform.scale };
@@ -4585,13 +4586,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const control = (icon: string, title: string, action: () => void) => {
 			const button = controls.createEl("button", { cls: "notelens-table-control" });
 			setIcon(button, icon);
-			button.title = title;
+			button.title = tr(title);
 			button.addEventListener("pointerdown", (event) => event.stopPropagation());
 			button.onclick = (event) => { event.stopPropagation(); action(); };
 		};
 		const headerBtn = controls.createEl("button", { cls: "notelens-table-control" });
 		setIcon(headerBtn, "heading");
-		headerBtn.title = table.header ? "Quitar la fila de encabezado" : "Usar la primera fila como encabezado";
+		headerBtn.title = table.header ? tr("Quitar la fila de encabezado") : tr("Usar la primera fila como encabezado");
 		headerBtn.toggleClass("active", !!table.header);
 		headerBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
 		headerBtn.onclick = (event) => { event.stopPropagation(); this.history.push(); table.header = !table.header; this.renderAll(); this.save(); };
@@ -4622,7 +4623,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const input = grid.createEl("textarea", { cls: "notelens-table-cell" });
 				if (table.header && row === 0) input.addClass("is-header");
 				if (table.headerColumn && col === 0) input.addClass("is-header-column");
-				input.placeholder = table.header && row === 0 ? "Título" : "";
+				input.placeholder = table.header && row === 0 ? tr("Título") : "";
 				input.value = table.cells[row]?.[col] ?? "";
 				input.setAttr("aria-label", `Fila ${row + 1}, columna ${col + 1}`);
 				input.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -5499,7 +5500,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const mkToggle = (key: string, icon: string, title: string, toggle: () => void) => {
 			const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 			setIcon(b, icon);
-			b.title = title;
+			b.title = tr(title);
 			b.onclick = () => apply(toggle);
 			toggleButtons.set(key, b);
 		};
@@ -5519,7 +5520,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const listButton = (icon: string, title: string, kind: ListKind) => {
 					const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 					setIcon(b, icon);
-					b.title = title;
+					b.title = tr(title);
 					b.onclick = () => { this.pushEditSession(); toggleListPrefix(el, kind); el.dispatchEvent(new Event("input")); el.focus(); };
 				};
 				listButton("list", "Lista con viñetas (•)", "bullet");
@@ -5531,7 +5532,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		const fontSelect = bar.createEl("select", { cls: "notelens-format-font" });
 		for (const [value, label] of [["sans", "Interfaz"], ["serif", "Clásica"], ["rounded", "Redondeada"], ["mono", "Mono"]] as [CanvasFont, string][]) {
-			fontSelect.createEl("option", { value, text: label });
+			fontSelect.createEl("option", { value, text: tr(label) });
 		}
 		fontSelect.value = tb.fontFamily ?? "sans";
 		fontSelect.onchange = () => apply(() => { tb.fontFamily = fontSelect.value as CanvasFont; });
@@ -5604,68 +5605,27 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			bar.addClass("is-math");
 			const palette = bar.createDiv({ cls: "notelens-math-palette" });
 			// Grouped so a long list stays findable: the tabs swap the keys below.
-			const groups: [string, [string, string, string][]][] = [
-				["Básico", [
-					["a/b", "Fracción", "(a)/(b)"], ["√", "Raíz cuadrada", "sqrt(x)"], ["ⁿ√", "Raíz enésima", "root(n)(x)"],
-					["xⁿ", "Potencia", "x^(n)"], ["xₙ", "Subíndice", "x_(n)"], ["·", "Producto", "*"], ["÷", "División", "-:"],
-					["±", "Más menos", "+-"], ["∓", "Menos más", "-+"], ["|x|", "Valor absoluto", "abs(x)"],
-					["( )", "Paréntesis", "()"], ["[ ]", "Corchetes", "[]"], ["{ }", "Llaves", "{}"], ["↵", "Nueva línea", "\n"]
-				]],
-				["Cálculo", [
-					["Σ", "Sumatorio", "sum_(i=1)^n "], ["Π", "Productorio", "prod_(i=1)^n "],
-					["∫", "Integral", "int_a^b  dx"], ["∬", "Integral doble", "int int  dA"], ["∮", "Integral de contorno", "oint  ds"],
-					["lim", "Límite", "lim_(x->oo) "], ["d/dx", "Derivada", "(d)/(dx) "], ["∂", "Derivada parcial", "(del)/(del x) "],
-					["∇", "Nabla", "grad "], ["∞", "Infinito", "oo"], ["→", "Tiende a", "->"], ["Δ", "Incremento", "Delta"]
-				]],
-				["Griego", [
-					["α", "Alfa", "alpha"], ["β", "Beta", "beta"], ["γ", "Gamma", "gamma"], ["δ", "Delta", "delta"],
-					["ε", "Épsilon", "epsilon"], ["θ", "Theta", "theta"], ["λ", "Lambda", "lambda"], ["μ", "Mu", "mu"],
-					["π", "Pi", "pi"], ["ρ", "Rho", "rho"], ["σ", "Sigma", "sigma"], ["τ", "Tau", "tau"],
-					["φ", "Fi", "phi"], ["ω", "Omega", "omega"], ["Ω", "Omega mayúscula", "Omega"]
-				]],
-				["Relaciones", [
-					["=", "Igual", "="], ["≠", "Distinto", "!="], ["≈", "Aproximado", "~~"], ["≡", "Idéntico", "-="],
-					["≤", "Menor o igual", "<="], ["≥", "Mayor o igual", ">="], ["≪", "Mucho menor", "<<"], ["≫", "Mucho mayor", ">>"],
-					["∝", "Proporcional", "prop"], ["→", "Implica", "->"], ["⇒", "Entonces", "=>"], ["⇔", "Si y solo si", "<=>"]
-				]],
-				["Conjuntos", [
-					["∈", "Pertenece", "in"], ["∉", "No pertenece", "!in"], ["⊂", "Subconjunto", "sub"], ["⊆", "Subconjunto o igual", "sube"],
-					["∪", "Unión", "uu"], ["∩", "Intersección", "nn"], ["∅", "Vacío", "O/"], ["∀", "Para todo", "AA"],
-					["∃", "Existe", "EE"], ["¬", "Negación", "not"], ["∧", "Y", "^^"], ["∨", "O", "vv"],
-					["ℝ", "Reales", "RR"], ["ℕ", "Naturales", "NN"], ["ℤ", "Enteros", "ZZ"], ["ℚ", "Racionales", "QQ"]
-				]],
-				["Matrices", [
-					["[2×2]", "Matriz 2×2", "[[a,b],[c,d]]"], ["[3×3]", "Matriz 3×3", "[[a,b,c],[d,e,f],[g,h,i]]"],
-					["(vec)", "Vector columna", "[[x],[y]]"], ["det", "Determinante", "|[a,b],[c,d]|"],
-					["x̄", "Media", "bar x"], ["x̂", "Sombrero", "hat x"], ["x⃗", "Vector", "vec x"], ["ẋ", "Punto", "dot x"]
-				]]
-			];
 			const keys = bar.createDiv({ cls: "notelens-math-keys" });
 			const tabs = palette.createDiv({ cls: "notelens-math-groups" });
 			const insertSnippet = (snippet: string) => {
-				const insert = snippet;
-				const start = el.selectionStart ?? el.value.length;
-				el.setRangeText(insert, start, el.selectionEnd ?? start, "end");
-				// Leave the caret where the argument goes, if the snippet has an empty slot.
-				const slot = insert.indexOf("()") >= 0 ? insert.indexOf("()") + 1 : insert.indexOf("  ") >= 0 ? insert.indexOf("  ") + 1 : -1;
-				if (slot >= 0) el.setSelectionRange(start + slot, start + slot);
-				el.focus();
+				insertMathSnippet(el, snippet);
 				el.dispatchEvent(new Event("input"));
 			};
 			const showGroup = (name: string) => {
 				keys.empty();
-				for (const [label, title, snippet] of groups.find(([id]) => id === name)?.[1] ?? []) {
-					const key = keys.createEl("button", { cls: "notelens-math-key", text: label });
-					key.title = title;
-					key.onclick = () => insertSnippet(snippet);
+				for (const item of MATH_GROUPS.find(group => group.name === name)?.keys ?? []) {
+					const key = keys.createEl("button", { cls: "notelens-math-key", text: item.glyph });
+					key.title = tr(item.name);
+					key.onclick = () => insertSnippet(item.snippet);
 				}
-				for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.textContent === name);
+				for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.getAttribute("data-group") === name);
 			};
-			for (const [name] of groups) {
-				const tab = tabs.createEl("button", { cls: "notelens-math-group", text: name });
-				tab.onclick = () => showGroup(name);
+			for (const group of MATH_GROUPS) {
+				const tab = tabs.createEl("button", { cls: "notelens-math-group", text: tr(group.name) });
+				tab.setAttr("data-group", group.name);
+				tab.onclick = () => showGroup(group.name);
 			}
-			showGroup(groups[0][0]);
+			showGroup(MATH_GROUPS[0].name);
 			palette.appendChild(keys);
 		}
 

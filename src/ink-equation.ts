@@ -2,6 +2,7 @@ import { App, Modal, setIcon } from "obsidian";
 import { recognizeFormula } from "./ocr";
 import { InkMathRecognition, pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
 import { tr } from "./i18n";
+import { MATH_GROUPS, insertMathSnippet } from "./math-palette";
 
 type InkTool = "write" | "erase";
 
@@ -51,6 +52,16 @@ export class InkEquationModal extends Modal {
 		contentEl.addClass("notelens-ink-equation");
 		contentEl.createEl("h3", { text: tr("Insertar ecuación") });
 
+		// Two ways in, not two dialogs: the pen and the keyboard write into the
+		// same notation, so a formula can be started by hand and finished typed.
+		const modeRow = contentEl.createDiv({ cls: "notelens-ink-modes" });
+		const handBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
+		setIcon(handBtn.createSpan(), "pen-line");
+		handBtn.createSpan({ text: tr("A mano") });
+		const typeBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
+		setIcon(typeBtn.createSpan(), "keyboard");
+		typeBtn.createSpan({ text: tr("Teclado") });
+
 		// --- the recognised formula, on top, exactly like OneNote
 		const preview = contentEl.createDiv({ cls: "notelens-ink-preview" });
 
@@ -73,6 +84,35 @@ export class InkEquationModal extends Modal {
 		// A LaTeX sample, identical in every language, so it stays out of the catalogue.
 		input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
 
+		// --- the keyboard pane: the same palette the formula box carries
+		const keyboard = contentEl.createDiv({ cls: "notelens-ink-keyboard hidden" });
+		const groupRow = keyboard.createDiv({ cls: "notelens-ink-groups" });
+		const keyGrid = keyboard.createDiv({ cls: "notelens-ink-keys" });
+		const showGroup = (name: string) => {
+			keyGrid.empty();
+			for (const item of MATH_GROUPS.find(group => group.name === name)?.keys ?? []) {
+				const button = keyGrid.createEl("button", { cls: "notelens-ink-key", text: item.glyph });
+				button.title = tr(item.name);
+				button.onclick = () => {
+					insertMathSnippet(input, item.snippet);
+					this.source = input.value;
+					editedByUser = true;
+					drawPreview();
+				};
+			}
+			for (const tab of Array.from(groupRow.children)) tab.toggleClass("active", tab.getAttribute("data-group") === name);
+		};
+		for (const group of MATH_GROUPS) {
+			const tab = groupRow.createEl("button", { cls: "notelens-ink-group", text: tr(group.name) });
+			tab.setAttr("data-group", group.name);
+			tab.onclick = () => showGroup(group.name);
+		}
+		showGroup(MATH_GROUPS[0].name);
+		keyboard.createDiv({
+			cls: "notelens-ink-cheatsheet",
+			text: tr("También entiende la notación de la calculadora: x^2/2, sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Y LaTeX tal cual.")
+		});
+
 		const status = contentEl.createDiv({ cls: "notelens-ink-status" });
 		const candidates = contentEl.createDiv({ cls: "notelens-ink-candidates hidden" });
 		let lastAutomatic = "";
@@ -86,39 +126,6 @@ export class InkEquationModal extends Modal {
 		};
 		input.addEventListener("input", () => { this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
 		drawPreview();
-
-		// Common structures are faster and less error-prone than typing every
-		// brace on a tablet. The inserted example stays selected for replacement.
-		const structures = contentEl.createDiv({ cls: "notelens-ink-structures" });
-		structures.createSpan({ cls: "notelens-ink-structures-label", text: tr("Estructuras") });
-		const structureItems: { label: string; value: string; select: [number, number] }[] = [
-			{ label: "a⁄b", value: "\\frac{a}{b}", select: [6, 7] },
-			{ label: "xⁿ", value: "x^{n}", select: [3, 4] },
-			{ label: "√x", value: "\\sqrt{x}", select: [6, 7] },
-			{ label: "∫", value: "\\int_{a}^{b} f(x)\\,dx", select: [6, 7] },
-			{ label: "Σ", value: "\\sum_{i=1}^{n}", select: [6, 9] },
-			{ label: "lim", value: "\\lim_{x \\to 0}", select: [6, 12] },
-			{ label: "|x|", value: "\\left|x\\right|", select: [6, 7] },
-			{ label: "(ⁿₖ)", value: "\\binom{n}{k}", select: [7, 8] },
-			{ label: "[□]", value: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", select: [17, 18] },
-			{ label: "{…", value: "\\begin{cases} a & x \\ge 0 \\\\ b & x < 0 \\end{cases}", select: [15, 16] },
-			{ label: "vec", value: "\\vec{x}", select: [5, 6] },
-			{ label: "π", value: "\\pi", select: [0, 3] }
-		];
-		for (const item of structureItems) {
-			const button = structures.createEl("button", { cls: "notelens-ink-structure", text: item.label });
-			button.title = tr("Insertar {p0}", { p0: item.value });
-			button.onclick = () => {
-				const start = input.selectionStart ?? input.value.length;
-				const end = input.selectionEnd ?? start;
-				input.setRangeText(item.value, start, end, "end");
-				input.setSelectionRange(start + item.select[0], start + item.select[1]);
-				this.source = input.value;
-				editedByUser = true;
-				drawPreview();
-				input.focus();
-			};
-		}
 
 		const showCandidates = (recognition: InkMathRecognition) => {
 			candidates.empty();
@@ -217,17 +224,17 @@ export class InkEquationModal extends Modal {
 			button.onclick = run;
 			return button;
 		};
-		const writeBtn = toolButton("pen-line", "Escribir", () => setTool("write"));
-		const eraseBtn = toolButton("eraser", "Borrar", () => setTool("erase"));
-		toolButton("undo-2", "Deshacer", () => {
+		const writeBtn = toolButton("pen-line", tr("Escribir"), () => setTool("write"));
+		const eraseBtn = toolButton("eraser", tr("Borrar"), () => setTool("erase"));
+		toolButton("undo-2", tr("Deshacer"), () => {
 			const last = this.strokes.pop();
 			if (last) { this.redoStack.push(last); redraw(); this.scheduleRecognition(); }
 		});
-		toolButton("redo-2", "Rehacer", () => {
+		toolButton("redo-2", tr("Rehacer"), () => {
 			const next = this.redoStack.pop();
 			if (next) { this.strokes.push(next); redraw(); this.scheduleRecognition(); }
 		});
-		toolButton("trash-2", "Eliminar", () => {
+		toolButton("trash-2", tr("Eliminar"), () => {
 			this.strokes = [];
 			this.redoStack = [];
 			redraw();
@@ -240,7 +247,7 @@ export class InkEquationModal extends Modal {
 			candidates.addClass("hidden");
 		});
 		if (this.readFromBoard) {
-			toolButton("scan-text", "Leer de la pizarra", async () => {
+			toolButton("scan-text", tr("Leer de la pizarra"), async () => {
 				status.setText(tr("Elige la zona de la pizarra…"));
 				const text = await this.readFromBoard?.(message => status.setText(message)).catch(() => "") ?? "";
 				if (!text.trim()) { status.setText(tr("No he leído nada. Prueba con una zona más ajustada.")); return; }
@@ -252,6 +259,18 @@ export class InkEquationModal extends Modal {
 				status.setText(tr("Leído desde los objetos y trazos de la pizarra. Revisa solo los símbolos marcados."));
 			});
 		}
+		const setMode = (mode: "hand" | "type") => {
+			handBtn.toggleClass("active", mode === "hand");
+			typeBtn.toggleClass("active", mode === "type");
+			board.toggleClass("hidden", mode !== "hand");
+			tools.toggleClass("hidden", mode !== "hand");
+			keyboard.toggleClass("hidden", mode !== "type");
+			candidates.toggleClass("hidden", mode !== "hand" || !candidates.childElementCount);
+			if (mode === "type") input.focus();
+		};
+		handBtn.onclick = () => setMode("hand");
+		typeBtn.onclick = () => setMode("type");
+
 		const setTool = (tool: InkTool) => {
 			this.tool = tool;
 			writeBtn.toggleClass("active", tool === "write");
@@ -259,6 +278,8 @@ export class InkEquationModal extends Modal {
 			canvas.toggleClass("is-erasing", tool === "erase");
 		};
 		setTool("write");
+		// Handwriting first, as OneNote does; the keyboard is one click away.
+		setMode("hand");
 
 		// --- footer
 		const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });

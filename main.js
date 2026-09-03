@@ -12,7 +12,7 @@ var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
 };
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __defNormalProp = (obj, key2, value) => key2 in obj ? __defProp(obj, key2, { enumerable: true, configurable: true, writable: true, value }) : obj[key2] = value;
 var __commonJS = (cb, mod) => function __require() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -26,9 +26,9 @@ var __export = (target, all) => {
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    for (let key2 of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key2) && key2 !== except)
+        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
   }
   return to;
 };
@@ -41,7 +41,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+var __publicField = (obj, key2, value) => __defNormalProp(obj, typeof key2 !== "symbol" ? key2 + "" : key2, value);
 var __accessCheck = (obj, member, msg) => member.has(obj) || __typeError("Cannot " + msg);
 var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read from private field"), getter ? getter.call(obj) : member.get(obj));
 var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
@@ -63,28 +63,28 @@ var require_runtime = __commonJS({
       "use strict";
       var Op = Object.prototype;
       var hasOwn = Op.hasOwnProperty;
-      var defineProperty = Object.defineProperty || function(obj, key, desc) {
-        obj[key] = desc.value;
+      var defineProperty = Object.defineProperty || function(obj, key2, desc) {
+        obj[key2] = desc.value;
       };
       var undefined2;
       var $Symbol = typeof Symbol === "function" ? Symbol : {};
       var iteratorSymbol = $Symbol.iterator || "@@iterator";
       var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
       var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-      function define(obj, key, value) {
-        Object.defineProperty(obj, key, {
+      function define(obj, key2, value) {
+        Object.defineProperty(obj, key2, {
           value,
           enumerable: true,
           configurable: true,
           writable: true
         });
-        return obj[key];
+        return obj[key2];
       }
       try {
         define({}, "");
       } catch (err3) {
-        define = function(obj, key, value) {
-          return obj[key] = value;
+        define = function(obj, key2, value) {
+          return obj[key2] = value;
         };
       }
       function wrap(innerFn, outerFn, self2, tryLocsList) {
@@ -361,15 +361,15 @@ var require_runtime = __commonJS({
       exports2.keys = function(val) {
         var object = Object(val);
         var keys = [];
-        for (var key in object) {
-          keys.push(key);
+        for (var key2 in object) {
+          keys.push(key2);
         }
         keys.reverse();
         return function next() {
           while (keys.length) {
-            var key2 = keys.pop();
-            if (key2 in object) {
-              next.value = key2;
+            var key3 = keys.pop();
+            if (key3 in object) {
+              next.value = key3;
               next.done = false;
               return next;
             }
@@ -698,7 +698,7 @@ var require_createScheduler = __commonJS({
 var require_getEnvironment = __commonJS({
   "node_modules/tesseract.js/src/utils/getEnvironment.js"(exports, module2) {
     "use strict";
-    module2.exports = (key) => {
+    module2.exports = (key2) => {
       const env = {};
       if (typeof WorkerGlobalScope !== "undefined") {
         env.type = "webworker";
@@ -707,10 +707,10 @@ var require_getEnvironment = __commonJS({
       } else if (typeof process === "object" && typeof require === "function") {
         env.type = "node";
       }
-      if (typeof key === "undefined") {
+      if (typeof key2 === "undefined") {
         return env;
       }
-      return env[key];
+      return env[key2];
     };
   }
 });
@@ -723,9 +723,9 @@ var require_resolvePaths = __commonJS({
     var resolveURL = isBrowser ? (s3) => new URL(s3, window.location.href).href : (s3) => s3;
     module2.exports = (options) => {
       const opts = { ...options };
-      ["corePath", "workerPath", "langPath"].forEach((key) => {
-        if (options[key]) {
-          opts[key] = resolveURL(opts[key]);
+      ["corePath", "workerPath", "langPath"].forEach((key2) => {
+        if (options[key2]) {
+          opts[key2] = resolveURL(opts[key2]);
         }
       });
       return opts;
@@ -1378,7 +1378,7 @@ __export(main_exports, {
 module.exports = __toCommonJS(main_exports);
 
 // src/assistant.ts
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 
 // src/cat-sprites.ts
 var CAT_SPRITES = {
@@ -1537,9 +1537,9 @@ function cleanNotesLocally(text) {
   for (const raw of stripMarkup(text).split(/\n+/)) {
     let line = raw.trim().replace(/^\s*[•*]\s*/, "- ").replace(/^\s*[-–—]\s*/, "- ");
     if (!line) continue;
-    const key = normalizeToken(line.replace(/^[-\d.)\s]+/, ""));
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
+    const key2 = normalizeToken(line.replace(/^[-\d.)\s]+/, ""));
+    if (!key2 || seen.has(key2)) continue;
+    seen.add(key2);
     if (!/^[-\d]/.test(line)) line = sentenceCase(line);
     output.push(line);
   }
@@ -2125,1314 +2125,8 @@ function pickFormulaCandidate(candidates) {
   return candidates.filter((candidate) => candidate.source.trim()).sort((a3, b3) => formulaCandidateScore(b3.source) + (b3.bonus ?? 0) - formulaCandidateScore(a3.source) - (a3.bonus ?? 0))[0]?.source.trim() ?? "";
 }
 
-// src/assistant.ts
-var VISION_HINTS = ["llava", "bakllava", "moondream", "minicpm", "qwen2-vl", "qwen2.5vl", "qwen2.5-vl", "qwen3-vl", "qwen3vl", "vision", "gemma3", "pixtral", "internvl", "granite3.2-vision", "smolvlm"];
-var VISION_CATALOGUE = [
-  { model: "moondream", params: "1.8B", downloadGb: 1.7, minRamGb: 4, note: "el m\xE1s ligero; entiende dibujos sencillos" },
-  { model: "smolvlm", params: "2.2B", downloadGb: 1.8, minRamGb: 5, note: "muy r\xE1pido, respuestas cortas" },
-  { model: "qwen2.5vl:3b", params: "3B", downloadGb: 3.2, minRamGb: 6, note: "buen lector de texto escrito a mano" },
-  { model: "llava-phi3", params: "3.8B", downloadGb: 2.9, minRamGb: 6, note: "equilibrado para port\xE1tiles modestos" },
-  { model: "gemma3:4b", params: "4B", downloadGb: 3.3, minRamGb: 8, note: "de Google, buen razonamiento para su tama\xF1o" },
-  { model: "llava:7b", params: "7B", downloadGb: 4.7, minRamGb: 10, note: "el cl\xE1sico; describe im\xE1genes con detalle" },
-  { model: "minicpm-v", params: "8B", downloadGb: 5.5, minRamGb: 12, note: "muy bueno leyendo apuntes a mano" },
-  { model: "qwen2.5vl:7b", params: "7B", downloadGb: 6, minRamGb: 12, note: "el m\xE1s equilibrado si tu equipo da" },
-  { model: "gemma3:12b", params: "12B", downloadGb: 8.9, minRamGb: 20, note: "m\xE1s listo, necesita bastante memoria" },
-  { model: "qwen2.5vl:32b", params: "32B", downloadGb: 21, minRamGb: 40, note: "solo para equipos grandes" }
-];
-function visionOptionsFor(memoryGb = detectMemoryGb()) {
-  return VISION_CATALOGUE.filter((option) => option.minRamGb <= memoryGb);
-}
-var CODE_HINTS = ["coder", "codellama", "starcoder", "deepseek-coder", "codegemma"];
-var EMBED_HINTS = ["embed", "nomic-embed", "bge-", "e5-", "minilm"];
-var supportsImages = (model) => VISION_HINTS.some((hint) => model.toLowerCase().includes(hint));
-function detectMemoryGb() {
-  try {
-    const os = window.require?.("os");
-    if (os?.totalmem) return Math.round(os.totalmem() / 1024 ** 3);
-  } catch {
-  }
-  const hint = navigator.deviceMemory;
-  return hint ? hint * 2 : 8;
-}
-function recommendedVisionModel(memoryGb = detectMemoryGb()) {
-  const fits = visionOptionsFor(memoryGb);
-  const sweetSpot = fits.filter((option) => option.downloadGb <= 6.5);
-  const pick = sweetSpot[sweetSpot.length - 1] ?? fits[0] ?? VISION_CATALOGUE[0];
-  return {
-    model: pick.model,
-    pull: `ollama pull ${pick.model}`,
-    why: `${pick.params}, ${pick.downloadGb} GB de descarga \xB7 ${pick.note}`
-  };
-}
-function parameterCount(model) {
-  const match = /(\d+(?:\.\d+)?)\s*b\b/i.exec(model.replace(/[:_-]/g, " "));
-  return match ? parseFloat(match[1]) : 0;
-}
-function rankTextModels(models, memoryGb = detectMemoryGb()) {
-  const comfortableB = Math.max(3, (memoryGb - 4) / 0.7);
-  return models.filter((model) => !EMBED_HINTS.some((hint) => model.toLowerCase().includes(hint))).map((model) => {
-    const name = model.toLowerCase();
-    const size = parameterCount(name);
-    let score = 50;
-    if (size === 0) score += 5;
-    else if (size <= comfortableB) score += 28;
-    else if (size <= comfortableB * 1.5) score -= 8;
-    else score -= 30;
-    if (CODE_HINTS.some((hint) => name.includes(hint))) score -= 25;
-    if (/qwen|llama3|mistral|gemma|phi|aya|nous/.test(name)) score += 10;
-    if (/aya|qwen|gemma|mistral/.test(name)) score += 6;
-    return { model, score };
-  }).sort((a3, b3) => b3.score - a3.score).map((entry) => entry.model);
-}
-function rankModels(models, memoryGb = detectMemoryGb()) {
-  const comfortableB = Math.max(3, (memoryGb - 4) / 0.7);
-  return models.filter((model) => !EMBED_HINTS.some((hint) => model.toLowerCase().includes(hint))).map((model) => {
-    const name = model.toLowerCase();
-    const size = parameterCount(name);
-    let score = 50;
-    const notes = [];
-    if (size === 0) {
-      notes.push("tama\xF1o desconocido");
-    } else if (size <= comfortableB * 0.6) {
-      score += 22;
-      notes.push(`${size}B, va sobrado en tu equipo`);
-    } else if (size <= comfortableB) {
-      score += 28;
-      notes.push(`${size}B, buen equilibrio para tus ${memoryGb} GB`);
-    } else if (size <= comfortableB * 1.5) {
-      score -= 8;
-      notes.push(`${size}B, justo para tus ${memoryGb} GB`);
-    } else {
-      score -= 30;
-      notes.push(`${size}B, demasiado para tus ${memoryGb} GB`);
-    }
-    if (CODE_HINTS.some((hint) => name.includes(hint))) {
-      score -= 20;
-      notes.push("orientado a c\xF3digo");
-    }
-    const fits = size === 0 || size <= comfortableB * 1.5;
-    if (!fits) notes.push("grande para tu equipo");
-    if (name.includes("instruct") || name.includes("chat")) {
-      score += 6;
-    }
-    if (/llama3|qwen2\.5|mistral|gemma|phi/.test(name)) {
-      score += 8;
-      notes.push("familia probada para estudiar");
-    }
-    return { model, score, reason: notes.join(" \xB7 ") || "modelo general" };
-  }).sort((a3, b3) => b3.score - a3.score);
-}
-var trimUrl = (url) => url.trim().replace(/\/+$/, "");
-function nodeRequest(url, method, body) {
-  let http = null;
-  try {
-    const req = window.require;
-    if (!req) return Promise.resolve(null);
-    http = req(url.startsWith("https:") ? "https" : "http");
-  } catch {
-    return Promise.resolve(null);
-  }
-  if (!http) return Promise.resolve(null);
-  const client = http;
-  let parsed;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return Promise.resolve(null);
-  }
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (value) => {
-      if (!settled) {
-        settled = true;
-        resolve(value);
-      }
-    };
-    try {
-      const request = client.request({
-        protocol: parsed.protocol,
-        hostname: parsed.hostname,
-        port: parsed.port,
-        path: `${parsed.pathname}${parsed.search}`,
-        method,
-        headers: body ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } : {},
-        timeout: 12e4
-      }, (response) => {
-        let text = "";
-        response.setEncoding("utf8");
-        response.on("data", (chunk) => {
-          text += chunk;
-        });
-        response.on("end", () => finish({ status: response.statusCode ?? 0, text }));
-      });
-      request.on("error", () => finish(null));
-      request.on("timeout", () => {
-        request.destroy();
-        finish(null);
-      });
-      if (body) request.write(body);
-      request.end();
-    } catch {
-      finish(null);
-    }
-  });
-}
-var sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
-function nodePlatform() {
-  try {
-    return window.process?.platform ?? "";
-  } catch {
-    return "";
-  }
-}
-function nodeSpawn() {
-  try {
-    const req = window.require;
-    const mod = req?.("child_process");
-    return mod?.spawn ?? null;
-  } catch {
-    return null;
-  }
-}
-var LocalServerManager = class {
-  constructor(baseUrl) {
-    this.baseUrl = baseUrl;
-  }
-  get canManage() {
-    return nodeSpawn() !== null;
-  }
-  /** Runs a command to completion and reports whether it succeeded. */
-  run(cmd, args) {
-    const spawn = nodeSpawn();
-    if (!spawn) return Promise.resolve(false);
-    return new Promise((resolve) => {
-      try {
-        const child = spawn(cmd, args, { stdio: "ignore", shell: nodePlatform() === "win32" });
-        if (!child.on) return resolve(false);
-        let settled = false;
-        child.on("close", (code) => {
-          if (!settled) {
-            settled = true;
-            resolve(code === 0);
-          }
-        });
-        child.on("error", () => {
-          if (!settled) {
-            settled = true;
-            resolve(false);
-          }
-        });
-      } catch {
-        resolve(false);
-      }
-    });
-  }
-  /** Where the ollama binary might be when it is not on the PATH. */
-  candidates() {
-    const platform = nodePlatform();
-    const env = window.process?.env ?? {};
-    if (platform === "win32") {
-      return [
-        "ollama",
-        `${env.LOCALAPPDATA ?? ""}\\Programs\\Ollama\\ollama.exe`,
-        `${env.ProgramFiles ?? ""}\\Ollama\\ollama.exe`
-      ].filter((path) => !path.startsWith("\\"));
-    }
-    if (platform === "darwin") return ["ollama", "/usr/local/bin/ollama", "/opt/homebrew/bin/ollama", "/Applications/Ollama.app/Contents/Resources/ollama"];
-    return ["ollama", "/usr/local/bin/ollama", "/usr/bin/ollama"];
-  }
-  /** The first ollama binary that answers, or null when none does. */
-  async findBinary() {
-    for (const candidate of this.candidates()) {
-      if (await this.run(candidate, ["--version"])) return candidate;
-    }
-    return null;
-  }
-  /** True when the ollama command answers on this computer. */
-  async isInstalled() {
-    return await this.findBinary() !== null;
-  }
-  /** How this operating system installs Ollama, for the button's label. */
-  installPlan() {
-    const platform = nodePlatform();
-    if (platform === "win32") {
-      return { label: "Instalar Ollama con winget", cmd: "winget", args: ["install", "--id", "Ollama.Ollama", "-e", "--accept-source-agreements", "--accept-package-agreements"], manual: "https://ollama.com/download" };
-    }
-    if (platform === "darwin") {
-      return { label: "Instalar Ollama con Homebrew", cmd: "brew", args: ["install", "ollama"], manual: "https://ollama.com/download" };
-    }
-    if (platform === "linux") {
-      return { label: "Instalar Ollama", cmd: "sh", args: ["-c", "curl -fsSL https://ollama.com/install.sh | sh"], manual: "https://ollama.com/download" };
-    }
-    return null;
-  }
-  /** Installs Ollama with the system's package manager, then checks it works. */
-  async install(onProgress) {
-    const plan = this.installPlan();
-    if (!plan) return false;
-    onProgress?.("Instalando Ollama\u2026 esto puede tardar unos minutos.");
-    const ok = await this.run(plan.cmd, plan.args);
-    if (!ok) return false;
-    onProgress?.("Ollama instalado, comprobando\u2026");
-    return this.isInstalled();
-  }
-  /** True when something answers on the configured port. */
-  async isRunning() {
-    const base = this.baseUrl();
-    const origin = /^https?:\/\/[^/]+/i.exec(base)?.[0] ?? "";
-    const headers = { Origin: origin, Referer: `${origin}/` };
-    for (const path of ["/api/tags", "/v1/models"]) {
-      const direct = await nodeRequest(`${base}${path}`, "GET");
-      if (direct && direct.status < 400) return true;
-      try {
-        const response = await (0, import_obsidian.requestUrl)({ url: `${base}${path}`, method: "GET", headers, throw: false });
-        if (response.status < 400) return true;
-      } catch {
-      }
-    }
-    return false;
-  }
-  /** Launches `ollama serve` in the background and waits until it answers. */
-  async start(onProgress) {
-    if (await this.isRunning()) return true;
-    const spawn = nodeSpawn();
-    if (!spawn) return false;
-    const binary = await this.findBinary();
-    if (!binary) return false;
-    onProgress?.("Arrancando el servidor local\u2026");
-    try {
-      const child = spawn(binary, ["serve"], { detached: true, stdio: "ignore", shell: nodePlatform() === "win32" });
-      child.unref?.();
-    } catch {
-      return false;
-    }
-    for (let attempt = 0; attempt < 15; attempt++) {
-      await sleep(600);
-      if (await this.isRunning()) {
-        onProgress?.("Servidor local en marcha");
-        return true;
-      }
-    }
-    return false;
-  }
-  /**
-   * Downloads a model with `ollama pull` and reports progress by watching the
-   * catalogue, which avoids holding an HTTP request open for several minutes.
-   */
-  async pull(model, onProgress) {
-    const spawn = nodeSpawn();
-    if (!spawn) return false;
-    const binary = await this.findBinary() ?? "ollama";
-    try {
-      const child = spawn(binary, ["pull", model], { detached: true, stdio: "ignore", shell: nodePlatform() === "win32" });
-      child.unref?.();
-    } catch {
-      return false;
-    }
-    const started = Date.now();
-    while (Date.now() - started < 20 * 60 * 1e3) {
-      await sleep(3e3);
-      const minutes = Math.floor((Date.now() - started) / 6e4);
-      const seconds = Math.floor((Date.now() - started) / 1e3) % 60;
-      onProgress?.(`Descargando ${model}\u2026 ${minutes}:${String(seconds).padStart(2, "0")}`);
-      try {
-        const origin = /^https?:\/\/[^/]+/i.exec(this.baseUrl())?.[0] ?? "";
-        const response = await (0, import_obsidian.requestUrl)({ url: `${this.baseUrl()}/api/tags`, method: "GET", headers: { Origin: origin, Referer: `${origin}/` }, throw: false });
-        const names = (response.json?.models ?? []).map((m3) => m3.name).filter(Boolean);
-        if (names.some((name) => name === model || name.startsWith(`${model}:`))) {
-          onProgress?.(`${model} listo`);
-          return true;
-        }
-      } catch {
-      }
-    }
-    return false;
-  }
-};
-var actionPrompt = (name) => `Eres ${name}, el ayudante de estudio de NoteLens, una pizarra infinita para tomar apuntes. Respondes en espa\xF1ol, breve y claro, con pasos numerados cuando ayuden.
-
-Puedes colocar cosas en la pizarra escribiendo estas etiquetas en tu respuesta:
-[[posit:amarillo]]texto corto[[/posit]] para una nota adhesiva (colores: amarillo, naranja, rosa, verde, azul, lila)
-[[latex]]x^2/2 + sqrt(x)[[/latex]] para una f\xF3rmula
-[[texto]]p\xE1rrafo m\xE1s largo[[/texto]] para un cuadro de texto
-[[tarea]]T\xEDtulo; paso 1; paso 2; paso 3[[/tarea]] para una tarea con pasos
-
-Usa las etiquetas solo cuando te pidan escribir o dibujar algo en la pizarra; el resto del tiempo responde en texto normal. Si te dan apuntes como contexto, ap\xF3yate en ellos y di cu\xE1ndo algo no aparece en ellos.`;
-function parseAssistantActions(text) {
-  const actions = [];
-  let prose = text;
-  const patterns = [
-    [/\[\[posit(?::([a-záéíóúñ]+))?\]\]([\s\S]*?)\[\[\/posit\]\]/gi, "posit"],
-    [/\[\[latex\]\]([\s\S]*?)\[\[\/latex\]\]/gi, "latex"],
-    [/\[\[texto\]\]([\s\S]*?)\[\[\/texto\]\]/gi, "texto"],
-    [/\[\[tarea\]\]([\s\S]*?)\[\[\/tarea\]\]/gi, "tarea"]
-  ];
-  for (const [pattern, kind] of patterns) {
-    prose = prose.replace(pattern, (_match, first, second) => {
-      const body = (kind === "posit" ? second : first) ?? "";
-      if (body.trim()) actions.push({ kind, body: body.trim(), color: kind === "posit" ? first : void 0 });
-      return "";
-    });
-  }
-  return { prose: prose.replace(/\n{3,}/g, "\n\n").trim(), actions };
-}
-var LocalModelClient = class {
-  constructor(host) {
-    this.host = host;
-    this.flavour = null;
-    /** Why the last probe failed, so the chat can say something useful. */
-    this.lastProbeError = "";
-    /** The address that actually answered, which may differ from the setting. */
-    this.workingBase = null;
-  }
-  get baseUrl() {
-    return trimUrl(this.host.aiBaseUrl) || "http://127.0.0.1:11434";
-  }
-  /** The same address written the other way, to dodge an IPv6-only lookup. */
-  altUrl(url) {
-    if (url.includes("//localhost")) return url.replace("//localhost", "//127.0.0.1");
-    if (url.includes("//127.0.0.1")) return url.replace("//127.0.0.1", "//localhost");
-    return null;
-  }
-  /**
-   * Reads a URL through Obsidian first and plain fetch second: some setups
-   * refuse one of the two for localhost, and either answer is good enough.
-   */
-  /** Headers that keep a local server from rejecting us as a foreign origin. */
-  localHeaders(url, extra = {}) {
-    const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0] ?? "";
-    return { Origin: origin, Referer: `${origin}/`, ...extra };
-  }
-  async getJson(url) {
-    const direct = await nodeRequest(url, "GET");
-    if (direct && direct.status < 400) {
-      try {
-        return { status: direct.status, json: JSON.parse(direct.text) };
-      } catch {
-      }
-    } else if (direct) {
-      this.lastProbeError = `respondi\xF3 ${direct.status}`;
-    }
-    try {
-      const response = await (0, import_obsidian.requestUrl)({ url, method: "GET", headers: this.localHeaders(url), throw: false });
-      if (response.status < 400) return { status: response.status, json: response.json };
-      this.lastProbeError = response.status === 403 ? "el servidor rechaz\xF3 el origen (403); revisa OLLAMA_ORIGINS" : `respondi\xF3 ${response.status}`;
-    } catch (error) {
-      this.lastProbeError = error instanceof Error ? error.message : String(error);
-    }
-    try {
-      const response = await (0, import_obsidian.requestUrl)({ url, method: "GET", throw: false });
-      if (response.status < 400) return { status: response.status, json: response.json };
-      this.lastProbeError = `respondi\xF3 ${response.status}`;
-    } catch (error) {
-      this.lastProbeError = error instanceof Error ? error.message : String(error);
-    }
-    return null;
-  }
-  async probe() {
-    let base = this.baseUrl;
-    this.lastProbeError = "";
-    let ollama = await this.getJson(`${base}/api/tags`);
-    if (!ollama) {
-      const alternative = this.altUrl(base);
-      if (alternative) {
-        const retry = await this.getJson(`${alternative}/api/tags`);
-        if (retry) {
-          base = alternative;
-          this.workingBase = alternative;
-          ollama = retry;
-        }
-      }
-    }
-    const ollamaModels = ollama?.json?.models;
-    if (Array.isArray(ollamaModels)) {
-      this.flavour = { kind: "ollama", models: ollamaModels.map((m3) => m3.name).filter((name) => !!name) };
-      return this.flavour;
-    }
-    const openai = await this.getJson(`${base}/v1/models`);
-    const openaiModels = openai?.json?.data;
-    if (Array.isArray(openaiModels)) {
-      this.flavour = { kind: "openai", models: openaiModels.map((m3) => m3.id).filter((id) => !!id) };
-      return this.flavour;
-    }
-    const detail = this.lastProbeError ? ` (${this.lastProbeError})` : "";
-    throw new Error(`No hay ning\xFAn modelo local escuchando en ${base}${detail}.`);
-  }
-  /** Reachable plus the catalogue, without collapsing "empty" into "down". */
-  async describeServer() {
-    try {
-      const flavour = await this.probe();
-      return { reachable: true, models: flavour.models };
-    } catch {
-      return { reachable: false, models: [] };
-    }
-  }
-  /** The model to use: the chosen one, or the best available when none is set. */
-  async resolveModel() {
-    const flavour = this.flavour ?? await this.probe();
-    if (this.host.aiModel && flavour.models.includes(this.host.aiModel)) return this.host.aiModel;
-    const best = rankModels(flavour.models)[0];
-    if (!best) throw new Error("El servidor local no tiene ning\xFAn modelo de chat. Descarga uno, por ejemplo con \xABollama pull llama3.2\xBB.");
-    return best.model;
-  }
-  async chat(messages2, context, name) {
-    const flavour = this.flavour ?? await this.probe();
-    const model = await this.resolveModel();
-    const base = this.workingBase ?? this.baseUrl;
-    const system = context ? `${actionPrompt(name)}
-
-Apuntes de la pizarra:
-"""
-${context}
-"""` : actionPrompt(name);
-    const hasImages = messages2.some((message) => message.images?.length);
-    if (hasImages && !supportsImages(model)) {
-      const tip = recommendedVisionModel();
-      throw new Error(`El modelo \xAB${model}\xBB no entiende im\xE1genes. Instala uno multimodal con \xAB${tip.pull}\xBB: ${tip.why}.`);
-    }
-    const post = async (path, payload2) => {
-      const body = JSON.stringify(payload2);
-      const direct = await nodeRequest(`${base}${path}`, "POST", body);
-      if (direct) {
-        if (direct.status >= 400) throw new Error(this.describeError(direct.status, direct.text, model));
-        try {
-          return JSON.parse(direct.text);
-        } catch {
-          throw new Error("El modelo devolvi\xF3 una respuesta ilegible.");
-        }
-      }
-      const response = await (0, import_obsidian.requestUrl)({
-        url: `${base}${path}`,
-        method: "POST",
-        headers: this.localHeaders(base, { "Content-Type": "application/json" }),
-        body,
-        throw: false
-      });
-      if (response.status >= 400) throw new Error(this.describeError(response.status, response.text, model));
-      return response.json;
-    };
-    if (flavour.kind === "ollama") {
-      const payload2 = [
-        { role: "system", content: system },
-        ...messages2.map((message) => message.images?.length ? { role: message.role, content: message.content, images: message.images } : { role: message.role, content: message.content })
-      ];
-      const json2 = await post("/api/chat", { model, messages: payload2, stream: false });
-      const text2 = json2?.message?.content;
-      if (!text2) throw new Error("El modelo respondi\xF3 sin texto.");
-      return String(text2).trim();
-    }
-    const payload = [
-      { role: "system", content: system },
-      ...messages2.map((message) => message.images?.length ? {
-        role: message.role,
-        content: [
-          { type: "text", text: message.content },
-          ...message.images.map((image) => ({ type: "image_url", image_url: { url: `data:image/png;base64,${image}` } }))
-        ]
-      } : { role: message.role, content: message.content })
-    ];
-    const json = await post("/v1/chat/completions", { model, messages: payload, stream: false });
-    const text = json?.choices?.[0]?.message?.content;
-    if (!text) throw new Error("El modelo respondi\xF3 sin texto.");
-    return String(text).trim();
-  }
-  describeError(status, body, model) {
-    if (status === 404) return `El servidor local no encuentra el modelo \xAB${model}\xBB. Comprueba el nombre en los ajustes.`;
-    const detail = body?.slice(0, 160).replace(/\s+/g, " ").trim();
-    return `El servidor local respondi\xF3 ${status}${detail ? `: ${detail}` : ""}.`;
-  }
-  /**
-   * Translates with a model on this computer, so there is no quota and no
-   * text leaves the machine. Returns null when no local model is available,
-   * letting the caller fall back to the web service.
-   */
-  async translate(text, fromName, toName) {
-    let models = [];
-    try {
-      models = (await this.probe()).models;
-    } catch {
-      return null;
-    }
-    const model = this.host.aiModel && models.includes(this.host.aiModel) ? this.host.aiModel : rankTextModels(models)[0];
-    if (!model) return null;
-    const flavour = this.flavour ?? await this.probe();
-    const base = this.workingBase ?? this.baseUrl;
-    const payload = [
-      {
-        role: "system",
-        content: `Eres un traductor. Traduces de ${fromName} a ${toName}. Devuelves \xFAnicamente la traducci\xF3n, sin comillas, sin explicaciones y sin repetir el original. Conservas los saltos de l\xEDnea y el formato.`
-      },
-      { role: "user", content: text }
-    ];
-    const path = flavour.kind === "ollama" ? "/api/chat" : "/v1/chat/completions";
-    const body = JSON.stringify({ model, messages: payload, stream: false });
-    const direct = await nodeRequest(`${base}${path}`, "POST", body);
-    let json = null;
-    if (direct && direct.status < 400) {
-      try {
-        json = JSON.parse(direct.text);
-      } catch {
-        return null;
-      }
-    } else if (!direct) {
-      const response = await (0, import_obsidian.requestUrl)({
-        url: `${base}${path}`,
-        method: "POST",
-        headers: this.localHeaders(base, { "Content-Type": "application/json" }),
-        body,
-        throw: false
-      });
-      if (response.status >= 400) return null;
-      json = response.json;
-    } else {
-      return null;
-    }
-    const answer = flavour.kind === "ollama" ? json?.message?.content : json?.choices?.[0]?.message?.content;
-    const clean = typeof answer === "string" ? answer.trim() : "";
-    return clean || null;
-  }
-  async listModels() {
-    try {
-      return (await this.probe()).models;
-    } catch {
-      return [];
-    }
-  }
-  forgetServer() {
-    this.flavour = null;
-    this.workingBase = null;
-  }
-};
-function createAssistantPet(host, container) {
-  const client = new LocalModelClient(host);
-  const server = new LocalServerManager(() => client.baseUrl);
-  const messages2 = [];
-  let open2 = false;
-  let busy = false;
-  let useBoardContext = host.aiUseBoardContext;
-  let sleepTimer = null;
-  let composerMode = "tools";
-  const petName = () => "Leen";
-  const pet = container.createDiv({ cls: "notelens-pet" });
-  for (const type of ["pointerdown", "pointerup", "dblclick"]) pet.addEventListener(type, (event) => event.stopPropagation());
-  const sprite = pet.createEl("img", { cls: "notelens-pet-sprite" });
-  sprite.draggable = false;
-  pet.style.setProperty("--pet-scale", String(host.petScale || 1));
-  const bubble = pet.createDiv({ cls: "notelens-pet-bubble hidden" });
-  const setMood = (mood) => {
-    sprite.src = CAT_SPRITES[mood];
-    pet.setAttr("data-mood", mood);
-  };
-  const wake = () => {
-    if (pet.getAttr("data-mood") === "sleeping") setMood("idle");
-    if (sleepTimer !== null) window.clearTimeout(sleepTimer);
-    sleepTimer = window.setTimeout(() => {
-      if (!busy && !open2) setMood("sleeping");
-    }, 45e3);
-  };
-  const say = (text, ms = 3200) => {
-    if (!host.petBubbles) return;
-    bubble.setText(text);
-    bubble.removeClass("hidden");
-    window.setTimeout(() => bubble.addClass("hidden"), ms);
-  };
-  setMood("idle");
-  wake();
-  let placePanelNearPet = () => {
-  };
-  const applyPetPosition = () => {
-    const saved = host.getPetPosition();
-    if (saved.x === null || saved.y === null) return;
-    const bounds = container.getBoundingClientRect();
-    const size = pet.getBoundingClientRect();
-    const width = size.width || 78;
-    const height = size.height || 78;
-    const left = Math.min(Math.max(saved.x * bounds.width - width / 2, 6), Math.max(6, bounds.width - width - 6));
-    const top = Math.min(Math.max(saved.y * bounds.height - height / 2, 6), Math.max(6, bounds.height - height - 6));
-    pet.style.left = `${left}px`;
-    pet.style.top = `${top}px`;
-    pet.setCssStyles({ right: "auto", bottom: "auto" });
-    if (open2) placePanelNearPet();
-  };
-  let dragMoved = false;
-  pet.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    const bounds = container.getBoundingClientRect();
-    const size = pet.getBoundingClientRect();
-    const grabX = event.clientX - size.left;
-    const grabY = event.clientY - size.top;
-    dragMoved = false;
-    const onMove = (move) => {
-      if (Math.abs(move.clientX - event.clientX) + Math.abs(move.clientY - event.clientY) < 4) return;
-      dragMoved = true;
-      pet.addClass("is-dragging");
-      const left = Math.min(Math.max(move.clientX - bounds.left - grabX, 6), bounds.width - size.width - 6);
-      const top = Math.min(Math.max(move.clientY - bounds.top - grabY, 6), bounds.height - size.height - 6);
-      pet.style.left = `${left}px`;
-      pet.style.top = `${top}px`;
-      pet.setCssStyles({ right: "auto", bottom: "auto" });
-      if (open2) placePanelNearPet();
-    };
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onUp, true);
-      pet.removeClass("is-dragging");
-      if (!dragMoved) return;
-      const size2 = pet.getBoundingClientRect();
-      host.setPetPosition(
-        (size2.left - bounds.left + size2.width / 2) / bounds.width,
-        (size2.top - bounds.top + size2.height / 2) / bounds.height
-      );
-      panel.addClass("is-anchored");
-      say("Aqu\xED estoy bien", 1600);
-    };
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onUp, true);
-  });
-  const panel = container.createDiv({ cls: "notelens-assistant hidden" });
-  for (const type of ["pointerdown", "pointerup", "dblclick"]) panel.addEventListener(type, (event) => event.stopPropagation());
-  panel.addEventListener("wheel", (event) => event.stopPropagation(), { passive: true });
-  panel.addEventListener("keydown", (event) => {
-    event.stopPropagation();
-    if (event.key === "Escape") {
-      event.preventDefault();
-      if (open2) toggle();
-    }
-  });
-  const header = panel.createDiv({ cls: "notelens-assistant-header" });
-  const avatar = header.createEl("img", { cls: "notelens-assistant-avatar" });
-  avatar.src = CAT_SPRITES.idle;
-  header.createSpan({ cls: "notelens-assistant-name", text: petName() });
-  const modelSelect = header.createEl("select", { cls: "notelens-assistant-model" });
-  modelSelect.title = "Modelo local que responde";
-  modelSelect.addClass("hidden");
-  const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-assistant-close is-glyph", text: "\u2715" });
-  closeBtn.title = "Cerrar el ayudante (Esc)";
-  closeBtn.setAttr("aria-label", "Cerrar el ayudante");
-  sprite.alt = petName();
-  const status = panel.createDiv({ cls: "notelens-assistant-status" });
-  const chooser = panel.createDiv({ cls: "notelens-assistant-chooser hidden" });
-  const chooserSelect = chooser.createEl("select", { cls: "notelens-assistant-chooser-select" });
-  const chooserCustom = chooser.createEl("input", { cls: "notelens-assistant-chooser-custom", type: "text" });
-  chooserCustom.placeholder = "\u2026o escribe otro modelo";
-  chooserCustom.title = "Cualquier modelo multimodal que exista en Ollama";
-  const serverBtn = panel.createEl("button", { cls: "notelens-assistant-server hidden" });
-  const instantPane = panel.createDiv({ cls: "notelens-assistant-instant" });
-  const instantHeader = instantPane.createDiv({ cls: "notelens-assistant-instant-header" });
-  instantHeader.createSpan({ text: "Acciones locales" });
-  const instantScope = instantHeader.createSpan({ cls: "notelens-assistant-scope", text: "selecci\xF3n o p\xE1gina" });
-  const instantGrid = instantPane.createDiv({ cls: "notelens-assistant-instant-grid" });
-  let runInstantTool = () => {
-  };
-  const instantTools = [
-    { id: "summary", icon: "align-left", label: "Resumir", hint: "Crea un resumen extractivo sin inventar contenido" },
-    { id: "key-ideas", icon: "lightbulb", label: "Ideas clave", hint: "Extrae definiciones y afirmaciones importantes" },
-    { id: "tasks", icon: "list-checks", label: "Plan de repaso", hint: "Convierte pendientes o conceptos en una checklist" },
-    { id: "outline", icon: "list-tree", label: "Esquema", hint: "Ordena los apuntes en una estructura breve" },
-    { id: "flashcards", icon: "panels-top-left", label: "Tarjetas", hint: "Genera preguntas y respuestas desde los apuntes" },
-    { id: "clean-notes", icon: "list-filter", label: "Limpiar texto", hint: "Quita duplicados y normaliza listas" },
-    { id: "board-latex", icon: "sigma", label: "Pizarra \u2192 LaTeX", hint: "Lee una regi\xF3n usando objetos y trazos vectoriales" },
-    { id: "organize-selection", icon: "layout-grid", label: "Ordenar selecci\xF3n", hint: "Distribuye los objetos seleccionados en una cuadr\xEDcula" },
-    { id: "polish-ink", icon: "wand-sparkles", label: "Pulir tinta", hint: "Suaviza el trazo seleccionado y endereza l\xEDneas" }
-  ];
-  for (const tool of instantTools) {
-    const button = instantGrid.createEl("button", { cls: "notelens-assistant-instant-tool" });
-    (0, import_obsidian.setIcon)(button.createSpan({ cls: "notelens-assistant-instant-icon" }), tool.icon);
-    button.createSpan({ text: tool.label });
-    button.title = tool.hint;
-    button.onclick = () => runInstantTool(tool.id);
-  }
-  const fillChooser = () => {
-    const options = visionOptionsFor();
-    chooserSelect.empty();
-    for (const option of [...options].reverse()) {
-      const entry = chooserSelect.createEl("option", {
-        value: option.model,
-        text: `${option.model} \xB7 ${option.params} \xB7 ${option.downloadGb} GB`
-      });
-      entry.title = option.note;
-    }
-    chooser.removeClass("hidden");
-    return () => chooserCustom.value.trim() || chooserSelect.value;
-  };
-  const hideChooser = () => chooser.addClass("hidden");
-  const log = panel.createDiv({ cls: "notelens-assistant-log" });
-  const setStatus = (text, kind = "info") => {
-    status.setText(text);
-    status.toggleClass("is-error", kind === "error");
-    status.toggleClass("is-ok", kind === "ok");
-  };
-  const renderLog = () => {
-    log.empty();
-    if (messages2.length === 0) {
-      const empty3 = log.createDiv({ cls: "notelens-assistant-empty" });
-      empty3.createDiv({ text: "Selecciona una zona o usa la p\xE1gina completa. Estas herramientas act\xFAan al instante y no env\xEDan nada fuera de Obsidian." });
-      return;
-    }
-    for (const message of messages2) {
-      const row = log.createDiv({ cls: `notelens-assistant-msg is-${message.role}` });
-      if (message.images?.length) {
-        const preview = row.createEl("img", { cls: "notelens-assistant-msg-image" });
-        preview.src = `data:image/png;base64,${message.images[0]}`;
-        preview.alt = "Lo que dibujaste";
-      }
-      if (message.content) row.createDiv({ cls: "notelens-assistant-msg-text", text: message.content });
-      if (message.role === "assistant") {
-        const actions = row.createDiv({ cls: "notelens-assistant-msg-actions" });
-        const insert = actions.createEl("button", { cls: "notelens-assistant-action" });
-        (0, import_obsidian.setIcon)(insert.createSpan(), "arrow-down-to-line");
-        insert.createSpan({ text: "A la pizarra" });
-        insert.onclick = () => {
-          setMood("drawing");
-          host.runAssistantAction({ kind: "texto", body: message.content });
-          say("\xA1Listo!", 1600);
-          window.setTimeout(() => setMood("idle"), 1300);
-        };
-        const copy = actions.createEl("button", { cls: "notelens-assistant-action" });
-        (0, import_obsidian.setIcon)(copy.createSpan(), "copy");
-        copy.createSpan({ text: "Copiar" });
-        copy.onclick = () => {
-          void navigator.clipboard.writeText(message.content);
-          new import_obsidian.Notice("Respuesta copiada");
-        };
-      }
-    }
-    log.scrollTop = log.scrollHeight;
-  };
-  runInstantTool = (tool) => {
-    wake();
-    if (tool === "board-latex") {
-      setStatus("Selecciona la regi\xF3n que contiene la f\xF3rmula.", "ok");
-      if (open2) toggle();
-      host.openFormulaReader();
-      return;
-    }
-    if (tool === "organize-selection" || tool === "polish-ink") {
-      setMood("drawing");
-      const report2 = host.runBoardUtility(tool);
-      messages2.push({ role: "assistant", content: report2 });
-      renderLog();
-      setStatus(report2, /selecciona/i.test(report2) ? "info" : "ok");
-      say(report2, 2200);
-      window.setTimeout(() => setMood("idle"), 700);
-      return;
-    }
-    const selected = host.getSelectionText().trim();
-    const source = selected || host.getBoardText().trim();
-    instantScope.setText(selected ? "selecci\xF3n actual" : "p\xE1gina completa");
-    const result = runLocalStudyTool(tool, source);
-    if (result.empty || !result.content.trim()) {
-      setStatus("No hay texto legible en la selecci\xF3n ni en esta p\xE1gina.", "error");
-      say("Necesito algo de texto", 1800);
-      return;
-    }
-    setMood("drawing");
-    let report = "";
-    if (tool === "tasks") {
-      report = host.runAssistantAction({ kind: "tarea", body: [result.title, ...result.items].join("; ") });
-    } else if (tool === "key-ideas") {
-      report = host.runAssistantAction({ kind: "posit", body: `${result.title}
-${result.content}`, color: "amarillo" });
-    } else {
-      report = host.runAssistantAction({ kind: "texto", body: `${result.title}
-
-${result.content}` });
-    }
-    messages2.push({ role: "assistant", content: `${result.title}
-${result.content}
-
-Creado: ${report}.` });
-    renderLog();
-    setStatus(`${result.title} creado desde la ${selected ? "selecci\xF3n" : "p\xE1gina"}.`, "ok");
-    say("Listo en la pizarra", 1800);
-    window.setTimeout(() => setMood("idle"), 700);
-  };
-  const contextRow = panel.createEl("label", { cls: "notelens-assistant-context" });
-  const contextToggle = contextRow.createEl("input");
-  contextToggle.type = "checkbox";
-  contextToggle.checked = useBoardContext;
-  contextRow.createSpan({ text: "Usar el texto de la pizarra como contexto" });
-  contextToggle.onchange = () => {
-    useBoardContext = contextToggle.checked;
-  };
-  const modeRow = panel.createDiv({ cls: "notelens-assistant-modes" });
-  const toolsModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
-  (0, import_obsidian.setIcon)(toolsModeBtn.createSpan(), "wand-sparkles");
-  toolsModeBtn.createSpan({ text: "Acciones" });
-  const textModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
-  (0, import_obsidian.setIcon)(textModeBtn.createSpan(), "message-square-text");
-  textModeBtn.createSpan({ text: "Chat local" });
-  const drawModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
-  (0, import_obsidian.setIcon)(drawModeBtn.createSpan(), "pen-line");
-  drawModeBtn.createSpan({ text: "F\xF3rmula r\xE1pida" });
-  panel.insertBefore(modeRow, instantPane);
-  const composer = panel.createDiv({ cls: "notelens-assistant-composer" });
-  const input = composer.createEl("textarea", { cls: "notelens-assistant-input" });
-  input.rows = 2;
-  input.placeholder = "Escribe tu pregunta y pulsa Enter";
-  const sketchPane = composer.createDiv({ cls: "notelens-assistant-sketch" });
-  const sketchCanvas = sketchPane.createEl("canvas");
-  const SKETCH_W = 300, SKETCH_H = 150;
-  const dpr = window.devicePixelRatio || 1;
-  sketchCanvas.width = SKETCH_W * dpr;
-  sketchCanvas.height = SKETCH_H * dpr;
-  sketchCanvas.style.width = `${SKETCH_W}px`;
-  sketchCanvas.style.height = `${SKETCH_H}px`;
-  const sketchCtx = sketchCanvas.getContext("2d");
-  const sketchHint = sketchPane.createDiv({ cls: "notelens-assistant-sketch-hint", text: "Escribe una f\xF3rmula; se lee desde los trazos" });
-  const requests = panel.createDiv({ cls: "notelens-assistant-requests" });
-  panel.insertBefore(requests, composer);
-  const REQUESTS = [];
-  let chosenRequest = "";
-  const requestButtons = [];
-  requests.createSpan({ cls: "notelens-assistant-requests-label", text: "Reconocimiento vectorial local \xB7 fracciones, potencias y operadores" });
-  for (const [label, prompt] of REQUESTS) {
-    const chip = requests.createEl("button", { cls: "notelens-assistant-request", text: label });
-    chip.title = prompt;
-    chip.onclick = () => {
-      chosenRequest = chosenRequest === prompt ? "" : prompt;
-      for (const other of requestButtons) other.toggleClass("active", false);
-      chip.toggleClass("active", !!chosenRequest);
-    };
-    requestButtons.push(chip);
-  }
-  const sketchClear = sketchPane.createEl("button", { cls: "notelens-assistant-sketch-clear" });
-  (0, import_obsidian.setIcon)(sketchClear, "eraser");
-  sketchClear.title = "Borrar el dibujo";
-  let sketchStrokes = [];
-  let sketchCurrent = null;
-  const redrawSketch = () => {
-    if (!sketchCtx) return;
-    sketchCtx.setTransform(1, 0, 0, 1, 0, 0);
-    sketchCtx.fillStyle = "#ffffff";
-    sketchCtx.fillRect(0, 0, sketchCanvas.width, sketchCanvas.height);
-    sketchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    sketchCtx.strokeStyle = "#0f172a";
-    sketchCtx.lineWidth = 2.6;
-    sketchCtx.lineCap = "round";
-    sketchCtx.lineJoin = "round";
-    for (const stroke of sketchStrokes) {
-      if (!stroke.length) continue;
-      sketchCtx.beginPath();
-      sketchCtx.moveTo(stroke[0].x, stroke[0].y);
-      for (let i4 = 1; i4 < stroke.length; i4++) sketchCtx.lineTo(stroke[i4].x, stroke[i4].y);
-      sketchCtx.stroke();
-    }
-    sketchHint.toggleClass("hidden-hint", sketchStrokes.length > 0);
-  };
-  redrawSketch();
-  const sketchPoint = (event) => {
-    const rect = sketchCanvas.getBoundingClientRect();
-    return { x: (event.clientX - rect.left) * (SKETCH_W / rect.width), y: (event.clientY - rect.top) * (SKETCH_H / rect.height) };
-  };
-  sketchCanvas.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    sketchCanvas.setPointerCapture(event.pointerId);
-    sketchCurrent = [sketchPoint(event)];
-    sketchStrokes.push(sketchCurrent);
-    redrawSketch();
-  });
-  sketchCanvas.addEventListener("pointermove", (event) => {
-    if (!sketchCurrent) return;
-    sketchCurrent.push(sketchPoint(event));
-    redrawSketch();
-  });
-  const endSketch = () => {
-    sketchCurrent = null;
-  };
-  sketchCanvas.addEventListener("pointerup", endSketch);
-  sketchCanvas.addEventListener("pointercancel", endSketch);
-  sketchClear.onclick = () => {
-    sketchStrokes = [];
-    redrawSketch();
-  };
-  const send = composer.createEl("button", { cls: "notelens-assistant-send" });
-  (0, import_obsidian.setIcon)(send, "send-horizontal");
-  send.title = "Enviar (Enter)";
-  const setComposerMode = (mode2) => {
-    composerMode = mode2;
-    panel.setAttr("data-mode", mode2);
-    toolsModeBtn.toggleClass("active", mode2 === "tools");
-    textModeBtn.toggleClass("active", mode2 === "text");
-    drawModeBtn.toggleClass("active", mode2 === "draw");
-    instantPane.style.display = mode2 === "tools" ? "" : "none";
-    composer.style.display = mode2 === "tools" ? "none" : "";
-    input.style.display = mode2 === "text" ? "" : "none";
-    sketchPane.style.display = mode2 === "draw" ? "" : "none";
-    requests.style.display = mode2 === "draw" ? "" : "none";
-    contextRow.style.display = mode2 === "text" ? "" : "none";
-    modelSelect.toggleClass("hidden", mode2 !== "text");
-    if (mode2 === "tools") {
-      serverBtn.addClass("hidden");
-      hideChooser();
-      setStatus("Acciones instant\xE1neas \xB7 sin red ni modelos", "ok");
-    } else if (mode2 === "draw") {
-      serverBtn.addClass("hidden");
-      hideChooser();
-      setStatus("Escribe y pulsa enviar \xB7 lectura vectorial local", "ok");
-    } else {
-      void refreshModels();
-      input.focus();
-    }
-    if (open2) window.requestAnimationFrame(placePanelNearPet);
-  };
-  toolsModeBtn.onclick = () => setComposerMode("tools");
-  textModeBtn.onclick = () => setComposerMode("text");
-  drawModeBtn.onclick = () => setComposerMode("draw");
-  setComposerMode("tools");
-  const showServerButton = (label, icon, run) => {
-    serverBtn.empty();
-    (0, import_obsidian.setIcon)(serverBtn.createSpan(), icon);
-    serverBtn.createSpan({ text: label });
-    serverBtn.removeClass("hidden");
-    serverBtn.disabled = false;
-    serverBtn.onclick = async () => {
-      serverBtn.disabled = true;
-      await run();
-      serverBtn.disabled = false;
-    };
-  };
-  const offerDownload = (reason) => {
-    const options = visionOptionsFor();
-    if (options.length === 0) {
-      hideChooser();
-      serverBtn.addClass("hidden");
-      setStatus(`${reason} Tu equipo tiene ${detectMemoryGb()} GB de RAM y el modelo multimodal m\xE1s peque\xF1o necesita ${VISION_CATALOGUE[0].minRamGb} GB, as\xED que Leen no puede funcionar aqu\xED.`, "error");
-      return;
-    }
-    if (!server.canManage) {
-      hideChooser();
-      setStatus(`${reason} Desc\xE1rgalo en una terminal, por ejemplo: ${recommendedVisionModel().pull}`, "info");
-      return;
-    }
-    const choice = fillChooser();
-    setStatus(reason, "info");
-    showServerButton("Descargar el modelo elegido", "download", async () => {
-      const model = choice();
-      if (!model) {
-        setStatus("Elige un modelo de la lista o escribe su nombre.", "error");
-        return;
-      }
-      const ok = await server.pull(model, (text) => setStatus(text));
-      if (!ok) {
-        setStatus(`No he podido descargar ${model}. Prueba en una terminal: ollama pull ${model}`, "error");
-        return;
-      }
-      client.forgetServer();
-      host.setAiModel(model);
-      hideChooser();
-      await refreshModels();
-    });
-  };
-  const refreshModels = async () => {
-    setStatus("Buscando un modelo local\u2026");
-    serverBtn.addClass("hidden");
-    hideChooser();
-    let { reachable, models } = await client.describeServer();
-    let missingOllama = false;
-    if (!reachable && server.canManage) {
-      missingOllama = !await server.isInstalled();
-      if (!missingOllama) {
-        const started = await server.start((text) => setStatus(text));
-        if (started) {
-          client.forgetServer();
-          ({ reachable, models } = await client.describeServer());
-        }
-      }
-    }
-    modelSelect.empty();
-    if (reachable && models.length === 0) {
-      modelSelect.createEl("option", { value: "", text: "sin modelos" });
-      offerDownload(`Ollama funciona en ${client.baseUrl} pero no tienes ning\xFAn modelo. Elige uno y lo descargo.`);
-      return;
-    }
-    if (models.length === 0) {
-      modelSelect.createEl("option", { value: "", text: "sin conexi\xF3n" });
-      if (server.canManage) {
-        if (missingOllama) {
-          const plan = server.installPlan();
-          if (plan) {
-            setStatus("No tienes Ollama en este equipo. Puedo instalarlo por ti; todo se queda en tu ordenador.", "info");
-            showServerButton(plan.label, "download", async () => {
-              const ok = await server.install((text) => setStatus(text));
-              if (!ok) {
-                setStatus(`No he podido instalarlo. Desc\xE1rgalo a mano en ${plan.manual}`, "error");
-                return;
-              }
-              await refreshModels();
-            });
-          } else {
-            setStatus(`Instala Ollama desde https://ollama.com/download y vuelve a abrirme.`, "error");
-          }
-          return;
-        }
-        const why = client.lastProbeError ? ` El intento dijo: ${client.lastProbeError}.` : "";
-        setStatus(`Ollama est\xE1 instalado pero no responde en ${client.baseUrl}.${why} Comprueba la direcci\xF3n en los ajustes del plugin.`, "error");
-        showServerButton("Reintentar arrancar el servidor", "play", async () => {
-          await refreshModels();
-        });
-      } else {
-        const why = client.lastProbeError ? ` (${client.lastProbeError})` : "";
-        setStatus(`No encuentro ning\xFAn servidor en ${client.baseUrl}${why}. Arranca Ollama o LM Studio.`, "error");
-      }
-      return;
-    }
-    const ranked = rankModels(models);
-    const best = ranked[0];
-    if (!best) {
-      modelSelect.createEl("option", { value: "", text: "sin modelo de chat" });
-      offerDownload(`Tienes ${models.length} modelo${models.length === 1 ? "" : "s"}, pero ninguno puede conversar.`);
-      return;
-    }
-    hideChooser();
-    modelSelect.createEl("option", { value: "", text: best ? `Autom\xE1tico (${best.model})` : "Autom\xE1tico" });
-    for (const entry of ranked) {
-      const option = modelSelect.createEl("option", { value: entry.model, text: entry.model === best?.model ? `${entry.model} \u2605` : entry.model });
-      option.title = entry.reason;
-    }
-    modelSelect.value = host.aiModel && models.includes(host.aiModel) ? host.aiModel : "";
-    const chosen = modelSelect.value || best?.model || "";
-    setStatus(host.aiModel ? `Conectado a ${client.baseUrl} \xB7 ${chosen}` : `Elegido para tu equipo: ${best.model} (${best.reason})`, "ok");
-  };
-  modelSelect.onchange = () => {
-    host.setAiModel(modelSelect.value);
-    void refreshModels();
-  };
-  const ask = async () => {
-    if (busy) return;
-    const question = input.value.trim();
-    const drawing = composerMode === "draw" && sketchStrokes.length > 0;
-    if (!question && !drawing) return;
-    busy = true;
-    if (drawing) {
-      const recognition = recognizeInkFormula(sketchStrokes.map((points) => ({ points })));
-      if (!recognition.source) {
-        setStatus("No distingo una f\xF3rmula todav\xEDa. A\xF1ade alg\xFAn trazo m\xE1s.", "error");
-        busy = false;
-        return;
-      }
-      setMood("drawing");
-      const report = host.runAssistantAction({ kind: "latex", body: recognition.source });
-      messages2.push({ role: "assistant", content: `${recognition.source}
-
-${recognition.detail}. Creado: ${report}.` });
-      sketchStrokes = [];
-      redrawSketch();
-      renderLog();
-      setStatus(`${recognition.detail} \xB7 f\xF3rmula insertada`, recognition.confidence < 0.56 ? "info" : "ok");
-      say("F\xF3rmula insertada", 1800);
-      busy = false;
-      window.setTimeout(() => setMood("idle"), 700);
-      return;
-    }
-    if (!question) {
-      setStatus("Escribe una pregunta para el chat local.", "error");
-      busy = false;
-      return;
-    }
-    const images = drawing ? [sketchCanvas.toDataURL("image/png").split(",")[1]] : void 0;
-    const content = question || chosenRequest;
-    input.value = "";
-    if (drawing) {
-      sketchStrokes = [];
-      redrawSketch();
-      chosenRequest = "";
-      for (const chip of requestButtons) chip.toggleClass("active", false);
-    }
-    messages2.push({ role: "user", content, images });
-    renderLog();
-    setMood("thinking");
-    setStatus("Pensando\u2026");
-    const pending = log.createDiv({ cls: "notelens-assistant-msg is-assistant is-pending", text: "\u2026" });
-    log.scrollTop = log.scrollHeight;
-    try {
-      const context = useBoardContext ? host.getBoardText().slice(0, 6e3) : "";
-      const answer = await client.chat(messages2, context, petName());
-      const { prose, actions } = parseAssistantActions(answer);
-      const reports = [];
-      if (actions.length) {
-        setMood("drawing");
-        for (const action of actions) reports.push(host.runAssistantAction(action));
-        say(`${actions.length} cosa${actions.length === 1 ? "" : "s"} en la pizarra`, 2400);
-      }
-      const body = [prose, reports.length ? `\u270D\uFE0F ${reports.join(" \xB7 ")}` : ""].filter(Boolean).join("\n\n");
-      messages2.push({ role: "assistant", content: body || "Hecho." });
-      setStatus(actions.length ? "Escrito en la pizarra" : "Respuesta lista", "ok");
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      messages2.push({ role: "assistant", content: `No he podido responder. ${reason}` });
-      setStatus(reason, "error");
-      client.forgetServer();
-    } finally {
-      pending.remove();
-      busy = false;
-      renderLog();
-      window.setTimeout(() => {
-        if (!busy) setMood("idle");
-      }, 900);
-      wake();
-    }
-  };
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      void ask();
-    }
-  });
-  send.onclick = () => void ask();
-  placePanelNearPet = () => {
-    const bounds = container.getBoundingClientRect();
-    const petBox = pet.getBoundingClientRect();
-    const gap = 14;
-    const width = panel.offsetWidth || 360;
-    const height = panel.offsetHeight || 420;
-    const petLeft = petBox.left - bounds.left;
-    const petTop = petBox.top - bounds.top;
-    const roomRight = bounds.width - (petLeft + petBox.width) - gap;
-    const roomLeft = petLeft - gap;
-    let left = roomRight >= width || roomRight >= roomLeft ? petLeft + petBox.width + gap : petLeft - width - gap;
-    left = Math.min(Math.max(left, 8), Math.max(8, bounds.width - width - 8));
-    const obstacles = [
-      ".onenote-ribbon-dock",
-      ".notelens-insert-dock",
-      ".notelens-document-dock",
-      ".onenote-quick-tags",
-      ".notelens-settings-btn",
-      ".notelens-settings-panel",
-      ".notelens-bookmarks-dock",
-      ".notelens-pages-dock",
-      ".notelens-navigation-controls",
-      ".notelens-minimap",
-      ".notelens-focus-toggle"
-    ].map((selector) => container.querySelector(selector)).filter((el) => !!el && !el.hasClass("hidden") && el.offsetWidth > 0).map((el) => {
-      const box = el.getBoundingClientRect();
-      return { left: box.left - bounds.left, right: box.right - bounds.left, top: box.top - bounds.top, bottom: box.bottom - bounds.top };
-    });
-    const overlapsColumn = (rect) => rect.right > left - 6 && rect.left < left + width + 6;
-    const ceiling = obstacles.filter((rect) => overlapsColumn(rect) && rect.bottom < bounds.height * 0.5).reduce((lowest, rect) => Math.max(lowest, rect.bottom + 10), 8);
-    const floor = obstacles.filter((rect) => overlapsColumn(rect) && rect.top > bounds.height * 0.5).reduce((highest, rect) => Math.min(highest, rect.top - 10), bounds.height - 8);
-    let top = petTop + petBox.height / 2 - height / 2;
-    if (top + height > floor) top = floor - height;
-    if (top < ceiling) top = ceiling;
-    if (ceiling + height > floor) top = Math.max(8, Math.min(ceiling, bounds.height - height - 8));
-    top = Math.min(Math.max(top, 8), Math.max(8, bounds.height - height - 8));
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-    panel.setCssStyles({ right: "auto", bottom: "auto" });
-    panel.toggleClass("points-left", left < petLeft);
-    const arrowTop = Math.min(Math.max(petTop + petBox.height / 2 - top, 16), Math.max(16, height - 16));
-    panel.style.setProperty("--arrow-top", `${arrowTop}px`);
-  };
-  const toggle = () => {
-    open2 = !open2;
-    panel.toggleClass("hidden", !open2);
-    pet.toggleClass("is-open", open2);
-    if (open2) window.requestAnimationFrame(placePanelNearPet);
-    if (open2) {
-      setMood("idle");
-      wake();
-      if (composerMode === "text") void refreshModels();
-      if (composerMode === "text") input.focus();
-    }
-  };
-  closeBtn.onclick = toggle;
-  pet.addEventListener("click", () => {
-    wake();
-    if (dragMoved) {
-      dragMoved = false;
-      return;
-    }
-    toggle();
-  });
-  pet.addEventListener("pointerenter", () => {
-    wake();
-    if (!open2 && !busy) say(`Soy ${petName()}, haz clic`, 2200);
-  });
-  if (typeof ResizeObserver !== "undefined") {
-    const observer = new ResizeObserver(() => {
-      if (open2) placePanelNearPet();
-    });
-    observer.observe(panel);
-  }
-  applyPetPosition();
-  renderLog();
-  return {
-    toggle,
-    isOpen: () => open2,
-    destroy: () => {
-      if (sleepTimer !== null) window.clearTimeout(sleepTimer);
-      pet.remove();
-      panel.remove();
-    },
-    /** Re-reads the settings that change how the pet looks and behaves. */
-    refresh: () => {
-      pet.style.setProperty("--pet-scale", String(host.petScale || 1));
-      useBoardContext = host.aiUseBoardContext;
-      contextToggle.checked = useBoardContext;
-      applyPetPosition();
-      if (open2) placePanelNearPet();
-    }
-  };
-}
-
-// src/main.ts
-var import_obsidian15 = require("obsidian");
-
-// src/view.ts
-var import_obsidian13 = require("obsidian");
-
-// src/calculator.ts
-var import_obsidian3 = require("obsidian");
-
-// src/panels.ts
-function makeDraggable(app, panel, handle, container, storageKey) {
-  handle.addClass("notelens-draggable");
-  const applyPosition = (left, top) => {
-    const maxLeft = Math.max(0, container.clientWidth - panel.offsetWidth);
-    const maxTop = Math.max(0, container.clientHeight - panel.offsetHeight);
-    panel.setCssStyles({ right: "auto", bottom: "auto" });
-    panel.style.left = `${Math.min(Math.max(0, left), maxLeft)}px`;
-    panel.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
-  };
-  try {
-    const saved = app.loadLocalStorage(storageKey);
-    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) window.requestAnimationFrame(() => applyPosition(saved.x, saved.y));
-  } catch {
-  }
-  handle.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button, input, select, textarea")) return;
-    e.preventDefault();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const rect = panel.getBoundingClientRect();
-    const parent = container.getBoundingClientRect();
-    const originLeft = rect.left - parent.left;
-    const originTop = rect.top - parent.top;
-    panel.addClass("is-dragging");
-    const onMove = (ev) => applyPosition(originLeft + ev.clientX - startX, originTop + ev.clientY - startY);
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove, { capture: true });
-      window.removeEventListener("pointerup", onUp, { capture: true });
-      panel.removeClass("is-dragging");
-      try {
-        app.saveLocalStorage(storageKey, { x: parseFloat(panel.style.left), y: parseFloat(panel.style.top) });
-      } catch {
-      }
-    };
-    window.addEventListener("pointermove", onMove, { capture: true });
-    window.addEventListener("pointerup", onUp, { capture: true });
-  });
-}
-function shieldPanel(panel) {
-  for (const type of ["pointerdown", "pointerup", "dblclick"]) panel.addEventListener(type, (e) => e.stopPropagation());
-  panel.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
-  panel.addEventListener("keydown", (e) => e.stopPropagation());
-}
-
 // src/i18n.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian = require("obsidian");
 
 // src/locales/en.ts
 var en = {
@@ -3944,7 +2638,222 @@ var en = {
   "{p0}: {p1} {p2}. Ctrl+V pega donde est\xE9 el rat\xF3n.": "{p0}: {p1} {p2}. Ctrl+V pastes wherever the mouse is.",
   "\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo.": "\u201CAutomatic\u201D follows Obsidian's language. Open boards update when you change it.",
   "\xBFC\xF3mo insertar el PDF?": "How should the PDF be inserted?",
-  "\xC1ngulos {p0}\xB0": "Angles {p0}\xB0"
+  "\xC1ngulos {p0}\xB0": "Angles {p0}\xB0",
+  "Selecci\xF3n": "Selection",
+  "Resaltador": "Highlighter",
+  "Goma": "Eraser",
+  "Formas": "Shapes",
+  "Peque\xF1a": "Small",
+  "Mediana": "Medium",
+  "Grande": "Large",
+  "Negrita": "Bold",
+  "Cursiva": "Italic",
+  "Subrayado": "Underline",
+  "Centrar": "Centre",
+  "Alinear a la izquierda": "Align left",
+  "Alinear a la derecha": "Align right",
+  "Lista con vi\xF1etas (\u2022)": "Bulleted list (\u2022)",
+  "Lista numerada (1. 2. 3.)": "Numbered list (1. 2. 3.)",
+  "Lista con flechas (\u2192)": "Arrow list (\u2192)",
+  "Lista con guiones (-)": "Dashed list (-)",
+  "Mono": "Mono",
+  "Duplicar (Ctrl+D)": "Duplicate (Ctrl+D)",
+  "Girar 90\xB0 a la izquierda": "Rotate 90\xB0 left",
+  "Girar 90\xB0 a la derecha": "Rotate 90\xB0 right",
+  "Eliminar (Supr)": "Delete (Del)",
+  "Usar la primera fila como encabezado": "Use the first row as a header",
+  "Quitar la fila de encabezado": "Remove the header row",
+  "Quitar fila de encabezado": "Remove header row",
+  "Primera fila como encabezado": "First row as header",
+  "Quitar columna de encabezado": "Remove header column",
+  "Primera columna como encabezado": "First column as header",
+  "A\xF1adir fila al final": "Add a row at the end",
+  "A\xF1adir columna al final": "Add a column at the end",
+  "Crear un gr\xE1fico con estos datos": "Chart this data",
+  "Regla": "Ruler",
+  "Guardar": "Save",
+  "P\xE1gina": "Page",
+  "P\xE1gina {p0}": "Page {p0}",
+  "Secci\xF3n {p0}": "Section {p0}",
+  "Nueva nota flotante": "New floating note",
+  "Nueva etiqueta: {p0}": "New tag: {p0}",
+  "Editar nota flotante": "Edit floating note",
+  "Editar etiqueta: {p0}": "Edit tag: {p0}",
+  "Tarea pendiente": "Task pending",
+  "Nota dibujada": "Drawn note",
+  "Marcar este paso como pendiente": "Mark this step as pending",
+  "Marcar solo este paso como hecho": "Mark only this step as done",
+  "Marcar todos como hechos": "Mark all as done",
+  "Marcar todos como pendientes": "Mark all as pending",
+  "Trazos de la nota": "The note's strokes",
+  "Vuelve aqu\xED al repasar. Doble clic para anotar por qu\xE9 es importante.": "Come back here when you revise. Double-click to note why it matters.",
+  "Ya est\xE1 resuelta.": "Already answered.",
+  "Preg\xFAntalo en clase o b\xFAscalo. Clic para marcarla resuelta.": "Ask in class or look it up. Click to mark it answered.",
+  "El concepto que hay que recordar. Doble clic para resumirlo.": "The idea worth remembering. Double-click to summarise it.",
+  "Completada.": "Done.",
+  "Clic para marcarla hecha. Doble clic para a\xF1adir pasos.": "Click to mark it done. Double-click to add steps.",
+  "Doble clic para escribir o dibujar la nota.": "Double-click to write or draw the note.",
+  "Nada que mostrar con estos filtros.": "Nothing matches these filters.",
+  "Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante.": "Place tags from the row above: Important, Question, Key idea, Task or Floating note.",
+  "Leyendo la f\xF3rmula de la imagen\u2026": "Reading the formula from the image\u2026",
+  "Verificando s\xEDmbolos dudosos\u2026": "Checking uncertain symbols\u2026",
+  "Preparando el reconocimiento\u2026": "Getting recognition ready\u2026",
+  "Texto capturado.": "Text captured.",
+  "B\xE1sico": "Basic",
+  "C\xE1lculo": "Calculus",
+  "Griego": "Greek",
+  "Relaciones": "Relations",
+  "Conjuntos": "Sets",
+  "Matrices": "Matrices",
+  "Fracci\xF3n": "Fraction",
+  "Ra\xEDz cuadrada": "Square root",
+  "Ra\xEDz en\xE9sima": "nth root",
+  "Potencia": "Power",
+  "Sub\xEDndice": "Subscript",
+  "Producto": "Product",
+  "Divisi\xF3n": "Division",
+  "M\xE1s menos": "Plus-minus",
+  "Menos m\xE1s": "Minus-plus",
+  "Valor absoluto": "Absolute value",
+  "Par\xE9ntesis": "Parentheses",
+  "Corchetes": "Brackets",
+  "Llaves": "Braces",
+  "Nueva l\xEDnea": "New line",
+  "Media": "Mean",
+  "Sombrero": "Hat",
+  "Vector": "Vector",
+  "Punto": "Dot",
+  "Integral": "Integral",
+  "Integral doble": "Double integral",
+  "Integral de contorno": "Contour integral",
+  "Sumatorio": "Sum",
+  "Productorio": "Product",
+  "L\xEDmite": "Limit",
+  "Derivada": "Derivative",
+  "Derivada parcial": "Partial derivative",
+  "Nabla": "Nabla",
+  "Infinito": "Infinity",
+  "Incremento": "Increment",
+  "Tiende a": "Tends to",
+  "Alfa": "Alpha",
+  "Beta": "Beta",
+  "Gamma": "Gamma",
+  "Delta": "Delta",
+  "\xC9psilon": "Epsilon",
+  "Theta": "Theta",
+  "Lambda": "Lambda",
+  "Mu": "Mu",
+  "Pi": "Pi",
+  "Rho": "Rho",
+  "Sigma": "Sigma",
+  "Tau": "Tau",
+  "Fi": "Phi",
+  "Omega": "Omega",
+  "Omega may\xFAscula": "Capital omega",
+  "Igual": "Equals",
+  "Distinto": "Not equal",
+  "Aproximado": "Approximately",
+  "Id\xE9ntico": "Identical",
+  "Menor o igual": "Less than or equal",
+  "Mayor o igual": "Greater than or equal",
+  "Mucho menor": "Much less than",
+  "Mucho mayor": "Much greater than",
+  "Proporcional": "Proportional to",
+  "Implica": "Implies",
+  "Si y solo si": "If and only if",
+  "Entonces": "Then",
+  "Pertenece": "Belongs to",
+  "No pertenece": "Does not belong to",
+  "Subconjunto": "Subset",
+  "Subconjunto o igual": "Subset or equal",
+  "Uni\xF3n": "Union",
+  "Intersecci\xF3n": "Intersection",
+  "Vac\xEDo": "Empty set",
+  "Para todo": "For all",
+  "Existe": "There exists",
+  "Negaci\xF3n": "Negation",
+  "Naturales": "Natural numbers",
+  "Enteros": "Integers",
+  "Racionales": "Rationals",
+  "Reales": "Reals",
+  "Matriz 2\xD72": "2\xD72 matrix",
+  "Matriz 3\xD73": "3\xD73 matrix",
+  "Vector columna": "Column vector",
+  "Determinante": "Determinant",
+  "Modelo local que responde": "The local model that answers",
+  "Cerrar el ayudante": "Close the assistant",
+  "Cerrar el ayudante (Esc)": "Close the assistant (Esc)",
+  "\u2026o escribe otro modelo": "\u2026or type another model",
+  "Cualquier modelo multimodal que exista en Ollama": "Any multimodal model available in Ollama",
+  "selecci\xF3n o p\xE1gina": "selection or page",
+  "Resumir": "Summarise",
+  "Crea un resumen extractivo sin inventar contenido": "Builds a summary from your own sentences, inventing nothing",
+  "Ideas clave": "Key ideas",
+  "Extrae definiciones y afirmaciones importantes": "Pulls out definitions and the claims that matter",
+  "Plan de repaso": "Revision plan",
+  "Convierte pendientes o conceptos en una checklist": "Turns pending items or concepts into a checklist",
+  "Esquema": "Outline",
+  "Ordena los apuntes en una estructura breve": "Arranges the notes into a short structure",
+  "Tarjetas": "Flashcards",
+  "Genera preguntas y respuestas desde los apuntes": "Makes questions and answers out of the notes",
+  "Limpiar texto": "Tidy text",
+  "Quita duplicados y normaliza listas": "Removes duplicates and evens out lists",
+  "Pizarra \u2192 LaTeX": "Board \u2192 LaTeX",
+  "Lee una regi\xF3n usando objetos y trazos vectoriales": "Reads a region from its objects and vector strokes",
+  "Ordenar selecci\xF3n": "Arrange selection",
+  "Distribuye los objetos seleccionados en una cuadr\xEDcula": "Lays the selected objects out on a grid",
+  "Pulir tinta": "Polish ink",
+  "Suaviza el trazo seleccionado y endereza l\xEDneas": "Smooths the selected strokes and straightens lines",
+  "Selecciona una zona o usa la p\xE1gina completa. Estas herramientas act\xFAan al instante y no env\xEDan nada fuera de Obsidian.": "Select an area or use the whole page. These tools act at once and send nothing outside Obsidian.",
+  "Lo que dibujaste": "What you drew",
+  "Selecciona uno o varios trazos para pulir la tinta": "Select one or more strokes to polish the ink",
+  "Selecciona al menos dos objetos para ordenarlos": "Select at least two objects to arrange them",
+  "el m\xE1s ligero; entiende dibujos sencillos": "the lightest; understands simple drawings",
+  "muy r\xE1pido, respuestas cortas": "very fast, short answers",
+  "buen lector de texto escrito a mano": "good at reading handwriting",
+  "equilibrado para port\xE1tiles modestos": "balanced for modest laptops",
+  "de Google, buen razonamiento para su tama\xF1o": "from Google, good reasoning for its size",
+  "el cl\xE1sico; describe im\xE1genes con detalle": "the classic; describes images in detail",
+  "muy bueno leyendo apuntes a mano": "very good at reading handwritten notes",
+  "el m\xE1s equilibrado si tu equipo da": "the best balance if your machine can take it",
+  "m\xE1s listo, necesita bastante memoria": "smarter, wants a good deal of memory",
+  "solo para equipos grandes": "only for large machines",
+  "Borrar memoria": "Clear memory",
+  "Insertar la memoria (tambi\xE9n puedes escribir M)": "Insert the memory (you can also type M)",
+  "Sumar el resultado actual a la memoria": "Add the current result to memory",
+  "Restar el resultado actual de la memoria": "Subtract the current result from memory",
+  "B\xE1sica": "Basic",
+  "Avanzada": "Advanced",
+  "Unidades": "Units",
+  "F\xF3rmula r\xE1pida": "Quick formula",
+  "Acciones instant\xE1neas \xB7 sin red ni modelos": "Instant actions \xB7 no network, no models",
+  "Sin remates": "Sans serif",
+  "Con remates": "Serif",
+  "Toca y desaparece entero": "Touch it and it all goes",
+  "Corta justo por donde pasas": "Cuts exactly where you pass",
+  "Arrastra una caja": "Drag a box",
+  "Rodea a mano alzada": "Circle it freehand",
+  "A mano": "By hand",
+  "Teclado": "Keyboard",
+  "Tambi\xE9n entiende la notaci\xF3n de la calculadora: x^2/2, sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Y LaTeX tal cual.": "It also understands calculator notation: x^2/2, sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. And plain LaTeX.",
+  "Escribir": "Write",
+  "Deshacer": "Undo",
+  "Rehacer": "Redo",
+  "Leer de la pizarra": "Read from the board",
+  "Coeficiente binomial": "Binomial coefficient",
+  "Definici\xF3n a trozos": "Piecewise definition",
+  "Y": "And",
+  "O": "Or",
+  "Modelo local": "Local model",
+  "La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra \u2192 LaTeX se calculan aqu\xED mismo.": "The whole board works with no model: summary, key ideas, revision plan, outline, flashcards, tidy text, polish ink and Board \u2192 LaTeX are all computed right here.",
+  "Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.": "A local model is only needed for two optional things: chatting with Leen and quota-free translation. Neither sends anything off your machine.",
+  "Sin comprobar. Tu equipo declara {p0} GB de RAM; para chat con dibujos encaja \xAB{p1}\xBB.": "Not checked yet. Your machine reports {p0} GB of RAM; for chatting about drawings, \u201C{p1}\u201D fits.",
+  "Servidor": "Server",
+  "Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1.": "Ollama or LM Studio on your own machine. If \u201Clocalhost\u201D does not answer, try 127.0.0.1.",
+  "Sin respuesta en {p0}. Arranca el servidor (por ejemplo \xABollama serve\xBB) y vuelve a probar.": "No answer at {p0}. Start the server (\u201Collama serve\u201D, for instance) and try again.",
+  "Responde, pero no tiene ning\xFAn modelo. Descarga uno: {p0}": "It answers, but has no models. Download one: {p0}",
+  "Conectado \xB7 {p0} modelo(s). Leen usar\xEDa \xAB{p1}\xBB: {p2}": "Connected \xB7 {p0} model(s). Leen would use \u201C{p1}\u201D: {p2}",
+  "Vac\xEDo = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como \xAB{p0}\xBB ({p1}).": "Empty = the best one that fits your memory. Reading what you draw needs a multimodal model, such as \u201C{p0}\u201D ({p1})."
 };
 
 // src/i18n.ts
@@ -3954,7 +2863,7 @@ var active = SOURCE_LOCALE;
 function detectLocale() {
   let stored = null;
   try {
-    stored = (0, import_obsidian2.getLanguage)();
+    stored = (0, import_obsidian.getLanguage)();
   } catch {
     stored = null;
   }
@@ -3976,12 +2885,1318 @@ function fill(text, params) {
   if (!params) return text;
   return text.replace(
     /\{(\w+)\}/g,
-    (match, key) => Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match
+    (match, key2) => Object.prototype.hasOwnProperty.call(params, key2) ? String(params[key2]) : match
   );
 }
 function tr(message, params) {
   if (active === SOURCE_LOCALE) return fill(message, params);
   return fill(CATALOGUES[active][message] ?? message, params);
+}
+
+// src/assistant.ts
+var VISION_HINTS = ["llava", "bakllava", "moondream", "minicpm", "qwen2-vl", "qwen2.5vl", "qwen2.5-vl", "qwen3-vl", "qwen3vl", "vision", "gemma3", "pixtral", "internvl", "granite3.2-vision", "smolvlm"];
+var VISION_CATALOGUE = [
+  { model: "moondream", params: "1.8B", downloadGb: 1.7, minRamGb: 4, note: "el m\xE1s ligero; entiende dibujos sencillos" },
+  { model: "smolvlm", params: "2.2B", downloadGb: 1.8, minRamGb: 5, note: "muy r\xE1pido, respuestas cortas" },
+  { model: "qwen2.5vl:3b", params: "3B", downloadGb: 3.2, minRamGb: 6, note: "buen lector de texto escrito a mano" },
+  { model: "llava-phi3", params: "3.8B", downloadGb: 2.9, minRamGb: 6, note: "equilibrado para port\xE1tiles modestos" },
+  { model: "gemma3:4b", params: "4B", downloadGb: 3.3, minRamGb: 8, note: "de Google, buen razonamiento para su tama\xF1o" },
+  { model: "llava:7b", params: "7B", downloadGb: 4.7, minRamGb: 10, note: "el cl\xE1sico; describe im\xE1genes con detalle" },
+  { model: "minicpm-v", params: "8B", downloadGb: 5.5, minRamGb: 12, note: "muy bueno leyendo apuntes a mano" },
+  { model: "qwen2.5vl:7b", params: "7B", downloadGb: 6, minRamGb: 12, note: "el m\xE1s equilibrado si tu equipo da" },
+  { model: "gemma3:12b", params: "12B", downloadGb: 8.9, minRamGb: 20, note: "m\xE1s listo, necesita bastante memoria" },
+  { model: "qwen2.5vl:32b", params: "32B", downloadGb: 21, minRamGb: 40, note: "solo para equipos grandes" }
+];
+function visionOptionsFor(memoryGb = detectMemoryGb()) {
+  return VISION_CATALOGUE.filter((option) => option.minRamGb <= memoryGb);
+}
+var CODE_HINTS = ["coder", "codellama", "starcoder", "deepseek-coder", "codegemma"];
+var EMBED_HINTS = ["embed", "nomic-embed", "bge-", "e5-", "minilm"];
+var supportsImages = (model) => VISION_HINTS.some((hint) => model.toLowerCase().includes(hint));
+function detectMemoryGb() {
+  try {
+    const os = window.require?.("os");
+    if (os?.totalmem) return Math.round(os.totalmem() / 1024 ** 3);
+  } catch {
+  }
+  const hint = navigator.deviceMemory;
+  return hint ? hint * 2 : 8;
+}
+function recommendedVisionModel(memoryGb = detectMemoryGb()) {
+  const fits = visionOptionsFor(memoryGb);
+  const sweetSpot = fits.filter((option) => option.downloadGb <= 6.5);
+  const pick = sweetSpot[sweetSpot.length - 1] ?? fits[0] ?? VISION_CATALOGUE[0];
+  return {
+    model: pick.model,
+    pull: `ollama pull ${pick.model}`,
+    why: `${pick.params}, ${pick.downloadGb} GB de descarga \xB7 ${pick.note}`
+  };
+}
+function parameterCount(model) {
+  const match = /(\d+(?:\.\d+)?)\s*b\b/i.exec(model.replace(/[:_-]/g, " "));
+  return match ? parseFloat(match[1]) : 0;
+}
+function rankTextModels(models, memoryGb = detectMemoryGb()) {
+  const comfortableB = Math.max(3, (memoryGb - 4) / 0.7);
+  return models.filter((model) => !EMBED_HINTS.some((hint) => model.toLowerCase().includes(hint))).map((model) => {
+    const name = model.toLowerCase();
+    const size = parameterCount(name);
+    let score = 50;
+    if (size === 0) score += 5;
+    else if (size <= comfortableB) score += 28;
+    else if (size <= comfortableB * 1.5) score -= 8;
+    else score -= 30;
+    if (CODE_HINTS.some((hint) => name.includes(hint))) score -= 25;
+    if (/qwen|llama3|mistral|gemma|phi|aya|nous/.test(name)) score += 10;
+    if (/aya|qwen|gemma|mistral/.test(name)) score += 6;
+    return { model, score };
+  }).sort((a3, b3) => b3.score - a3.score).map((entry) => entry.model);
+}
+function rankModels(models, memoryGb = detectMemoryGb()) {
+  const comfortableB = Math.max(3, (memoryGb - 4) / 0.7);
+  return models.filter((model) => !EMBED_HINTS.some((hint) => model.toLowerCase().includes(hint))).map((model) => {
+    const name = model.toLowerCase();
+    const size = parameterCount(name);
+    let score = 50;
+    const notes = [];
+    if (size === 0) {
+      notes.push("tama\xF1o desconocido");
+    } else if (size <= comfortableB * 0.6) {
+      score += 22;
+      notes.push(`${size}B, va sobrado en tu equipo`);
+    } else if (size <= comfortableB) {
+      score += 28;
+      notes.push(`${size}B, buen equilibrio para tus ${memoryGb} GB`);
+    } else if (size <= comfortableB * 1.5) {
+      score -= 8;
+      notes.push(`${size}B, justo para tus ${memoryGb} GB`);
+    } else {
+      score -= 30;
+      notes.push(`${size}B, demasiado para tus ${memoryGb} GB`);
+    }
+    if (CODE_HINTS.some((hint) => name.includes(hint))) {
+      score -= 20;
+      notes.push("orientado a c\xF3digo");
+    }
+    const fits = size === 0 || size <= comfortableB * 1.5;
+    if (!fits) notes.push("grande para tu equipo");
+    if (name.includes("instruct") || name.includes("chat")) {
+      score += 6;
+    }
+    if (/llama3|qwen2\.5|mistral|gemma|phi/.test(name)) {
+      score += 8;
+      notes.push("familia probada para estudiar");
+    }
+    return { model, score, reason: notes.join(" \xB7 ") || "modelo general" };
+  }).sort((a3, b3) => b3.score - a3.score);
+}
+var trimUrl = (url) => url.trim().replace(/\/+$/, "");
+function nodeRequest(url, method, body) {
+  let http = null;
+  try {
+    const req = window.require;
+    if (!req) return Promise.resolve(null);
+    http = req(url.startsWith("https:") ? "https" : "http");
+  } catch {
+    return Promise.resolve(null);
+  }
+  if (!http) return Promise.resolve(null);
+  const client = http;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return Promise.resolve(null);
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (!settled) {
+        settled = true;
+        resolve(value);
+      }
+    };
+    try {
+      const request = client.request({
+        protocol: parsed.protocol,
+        hostname: parsed.hostname,
+        port: parsed.port,
+        path: `${parsed.pathname}${parsed.search}`,
+        method,
+        headers: body ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } : {},
+        timeout: 12e4
+      }, (response) => {
+        let text = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          text += chunk;
+        });
+        response.on("end", () => finish({ status: response.statusCode ?? 0, text }));
+      });
+      request.on("error", () => finish(null));
+      request.on("timeout", () => {
+        request.destroy();
+        finish(null);
+      });
+      if (body) request.write(body);
+      request.end();
+    } catch {
+      finish(null);
+    }
+  });
+}
+var sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+function nodePlatform() {
+  try {
+    return window.process?.platform ?? "";
+  } catch {
+    return "";
+  }
+}
+function nodeSpawn() {
+  try {
+    const req = window.require;
+    const mod = req?.("child_process");
+    return mod?.spawn ?? null;
+  } catch {
+    return null;
+  }
+}
+var LocalServerManager = class {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+  get canManage() {
+    return nodeSpawn() !== null;
+  }
+  /** Runs a command to completion and reports whether it succeeded. */
+  run(cmd, args) {
+    const spawn = nodeSpawn();
+    if (!spawn) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      try {
+        const child = spawn(cmd, args, { stdio: "ignore", shell: nodePlatform() === "win32" });
+        if (!child.on) return resolve(false);
+        let settled = false;
+        child.on("close", (code) => {
+          if (!settled) {
+            settled = true;
+            resolve(code === 0);
+          }
+        });
+        child.on("error", () => {
+          if (!settled) {
+            settled = true;
+            resolve(false);
+          }
+        });
+      } catch {
+        resolve(false);
+      }
+    });
+  }
+  /** Where the ollama binary might be when it is not on the PATH. */
+  candidates() {
+    const platform = nodePlatform();
+    const env = window.process?.env ?? {};
+    if (platform === "win32") {
+      return [
+        "ollama",
+        `${env.LOCALAPPDATA ?? ""}\\Programs\\Ollama\\ollama.exe`,
+        `${env.ProgramFiles ?? ""}\\Ollama\\ollama.exe`
+      ].filter((path) => !path.startsWith("\\"));
+    }
+    if (platform === "darwin") return ["ollama", "/usr/local/bin/ollama", "/opt/homebrew/bin/ollama", "/Applications/Ollama.app/Contents/Resources/ollama"];
+    return ["ollama", "/usr/local/bin/ollama", "/usr/bin/ollama"];
+  }
+  /** The first ollama binary that answers, or null when none does. */
+  async findBinary() {
+    for (const candidate of this.candidates()) {
+      if (await this.run(candidate, ["--version"])) return candidate;
+    }
+    return null;
+  }
+  /** True when the ollama command answers on this computer. */
+  async isInstalled() {
+    return await this.findBinary() !== null;
+  }
+  /** How this operating system installs Ollama, for the button's label. */
+  installPlan() {
+    const platform = nodePlatform();
+    if (platform === "win32") {
+      return { label: "Instalar Ollama con winget", cmd: "winget", args: ["install", "--id", "Ollama.Ollama", "-e", "--accept-source-agreements", "--accept-package-agreements"], manual: "https://ollama.com/download" };
+    }
+    if (platform === "darwin") {
+      return { label: "Instalar Ollama con Homebrew", cmd: "brew", args: ["install", "ollama"], manual: "https://ollama.com/download" };
+    }
+    if (platform === "linux") {
+      return { label: "Instalar Ollama", cmd: "sh", args: ["-c", "curl -fsSL https://ollama.com/install.sh | sh"], manual: "https://ollama.com/download" };
+    }
+    return null;
+  }
+  /** Installs Ollama with the system's package manager, then checks it works. */
+  async install(onProgress) {
+    const plan = this.installPlan();
+    if (!plan) return false;
+    onProgress?.("Instalando Ollama\u2026 esto puede tardar unos minutos.");
+    const ok = await this.run(plan.cmd, plan.args);
+    if (!ok) return false;
+    onProgress?.("Ollama instalado, comprobando\u2026");
+    return this.isInstalled();
+  }
+  /** True when something answers on the configured port. */
+  async isRunning() {
+    const base = this.baseUrl();
+    const origin = /^https?:\/\/[^/]+/i.exec(base)?.[0] ?? "";
+    const headers = { Origin: origin, Referer: `${origin}/` };
+    for (const path of ["/api/tags", "/v1/models"]) {
+      const direct = await nodeRequest(`${base}${path}`, "GET");
+      if (direct && direct.status < 400) return true;
+      try {
+        const response = await (0, import_obsidian2.requestUrl)({ url: `${base}${path}`, method: "GET", headers, throw: false });
+        if (response.status < 400) return true;
+      } catch {
+      }
+    }
+    return false;
+  }
+  /** Launches `ollama serve` in the background and waits until it answers. */
+  async start(onProgress) {
+    if (await this.isRunning()) return true;
+    const spawn = nodeSpawn();
+    if (!spawn) return false;
+    const binary = await this.findBinary();
+    if (!binary) return false;
+    onProgress?.("Arrancando el servidor local\u2026");
+    try {
+      const child = spawn(binary, ["serve"], { detached: true, stdio: "ignore", shell: nodePlatform() === "win32" });
+      child.unref?.();
+    } catch {
+      return false;
+    }
+    for (let attempt = 0; attempt < 15; attempt++) {
+      await sleep(600);
+      if (await this.isRunning()) {
+        onProgress?.("Servidor local en marcha");
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Downloads a model with `ollama pull` and reports progress by watching the
+   * catalogue, which avoids holding an HTTP request open for several minutes.
+   */
+  async pull(model, onProgress) {
+    const spawn = nodeSpawn();
+    if (!spawn) return false;
+    const binary = await this.findBinary() ?? "ollama";
+    try {
+      const child = spawn(binary, ["pull", model], { detached: true, stdio: "ignore", shell: nodePlatform() === "win32" });
+      child.unref?.();
+    } catch {
+      return false;
+    }
+    const started = Date.now();
+    while (Date.now() - started < 20 * 60 * 1e3) {
+      await sleep(3e3);
+      const minutes = Math.floor((Date.now() - started) / 6e4);
+      const seconds = Math.floor((Date.now() - started) / 1e3) % 60;
+      onProgress?.(`Descargando ${model}\u2026 ${minutes}:${String(seconds).padStart(2, "0")}`);
+      try {
+        const origin = /^https?:\/\/[^/]+/i.exec(this.baseUrl())?.[0] ?? "";
+        const response = await (0, import_obsidian2.requestUrl)({ url: `${this.baseUrl()}/api/tags`, method: "GET", headers: { Origin: origin, Referer: `${origin}/` }, throw: false });
+        const names = (response.json?.models ?? []).map((m3) => m3.name).filter(Boolean);
+        if (names.some((name) => name === model || name.startsWith(`${model}:`))) {
+          onProgress?.(`${model} listo`);
+          return true;
+        }
+      } catch {
+      }
+    }
+    return false;
+  }
+};
+var actionPrompt = (name) => `Eres ${name}, el ayudante de estudio de NoteLens, una pizarra infinita para tomar apuntes. Respondes en espa\xF1ol, breve y claro, con pasos numerados cuando ayuden.
+
+Puedes colocar cosas en la pizarra escribiendo estas etiquetas en tu respuesta:
+[[posit:amarillo]]texto corto[[/posit]] para una nota adhesiva (colores: amarillo, naranja, rosa, verde, azul, lila)
+[[latex]]x^2/2 + sqrt(x)[[/latex]] para una f\xF3rmula
+[[texto]]p\xE1rrafo m\xE1s largo[[/texto]] para un cuadro de texto
+[[tarea]]T\xEDtulo; paso 1; paso 2; paso 3[[/tarea]] para una tarea con pasos
+
+Usa las etiquetas solo cuando te pidan escribir o dibujar algo en la pizarra; el resto del tiempo responde en texto normal. Si te dan apuntes como contexto, ap\xF3yate en ellos y di cu\xE1ndo algo no aparece en ellos.`;
+function parseAssistantActions(text) {
+  const actions = [];
+  let prose = text;
+  const patterns = [
+    [/\[\[posit(?::([a-záéíóúñ]+))?\]\]([\s\S]*?)\[\[\/posit\]\]/gi, "posit"],
+    [/\[\[latex\]\]([\s\S]*?)\[\[\/latex\]\]/gi, "latex"],
+    [/\[\[texto\]\]([\s\S]*?)\[\[\/texto\]\]/gi, "texto"],
+    [/\[\[tarea\]\]([\s\S]*?)\[\[\/tarea\]\]/gi, "tarea"]
+  ];
+  for (const [pattern, kind] of patterns) {
+    prose = prose.replace(pattern, (_match, first, second) => {
+      const body = (kind === "posit" ? second : first) ?? "";
+      if (body.trim()) actions.push({ kind, body: body.trim(), color: kind === "posit" ? first : void 0 });
+      return "";
+    });
+  }
+  return { prose: prose.replace(/\n{3,}/g, "\n\n").trim(), actions };
+}
+var LocalModelClient = class {
+  constructor(host) {
+    this.host = host;
+    this.flavour = null;
+    /** Why the last probe failed, so the chat can say something useful. */
+    this.lastProbeError = "";
+    /** The address that actually answered, which may differ from the setting. */
+    this.workingBase = null;
+  }
+  get baseUrl() {
+    return trimUrl(this.host.aiBaseUrl) || "http://127.0.0.1:11434";
+  }
+  /** The same address written the other way, to dodge an IPv6-only lookup. */
+  altUrl(url) {
+    if (url.includes("//localhost")) return url.replace("//localhost", "//127.0.0.1");
+    if (url.includes("//127.0.0.1")) return url.replace("//127.0.0.1", "//localhost");
+    return null;
+  }
+  /**
+   * Reads a URL through Obsidian first and plain fetch second: some setups
+   * refuse one of the two for localhost, and either answer is good enough.
+   */
+  /** Headers that keep a local server from rejecting us as a foreign origin. */
+  localHeaders(url, extra = {}) {
+    const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0] ?? "";
+    return { Origin: origin, Referer: `${origin}/`, ...extra };
+  }
+  async getJson(url) {
+    const direct = await nodeRequest(url, "GET");
+    if (direct && direct.status < 400) {
+      try {
+        return { status: direct.status, json: JSON.parse(direct.text) };
+      } catch {
+      }
+    } else if (direct) {
+      this.lastProbeError = `respondi\xF3 ${direct.status}`;
+    }
+    try {
+      const response = await (0, import_obsidian2.requestUrl)({ url, method: "GET", headers: this.localHeaders(url), throw: false });
+      if (response.status < 400) return { status: response.status, json: response.json };
+      this.lastProbeError = response.status === 403 ? "el servidor rechaz\xF3 el origen (403); revisa OLLAMA_ORIGINS" : `respondi\xF3 ${response.status}`;
+    } catch (error) {
+      this.lastProbeError = error instanceof Error ? error.message : String(error);
+    }
+    try {
+      const response = await (0, import_obsidian2.requestUrl)({ url, method: "GET", throw: false });
+      if (response.status < 400) return { status: response.status, json: response.json };
+      this.lastProbeError = `respondi\xF3 ${response.status}`;
+    } catch (error) {
+      this.lastProbeError = error instanceof Error ? error.message : String(error);
+    }
+    return null;
+  }
+  async probe() {
+    let base = this.baseUrl;
+    this.lastProbeError = "";
+    let ollama = await this.getJson(`${base}/api/tags`);
+    if (!ollama) {
+      const alternative = this.altUrl(base);
+      if (alternative) {
+        const retry = await this.getJson(`${alternative}/api/tags`);
+        if (retry) {
+          base = alternative;
+          this.workingBase = alternative;
+          ollama = retry;
+        }
+      }
+    }
+    const ollamaModels = ollama?.json?.models;
+    if (Array.isArray(ollamaModels)) {
+      this.flavour = { kind: "ollama", models: ollamaModels.map((m3) => m3.name).filter((name) => !!name) };
+      return this.flavour;
+    }
+    const openai = await this.getJson(`${base}/v1/models`);
+    const openaiModels = openai?.json?.data;
+    if (Array.isArray(openaiModels)) {
+      this.flavour = { kind: "openai", models: openaiModels.map((m3) => m3.id).filter((id) => !!id) };
+      return this.flavour;
+    }
+    const detail = this.lastProbeError ? ` (${this.lastProbeError})` : "";
+    throw new Error(`No hay ning\xFAn modelo local escuchando en ${base}${detail}.`);
+  }
+  /** Reachable plus the catalogue, without collapsing "empty" into "down". */
+  async describeServer() {
+    try {
+      const flavour = await this.probe();
+      return { reachable: true, models: flavour.models };
+    } catch {
+      return { reachable: false, models: [] };
+    }
+  }
+  /** The model to use: the chosen one, or the best available when none is set. */
+  async resolveModel() {
+    const flavour = this.flavour ?? await this.probe();
+    if (this.host.aiModel && flavour.models.includes(this.host.aiModel)) return this.host.aiModel;
+    const best = rankModels(flavour.models)[0];
+    if (!best) throw new Error("El servidor local no tiene ning\xFAn modelo de chat. Descarga uno, por ejemplo con \xABollama pull llama3.2\xBB.");
+    return best.model;
+  }
+  async chat(messages2, context, name) {
+    const flavour = this.flavour ?? await this.probe();
+    const model = await this.resolveModel();
+    const base = this.workingBase ?? this.baseUrl;
+    const system = context ? `${actionPrompt(name)}
+
+Apuntes de la pizarra:
+"""
+${context}
+"""` : actionPrompt(name);
+    const hasImages = messages2.some((message) => message.images?.length);
+    if (hasImages && !supportsImages(model)) {
+      const tip = recommendedVisionModel();
+      throw new Error(`El modelo \xAB${model}\xBB no entiende im\xE1genes. Instala uno multimodal con \xAB${tip.pull}\xBB: ${tip.why}.`);
+    }
+    const post = async (path, payload2) => {
+      const body = JSON.stringify(payload2);
+      const direct = await nodeRequest(`${base}${path}`, "POST", body);
+      if (direct) {
+        if (direct.status >= 400) throw new Error(this.describeError(direct.status, direct.text, model));
+        try {
+          return JSON.parse(direct.text);
+        } catch {
+          throw new Error("El modelo devolvi\xF3 una respuesta ilegible.");
+        }
+      }
+      const response = await (0, import_obsidian2.requestUrl)({
+        url: `${base}${path}`,
+        method: "POST",
+        headers: this.localHeaders(base, { "Content-Type": "application/json" }),
+        body,
+        throw: false
+      });
+      if (response.status >= 400) throw new Error(this.describeError(response.status, response.text, model));
+      return response.json;
+    };
+    if (flavour.kind === "ollama") {
+      const payload2 = [
+        { role: "system", content: system },
+        ...messages2.map((message) => message.images?.length ? { role: message.role, content: message.content, images: message.images } : { role: message.role, content: message.content })
+      ];
+      const json2 = await post("/api/chat", { model, messages: payload2, stream: false });
+      const text2 = json2?.message?.content;
+      if (!text2) throw new Error("El modelo respondi\xF3 sin texto.");
+      return String(text2).trim();
+    }
+    const payload = [
+      { role: "system", content: system },
+      ...messages2.map((message) => message.images?.length ? {
+        role: message.role,
+        content: [
+          { type: "text", text: message.content },
+          ...message.images.map((image) => ({ type: "image_url", image_url: { url: `data:image/png;base64,${image}` } }))
+        ]
+      } : { role: message.role, content: message.content })
+    ];
+    const json = await post("/v1/chat/completions", { model, messages: payload, stream: false });
+    const text = json?.choices?.[0]?.message?.content;
+    if (!text) throw new Error("El modelo respondi\xF3 sin texto.");
+    return String(text).trim();
+  }
+  describeError(status, body, model) {
+    if (status === 404) return `El servidor local no encuentra el modelo \xAB${model}\xBB. Comprueba el nombre en los ajustes.`;
+    const detail = body?.slice(0, 160).replace(/\s+/g, " ").trim();
+    return `El servidor local respondi\xF3 ${status}${detail ? `: ${detail}` : ""}.`;
+  }
+  /**
+   * Translates with a model on this computer, so there is no quota and no
+   * text leaves the machine. Returns null when no local model is available,
+   * letting the caller fall back to the web service.
+   */
+  async translate(text, fromName, toName) {
+    let models = [];
+    try {
+      models = (await this.probe()).models;
+    } catch {
+      return null;
+    }
+    const model = this.host.aiModel && models.includes(this.host.aiModel) ? this.host.aiModel : rankTextModels(models)[0];
+    if (!model) return null;
+    const flavour = this.flavour ?? await this.probe();
+    const base = this.workingBase ?? this.baseUrl;
+    const payload = [
+      {
+        role: "system",
+        content: `Eres un traductor. Traduces de ${fromName} a ${toName}. Devuelves \xFAnicamente la traducci\xF3n, sin comillas, sin explicaciones y sin repetir el original. Conservas los saltos de l\xEDnea y el formato.`
+      },
+      { role: "user", content: text }
+    ];
+    const path = flavour.kind === "ollama" ? "/api/chat" : "/v1/chat/completions";
+    const body = JSON.stringify({ model, messages: payload, stream: false });
+    const direct = await nodeRequest(`${base}${path}`, "POST", body);
+    let json = null;
+    if (direct && direct.status < 400) {
+      try {
+        json = JSON.parse(direct.text);
+      } catch {
+        return null;
+      }
+    } else if (!direct) {
+      const response = await (0, import_obsidian2.requestUrl)({
+        url: `${base}${path}`,
+        method: "POST",
+        headers: this.localHeaders(base, { "Content-Type": "application/json" }),
+        body,
+        throw: false
+      });
+      if (response.status >= 400) return null;
+      json = response.json;
+    } else {
+      return null;
+    }
+    const answer = flavour.kind === "ollama" ? json?.message?.content : json?.choices?.[0]?.message?.content;
+    const clean = typeof answer === "string" ? answer.trim() : "";
+    return clean || null;
+  }
+  async listModels() {
+    try {
+      return (await this.probe()).models;
+    } catch {
+      return [];
+    }
+  }
+  forgetServer() {
+    this.flavour = null;
+    this.workingBase = null;
+  }
+};
+function createAssistantPet(host, container) {
+  const client = new LocalModelClient(host);
+  const server = new LocalServerManager(() => client.baseUrl);
+  const messages2 = [];
+  let open2 = false;
+  let busy = false;
+  let useBoardContext = host.aiUseBoardContext;
+  let sleepTimer = null;
+  let composerMode = "tools";
+  const petName = () => "Leen";
+  const pet = container.createDiv({ cls: "notelens-pet" });
+  for (const type of ["pointerdown", "pointerup", "dblclick"]) pet.addEventListener(type, (event) => event.stopPropagation());
+  const sprite = pet.createEl("img", { cls: "notelens-pet-sprite" });
+  sprite.draggable = false;
+  pet.style.setProperty("--pet-scale", String(host.petScale || 1));
+  const bubble = pet.createDiv({ cls: "notelens-pet-bubble hidden" });
+  const setMood = (mood) => {
+    sprite.src = CAT_SPRITES[mood];
+    pet.setAttr("data-mood", mood);
+  };
+  const wake = () => {
+    if (pet.getAttr("data-mood") === "sleeping") setMood("idle");
+    if (sleepTimer !== null) window.clearTimeout(sleepTimer);
+    sleepTimer = window.setTimeout(() => {
+      if (!busy && !open2) setMood("sleeping");
+    }, 45e3);
+  };
+  const say = (text, ms = 3200) => {
+    if (!host.petBubbles) return;
+    bubble.setText(text);
+    bubble.removeClass("hidden");
+    window.setTimeout(() => bubble.addClass("hidden"), ms);
+  };
+  setMood("idle");
+  wake();
+  let placePanelNearPet = () => {
+  };
+  const applyPetPosition = () => {
+    const saved = host.getPetPosition();
+    if (saved.x === null || saved.y === null) return;
+    const bounds = container.getBoundingClientRect();
+    const size = pet.getBoundingClientRect();
+    const width = size.width || 78;
+    const height = size.height || 78;
+    const left = Math.min(Math.max(saved.x * bounds.width - width / 2, 6), Math.max(6, bounds.width - width - 6));
+    const top = Math.min(Math.max(saved.y * bounds.height - height / 2, 6), Math.max(6, bounds.height - height - 6));
+    pet.style.left = `${left}px`;
+    pet.style.top = `${top}px`;
+    pet.setCssStyles({ right: "auto", bottom: "auto" });
+    if (open2) placePanelNearPet();
+  };
+  let dragMoved = false;
+  pet.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const bounds = container.getBoundingClientRect();
+    const size = pet.getBoundingClientRect();
+    const grabX = event.clientX - size.left;
+    const grabY = event.clientY - size.top;
+    dragMoved = false;
+    const onMove = (move) => {
+      if (Math.abs(move.clientX - event.clientX) + Math.abs(move.clientY - event.clientY) < 4) return;
+      dragMoved = true;
+      pet.addClass("is-dragging");
+      const left = Math.min(Math.max(move.clientX - bounds.left - grabX, 6), bounds.width - size.width - 6);
+      const top = Math.min(Math.max(move.clientY - bounds.top - grabY, 6), bounds.height - size.height - 6);
+      pet.style.left = `${left}px`;
+      pet.style.top = `${top}px`;
+      pet.setCssStyles({ right: "auto", bottom: "auto" });
+      if (open2) placePanelNearPet();
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      pet.removeClass("is-dragging");
+      if (!dragMoved) return;
+      const size2 = pet.getBoundingClientRect();
+      host.setPetPosition(
+        (size2.left - bounds.left + size2.width / 2) / bounds.width,
+        (size2.top - bounds.top + size2.height / 2) / bounds.height
+      );
+      panel.addClass("is-anchored");
+      say("Aqu\xED estoy bien", 1600);
+    };
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+  });
+  const panel = container.createDiv({ cls: "notelens-assistant hidden" });
+  for (const type of ["pointerdown", "pointerup", "dblclick"]) panel.addEventListener(type, (event) => event.stopPropagation());
+  panel.addEventListener("wheel", (event) => event.stopPropagation(), { passive: true });
+  panel.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (open2) toggle();
+    }
+  });
+  const header = panel.createDiv({ cls: "notelens-assistant-header" });
+  const avatar = header.createEl("img", { cls: "notelens-assistant-avatar" });
+  avatar.src = CAT_SPRITES.idle;
+  header.createSpan({ cls: "notelens-assistant-name", text: petName() });
+  const modelSelect = header.createEl("select", { cls: "notelens-assistant-model" });
+  modelSelect.title = tr("Modelo local que responde");
+  modelSelect.addClass("hidden");
+  const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-assistant-close is-glyph", text: "\u2715" });
+  closeBtn.title = tr("Cerrar el ayudante (Esc)");
+  closeBtn.setAttr("aria-label", tr("Cerrar el ayudante"));
+  sprite.alt = petName();
+  const status = panel.createDiv({ cls: "notelens-assistant-status" });
+  const chooser = panel.createDiv({ cls: "notelens-assistant-chooser hidden" });
+  const chooserSelect = chooser.createEl("select", { cls: "notelens-assistant-chooser-select" });
+  const chooserCustom = chooser.createEl("input", { cls: "notelens-assistant-chooser-custom", type: "text" });
+  chooserCustom.placeholder = tr("\u2026o escribe otro modelo");
+  chooserCustom.title = tr("Cualquier modelo multimodal que exista en Ollama");
+  const serverBtn = panel.createEl("button", { cls: "notelens-assistant-server hidden" });
+  const instantPane = panel.createDiv({ cls: "notelens-assistant-instant" });
+  const instantHeader = instantPane.createDiv({ cls: "notelens-assistant-instant-header" });
+  instantHeader.createSpan({ text: tr("Acciones locales") });
+  const instantScope = instantHeader.createSpan({ cls: "notelens-assistant-scope", text: tr("selecci\xF3n o p\xE1gina") });
+  const instantGrid = instantPane.createDiv({ cls: "notelens-assistant-instant-grid" });
+  let runInstantTool = () => {
+  };
+  const instantTools = [
+    { id: "summary", icon: "align-left", label: "Resumir", hint: "Crea un resumen extractivo sin inventar contenido" },
+    { id: "key-ideas", icon: "lightbulb", label: "Ideas clave", hint: "Extrae definiciones y afirmaciones importantes" },
+    { id: "tasks", icon: "list-checks", label: "Plan de repaso", hint: "Convierte pendientes o conceptos en una checklist" },
+    { id: "outline", icon: "list-tree", label: "Esquema", hint: "Ordena los apuntes en una estructura breve" },
+    { id: "flashcards", icon: "panels-top-left", label: "Tarjetas", hint: "Genera preguntas y respuestas desde los apuntes" },
+    { id: "clean-notes", icon: "list-filter", label: "Limpiar texto", hint: "Quita duplicados y normaliza listas" },
+    { id: "board-latex", icon: "sigma", label: "Pizarra \u2192 LaTeX", hint: "Lee una regi\xF3n usando objetos y trazos vectoriales" },
+    { id: "organize-selection", icon: "layout-grid", label: "Ordenar selecci\xF3n", hint: "Distribuye los objetos seleccionados en una cuadr\xEDcula" },
+    { id: "polish-ink", icon: "wand-sparkles", label: "Pulir tinta", hint: "Suaviza el trazo seleccionado y endereza l\xEDneas" }
+  ];
+  for (const tool of instantTools) {
+    const button = instantGrid.createEl("button", { cls: "notelens-assistant-instant-tool" });
+    (0, import_obsidian2.setIcon)(button.createSpan({ cls: "notelens-assistant-instant-icon" }), tool.icon);
+    button.createSpan({ text: tr(tool.label) });
+    button.title = tr(tool.hint);
+    button.onclick = () => runInstantTool(tool.id);
+  }
+  const fillChooser = () => {
+    const options = visionOptionsFor();
+    chooserSelect.empty();
+    for (const option of [...options].reverse()) {
+      const entry = chooserSelect.createEl("option", {
+        value: option.model,
+        text: `${option.model} \xB7 ${option.params} \xB7 ${option.downloadGb} GB`
+      });
+      entry.title = tr(option.note);
+    }
+    chooser.removeClass("hidden");
+    return () => chooserCustom.value.trim() || chooserSelect.value;
+  };
+  const hideChooser = () => chooser.addClass("hidden");
+  const log = panel.createDiv({ cls: "notelens-assistant-log" });
+  const setStatus = (text, kind = "info") => {
+    status.setText(text);
+    status.toggleClass("is-error", kind === "error");
+    status.toggleClass("is-ok", kind === "ok");
+  };
+  const renderLog = () => {
+    log.empty();
+    if (messages2.length === 0) {
+      const empty3 = log.createDiv({ cls: "notelens-assistant-empty" });
+      empty3.createDiv({ text: tr("Selecciona una zona o usa la p\xE1gina completa. Estas herramientas act\xFAan al instante y no env\xEDan nada fuera de Obsidian.") });
+      return;
+    }
+    for (const message of messages2) {
+      const row = log.createDiv({ cls: `notelens-assistant-msg is-${message.role}` });
+      if (message.images?.length) {
+        const preview = row.createEl("img", { cls: "notelens-assistant-msg-image" });
+        preview.src = `data:image/png;base64,${message.images[0]}`;
+        preview.alt = tr("Lo que dibujaste");
+      }
+      if (message.content) row.createDiv({ cls: "notelens-assistant-msg-text", text: message.content });
+      if (message.role === "assistant") {
+        const actions = row.createDiv({ cls: "notelens-assistant-msg-actions" });
+        const insert = actions.createEl("button", { cls: "notelens-assistant-action" });
+        (0, import_obsidian2.setIcon)(insert.createSpan(), "arrow-down-to-line");
+        insert.createSpan({ text: "A la pizarra" });
+        insert.onclick = () => {
+          setMood("drawing");
+          host.runAssistantAction({ kind: "texto", body: message.content });
+          say("\xA1Listo!", 1600);
+          window.setTimeout(() => setMood("idle"), 1300);
+        };
+        const copy = actions.createEl("button", { cls: "notelens-assistant-action" });
+        (0, import_obsidian2.setIcon)(copy.createSpan(), "copy");
+        copy.createSpan({ text: "Copiar" });
+        copy.onclick = () => {
+          void navigator.clipboard.writeText(message.content);
+          new import_obsidian2.Notice("Respuesta copiada");
+        };
+      }
+    }
+    log.scrollTop = log.scrollHeight;
+  };
+  runInstantTool = (tool) => {
+    wake();
+    if (tool === "board-latex") {
+      setStatus(tr("Selecciona la regi\xF3n que contiene la f\xF3rmula."), "ok");
+      if (open2) toggle();
+      host.openFormulaReader();
+      return;
+    }
+    if (tool === "organize-selection" || tool === "polish-ink") {
+      setMood("drawing");
+      const report2 = host.runBoardUtility(tool);
+      messages2.push({ role: "assistant", content: report2 });
+      renderLog();
+      setStatus(report2, /selecciona/i.test(report2) ? "info" : "ok");
+      say(report2, 2200);
+      window.setTimeout(() => setMood("idle"), 700);
+      return;
+    }
+    const selected = host.getSelectionText().trim();
+    const source = selected || host.getBoardText().trim();
+    instantScope.setText(selected ? "selecci\xF3n actual" : "p\xE1gina completa");
+    const result = runLocalStudyTool(tool, source);
+    if (result.empty || !result.content.trim()) {
+      setStatus(tr("No hay texto legible en la selecci\xF3n ni en esta p\xE1gina."), "error");
+      say("Necesito algo de texto", 1800);
+      return;
+    }
+    setMood("drawing");
+    let report = "";
+    if (tool === "tasks") {
+      report = host.runAssistantAction({ kind: "tarea", body: [result.title, ...result.items].join("; ") });
+    } else if (tool === "key-ideas") {
+      report = host.runAssistantAction({ kind: "posit", body: `${result.title}
+${result.content}`, color: "amarillo" });
+    } else {
+      report = host.runAssistantAction({ kind: "texto", body: `${result.title}
+
+${result.content}` });
+    }
+    messages2.push({ role: "assistant", content: `${result.title}
+${result.content}
+
+Creado: ${report}.` });
+    renderLog();
+    setStatus(`${result.title} creado desde la ${selected ? "selecci\xF3n" : "p\xE1gina"}.`, "ok");
+    say("Listo en la pizarra", 1800);
+    window.setTimeout(() => setMood("idle"), 700);
+  };
+  const contextRow = panel.createEl("label", { cls: "notelens-assistant-context" });
+  const contextToggle = contextRow.createEl("input");
+  contextToggle.type = "checkbox";
+  contextToggle.checked = useBoardContext;
+  contextRow.createSpan({ text: "Usar el texto de la pizarra como contexto" });
+  contextToggle.onchange = () => {
+    useBoardContext = contextToggle.checked;
+  };
+  const modeRow = panel.createDiv({ cls: "notelens-assistant-modes" });
+  const toolsModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
+  (0, import_obsidian2.setIcon)(toolsModeBtn.createSpan(), "wand-sparkles");
+  toolsModeBtn.createSpan({ text: tr("Acciones") });
+  const textModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
+  (0, import_obsidian2.setIcon)(textModeBtn.createSpan(), "message-square-text");
+  textModeBtn.createSpan({ text: tr("Chat local") });
+  const drawModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
+  (0, import_obsidian2.setIcon)(drawModeBtn.createSpan(), "pen-line");
+  drawModeBtn.createSpan({ text: tr("F\xF3rmula r\xE1pida") });
+  panel.insertBefore(modeRow, instantPane);
+  const composer = panel.createDiv({ cls: "notelens-assistant-composer" });
+  const input = composer.createEl("textarea", { cls: "notelens-assistant-input" });
+  input.rows = 2;
+  input.placeholder = tr("Escribe tu pregunta y pulsa Enter");
+  const sketchPane = composer.createDiv({ cls: "notelens-assistant-sketch" });
+  const sketchCanvas = sketchPane.createEl("canvas");
+  const SKETCH_W = 300, SKETCH_H = 150;
+  const dpr = window.devicePixelRatio || 1;
+  sketchCanvas.width = SKETCH_W * dpr;
+  sketchCanvas.height = SKETCH_H * dpr;
+  sketchCanvas.style.width = `${SKETCH_W}px`;
+  sketchCanvas.style.height = `${SKETCH_H}px`;
+  const sketchCtx = sketchCanvas.getContext("2d");
+  const sketchHint = sketchPane.createDiv({ cls: "notelens-assistant-sketch-hint", text: tr("Escribe una f\xF3rmula; se lee desde los trazos") });
+  const requests = panel.createDiv({ cls: "notelens-assistant-requests" });
+  panel.insertBefore(requests, composer);
+  const REQUESTS = [];
+  let chosenRequest = "";
+  const requestButtons = [];
+  requests.createSpan({ cls: "notelens-assistant-requests-label", text: tr("Reconocimiento vectorial local \xB7 fracciones, potencias y operadores") });
+  for (const [label, prompt] of REQUESTS) {
+    const chip = requests.createEl("button", { cls: "notelens-assistant-request", text: label });
+    chip.title = prompt;
+    chip.onclick = () => {
+      chosenRequest = chosenRequest === prompt ? "" : prompt;
+      for (const other of requestButtons) other.toggleClass("active", false);
+      chip.toggleClass("active", !!chosenRequest);
+    };
+    requestButtons.push(chip);
+  }
+  const sketchClear = sketchPane.createEl("button", { cls: "notelens-assistant-sketch-clear" });
+  (0, import_obsidian2.setIcon)(sketchClear, "eraser");
+  sketchClear.title = tr("Borrar el dibujo");
+  let sketchStrokes = [];
+  let sketchCurrent = null;
+  const redrawSketch = () => {
+    if (!sketchCtx) return;
+    sketchCtx.setTransform(1, 0, 0, 1, 0, 0);
+    sketchCtx.fillStyle = "#ffffff";
+    sketchCtx.fillRect(0, 0, sketchCanvas.width, sketchCanvas.height);
+    sketchCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sketchCtx.strokeStyle = "#0f172a";
+    sketchCtx.lineWidth = 2.6;
+    sketchCtx.lineCap = "round";
+    sketchCtx.lineJoin = "round";
+    for (const stroke of sketchStrokes) {
+      if (!stroke.length) continue;
+      sketchCtx.beginPath();
+      sketchCtx.moveTo(stroke[0].x, stroke[0].y);
+      for (let i4 = 1; i4 < stroke.length; i4++) sketchCtx.lineTo(stroke[i4].x, stroke[i4].y);
+      sketchCtx.stroke();
+    }
+    sketchHint.toggleClass("hidden-hint", sketchStrokes.length > 0);
+  };
+  redrawSketch();
+  const sketchPoint = (event) => {
+    const rect = sketchCanvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * (SKETCH_W / rect.width), y: (event.clientY - rect.top) * (SKETCH_H / rect.height) };
+  };
+  sketchCanvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    sketchCanvas.setPointerCapture(event.pointerId);
+    sketchCurrent = [sketchPoint(event)];
+    sketchStrokes.push(sketchCurrent);
+    redrawSketch();
+  });
+  sketchCanvas.addEventListener("pointermove", (event) => {
+    if (!sketchCurrent) return;
+    sketchCurrent.push(sketchPoint(event));
+    redrawSketch();
+  });
+  const endSketch = () => {
+    sketchCurrent = null;
+  };
+  sketchCanvas.addEventListener("pointerup", endSketch);
+  sketchCanvas.addEventListener("pointercancel", endSketch);
+  sketchClear.onclick = () => {
+    sketchStrokes = [];
+    redrawSketch();
+  };
+  const send = composer.createEl("button", { cls: "notelens-assistant-send" });
+  (0, import_obsidian2.setIcon)(send, "send-horizontal");
+  send.title = "Enviar (Enter)";
+  const setComposerMode = (mode2) => {
+    composerMode = mode2;
+    panel.setAttr("data-mode", mode2);
+    toolsModeBtn.toggleClass("active", mode2 === "tools");
+    textModeBtn.toggleClass("active", mode2 === "text");
+    drawModeBtn.toggleClass("active", mode2 === "draw");
+    instantPane.style.display = mode2 === "tools" ? "" : "none";
+    composer.style.display = mode2 === "tools" ? "none" : "";
+    input.style.display = mode2 === "text" ? "" : "none";
+    sketchPane.style.display = mode2 === "draw" ? "" : "none";
+    requests.style.display = mode2 === "draw" ? "" : "none";
+    contextRow.style.display = mode2 === "text" ? "" : "none";
+    modelSelect.toggleClass("hidden", mode2 !== "text");
+    if (mode2 === "tools") {
+      serverBtn.addClass("hidden");
+      hideChooser();
+      setStatus(tr("Acciones instant\xE1neas \xB7 sin red ni modelos"), "ok");
+    } else if (mode2 === "draw") {
+      serverBtn.addClass("hidden");
+      hideChooser();
+      setStatus(tr("Escribe y pulsa enviar \xB7 lectura vectorial local"), "ok");
+    } else {
+      void refreshModels();
+      input.focus();
+    }
+    if (open2) window.requestAnimationFrame(placePanelNearPet);
+  };
+  toolsModeBtn.onclick = () => setComposerMode("tools");
+  textModeBtn.onclick = () => setComposerMode("text");
+  drawModeBtn.onclick = () => setComposerMode("draw");
+  setComposerMode("tools");
+  const showServerButton = (label, icon, run) => {
+    serverBtn.empty();
+    (0, import_obsidian2.setIcon)(serverBtn.createSpan(), icon);
+    serverBtn.createSpan({ text: label });
+    serverBtn.removeClass("hidden");
+    serverBtn.disabled = false;
+    serverBtn.onclick = async () => {
+      serverBtn.disabled = true;
+      await run();
+      serverBtn.disabled = false;
+    };
+  };
+  const offerDownload = (reason) => {
+    const options = visionOptionsFor();
+    if (options.length === 0) {
+      hideChooser();
+      serverBtn.addClass("hidden");
+      setStatus(`${reason} Tu equipo tiene ${detectMemoryGb()} GB de RAM y el modelo multimodal m\xE1s peque\xF1o necesita ${VISION_CATALOGUE[0].minRamGb} GB, as\xED que Leen no puede funcionar aqu\xED.`, "error");
+      return;
+    }
+    if (!server.canManage) {
+      hideChooser();
+      setStatus(`${reason} Desc\xE1rgalo en una terminal, por ejemplo: ${recommendedVisionModel().pull}`, "info");
+      return;
+    }
+    const choice = fillChooser();
+    setStatus(reason, "info");
+    showServerButton("Descargar el modelo elegido", "download", async () => {
+      const model = choice();
+      if (!model) {
+        setStatus(tr("Elige un modelo de la lista o escribe su nombre."), "error");
+        return;
+      }
+      const ok = await server.pull(model, (text) => setStatus(text));
+      if (!ok) {
+        setStatus(`No he podido descargar ${model}. Prueba en una terminal: ollama pull ${model}`, "error");
+        return;
+      }
+      client.forgetServer();
+      host.setAiModel(model);
+      hideChooser();
+      await refreshModels();
+    });
+  };
+  const refreshModels = async () => {
+    setStatus(tr("Buscando un modelo local\u2026"));
+    serverBtn.addClass("hidden");
+    hideChooser();
+    let { reachable, models } = await client.describeServer();
+    let missingOllama = false;
+    if (!reachable && server.canManage) {
+      missingOllama = !await server.isInstalled();
+      if (!missingOllama) {
+        const started = await server.start((text) => setStatus(text));
+        if (started) {
+          client.forgetServer();
+          ({ reachable, models } = await client.describeServer());
+        }
+      }
+    }
+    modelSelect.empty();
+    if (reachable && models.length === 0) {
+      modelSelect.createEl("option", { value: "", text: "sin modelos" });
+      offerDownload(`Ollama funciona en ${client.baseUrl} pero no tienes ning\xFAn modelo. Elige uno y lo descargo.`);
+      return;
+    }
+    if (models.length === 0) {
+      modelSelect.createEl("option", { value: "", text: "sin conexi\xF3n" });
+      if (server.canManage) {
+        if (missingOllama) {
+          const plan = server.installPlan();
+          if (plan) {
+            setStatus(tr("No tienes Ollama en este equipo. Puedo instalarlo por ti; todo se queda en tu ordenador."), "info");
+            showServerButton(plan.label, "download", async () => {
+              const ok = await server.install((text) => setStatus(text));
+              if (!ok) {
+                setStatus(`No he podido instalarlo. Desc\xE1rgalo a mano en ${plan.manual}`, "error");
+                return;
+              }
+              await refreshModels();
+            });
+          } else {
+            setStatus(`Instala Ollama desde https://ollama.com/download y vuelve a abrirme.`, "error");
+          }
+          return;
+        }
+        const why = client.lastProbeError ? ` El intento dijo: ${client.lastProbeError}.` : "";
+        setStatus(`Ollama est\xE1 instalado pero no responde en ${client.baseUrl}.${why} Comprueba la direcci\xF3n en los ajustes del plugin.`, "error");
+        showServerButton("Reintentar arrancar el servidor", "play", async () => {
+          await refreshModels();
+        });
+      } else {
+        const why = client.lastProbeError ? ` (${client.lastProbeError})` : "";
+        setStatus(`No encuentro ning\xFAn servidor en ${client.baseUrl}${why}. Arranca Ollama o LM Studio.`, "error");
+      }
+      return;
+    }
+    const ranked = rankModels(models);
+    const best = ranked[0];
+    if (!best) {
+      modelSelect.createEl("option", { value: "", text: "sin modelo de chat" });
+      offerDownload(`Tienes ${models.length} modelo${models.length === 1 ? "" : "s"}, pero ninguno puede conversar.`);
+      return;
+    }
+    hideChooser();
+    modelSelect.createEl("option", { value: "", text: best ? `Autom\xE1tico (${best.model})` : "Autom\xE1tico" });
+    for (const entry of ranked) {
+      const option = modelSelect.createEl("option", { value: entry.model, text: entry.model === best?.model ? `${entry.model} \u2605` : entry.model });
+      option.title = entry.reason;
+    }
+    modelSelect.value = host.aiModel && models.includes(host.aiModel) ? host.aiModel : "";
+    const chosen = modelSelect.value || best?.model || "";
+    setStatus(host.aiModel ? `Conectado a ${client.baseUrl} \xB7 ${chosen}` : `Elegido para tu equipo: ${best.model} (${best.reason})`, "ok");
+  };
+  modelSelect.onchange = () => {
+    host.setAiModel(modelSelect.value);
+    void refreshModels();
+  };
+  const ask = async () => {
+    if (busy) return;
+    const question = input.value.trim();
+    const drawing = composerMode === "draw" && sketchStrokes.length > 0;
+    if (!question && !drawing) return;
+    busy = true;
+    if (drawing) {
+      const recognition = recognizeInkFormula(sketchStrokes.map((points) => ({ points })));
+      if (!recognition.source) {
+        setStatus("No distingo una f\xF3rmula todav\xEDa. A\xF1ade alg\xFAn trazo m\xE1s.", "error");
+        busy = false;
+        return;
+      }
+      setMood("drawing");
+      const report = host.runAssistantAction({ kind: "latex", body: recognition.source });
+      messages2.push({ role: "assistant", content: `${recognition.source}
+
+${recognition.detail}. Creado: ${report}.` });
+      sketchStrokes = [];
+      redrawSketch();
+      renderLog();
+      setStatus(`${recognition.detail} \xB7 f\xF3rmula insertada`, recognition.confidence < 0.56 ? "info" : "ok");
+      say("F\xF3rmula insertada", 1800);
+      busy = false;
+      window.setTimeout(() => setMood("idle"), 700);
+      return;
+    }
+    if (!question) {
+      setStatus("Escribe una pregunta para el chat local.", "error");
+      busy = false;
+      return;
+    }
+    const images = drawing ? [sketchCanvas.toDataURL("image/png").split(",")[1]] : void 0;
+    const content = question || chosenRequest;
+    input.value = "";
+    if (drawing) {
+      sketchStrokes = [];
+      redrawSketch();
+      chosenRequest = "";
+      for (const chip of requestButtons) chip.toggleClass("active", false);
+    }
+    messages2.push({ role: "user", content, images });
+    renderLog();
+    setMood("thinking");
+    setStatus("Pensando\u2026");
+    const pending = log.createDiv({ cls: "notelens-assistant-msg is-assistant is-pending", text: "\u2026" });
+    log.scrollTop = log.scrollHeight;
+    try {
+      const context = useBoardContext ? host.getBoardText().slice(0, 6e3) : "";
+      const answer = await client.chat(messages2, context, petName());
+      const { prose, actions } = parseAssistantActions(answer);
+      const reports = [];
+      if (actions.length) {
+        setMood("drawing");
+        for (const action of actions) reports.push(host.runAssistantAction(action));
+        say(`${actions.length} cosa${actions.length === 1 ? "" : "s"} en la pizarra`, 2400);
+      }
+      const body = [prose, reports.length ? `\u270D\uFE0F ${reports.join(" \xB7 ")}` : ""].filter(Boolean).join("\n\n");
+      messages2.push({ role: "assistant", content: body || "Hecho." });
+      setStatus(actions.length ? "Escrito en la pizarra" : "Respuesta lista", "ok");
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      messages2.push({ role: "assistant", content: `No he podido responder. ${reason}` });
+      setStatus(reason, "error");
+      client.forgetServer();
+    } finally {
+      pending.remove();
+      busy = false;
+      renderLog();
+      window.setTimeout(() => {
+        if (!busy) setMood("idle");
+      }, 900);
+      wake();
+    }
+  };
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void ask();
+    }
+  });
+  send.onclick = () => void ask();
+  placePanelNearPet = () => {
+    const bounds = container.getBoundingClientRect();
+    const petBox = pet.getBoundingClientRect();
+    const gap = 14;
+    const width = panel.offsetWidth || 360;
+    const height = panel.offsetHeight || 420;
+    const petLeft = petBox.left - bounds.left;
+    const petTop = petBox.top - bounds.top;
+    const roomRight = bounds.width - (petLeft + petBox.width) - gap;
+    const roomLeft = petLeft - gap;
+    let left = roomRight >= width || roomRight >= roomLeft ? petLeft + petBox.width + gap : petLeft - width - gap;
+    left = Math.min(Math.max(left, 8), Math.max(8, bounds.width - width - 8));
+    const obstacles = [
+      ".onenote-ribbon-dock",
+      ".notelens-insert-dock",
+      ".notelens-document-dock",
+      ".onenote-quick-tags",
+      ".notelens-settings-btn",
+      ".notelens-settings-panel",
+      ".notelens-bookmarks-dock",
+      ".notelens-pages-dock",
+      ".notelens-navigation-controls",
+      ".notelens-minimap",
+      ".notelens-focus-toggle"
+    ].map((selector) => container.querySelector(selector)).filter((el) => !!el && !el.hasClass("hidden") && el.offsetWidth > 0).map((el) => {
+      const box = el.getBoundingClientRect();
+      return { left: box.left - bounds.left, right: box.right - bounds.left, top: box.top - bounds.top, bottom: box.bottom - bounds.top };
+    });
+    const overlapsColumn = (rect) => rect.right > left - 6 && rect.left < left + width + 6;
+    const ceiling = obstacles.filter((rect) => overlapsColumn(rect) && rect.bottom < bounds.height * 0.5).reduce((lowest, rect) => Math.max(lowest, rect.bottom + 10), 8);
+    const floor = obstacles.filter((rect) => overlapsColumn(rect) && rect.top > bounds.height * 0.5).reduce((highest, rect) => Math.min(highest, rect.top - 10), bounds.height - 8);
+    let top = petTop + petBox.height / 2 - height / 2;
+    if (top + height > floor) top = floor - height;
+    if (top < ceiling) top = ceiling;
+    if (ceiling + height > floor) top = Math.max(8, Math.min(ceiling, bounds.height - height - 8));
+    top = Math.min(Math.max(top, 8), Math.max(8, bounds.height - height - 8));
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+    panel.setCssStyles({ right: "auto", bottom: "auto" });
+    panel.toggleClass("points-left", left < petLeft);
+    const arrowTop = Math.min(Math.max(petTop + petBox.height / 2 - top, 16), Math.max(16, height - 16));
+    panel.style.setProperty("--arrow-top", `${arrowTop}px`);
+  };
+  const toggle = () => {
+    open2 = !open2;
+    panel.toggleClass("hidden", !open2);
+    pet.toggleClass("is-open", open2);
+    if (open2) window.requestAnimationFrame(placePanelNearPet);
+    if (open2) {
+      setMood("idle");
+      wake();
+      if (composerMode === "text") void refreshModels();
+      if (composerMode === "text") input.focus();
+    }
+  };
+  closeBtn.onclick = toggle;
+  pet.addEventListener("click", () => {
+    wake();
+    if (dragMoved) {
+      dragMoved = false;
+      return;
+    }
+    toggle();
+  });
+  pet.addEventListener("pointerenter", () => {
+    wake();
+    if (!open2 && !busy) say(`Soy ${petName()}, haz clic`, 2200);
+  });
+  if (typeof ResizeObserver !== "undefined") {
+    const observer = new ResizeObserver(() => {
+      if (open2) placePanelNearPet();
+    });
+    observer.observe(panel);
+  }
+  applyPetPosition();
+  renderLog();
+  return {
+    toggle,
+    isOpen: () => open2,
+    destroy: () => {
+      if (sleepTimer !== null) window.clearTimeout(sleepTimer);
+      pet.remove();
+      panel.remove();
+    },
+    /** Re-reads the settings that change how the pet looks and behaves. */
+    refresh: () => {
+      pet.style.setProperty("--pet-scale", String(host.petScale || 1));
+      useBoardContext = host.aiUseBoardContext;
+      contextToggle.checked = useBoardContext;
+      applyPetPosition();
+      if (open2) placePanelNearPet();
+    }
+  };
+}
+
+// src/main.ts
+var import_obsidian15 = require("obsidian");
+
+// src/view.ts
+var import_obsidian13 = require("obsidian");
+
+// src/calculator.ts
+var import_obsidian3 = require("obsidian");
+
+// src/panels.ts
+function makeDraggable(app, panel, handle, container, storageKey) {
+  handle.addClass("notelens-draggable");
+  const applyPosition = (left, top) => {
+    const maxLeft = Math.max(0, container.clientWidth - panel.offsetWidth);
+    const maxTop = Math.max(0, container.clientHeight - panel.offsetHeight);
+    panel.setCssStyles({ right: "auto", bottom: "auto" });
+    panel.style.left = `${Math.min(Math.max(0, left), maxLeft)}px`;
+    panel.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
+  };
+  try {
+    const saved = app.loadLocalStorage(storageKey);
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) window.requestAnimationFrame(() => applyPosition(saved.x, saved.y));
+  } catch {
+  }
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.target.closest("button, input, select, textarea")) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const rect = panel.getBoundingClientRect();
+    const parent = container.getBoundingClientRect();
+    const originLeft = rect.left - parent.left;
+    const originTop = rect.top - parent.top;
+    panel.addClass("is-dragging");
+    const onMove = (ev) => applyPosition(originLeft + ev.clientX - startX, originTop + ev.clientY - startY);
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove, { capture: true });
+      window.removeEventListener("pointerup", onUp, { capture: true });
+      panel.removeClass("is-dragging");
+      try {
+        app.saveLocalStorage(storageKey, { x: parseFloat(panel.style.left), y: parseFloat(panel.style.top) });
+      } catch {
+      }
+    };
+    window.addEventListener("pointermove", onMove, { capture: true });
+    window.addEventListener("pointerup", onUp, { capture: true });
+  });
+}
+function shieldPanel(panel) {
+  for (const type of ["pointerdown", "pointerup", "dblclick"]) panel.addEventListener(type, (e) => e.stopPropagation());
+  panel.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+  panel.addEventListener("keydown", (e) => e.stopPropagation());
 }
 
 // src/calculator.ts
@@ -4676,14 +4891,14 @@ function createCalculatorPanel(host, container) {
       preview();
     };
   };
-  memKey("MC", "Borrar memoria", () => {
+  memKey("MC", tr("Borrar memoria"), () => {
     env.memory = 0;
   });
-  memKey("MR", "Insertar la memoria (tambi\xE9n puedes escribir M)", () => insertText("M"));
-  memKey("M+", "Sumar el resultado actual a la memoria", () => {
+  memKey("MR", tr("Insertar la memoria (tambi\xE9n puedes escribir M)"), () => insertText("M"));
+  memKey("M+", tr("Sumar el resultado actual a la memoria"), () => {
     env.memory += currentValue();
   });
-  memKey("M\u2212", "Restar el resultado actual de la memoria", () => {
+  memKey("M\u2212", tr("Restar el resultado actual de la memoria"), () => {
     env.memory -= currentValue();
   });
   refreshMemory();
@@ -4898,18 +5113,19 @@ function createCalculatorPanel(host, container) {
   };
   const renderKeys = (page) => {
     keys.empty();
-    for (const key of pages[page]) {
-      const b3 = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: tr(key.label) });
-      if (key.title) b3.title = key.title;
+    for (const key2 of pages[page]) {
+      const b3 = keys.createEl("button", { cls: `notelens-calculator-key ${key2.cls ?? ""}`, text: tr(key2.label) });
+      if (key2.title) b3.title = tr(key2.title);
       b3.onclick = () => {
-        if (key.action) key.action();
-        else if (key.insert) insertText(key.insert);
+        if (key2.action) key2.action();
+        else if (key2.insert) insertText(key2.insert);
       };
     }
-    for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.textContent === page);
+    for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.getAttribute("data-page") === page);
   };
   for (const page of Object.keys(pages)) {
-    const tab = tabs.createEl("button", { cls: "notelens-calculator-tab", text: page });
+    const tab = tabs.createEl("button", { cls: "notelens-calculator-tab", text: tr(page) });
+    tab.setAttr("data-page", page);
     tab.onclick = () => renderKeys(page);
   }
   renderKeys("B\xE1sica");
@@ -15466,6 +15682,128 @@ function toRenderableLatex(src) {
   return looksLikeLatex(src) ? src : asciiToLatex(src);
 }
 
+// src/math-palette.ts
+var key = (glyph, name, snippet) => ({ glyph, name, snippet });
+var MATH_GROUPS = [
+  {
+    name: "B\xE1sico",
+    keys: [
+      key("a/b", "Fracci\xF3n", "(a)/(b)"),
+      key("\u221A", "Ra\xEDz cuadrada", "sqrt(x)"),
+      key("\u207F\u221A", "Ra\xEDz en\xE9sima", "root(n)(x)"),
+      key("x\u207F", "Potencia", "x^(n)"),
+      key("x\u2099", "Sub\xEDndice", "x_(n)"),
+      key("\xB7", "Producto", "*"),
+      key("\xF7", "Divisi\xF3n", "-:"),
+      key("\xB1", "M\xE1s menos", "+-"),
+      key("\u2213", "Menos m\xE1s", "-+"),
+      key("|x|", "Valor absoluto", "abs(x)"),
+      key("( )", "Par\xE9ntesis", "()"),
+      key("[ ]", "Corchetes", "[]"),
+      key("{ }", "Llaves", "{}"),
+      key("\u21B5", "Nueva l\xEDnea", "\n")
+    ]
+  },
+  {
+    name: "C\xE1lculo",
+    keys: [
+      key("\u03A3", "Sumatorio", "sum_(i=1)^n "),
+      key("\u03A0", "Productorio", "prod_(i=1)^n "),
+      key("\u222B", "Integral", "int_a^b  dx"),
+      key("\u222C", "Integral doble", "int int  dA"),
+      key("\u222E", "Integral de contorno", "oint  ds"),
+      key("lim", "L\xEDmite", "lim_(x->oo) "),
+      key("d/dx", "Derivada", "(d)/(dx) "),
+      key("\u2202", "Derivada parcial", "(del)/(del x) "),
+      key("\u2207", "Nabla", "grad "),
+      key("\u221E", "Infinito", "oo"),
+      key("\u2192", "Tiende a", "->"),
+      key("\u0394", "Incremento", "Delta")
+    ]
+  },
+  {
+    name: "Griego",
+    keys: [
+      key("\u03B1", "Alfa", "alpha"),
+      key("\u03B2", "Beta", "beta"),
+      key("\u03B3", "Gamma", "gamma"),
+      key("\u03B4", "Delta", "delta"),
+      key("\u03B5", "\xC9psilon", "epsilon"),
+      key("\u03B8", "Theta", "theta"),
+      key("\u03BB", "Lambda", "lambda"),
+      key("\u03BC", "Mu", "mu"),
+      key("\u03C0", "Pi", "pi"),
+      key("\u03C1", "Rho", "rho"),
+      key("\u03C3", "Sigma", "sigma"),
+      key("\u03C4", "Tau", "tau"),
+      key("\u03C6", "Fi", "phi"),
+      key("\u03C9", "Omega", "omega"),
+      key("\u03A9", "Omega may\xFAscula", "Omega")
+    ]
+  },
+  {
+    name: "Relaciones",
+    keys: [
+      key("=", "Igual", "="),
+      key("\u2260", "Distinto", "!="),
+      key("\u2248", "Aproximado", "~~"),
+      key("\u2261", "Id\xE9ntico", "=="),
+      key("\u2264", "Menor o igual", "<="),
+      key("\u2265", "Mayor o igual", ">="),
+      key("\u226A", "Mucho menor", "<<"),
+      key("\u226B", "Mucho mayor", ">>"),
+      key("\u221D", "Proporcional", "prop"),
+      key("\u2192", "Implica", "->"),
+      key("\u21D2", "Entonces", "=>"),
+      key("\u21D4", "Si y solo si", "<=>")
+    ]
+  },
+  {
+    name: "Conjuntos",
+    keys: [
+      key("\u2208", "Pertenece", "in"),
+      key("\u2209", "No pertenece", "notin"),
+      key("\u2282", "Subconjunto", "sub"),
+      key("\u2286", "Subconjunto o igual", "sube"),
+      key("\u222A", "Uni\xF3n", "uu"),
+      key("\u2229", "Intersecci\xF3n", "nn"),
+      key("\u2205", "Vac\xEDo", "emptyset"),
+      key("\u2200", "Para todo", "AA"),
+      key("\u2203", "Existe", "EE"),
+      key("\xAC", "Negaci\xF3n", "not"),
+      key("\u2227", "Y", "and"),
+      key("\u2228", "O", "or"),
+      key("\u211D", "Reales", "RR"),
+      key("\u2115", "Naturales", "NN"),
+      key("\u2124", "Enteros", "ZZ"),
+      key("\u211A", "Racionales", "QQ")
+    ]
+  },
+  {
+    name: "Matrices",
+    keys: [
+      key("[2\xD72]", "Matriz 2\xD72", "[[a,b],[c,d]]"),
+      key("[3\xD73]", "Matriz 3\xD73", "[[a,b,c],[d,e,f],[g,h,i]]"),
+      key("(vec)", "Vector columna", "[[x],[y]]"),
+      key("det", "Determinante", "det [[a,b],[c,d]]"),
+      key("(\u207F\u2096)", "Coeficiente binomial", "((n),(k))"),
+      key("{\u2026", "Definici\xF3n a trozos", "{(a, x>=0), (b, x<0):}"),
+      key("x\u0304", "Media", "bar x"),
+      key("x\u0302", "Sombrero", "hat x"),
+      key("x\u20D7", "Vector", "vec x"),
+      key("\u1E8B", "Punto", "dot x")
+    ]
+  }
+];
+function insertMathSnippet(field, snippet) {
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? start;
+  field.setRangeText(snippet, start, end, "end");
+  const slot = snippet.indexOf("()") >= 0 ? snippet.indexOf("()") + 1 : snippet.indexOf("  ") >= 0 ? snippet.indexOf("  ") + 1 : -1;
+  if (slot >= 0) field.setSelectionRange(start + slot, start + slot);
+  field.focus();
+}
+
 // src/exchange.ts
 var import_obsidian5 = require("obsidian");
 
@@ -19814,8 +20152,8 @@ var deflate_1$2 = {
   deflateSetDictionary: deflateSetDictionary_1,
   deflateInfo
 };
-var _has = (obj, key) => {
-  return Object.prototype.hasOwnProperty.call(obj, key);
+var _has = (obj, key2) => {
+  return Object.prototype.hasOwnProperty.call(obj, key2);
 };
 var assign = function(obj) {
   const sources = Array.prototype.slice.call(arguments, 1);
@@ -31199,9 +31537,9 @@ var import_meta = {};
 var __webpack_require__ = {};
 (() => {
   __webpack_require__.d = (exports, definition) => {
-    for (var key in definition) {
-      if (__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
-        Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+    for (var key2 in definition) {
+      if (__webpack_require__.o(definition, key2) && !__webpack_require__.o(exports, key2)) {
+        Object.defineProperty(exports, key2, { enumerable: true, get: definition[key2] });
       }
     }
   };
@@ -31759,8 +32097,8 @@ function string32(value) {
 }
 function objectFromMap(map) {
   const obj = /* @__PURE__ */ Object.create(null);
-  for (const [key, value] of map) {
-    obj[key] = value;
+  for (const [key2, value] of map) {
+    obj[key2] = value;
   }
   return obj;
 }
@@ -32749,9 +33087,9 @@ _baseId = new WeakMap();
 _id2 = new WeakMap();
 _cache = new WeakMap();
 _ImageManager_instances = new WeakSet();
-get_fn = async function(key, rawData) {
+get_fn = async function(key2, rawData) {
   __privateGet(this, _cache) || __privateSet(this, _cache, /* @__PURE__ */ new Map());
-  let data = __privateGet(this, _cache).get(key);
+  let data = __privateGet(this, _cache).get(key2);
   if (data === null) {
     return null;
   }
@@ -32801,7 +33139,7 @@ get_fn = async function(key, rawData) {
     warn(e);
     data = null;
   }
-  __privateGet(this, _cache).set(key, data);
+  __privateGet(this, _cache).set(key2, data);
   if (data) {
     __privateGet(this, _cache).set(data.id, data);
   }
@@ -32930,20 +33268,20 @@ var KeyboardManager = class {
       isMac
     } = util_FeatureTest.platform;
     for (const [keys, callback, options = {}] of callbacks) {
-      for (const key of keys) {
-        const isMacKey = key.startsWith("mac+");
+      for (const key2 of keys) {
+        const isMacKey = key2.startsWith("mac+");
         if (isMac && isMacKey) {
-          this.callbacks.set(key.slice(4), {
+          this.callbacks.set(key2.slice(4), {
             callback,
             options
           });
-          this.allKeys.add(key.split("+").at(-1));
+          this.allKeys.add(key2.split("+").at(-1));
         } else if (!isMac && !isMacKey) {
-          this.callbacks.set(key, {
+          this.callbacks.set(key2, {
             callback,
             options
           });
-          this.allKeys.add(key.split("+").at(-1));
+          this.allKeys.add(key2.split("+").at(-1));
         }
       }
     }
@@ -34368,7 +34706,7 @@ addDragAndDropListeners_fn = function() {
   });
 };
 dispatchUpdateStates_fn = function(details) {
-  const hasChanged = Object.entries(details).some(([key, value]) => __privateGet(this, _previousStates)[key] !== value);
+  const hasChanged = Object.entries(details).some(([key2, value]) => __privateGet(this, _previousStates)[key2] !== value);
   if (hasChanged) {
     this._eventBus.dispatch("annotationeditorstateschanged", {
       source: this,
@@ -36376,18 +36714,18 @@ var AnnotationStorage = class {
     this.onResetModified = null;
     this.onAnnotationEditor = null;
   }
-  getValue(key, defaultValue) {
-    const value = __privateGet(this, _storage).get(key);
+  getValue(key2, defaultValue) {
+    const value = __privateGet(this, _storage).get(key2);
     if (value === void 0) {
       return defaultValue;
     }
     return Object.assign(defaultValue, value);
   }
-  getRawValue(key) {
-    return __privateGet(this, _storage).get(key);
+  getRawValue(key2) {
+    return __privateGet(this, _storage).get(key2);
   }
-  remove(key) {
-    __privateGet(this, _storage).delete(key);
+  remove(key2) {
+    __privateGet(this, _storage).delete(key2);
     if (__privateGet(this, _storage).size === 0) {
       this.resetModified();
     }
@@ -36400,8 +36738,8 @@ var AnnotationStorage = class {
       this.onAnnotationEditor(null);
     }
   }
-  setValue(key, value) {
-    const obj = __privateGet(this, _storage).get(key);
+  setValue(key2, value) {
+    const obj = __privateGet(this, _storage).get(key2);
     let modified = false;
     if (obj !== void 0) {
       for (const [entry, val] of Object.entries(value)) {
@@ -36412,7 +36750,7 @@ var AnnotationStorage = class {
       }
     } else {
       modified = true;
-      __privateGet(this, _storage).set(key, value);
+      __privateGet(this, _storage).set(key2, value);
     }
     if (modified) {
       __privateMethod(this, _AnnotationStorage_instances, setModified_fn).call(this);
@@ -36421,15 +36759,15 @@ var AnnotationStorage = class {
       this.onAnnotationEditor(value.constructor._type);
     }
   }
-  has(key) {
-    return __privateGet(this, _storage).has(key);
+  has(key2) {
+    return __privateGet(this, _storage).has(key2);
   }
   getAll() {
     return __privateGet(this, _storage).size > 0 ? objectFromMap(__privateGet(this, _storage)) : null;
   }
   setAll(obj) {
-    for (const [key, val] of Object.entries(obj)) {
-      this.setValue(key, val);
+    for (const [key2, val] of Object.entries(obj)) {
+      this.setValue(key2, val);
     }
   }
   get size() {
@@ -36453,11 +36791,11 @@ var AnnotationStorage = class {
     const map = /* @__PURE__ */ new Map(), hash = new MurmurHash3_64(), transfer = [];
     const context = /* @__PURE__ */ Object.create(null);
     let hasBitmap = false;
-    for (const [key, val] of __privateGet(this, _storage)) {
+    for (const [key2, val] of __privateGet(this, _storage)) {
       const serialized = val instanceof AnnotationEditor ? val.serialize(false, context) : val;
       if (serialized) {
-        map.set(key, serialized);
-        hash.update(`${key}:${JSON.stringify(serialized)}`);
+        map.set(key2, serialized);
+        hash.update(`${key2}:${JSON.stringify(serialized)}`);
         hasBitmap || (hasBitmap = !!serialized.bitmap);
       }
     }
@@ -36493,14 +36831,14 @@ var AnnotationStorage = class {
       }
       stats || (stats = /* @__PURE__ */ Object.create(null));
       const map = stats[type] || (stats[type] = /* @__PURE__ */ new Map());
-      for (const [key, val] of Object.entries(editorStats)) {
-        if (key === "type") {
+      for (const [key2, val] of Object.entries(editorStats)) {
+        if (key2 === "type") {
           continue;
         }
-        let counters = map.get(key);
+        let counters = map.get(key2);
         if (!counters) {
           counters = /* @__PURE__ */ new Map();
-          map.set(key, counters);
+          map.set(key2, counters);
         }
         const count = counters.get(val) ?? 0;
         counters.set(val, count + 1);
@@ -37387,8 +37725,8 @@ var DOMFilterFactory = class extends BaseFilterFactory {
       return value;
     }
     const [tableR, tableG, tableB] = __privateMethod(this, _DOMFilterFactory_instances, createTables_fn).call(this, maps);
-    const key = maps.length === 1 ? tableR : `${tableR}${tableG}${tableB}`;
-    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key);
+    const key2 = maps.length === 1 ? tableR : `${tableR}${tableG}${tableB}`;
+    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key2);
     if (value) {
       __privateGet(this, _DOMFilterFactory_instances, cache_get).set(maps, value);
       return value;
@@ -37396,26 +37734,26 @@ var DOMFilterFactory = class extends BaseFilterFactory {
     const id = `g_${__privateGet(this, _docId)}_transfer_map_${__privateWrapper(this, _id3)._++}`;
     const url = __privateMethod(this, _DOMFilterFactory_instances, createUrl_fn).call(this, id);
     __privateGet(this, _DOMFilterFactory_instances, cache_get).set(maps, url);
-    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key, url);
+    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key2, url);
     const filter = __privateMethod(this, _DOMFilterFactory_instances, createFilter_fn).call(this, id);
     __privateMethod(this, _DOMFilterFactory_instances, addTransferMapConversion_fn).call(this, tableR, tableG, tableB, filter);
     return url;
   }
   addHCMFilter(fgColor, bgColor) {
-    const key = `${fgColor}-${bgColor}`;
+    const key2 = `${fgColor}-${bgColor}`;
     const filterName = "base";
     let info2 = __privateGet(this, _DOMFilterFactory_instances, hcmCache_get).get(filterName);
-    if (info2?.key === key) {
+    if (info2?.key === key2) {
       return info2.url;
     }
     if (info2) {
       info2.filter?.remove();
-      info2.key = key;
+      info2.key = key2;
       info2.url = "none";
       info2.filter = null;
     } else {
       info2 = {
-        key,
+        key: key2,
         url: "none",
         filter: null
       };
@@ -37461,8 +37799,8 @@ var DOMFilterFactory = class extends BaseFilterFactory {
       return value;
     }
     const [tableA] = __privateMethod(this, _DOMFilterFactory_instances, createTables_fn).call(this, [map]);
-    const key = `alpha_${tableA}`;
-    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key);
+    const key2 = `alpha_${tableA}`;
+    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key2);
     if (value) {
       __privateGet(this, _DOMFilterFactory_instances, cache_get).set(map, value);
       return value;
@@ -37470,7 +37808,7 @@ var DOMFilterFactory = class extends BaseFilterFactory {
     const id = `g_${__privateGet(this, _docId)}_alpha_map_${__privateWrapper(this, _id3)._++}`;
     const url = __privateMethod(this, _DOMFilterFactory_instances, createUrl_fn).call(this, id);
     __privateGet(this, _DOMFilterFactory_instances, cache_get).set(map, url);
-    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key, url);
+    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key2, url);
     const filter = __privateMethod(this, _DOMFilterFactory_instances, createFilter_fn).call(this, id);
     __privateMethod(this, _DOMFilterFactory_instances, addTransferMapAlphaConversion_fn).call(this, tableA, filter);
     return url;
@@ -37480,14 +37818,14 @@ var DOMFilterFactory = class extends BaseFilterFactory {
     if (value) {
       return value;
     }
-    let tableA, key;
+    let tableA, key2;
     if (map) {
       [tableA] = __privateMethod(this, _DOMFilterFactory_instances, createTables_fn).call(this, [map]);
-      key = `luminosity_${tableA}`;
+      key2 = `luminosity_${tableA}`;
     } else {
-      key = "luminosity";
+      key2 = "luminosity";
     }
-    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key);
+    value = __privateGet(this, _DOMFilterFactory_instances, cache_get).get(key2);
     if (value) {
       __privateGet(this, _DOMFilterFactory_instances, cache_get).set(map, value);
       return value;
@@ -37495,7 +37833,7 @@ var DOMFilterFactory = class extends BaseFilterFactory {
     const id = `g_${__privateGet(this, _docId)}_luminosity_map_${__privateWrapper(this, _id3)._++}`;
     const url = __privateMethod(this, _DOMFilterFactory_instances, createUrl_fn).call(this, id);
     __privateGet(this, _DOMFilterFactory_instances, cache_get).set(map, url);
-    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key, url);
+    __privateGet(this, _DOMFilterFactory_instances, cache_get).set(key2, url);
     const filter = __privateMethod(this, _DOMFilterFactory_instances, createFilter_fn).call(this, id);
     __privateMethod(this, _DOMFilterFactory_instances, addLuminosityConversion_fn).call(this, filter);
     if (map) {
@@ -37504,19 +37842,19 @@ var DOMFilterFactory = class extends BaseFilterFactory {
     return url;
   }
   addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
-    const key = `${fgColor}-${bgColor}-${newFgColor}-${newBgColor}`;
+    const key2 = `${fgColor}-${bgColor}-${newFgColor}-${newBgColor}`;
     let info2 = __privateGet(this, _DOMFilterFactory_instances, hcmCache_get).get(filterName);
-    if (info2?.key === key) {
+    if (info2?.key === key2) {
       return info2.url;
     }
     if (info2) {
       info2.filter?.remove();
-      info2.key = key;
+      info2.key = key2;
       info2.url = "none";
       info2.filter = null;
     } else {
       info2 = {
-        key,
+        key: key2,
         url: "none",
         filter: null
       };
@@ -39074,8 +39412,8 @@ var _CanvasGraphics = class _CanvasGraphics {
   setFlatness(flatness) {
   }
   setGState(states) {
-    for (const [key, value] of states) {
-      switch (key) {
+    for (const [key2, value] of states) {
+      switch (key2) {
         case "LW":
           this.setLineWidth(value);
           break;
@@ -41168,10 +41506,10 @@ function createHeaders(isHttp, httpHeaders) {
   if (!isHttp || !httpHeaders || typeof httpHeaders !== "object") {
     return headers;
   }
-  for (const key in httpHeaders) {
-    const val = httpHeaders[key];
+  for (const key2 in httpHeaders) {
+    const val = httpHeaders[key2];
     if (val !== void 0) {
-      headers.append(key, val);
+      headers.append(key2, val);
     }
   }
   return headers;
@@ -41465,8 +41803,8 @@ var NetworkManager = class {
     };
     xhr.open("GET", this.url);
     xhr.withCredentials = this.withCredentials;
-    for (const [key, val] of this.headers) {
-      xhr.setRequestHeader(key, val);
+    for (const [key2, val] of this.headers) {
+      xhr.setRequestHeader(key2, val);
     }
     if (this.isHttp && "begin" in args && "end" in args) {
       xhr.setRequestHeader("Range", `bytes=${args.begin}-${args.end - 1}`);
@@ -41620,8 +41958,8 @@ var PDFNetworkStreamFullRequestReader = class {
     this._manager._responseOrigin = getResponseOrigin(fullRequestXhr.responseURL);
     const rawResponseHeaders = fullRequestXhr.getAllResponseHeaders();
     const responseHeaders = new Headers(rawResponseHeaders ? rawResponseHeaders.trimStart().replace(/[^\S ]+$/, "").split(/[\r\n]+/).map((x4) => {
-      const [key, ...val] = x4.split(": ");
-      return [key, val.join(": ")];
+      const [key2, ...val] = x4.split(": ");
+      return [key2, val.join(": ")];
     }) : []);
     const {
       allowRangeRequests,
@@ -44603,14 +44941,14 @@ var XfaLayer = class {
     if (attributes.type === "radio") {
       attributes.name = `${attributes.name}-${intent}`;
     }
-    for (const [key, value] of Object.entries(attributes)) {
+    for (const [key2, value] of Object.entries(attributes)) {
       if (value === null || value === void 0) {
         continue;
       }
-      switch (key) {
+      switch (key2) {
         case "class":
           if (value.length) {
-            html.setAttribute(key, value.join(" "));
+            html.setAttribute(key2, value.join(" "));
           }
           break;
         case "dataId":
@@ -44625,8 +44963,8 @@ var XfaLayer = class {
           html.textContent = value;
           break;
         default:
-          if (!isHTMLAnchorElement || key !== "href" && key !== "newWindow") {
-            html.setAttribute(key, value);
+          if (!isHTMLAnchorElement || key2 !== "href" && key2 !== "newWindow") {
+            html.setAttribute(key2, value);
           }
       }
     }
@@ -45677,11 +46015,11 @@ var TextWidgetAnnotationElement = class extends WidgetAnnotationElement {
       isRenderable
     });
   }
-  setPropertyOnSiblings(base, key, value, keyInStorage) {
+  setPropertyOnSiblings(base, key2, value, keyInStorage) {
     const storage = this.annotationStorage;
     for (const element of this._getElementsByName(base.name, base.id)) {
       if (element.domElement) {
-        element.domElement[key] = value;
+        element.domElement[key2] = value;
       }
       storage.setValue(element.id, {
         [keyInStorage]: value
@@ -47366,8 +47704,8 @@ appendElement_fn = async function(element, id) {
   const annotationId = contentElement.id = `${AnnotationPrefix}${id}`;
   const ariaAttributes = await __privateGet(this, _structTreeLayer)?.getAriaAttributes(annotationId);
   if (ariaAttributes) {
-    for (const [key, value] of ariaAttributes) {
-      contentElement.setAttribute(key, value);
+    for (const [key2, value] of ariaAttributes) {
+      contentElement.setAttribute(key2, value);
     }
   }
   this.div.append(element);
@@ -49869,11 +50207,11 @@ var _DrawingEditor = class _DrawingEditor extends AnnotationEditor {
   }
   static _mergeSVGProperties(p12, p22) {
     const p1Keys = new Set(Object.keys(p12));
-    for (const [key, value] of Object.entries(p22)) {
-      if (p1Keys.has(key)) {
-        Object.assign(p12[key], value);
+    for (const [key2, value] of Object.entries(p22)) {
+      if (p1Keys.has(key2)) {
+        Object.assign(p12[key2], value);
       } else {
-        p12[key] = value;
+        p12[key2] = value;
       }
     }
     return p12;
@@ -52879,11 +53217,11 @@ createClipPath_fn = function(defs, pathId) {
   return clipPathId;
 };
 updateProperties_fn = function(element, properties) {
-  for (const [key, value] of Object.entries(properties)) {
+  for (const [key2, value] of Object.entries(properties)) {
     if (value === null) {
-      element.removeAttribute(key);
+      element.removeAttribute(key2);
     } else {
-      element.setAttribute(key, value);
+      element.setAttribute(key2, value);
     }
   }
 };
@@ -53367,10 +53705,10 @@ var ChartEditorModal = class extends import_obsidian7.Modal {
       t3.inputEl.rows = 4;
       t3.inputEl.addClass("notelens-chart-data");
     });
-    const numberField = (setting, key, placeholder) => setting.addText((t3) => {
-      t3.setPlaceholder(placeholder).setValue(this.spec[key] === void 0 ? "" : String(this.spec[key])).onChange((v3) => {
+    const numberField = (setting, key2, placeholder) => setting.addText((t3) => {
+      t3.setPlaceholder(placeholder).setValue(this.spec[key2] === void 0 ? "" : String(this.spec[key2])).onChange((v3) => {
         const n = parseFloat(v3.replace(",", "."));
-        this.spec[key] = v3.trim() === "" || !Number.isFinite(n) ? void 0 : n;
+        this.spec[key2] = v3.trim() === "" || !Number.isFinite(n) ? void 0 : n;
         redraw();
       });
       t3.inputEl.setCssStyles({ width: "80px" });
@@ -55010,9 +55348,9 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       const seen = /* @__PURE__ */ new Set();
       const collect = (file) => {
         if (!file || !file.type.startsWith("image/")) return;
-        const key = `${file.name}:${file.type}:${file.size}:${file.lastModified}`;
-        if (seen.has(key)) return;
-        seen.add(key);
+        const key2 = `${file.name}:${file.type}:${file.size}:${file.lastModified}`;
+        if (seen.has(key2)) return;
+        seen.add(key2);
         files.push(file);
       };
       Array.from(transfer.files ?? []).forEach(collect);
@@ -55379,6 +55717,13 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     contentEl.empty();
     contentEl.addClass("notelens-ink-equation");
     contentEl.createEl("h3", { text: tr("Insertar ecuaci\xF3n") });
+    const modeRow = contentEl.createDiv({ cls: "notelens-ink-modes" });
+    const handBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
+    (0, import_obsidian11.setIcon)(handBtn.createSpan(), "pen-line");
+    handBtn.createSpan({ text: tr("A mano") });
+    const typeBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
+    (0, import_obsidian11.setIcon)(typeBtn.createSpan(), "keyboard");
+    typeBtn.createSpan({ text: tr("Teclado") });
     const preview = contentEl.createDiv({ cls: "notelens-ink-preview" });
     const board = contentEl.createDiv({ cls: "notelens-ink-board" });
     const canvas = board.createEl("canvas");
@@ -55394,6 +55739,33 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     const input = sourceRow.createEl("input", { cls: "notelens-ink-source", type: "text" });
     input.value = this.source;
     input.placeholder = "\\frac{a}{b} + \\sqrt{x}";
+    const keyboard = contentEl.createDiv({ cls: "notelens-ink-keyboard hidden" });
+    const groupRow = keyboard.createDiv({ cls: "notelens-ink-groups" });
+    const keyGrid = keyboard.createDiv({ cls: "notelens-ink-keys" });
+    const showGroup = (name) => {
+      keyGrid.empty();
+      for (const item of MATH_GROUPS.find((group) => group.name === name)?.keys ?? []) {
+        const button = keyGrid.createEl("button", { cls: "notelens-ink-key", text: item.glyph });
+        button.title = tr(item.name);
+        button.onclick = () => {
+          insertMathSnippet(input, item.snippet);
+          this.source = input.value;
+          editedByUser = true;
+          drawPreview();
+        };
+      }
+      for (const tab of Array.from(groupRow.children)) tab.toggleClass("active", tab.getAttribute("data-group") === name);
+    };
+    for (const group of MATH_GROUPS) {
+      const tab = groupRow.createEl("button", { cls: "notelens-ink-group", text: tr(group.name) });
+      tab.setAttr("data-group", group.name);
+      tab.onclick = () => showGroup(group.name);
+    }
+    showGroup(MATH_GROUPS[0].name);
+    keyboard.createDiv({
+      cls: "notelens-ink-cheatsheet",
+      text: tr("Tambi\xE9n entiende la notaci\xF3n de la calculadora: x^2/2, sqrt(x), sum_(i=1)^n i, int_0^1 x^2 dx, [[a,b],[c,d]]. Y LaTeX tal cual.")
+    });
     const status = contentEl.createDiv({ cls: "notelens-ink-status" });
     const candidates = contentEl.createDiv({ cls: "notelens-ink-candidates hidden" });
     let lastAutomatic = "";
@@ -55413,36 +55785,6 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       drawPreview();
     });
     drawPreview();
-    const structures = contentEl.createDiv({ cls: "notelens-ink-structures" });
-    structures.createSpan({ cls: "notelens-ink-structures-label", text: tr("Estructuras") });
-    const structureItems = [
-      { label: "a\u2044b", value: "\\frac{a}{b}", select: [6, 7] },
-      { label: "x\u207F", value: "x^{n}", select: [3, 4] },
-      { label: "\u221Ax", value: "\\sqrt{x}", select: [6, 7] },
-      { label: "\u222B", value: "\\int_{a}^{b} f(x)\\,dx", select: [6, 7] },
-      { label: "\u03A3", value: "\\sum_{i=1}^{n}", select: [6, 9] },
-      { label: "lim", value: "\\lim_{x \\to 0}", select: [6, 12] },
-      { label: "|x|", value: "\\left|x\\right|", select: [6, 7] },
-      { label: "(\u207F\u2096)", value: "\\binom{n}{k}", select: [7, 8] },
-      { label: "[\u25A1]", value: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", select: [17, 18] },
-      { label: "{\u2026", value: "\\begin{cases} a & x \\ge 0 \\\\ b & x < 0 \\end{cases}", select: [15, 16] },
-      { label: "vec", value: "\\vec{x}", select: [5, 6] },
-      { label: "\u03C0", value: "\\pi", select: [0, 3] }
-    ];
-    for (const item of structureItems) {
-      const button = structures.createEl("button", { cls: "notelens-ink-structure", text: item.label });
-      button.title = tr("Insertar {p0}", { p0: item.value });
-      button.onclick = () => {
-        const start = input.selectionStart ?? input.value.length;
-        const end = input.selectionEnd ?? start;
-        input.setRangeText(item.value, start, end, "end");
-        input.setSelectionRange(start + item.select[0], start + item.select[1]);
-        this.source = input.value;
-        editedByUser = true;
-        drawPreview();
-        input.focus();
-      };
-    }
     const showCandidates = (recognition) => {
       candidates.empty();
       const uncertain = recognition.tokens.filter((token) => token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1).slice(0, 7);
@@ -55544,9 +55886,9 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       button.onclick = run;
       return button;
     };
-    const writeBtn = toolButton("pen-line", "Escribir", () => setTool("write"));
-    const eraseBtn = toolButton("eraser", "Borrar", () => setTool("erase"));
-    toolButton("undo-2", "Deshacer", () => {
+    const writeBtn = toolButton("pen-line", tr("Escribir"), () => setTool("write"));
+    const eraseBtn = toolButton("eraser", tr("Borrar"), () => setTool("erase"));
+    toolButton("undo-2", tr("Deshacer"), () => {
       const last = this.strokes.pop();
       if (last) {
         this.redoStack.push(last);
@@ -55554,7 +55896,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         this.scheduleRecognition();
       }
     });
-    toolButton("redo-2", "Rehacer", () => {
+    toolButton("redo-2", tr("Rehacer"), () => {
       const next = this.redoStack.pop();
       if (next) {
         this.strokes.push(next);
@@ -55562,7 +55904,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         this.scheduleRecognition();
       }
     });
-    toolButton("trash-2", "Eliminar", () => {
+    toolButton("trash-2", tr("Eliminar"), () => {
       this.strokes = [];
       this.redoStack = [];
       redraw();
@@ -55575,7 +55917,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       candidates.addClass("hidden");
     });
     if (this.readFromBoard) {
-      toolButton("scan-text", "Leer de la pizarra", async () => {
+      toolButton("scan-text", tr("Leer de la pizarra"), async () => {
         status.setText(tr("Elige la zona de la pizarra\u2026"));
         const text = await this.readFromBoard?.((message) => status.setText(message)).catch(() => "") ?? "";
         if (!text.trim()) {
@@ -55590,6 +55932,17 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         status.setText(tr("Le\xEDdo desde los objetos y trazos de la pizarra. Revisa solo los s\xEDmbolos marcados."));
       });
     }
+    const setMode = (mode2) => {
+      handBtn.toggleClass("active", mode2 === "hand");
+      typeBtn.toggleClass("active", mode2 === "type");
+      board.toggleClass("hidden", mode2 !== "hand");
+      tools.toggleClass("hidden", mode2 !== "hand");
+      keyboard.toggleClass("hidden", mode2 !== "type");
+      candidates.toggleClass("hidden", mode2 !== "hand" || !candidates.childElementCount);
+      if (mode2 === "type") input.focus();
+    };
+    handBtn.onclick = () => setMode("hand");
+    typeBtn.onclick = () => setMode("type");
     const setTool = (tool) => {
       this.tool = tool;
       writeBtn.toggleClass("active", tool === "write");
@@ -55597,6 +55950,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       canvas.toggleClass("is-erasing", tool === "erase");
     };
     setTool("write");
+    setMode("hand");
     const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
     const insert = footer.createEl("button", { cls: "mod-cta", text: tr("Insertar") });
     const cancel = footer.createEl("button", { text: tr("Cancelar") });
@@ -56429,20 +56783,22 @@ function createOptionsPanel(host, container, close) {
     const header = section.createDiv({ cls: "notelens-tool-panel-header" });
     const iconWrap = header.createDiv({ cls: "notelens-tool-panel-icon" });
     (0, import_obsidian12.setIcon)(iconWrap, icon);
-    header.createDiv({ cls: "notelens-tool-heading", text: title });
+    header.createDiv({ cls: "notelens-tool-heading", text: tr(title) });
   }
   const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
   createPanelHeader(selectSection, "mouse-pointer-2", "Selecci\xF3n");
   selectSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
-  const selectModeRow = selectSection.createDiv({ cls: "notelens-eraser-modes" });
+  const selectModeRow = selectSection.createDiv({ cls: "notelens-choice-row" });
   const selectModeBtns = [];
   for (const mode2 of [
-    { id: "rect", icon: "box-select", label: "Rect\xE1ngulo" },
-    { id: "lasso", icon: "lasso", label: "Lazo (L)" }
+    { id: "rect", icon: "box-select", label: "Rect\xE1ngulo", hint: "Arrastra una caja" },
+    { id: "lasso", icon: "lasso", label: "Lazo (L)", hint: "Rodea a mano alzada" }
   ]) {
-    const b3 = selectModeRow.createEl("button", { cls: "notelens-eraser-mode" });
-    (0, import_obsidian12.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
-    b3.createSpan({ text: tr(mode2.label) });
+    const b3 = selectModeRow.createEl("button", { cls: "notelens-choice-card" });
+    const top = b3.createDiv({ cls: "notelens-choice-top" });
+    (0, import_obsidian12.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
+    top.createSpan({ cls: "notelens-choice-name", text: tr(mode2.label) });
+    b3.createSpan({ cls: "notelens-choice-hint", text: tr(mode2.hint) });
     b3.onclick = () => {
       host.setSelectionMode(mode2.id);
       refresh();
@@ -56587,30 +56943,58 @@ function createOptionsPanel(host, container, close) {
   };
   const eraserSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-eraser" });
   createPanelHeader(eraserSection, "eraser", "Goma");
+  const INK_PATH = "M10 34 C 26 8, 44 8, 58 24 S 92 44, 112 22 S 142 10, 154 26";
+  const maskId = `notelens-eraser-cut-${Math.random().toString(36).slice(2, 8)}`;
+  const preview = eraserSection.createDiv({ cls: "notelens-eraser-preview" });
+  const previewSvg = preview.createSvg("svg", { cls: "notelens-eraser-preview-svg" });
+  previewSvg.setAttr("viewBox", "0 0 164 44");
+  previewSvg.setAttr("preserveAspectRatio", "xMidYMid meet");
+  const defs = previewSvg.createSvg("defs");
+  const mask = defs.createSvg("mask");
+  mask.setAttr("id", maskId);
+  const maskField = mask.createSvg("rect");
+  maskField.setAttr("x", "0");
+  maskField.setAttr("y", "0");
+  maskField.setAttr("width", "164");
+  maskField.setAttr("height", "44");
+  maskField.setAttr("fill", "#fff");
+  const maskHole = mask.createSvg("circle");
+  maskHole.setAttr("fill", "#000");
+  const ghost = previewSvg.createSvg("path", { cls: "notelens-eraser-preview-ghost" });
+  ghost.setAttr("d", INK_PATH);
+  const inkLine = previewSvg.createSvg("path", { cls: "notelens-eraser-preview-ink" });
+  inkLine.setAttr("d", INK_PATH);
+  inkLine.setAttr("mask", `url(#${maskId})`);
+  const previewDisc = previewSvg.createSvg("circle", { cls: "notelens-eraser-preview-disc" });
   eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Tama\xF1o de la goma") });
   const eraserRow = eraserSection.createDiv({ cls: "notelens-eraser-sizes" });
   const eraserBtns = [];
+  const biggest = Math.max(...ERASER_SIZES.map((s3) => s3.value));
   for (const s3 of ERASER_SIZES) {
     const b3 = eraserRow.createEl("button", { cls: "notelens-eraser-choice" });
-    b3.createSpan({ cls: "notelens-eraser-block" });
+    const disc = b3.createSpan({ cls: "notelens-eraser-disc" });
+    const diameter = Math.round(10 + 20 * (s3.value / biggest));
+    disc.style.setProperty("--disc", `${diameter}px`);
     b3.createSpan({ cls: "notelens-eraser-size-label", text: tr(s3.label) });
     b3.title = tr("Goma {p0} ({p1}px)", { p0: tr(s3.label), p1: s3.value });
     b3.onclick = () => {
       host.setEraserSize(s3.value);
-      close();
+      refresh();
     };
     eraserBtns.push([b3, s3.value]);
   }
   eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
-  const eraserModeRow = eraserSection.createDiv({ cls: "notelens-eraser-modes" });
+  const eraserModeRow = eraserSection.createDiv({ cls: "notelens-choice-row" });
   const eraserModeBtns = [];
   for (const mode2 of [
-    { id: "stroke", icon: "eraser", label: "Trazo entero" },
-    { id: "partial", icon: "scissors", label: "Solo lo que tocas" }
+    { id: "stroke", icon: "eraser", label: "Trazo entero", hint: "Toca y desaparece entero" },
+    { id: "partial", icon: "scissors", label: "Solo lo que tocas", hint: "Corta justo por donde pasas" }
   ]) {
-    const b3 = eraserModeRow.createEl("button", { cls: "notelens-eraser-mode" });
-    (0, import_obsidian12.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
-    b3.createSpan({ text: tr(mode2.label) });
+    const b3 = eraserModeRow.createEl("button", { cls: "notelens-choice-card" });
+    const top = b3.createDiv({ cls: "notelens-choice-top" });
+    (0, import_obsidian12.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
+    top.createSpan({ cls: "notelens-choice-name", text: tr(mode2.label) });
+    b3.createSpan({ cls: "notelens-choice-hint", text: tr(mode2.hint) });
     b3.onclick = () => {
       host.setEraserMode(mode2.id);
       refresh();
@@ -56618,6 +57002,17 @@ function createOptionsPanel(host, container, close) {
     eraserModeBtns.push([b3, mode2.id]);
   }
   const eraserHint = eraserSection.createDiv({ cls: "notelens-panel-hint" });
+  const refreshEraserPreview = () => {
+    const partial = host.eraserMode === "partial";
+    const radius = Math.max(5, Math.min(19, host.eraserSize * 0.62));
+    for (const [target, key2] of [[previewDisc, "disc"], [maskHole, "hole"]]) {
+      target.setAttr("cx", "83");
+      target.setAttr("cy", "37");
+      target.setAttr("r", key2 === "hole" ? `${radius + 1.5}` : `${radius}`);
+    }
+    preview.toggleClass("is-partial", partial);
+    preview.toggleClass("is-whole", !partial);
+  };
   const textSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-text" });
   createPanelHeader(textSection, "type", "Texto");
   textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tama\xF1o de texto") });
@@ -56726,6 +57121,7 @@ function createOptionsPanel(host, container, close) {
     for (const [dot, w3] of highlighterDots) dot.toggleClass("active", Math.abs(host.highlighterWidth - w3) < 0.01);
     for (const [b3, v3] of eraserBtns) b3.toggleClass("active", host.eraserSize === v3);
     for (const [b3, mode2] of eraserModeBtns) b3.toggleClass("active", host.eraserMode === mode2);
+    refreshEraserPreview();
     eraserHint.setText(host.eraserMode === "partial" ? tr("Corta el trazo justo donde pasas la goma, como en OneNote.") : tr("Borra el trazo entero al tocarlo."));
     for (const [b3, v3] of textBtns) b3.toggleClass("active", host.textSize === v3);
     fontSelect.value = host.textFont;
@@ -56857,7 +57253,7 @@ function createSettingsPanel(host, container) {
   const gridButtons = [];
   for (const opt of [{ id: "small", label: "Peque\xF1a" }, { id: "medium", label: "Mediana" }, { id: "large", label: "Grande" }]) {
     const b3 = gridRow.createEl("button", { cls: "notelens-settings-choice" });
-    b3.createSpan({ cls: "notelens-settings-choice-label", text: opt.label });
+    b3.createSpan({ cls: "notelens-settings-choice-label", text: tr(opt.label) });
     b3.onclick = () => {
       host.setGridSize(opt.id);
       for (const [btn2, id] of gridButtons) btn2.toggleClass("active", id === opt.id);
@@ -57047,9 +57443,9 @@ var LANGUAGE_ALIASES = {
   txt: "plaintext"
 };
 function normalizeLanguage(raw) {
-  const key = (raw ?? "").trim().toLowerCase();
-  if (!key) return "plaintext";
-  return LANGUAGE_ALIASES[key] ?? key;
+  const key2 = (raw ?? "").trim().toLowerCase();
+  if (!key2) return "plaintext";
+  return LANGUAGE_ALIASES[key2] ?? key2;
 }
 var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileView {
   constructor(leaf, plugin) {
@@ -57258,7 +57654,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     return VIEW_TYPE_ONENOTE;
   }
   getDisplayText() {
-    return this.file ? this.file.basename : "Pizarra NoteLens";
+    return this.file ? this.file.basename : tr("Pizarra NoteLens");
   }
   getIcon() {
     return "pencil";
@@ -57525,7 +57921,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const mode2 = this.rulerEl.querySelector(".notelens-ruler-mode");
     if (mode2) {
       const angle = (Math.round(this.rulerState.angle) % 360 + 360) % 360;
-      mode2.setText(isProtractor ? tr("\xC1ngulos {p0}\xB0", { p0: angle }) : "Regla");
+      mode2.setText(isProtractor ? tr("\xC1ngulos {p0}\xB0", { p0: angle }) : tr("Regla"));
       mode2.setAttr("aria-label", mode2.textContent || "Regla");
     }
   }
@@ -57738,18 +58134,18 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (directFormula) candidates.push({ source: directFormula, bonus: 14 });
       if (vector.source) candidates.push({ source: vector.source, bonus: vector.confidence * 9 });
       if (paintedMedia > 0 || !directFormula && regionStrokes.length > 0 && vector.confidence < 0.78) {
-        onProgress(paintedMedia > 0 ? "Leyendo la f\xF3rmula de la imagen\u2026" : "Verificando s\xEDmbolos dudosos\u2026");
+        onProgress(paintedMedia > 0 ? tr("Leyendo la f\xF3rmula de la imagen\u2026") : tr("Verificando s\xEDmbolos dudosos\u2026"));
         const ocr = await recognizeFormula(canvas, onProgress);
         if (ocr) candidates.push({ source: ocr, bonus: 1.5 });
       }
       recognized = pickFormulaCandidate(candidates);
       onProgress(recognized ? directFormula ? "F\xF3rmula recuperada desde la pizarra." : vector.detail : "");
     } else if (painted > 0) {
-      onProgress("Preparando el reconocimiento\u2026");
+      onProgress(tr("Preparando el reconocimiento\u2026"));
       recognized = await recognizeImage(canvas, langCode, onProgress);
     }
     const parts = [...typed, recognized].filter((p3) => p3.trim());
-    onProgress(parts.length ? "Texto capturado." : "");
+    onProgress(parts.length ? tr("Texto capturado.") : "");
     return parts.join("\n\n");
   }
   toggleMiniMap() {
@@ -58161,36 +58557,36 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.setTool("pen");
       return;
     }
-    const key = e.key.toLowerCase();
-    if ((e.ctrlKey || e.metaKey) && key === "z") {
+    const key2 = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && key2 === "z") {
       e.preventDefault();
       if (e.shiftKey) this.redo();
       else this.undo();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && key === "y") {
+    if ((e.ctrlKey || e.metaKey) && key2 === "y") {
       e.preventDefault();
       this.redo();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && key === "a") {
+    if ((e.ctrlKey || e.metaKey) && key2 === "a") {
       e.preventDefault();
       this.selectAll();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && key === "f") {
+    if ((e.ctrlKey || e.metaKey) && key2 === "f") {
       e.preventDefault();
       this.openSearch();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && (key === "c" || key === "x")) {
+    if ((e.ctrlKey || e.metaKey) && (key2 === "c" || key2 === "x")) {
       if (this.hasSelection()) {
         e.preventDefault();
-        this.copySelection(key === "x");
+        this.copySelection(key2 === "x");
       }
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && key === "d") {
+    if ((e.ctrlKey || e.metaKey) && key2 === "d") {
       if (this.hasSelection()) {
         e.preventDefault();
         this.duplicateSelection();
@@ -58229,7 +58625,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.hideFormatBar();
       return;
     }
-    if (key === "l") {
+    if (key2 === "l") {
       this.setSelectionMode("lasso");
       return;
     }
@@ -58241,9 +58637,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       t: "text",
       s: "shape"
     };
-    if (map[key]) {
-      if (map[key] === "select") this.setSelectionMode("rect");
-      else this.setTool(map[key]);
+    if (map[key2]) {
+      if (map[key2] === "select") this.setSelectionMode("rect");
+      else this.setTool(map[key2]);
     }
   }
   /** Double-click with the selection tool picks the topmost ink or shape. */
@@ -58891,7 +59287,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const action = (icon, title, run) => {
       const button = bar.createEl("button", { cls: "notelens-selection-action" });
       (0, import_obsidian13.setIcon)(button, icon);
-      button.title = title;
+      button.title = tr(title);
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         run();
@@ -60203,7 +60599,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.syncToolCursor();
       this.syncToolbar();
     };
-    const dialogTitle = tag.id === "tag_hover" ? "Nueva nota flotante" : `Nueva etiqueta: ${defaultTitle}`;
+    const dialogTitle = tag.id === "tag_hover" ? tr("Nueva nota flotante") : tr("Nueva etiqueta: {p0}", { p0: defaultTitle });
     new HoverNoteModal(this.app, dialogTitle, { title: defaultTitle, text: "" }, (content) => {
       if (content) place(content);
     }, tag.id === "tag_hover" ? void 0 : "A\xF1ade el contexto de esta etiqueta. Tambi\xE9n puedes dibujar o adjuntar im\xE1genes desde Pizarra.", tag.id === "tag_todo").open();
@@ -60368,7 +60764,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   editBadgeNote(badge) {
     const tag = quickTagById(badge.tagId);
     const fallbackTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
-    const title = badge.tagId === "tag_hover" ? "Editar nota flotante" : `Editar etiqueta: ${fallbackTitle}`;
+    const title = badge.tagId === "tag_hover" ? tr("Editar nota flotante") : tr("Editar etiqueta: {p0}", { p0: fallbackTitle });
     new HoverNoteModal(this.app, title, { title: badge.title ?? fallbackTitle, text: badge.tooltip ?? "", sketch: badge.sketch, images: badge.images, checklist: badge.checklist }, (content) => {
       if (!content) return;
       this.history.push();
@@ -60575,8 +60971,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       tag_star: "Importante",
       tag_question: badge.done ? "Duda resuelta" : "Duda pendiente",
       tag_idea: "Idea clave",
-      tag_todo: badge.done ? "Tarea hecha" : "Tarea pendiente",
-      tag_hover: badge.sketch && !badge.tooltip ? "Nota dibujada" : "Nota flotante"
+      tag_todo: badge.done ? tr("Tarea hecha") : tr("Tarea pendiente"),
+      tag_hover: badge.sketch && !badge.tooltip ? tr("Nota dibujada") : tr("Nota flotante")
     };
     head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tag.label });
     if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
@@ -60595,7 +60991,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         } else {
           row.createSpan({ text: item.text });
         }
-        row.title = item.done ? "Marcar este paso como pendiente" : "Marcar solo este paso como hecho";
+        row.title = item.done ? tr("Marcar este paso como pendiente") : tr("Marcar solo este paso como hecho");
         row.addEventListener("pointerdown", (event) => event.stopPropagation());
         row.addEventListener("click", (event) => {
           event.stopPropagation();
@@ -60606,7 +61002,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const allDone = completed === checklist.length;
       const bulk = el.createEl("button", { cls: "onenote-top-tooltip-bulk" });
       (0, import_obsidian13.setIcon)(bulk.createSpan(), allDone ? "circle" : "check-check");
-      bulk.createSpan({ text: allDone ? "Marcar todos como pendientes" : "Marcar todos como hechos" });
+      bulk.createSpan({ text: allDone ? tr("Marcar todos como pendientes") : tr("Marcar todos como hechos") });
       bulk.addEventListener("pointerdown", (event) => event.stopPropagation());
       bulk.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -60629,18 +61025,18 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (badge.sketch) {
         const drawing = preview.createEl("img", { cls: "onenote-top-tooltip-drawing" });
         drawing.src = badge.sketch;
-        drawing.alt = "Trazos de la nota";
+        drawing.alt = tr("Trazos de la nota");
       }
     }
     if (badge.tooltip) {
       el.createDiv({ cls: "onenote-top-tooltip-body", text: badge.tooltip });
     } else if (!badge.sketch && !images.length && !checklist.length) {
       const hints = {
-        tag_star: "Vuelve aqu\xED al repasar. Doble clic para anotar por qu\xE9 es importante.",
-        tag_question: badge.done ? "Ya est\xE1 resuelta." : "Preg\xFAntalo en clase o b\xFAscalo. Clic para marcarla resuelta.",
-        tag_idea: "El concepto que hay que recordar. Doble clic para resumirlo.",
-        tag_todo: badge.done ? "Completada." : "Clic para marcarla hecha. Doble clic para a\xF1adir pasos.",
-        tag_hover: "Doble clic para escribir o dibujar la nota."
+        tag_star: tr("Vuelve aqu\xED al repasar. Doble clic para anotar por qu\xE9 es importante."),
+        tag_question: badge.done ? tr("Ya est\xE1 resuelta.") : tr("Preg\xFAntalo en clase o b\xFAscalo. Clic para marcarla resuelta."),
+        tag_idea: tr("El concepto que hay que recordar. Doble clic para resumirlo."),
+        tag_todo: badge.done ? tr("Completada.") : tr("Clic para marcarla hecha. Doble clic para a\xF1adir pasos."),
+        tag_hover: tr("Doble clic para escribir o dibujar la nota.")
       };
       const near = this.badgeContext(badge);
       el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? `Junto a: \xAB${near}\xBB` : hints[badge.tagId] ?? "" });
@@ -60962,7 +61358,7 @@ ${rows.join("\n")}`);
   runBoardUtility(utility) {
     if (utility === "polish-ink") {
       const strokes = this.pageStrokes.filter((stroke) => this.selStrokes.has(stroke.id));
-      if (!strokes.length) return "Selecciona uno o varios trazos para pulir la tinta";
+      if (!strokes.length) return tr("Selecciona uno o varios trazos para pulir la tinta");
       this.history.push();
       for (const stroke of strokes) {
         if (stroke.points.length < 3) continue;
@@ -61018,7 +61414,7 @@ ${rows.join("\n")}`);
       embed.x = x4;
       embed.y = y3;
     } });
-    if (items.length < 2) return "Selecciona al menos dos objetos para ordenarlos";
+    if (items.length < 2) return tr("Selecciona al menos dos objetos para ordenarlos");
     this.history.push();
     items.sort((a3, b3) => a3.y - b3.y || a3.x - b3.x);
     const originX = Math.min(...items.map((item) => item.x));
@@ -61069,13 +61465,13 @@ ${rows.join("\n")}`);
     return this.data.activePageId;
   }
   getPageTitle(id = this.data.activePageId) {
-    return this.data.pages.find((page) => page.id === id)?.title ?? "P\xE1gina";
+    return this.data.pages.find((page) => page.id === id)?.title ?? tr("P\xE1gina");
   }
   addDocumentPage() {
     this.commitTextEditor();
     this.syncActivePageMeta();
     this.history.push();
-    const page = createDocumentPage(`P\xE1gina ${this.data.pages.length + 1}`, {
+    const page = createDocumentPage(tr("P\xE1gina {p0}", { p0: this.data.pages.length + 1 }), {
       background: this.data.background,
       marginEnabled: this.marginEnabled,
       backgroundColor: this.data.backgroundColor,
@@ -61160,7 +61556,7 @@ ${rows.join("\n")}`);
    * bookmark opens in the list with its name selected so typing renames it.
    */
   addViewportBookmark() {
-    const label = `Secci\xF3n ${this.data.bookmarks.length + 1}`;
+    const label = tr("Secci\xF3n {p0}", { p0: this.data.bookmarks.length + 1 });
     const c3 = this.getViewportCenterScene();
     this.history.push();
     const bookmark = { id: genId("bookmark"), pageId: this.data.activePageId, label, x: c3.x, y: c3.y, scale: this.data.viewTransform.scale };
@@ -61418,7 +61814,7 @@ ${rows.join("\n")}`);
     const control = (icon, title, action) => {
       const button = controls.createEl("button", { cls: "notelens-table-control" });
       (0, import_obsidian13.setIcon)(button, icon);
-      button.title = title;
+      button.title = tr(title);
       button.addEventListener("pointerdown", (event) => event.stopPropagation());
       button.onclick = (event) => {
         event.stopPropagation();
@@ -61427,7 +61823,7 @@ ${rows.join("\n")}`);
     };
     const headerBtn = controls.createEl("button", { cls: "notelens-table-control" });
     (0, import_obsidian13.setIcon)(headerBtn, "heading");
-    headerBtn.title = table.header ? "Quitar la fila de encabezado" : "Usar la primera fila como encabezado";
+    headerBtn.title = table.header ? tr("Quitar la fila de encabezado") : tr("Usar la primera fila como encabezado");
     headerBtn.toggleClass("active", !!table.header);
     headerBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
     headerBtn.onclick = (event) => {
@@ -61462,7 +61858,7 @@ ${rows.join("\n")}`);
         const input = grid.createEl("textarea", { cls: "notelens-table-cell" });
         if (table.header && row === 0) input.addClass("is-header");
         if (table.headerColumn && col === 0) input.addClass("is-header-column");
-        input.placeholder = table.header && row === 0 ? "T\xEDtulo" : "";
+        input.placeholder = table.header && row === 0 ? tr("T\xEDtulo") : "";
         input.value = table.cells[row]?.[col] ?? "";
         input.setAttr("aria-label", `Fila ${row + 1}, columna ${col + 1}`);
         input.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -62281,12 +62677,12 @@ ${rows.join("\n")}`);
       this.save();
     };
     const toggleButtons = /* @__PURE__ */ new Map();
-    const mkToggle = (key, icon, title, toggle) => {
+    const mkToggle = (key2, icon, title, toggle) => {
       const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
       (0, import_obsidian13.setIcon)(b3, icon);
-      b3.title = title;
+      b3.title = tr(title);
       b3.onclick = () => apply(toggle);
-      toggleButtons.set(key, b3);
+      toggleButtons.set(key2, b3);
     };
     const plainText = tb.variant !== "code" && tb.variant !== "math";
     if (plainText) {
@@ -62314,7 +62710,7 @@ ${rows.join("\n")}`);
         const listButton = (icon, title, kind) => {
           const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
           (0, import_obsidian13.setIcon)(b3, icon);
-          b3.title = title;
+          b3.title = tr(title);
           b3.onclick = () => {
             this.pushEditSession();
             toggleListPrefix(el, kind);
@@ -62331,7 +62727,7 @@ ${rows.join("\n")}`);
     }
     const fontSelect = bar.createEl("select", { cls: "notelens-format-font" });
     for (const [value, label] of [["sans", "Interfaz"], ["serif", "Cl\xE1sica"], ["rounded", "Redondeada"], ["mono", "Mono"]]) {
-      fontSelect.createEl("option", { value, text: label });
+      fontSelect.createEl("option", { value, text: tr(label) });
     }
     fontSelect.value = tb.fontFamily ?? "sans";
     fontSelect.onchange = () => apply(() => {
@@ -62404,122 +62800,27 @@ ${rows.join("\n")}`);
     if (tb.variant === "math" && el.instanceOf(HTMLTextAreaElement)) {
       bar.addClass("is-math");
       const palette = bar.createDiv({ cls: "notelens-math-palette" });
-      const groups = [
-        ["B\xE1sico", [
-          ["a/b", "Fracci\xF3n", "(a)/(b)"],
-          ["\u221A", "Ra\xEDz cuadrada", "sqrt(x)"],
-          ["\u207F\u221A", "Ra\xEDz en\xE9sima", "root(n)(x)"],
-          ["x\u207F", "Potencia", "x^(n)"],
-          ["x\u2099", "Sub\xEDndice", "x_(n)"],
-          ["\xB7", "Producto", "*"],
-          ["\xF7", "Divisi\xF3n", "-:"],
-          ["\xB1", "M\xE1s menos", "+-"],
-          ["\u2213", "Menos m\xE1s", "-+"],
-          ["|x|", "Valor absoluto", "abs(x)"],
-          ["( )", "Par\xE9ntesis", "()"],
-          ["[ ]", "Corchetes", "[]"],
-          ["{ }", "Llaves", "{}"],
-          ["\u21B5", "Nueva l\xEDnea", "\n"]
-        ]],
-        ["C\xE1lculo", [
-          ["\u03A3", "Sumatorio", "sum_(i=1)^n "],
-          ["\u03A0", "Productorio", "prod_(i=1)^n "],
-          ["\u222B", "Integral", "int_a^b  dx"],
-          ["\u222C", "Integral doble", "int int  dA"],
-          ["\u222E", "Integral de contorno", "oint  ds"],
-          ["lim", "L\xEDmite", "lim_(x->oo) "],
-          ["d/dx", "Derivada", "(d)/(dx) "],
-          ["\u2202", "Derivada parcial", "(del)/(del x) "],
-          ["\u2207", "Nabla", "grad "],
-          ["\u221E", "Infinito", "oo"],
-          ["\u2192", "Tiende a", "->"],
-          ["\u0394", "Incremento", "Delta"]
-        ]],
-        ["Griego", [
-          ["\u03B1", "Alfa", "alpha"],
-          ["\u03B2", "Beta", "beta"],
-          ["\u03B3", "Gamma", "gamma"],
-          ["\u03B4", "Delta", "delta"],
-          ["\u03B5", "\xC9psilon", "epsilon"],
-          ["\u03B8", "Theta", "theta"],
-          ["\u03BB", "Lambda", "lambda"],
-          ["\u03BC", "Mu", "mu"],
-          ["\u03C0", "Pi", "pi"],
-          ["\u03C1", "Rho", "rho"],
-          ["\u03C3", "Sigma", "sigma"],
-          ["\u03C4", "Tau", "tau"],
-          ["\u03C6", "Fi", "phi"],
-          ["\u03C9", "Omega", "omega"],
-          ["\u03A9", "Omega may\xFAscula", "Omega"]
-        ]],
-        ["Relaciones", [
-          ["=", "Igual", "="],
-          ["\u2260", "Distinto", "!="],
-          ["\u2248", "Aproximado", "~~"],
-          ["\u2261", "Id\xE9ntico", "-="],
-          ["\u2264", "Menor o igual", "<="],
-          ["\u2265", "Mayor o igual", ">="],
-          ["\u226A", "Mucho menor", "<<"],
-          ["\u226B", "Mucho mayor", ">>"],
-          ["\u221D", "Proporcional", "prop"],
-          ["\u2192", "Implica", "->"],
-          ["\u21D2", "Entonces", "=>"],
-          ["\u21D4", "Si y solo si", "<=>"]
-        ]],
-        ["Conjuntos", [
-          ["\u2208", "Pertenece", "in"],
-          ["\u2209", "No pertenece", "!in"],
-          ["\u2282", "Subconjunto", "sub"],
-          ["\u2286", "Subconjunto o igual", "sube"],
-          ["\u222A", "Uni\xF3n", "uu"],
-          ["\u2229", "Intersecci\xF3n", "nn"],
-          ["\u2205", "Vac\xEDo", "O/"],
-          ["\u2200", "Para todo", "AA"],
-          ["\u2203", "Existe", "EE"],
-          ["\xAC", "Negaci\xF3n", "not"],
-          ["\u2227", "Y", "^^"],
-          ["\u2228", "O", "vv"],
-          ["\u211D", "Reales", "RR"],
-          ["\u2115", "Naturales", "NN"],
-          ["\u2124", "Enteros", "ZZ"],
-          ["\u211A", "Racionales", "QQ"]
-        ]],
-        ["Matrices", [
-          ["[2\xD72]", "Matriz 2\xD72", "[[a,b],[c,d]]"],
-          ["[3\xD73]", "Matriz 3\xD73", "[[a,b,c],[d,e,f],[g,h,i]]"],
-          ["(vec)", "Vector columna", "[[x],[y]]"],
-          ["det", "Determinante", "|[a,b],[c,d]|"],
-          ["x\u0304", "Media", "bar x"],
-          ["x\u0302", "Sombrero", "hat x"],
-          ["x\u20D7", "Vector", "vec x"],
-          ["\u1E8B", "Punto", "dot x"]
-        ]]
-      ];
       const keys = bar.createDiv({ cls: "notelens-math-keys" });
       const tabs = palette.createDiv({ cls: "notelens-math-groups" });
       const insertSnippet = (snippet) => {
-        const insert = snippet;
-        const start = el.selectionStart ?? el.value.length;
-        el.setRangeText(insert, start, el.selectionEnd ?? start, "end");
-        const slot = insert.indexOf("()") >= 0 ? insert.indexOf("()") + 1 : insert.indexOf("  ") >= 0 ? insert.indexOf("  ") + 1 : -1;
-        if (slot >= 0) el.setSelectionRange(start + slot, start + slot);
-        el.focus();
+        insertMathSnippet(el, snippet);
         el.dispatchEvent(new Event("input"));
       };
       const showGroup = (name) => {
         keys.empty();
-        for (const [label, title, snippet] of groups.find(([id]) => id === name)?.[1] ?? []) {
-          const key = keys.createEl("button", { cls: "notelens-math-key", text: label });
-          key.title = title;
-          key.onclick = () => insertSnippet(snippet);
+        for (const item of MATH_GROUPS.find((group) => group.name === name)?.keys ?? []) {
+          const key2 = keys.createEl("button", { cls: "notelens-math-key", text: item.glyph });
+          key2.title = tr(item.name);
+          key2.onclick = () => insertSnippet(item.snippet);
         }
-        for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.textContent === name);
+        for (const tab of Array.from(tabs.children)) tab.toggleClass("active", tab.getAttribute("data-group") === name);
       };
-      for (const [name] of groups) {
-        const tab = tabs.createEl("button", { cls: "notelens-math-group", text: name });
-        tab.onclick = () => showGroup(name);
+      for (const group of MATH_GROUPS) {
+        const tab = tabs.createEl("button", { cls: "notelens-math-group", text: tr(group.name) });
+        tab.setAttr("data-group", group.name);
+        tab.onclick = () => showGroup(group.name);
       }
-      showGroup(groups[0][0]);
+      showGroup(MATH_GROUPS[0].name);
       palette.appendChild(keys);
     }
     const closeBar = bar.createEl("button", { cls: "notelens-embed-close notelens-format-close is-glyph", text: "\u2715" });
@@ -62728,7 +63029,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.4.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.5.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -62756,7 +63057,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       s3.defaultMargin = value;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de la cuadr\xEDcula")).setDesc(tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.")).addDropdown((d3) => d3.addOptions({ small: "Peque\xF1a", medium: "Mediana", large: "Grande" }).setValue(s3.defaultGridSize).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de la cuadr\xEDcula")).setDesc(tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.")).addDropdown((d3) => d3.addOptions({ small: tr("Peque\xF1a"), medium: tr("Mediana"), large: tr("Grande") }).setValue(s3.defaultGridSize).onChange((v3) => {
       s3.defaultGridSize = v3;
       save();
     }));
@@ -62798,11 +63099,11 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       s3.textSize = v3;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Punta del l\xE1piz")).setDesc(tr("Trazo con el que empieza la herramienta de l\xE1piz.")).addDropdown((d3) => d3.addOptions({ ballpoint: "Bol\xEDgrafo", pencil: "L\xE1piz", fountain: "Pluma", marker: "Rotulador", brush: "Pincel" }).setValue(s3.penStyle).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Punta del l\xE1piz")).setDesc(tr("Trazo con el que empieza la herramienta de l\xE1piz.")).addDropdown((d3) => d3.addOptions({ ballpoint: tr("Bol\xEDgrafo"), pencil: tr("L\xE1piz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") }).setValue(s3.penStyle).onChange((v3) => {
       s3.penStyle = v3;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Fuente del texto")).setDesc(tr("Tipograf\xEDa con la que se crean los cuadros de texto.")).addDropdown((d3) => d3.addOptions({ sans: "Sin remates", serif: "Con remates", rounded: "Redondeada", mono: "Monoespaciada" }).setValue(s3.defaultTextFont).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Fuente del texto")).setDesc(tr("Tipograf\xEDa con la que se crean los cuadros de texto.")).addDropdown((d3) => d3.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") }).setValue(s3.defaultTextFont).onChange((v3) => {
       s3.defaultTextFont = v3;
       save();
     }));
@@ -62857,26 +63158,49 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
         save();
         new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
       }));
-      new import_obsidian14.Setting(containerEl).setName(tr("Acciones locales")).setDesc(tr("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuraci\xF3n."));
-      new import_obsidian14.Setting(containerEl).setName(tr("Servidor del modelo local")).setDesc(tr("Solo para la pesta\xF1a opcional \xABChat local\xBB. Las acciones de pizarra no lo necesitan. Si \xABlocalhost\xBB falla, prueba con 127.0.0.1.")).addText((t3) => t3.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s3.aiBaseUrl).onChange((v3) => {
-        s3.aiBaseUrl = v3.trim() || DEFAULT_SETTINGS.aiBaseUrl;
-        save();
-      })).addButton((b3) => b3.setButtonText(tr("Probar")).onClick(async () => {
-        const base = s3.aiBaseUrl.replace(/\/+$/, "");
-        b3.setButtonText(tr("Probando\u2026"));
-        const models = await probeLocalServer(base);
-        b3.setButtonText(tr("Probar"));
-        new import_obsidian14.Notice(models === null ? tr("No hay respuesta en {p0}. \xBFEst\xE1 arrancado el servidor?", { p0: base }) : `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6e3);
-      }));
-      new import_obsidian14.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("D\xE9jalo vac\xEDo para que Leen elija el mejor seg\xFAn la memoria de tu equipo.")).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
-        s3.aiModel = v3.trim();
-        save();
-      }));
-      new import_obsidian14.Setting(containerEl).setName(tr("Usar la pizarra como contexto")).setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")).addToggle((t3) => t3.setValue(s3.aiUseBoardContext).onChange((v3) => {
-        s3.aiUseBoardContext = v3;
-        save();
-      }));
     }
+    new import_obsidian14.Setting(containerEl).setName(tr("Modelo local")).setHeading();
+    const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
+    aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra \u2192 LaTeX se calculan aqu\xED mismo.") });
+    aiIntro.createDiv({ text: tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") });
+    const memory = detectMemoryGb();
+    const suggestion = recommendedVisionModel(memory);
+    const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
+    const paintStatus = (text, kind = "info") => {
+      aiStatus.setText(text);
+      aiStatus.toggleClass("is-ok", kind === "ok");
+      aiStatus.toggleClass("is-error", kind === "error");
+    };
+    paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM; para chat con dibujos encaja \xAB{p1}\xBB.", { p0: memory, p1: suggestion.model }));
+    new import_obsidian14.Setting(containerEl).setName(tr("Servidor")).setDesc(tr("Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1.")).addText((t3) => t3.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s3.aiBaseUrl).onChange((v3) => {
+      s3.aiBaseUrl = v3.trim() || DEFAULT_SETTINGS.aiBaseUrl;
+      save();
+    })).addButton((b3) => b3.setButtonText(tr("Probar")).onClick(async () => {
+      const base = s3.aiBaseUrl.replace(/\/+$/, "");
+      b3.setButtonText(tr("Probando\u2026"));
+      b3.setDisabled(true);
+      const models = await probeLocalServer(base);
+      b3.setButtonText(tr("Probar"));
+      b3.setDisabled(false);
+      if (models === null) {
+        paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo \xABollama serve\xBB) y vuelve a probar.", { p0: base }), "error");
+        return;
+      }
+      if (!models.length) {
+        paintStatus(tr("Responde, pero no tiene ning\xFAn modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
+        return;
+      }
+      const best = rankModels(models, memory)[0];
+      paintStatus(tr("Conectado \xB7 {p0} modelo(s). Leen usar\xEDa \xAB{p1}\xBB: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+    }));
+    new import_obsidian14.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("Vac\xEDo = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como \xAB{p0}\xBB ({p1}).", { p0: suggestion.model, p1: suggestion.why })).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
+      s3.aiModel = v3.trim();
+      save();
+    }));
+    new import_obsidian14.Setting(containerEl).setName(tr("Usar la pizarra como contexto")).setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")).addToggle((t3) => t3.setValue(s3.aiUseBoardContext).onChange((v3) => {
+      s3.aiUseBoardContext = v3;
+      save();
+    }));
     new import_obsidian14.Setting(containerEl).setName(tr("Traductor")).setHeading();
     const languages = {
       es: "Espa\xF1ol",

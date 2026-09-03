@@ -882,22 +882,24 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		const header = section.createDiv({ cls: "notelens-tool-panel-header" });
 		const iconWrap = header.createDiv({ cls: "notelens-tool-panel-icon" });
 		setIcon(iconWrap, icon);
-		header.createDiv({ cls: "notelens-tool-heading", text: title });
+		header.createDiv({ cls: "notelens-tool-heading", text: tr(title) });
 	}
 
 	// ============================ SELECT ====================================
 	const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
 	createPanelHeader(selectSection, "mouse-pointer-2", "Selección");
 	selectSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
-	const selectModeRow = selectSection.createDiv({ cls: "notelens-eraser-modes" });
+	const selectModeRow = selectSection.createDiv({ cls: "notelens-choice-row" });
 	const selectModeBtns: [HTMLElement, SelectionMode][] = [];
 	for (const mode of [
-		{ id: "rect" as SelectionMode, icon: "box-select", label: "Rectángulo" },
-		{ id: "lasso" as SelectionMode, icon: "lasso", label: "Lazo (L)" }
+		{ id: "rect" as SelectionMode, icon: "box-select", label: "Rectángulo", hint: "Arrastra una caja" },
+		{ id: "lasso" as SelectionMode, icon: "lasso", label: "Lazo (L)", hint: "Rodea a mano alzada" }
 	]) {
-		const b = selectModeRow.createEl("button", { cls: "notelens-eraser-mode" });
-		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
-		b.createSpan({ text: tr(mode.label) });
+		const b = selectModeRow.createEl("button", { cls: "notelens-choice-card" });
+		const top = b.createDiv({ cls: "notelens-choice-top" });
+		setIcon(top.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
+		top.createSpan({ cls: "notelens-choice-name", text: tr(mode.label) });
+		b.createSpan({ cls: "notelens-choice-hint", text: tr(mode.hint) });
 		b.onclick = () => { host.setSelectionMode(mode.id); refresh(); close(); };
 		selectModeBtns.push([b, mode.id]);
 	}
@@ -1041,31 +1043,79 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	// ============================ ERASER ====================================
 	const eraserSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-eraser" });
 	createPanelHeader(eraserSection, "eraser", "Goma");
+	// A stroke with the eraser sitting on it: the mode decides whether the ink
+	// survives around the disc, which is the whole difference between the two
+	// and is far easier to see than to read.
+	const INK_PATH = "M10 34 C 26 8, 44 8, 58 24 S 92 44, 112 22 S 142 10, 154 26";
+	const maskId = `notelens-eraser-cut-${Math.random().toString(36).slice(2, 8)}`;
+	const preview = eraserSection.createDiv({ cls: "notelens-eraser-preview" });
+	const previewSvg = preview.createSvg("svg", { cls: "notelens-eraser-preview-svg" });
+	previewSvg.setAttr("viewBox", "0 0 164 44");
+	previewSvg.setAttr("preserveAspectRatio", "xMidYMid meet");
+	const defs = previewSvg.createSvg("defs");
+	const mask = defs.createSvg("mask");
+	mask.setAttr("id", maskId);
+	const maskField = mask.createSvg("rect");
+	maskField.setAttr("x", "0"); maskField.setAttr("y", "0");
+	maskField.setAttr("width", "164"); maskField.setAttr("height", "44");
+	maskField.setAttr("fill", "#fff");
+	const maskHole = mask.createSvg("circle");
+	maskHole.setAttr("fill", "#000");
+	const ghost = previewSvg.createSvg("path", { cls: "notelens-eraser-preview-ghost" });
+	ghost.setAttr("d", INK_PATH);
+	const inkLine = previewSvg.createSvg("path", { cls: "notelens-eraser-preview-ink" });
+	inkLine.setAttr("d", INK_PATH);
+	inkLine.setAttr("mask", `url(#${maskId})`);
+	const previewDisc = previewSvg.createSvg("circle", { cls: "notelens-eraser-preview-disc" });
+
 	eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Tamaño de la goma") });
 	const eraserRow = eraserSection.createDiv({ cls: "notelens-eraser-sizes" });
 	const eraserBtns: [HTMLElement, number][] = [];
+	const biggest = Math.max(...ERASER_SIZES.map(s => s.value));
 	for (const s of ERASER_SIZES) {
 		const b = eraserRow.createEl("button", { cls: "notelens-eraser-choice" });
-		b.createSpan({ cls: "notelens-eraser-block" });
+		const disc = b.createSpan({ cls: "notelens-eraser-disc" });
+		// The dots keep the real proportion between sizes, with a floor so the
+		// smallest is still a target you can hit with a finger.
+		const diameter = Math.round(10 + 20 * (s.value / biggest));
+		disc.style.setProperty("--disc", `${diameter}px`);
 		b.createSpan({ cls: "notelens-eraser-size-label", text: tr(s.label) });
 		b.title = tr("Goma {p0} ({p1}px)", { p0: tr(s.label), p1: s.value });
-		b.onclick = () => { host.setEraserSize(s.value); close(); };
+		b.onclick = () => { host.setEraserSize(s.value); refresh(); };
 		eraserBtns.push([b, s.value]);
 	}
 	eraserSection.createDiv({ cls: "notelens-panel-label", text: tr("Modo") });
-	const eraserModeRow = eraserSection.createDiv({ cls: "notelens-eraser-modes" });
+	const eraserModeRow = eraserSection.createDiv({ cls: "notelens-choice-row" });
 	const eraserModeBtns: [HTMLElement, EraserMode][] = [];
 	for (const mode of [
-		{ id: "stroke" as EraserMode, icon: "eraser", label: "Trazo entero" },
-		{ id: "partial" as EraserMode, icon: "scissors", label: "Solo lo que tocas" }
+		{ id: "stroke" as EraserMode, icon: "eraser", label: "Trazo entero", hint: "Toca y desaparece entero" },
+		{ id: "partial" as EraserMode, icon: "scissors", label: "Solo lo que tocas", hint: "Corta justo por donde pasas" }
 	]) {
-		const b = eraserModeRow.createEl("button", { cls: "notelens-eraser-mode" });
-		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
-		b.createSpan({ text: tr(mode.label) });
+		const b = eraserModeRow.createEl("button", { cls: "notelens-choice-card" });
+		const top = b.createDiv({ cls: "notelens-choice-top" });
+		setIcon(top.createSpan({ cls: "notelens-mode-icon" }), mode.icon);
+		top.createSpan({ cls: "notelens-choice-name", text: tr(mode.label) });
+		b.createSpan({ cls: "notelens-choice-hint", text: tr(mode.hint) });
 		b.onclick = () => { host.setEraserMode(mode.id); refresh(); };
 		eraserModeBtns.push([b, mode.id]);
 	}
 	const eraserHint = eraserSection.createDiv({ cls: "notelens-panel-hint" });
+
+	/** Keeps the preview showing the size and mode that are actually selected. */
+	const refreshEraserPreview = () => {
+		const partial = host.eraserMode === "partial";
+		// 8 px of board is about 3 px of this 164-wide drawing.
+		const radius = Math.max(5, Math.min(19, host.eraserSize * 0.62));
+		for (const [target, key] of [[previewDisc, "disc"], [maskHole, "hole"]] as const) {
+			// On the curve, not floating above it: the disc has to overlap the
+			// stroke for the cut to be visible at all.
+			target.setAttr("cx", "83");
+			target.setAttr("cy", "37");
+			target.setAttr("r", key === "hole" ? `${radius + 1.5}` : `${radius}`);
+		}
+		preview.toggleClass("is-partial", partial);
+		preview.toggleClass("is-whole", !partial);
+	};
 
 	// ============================ TEXT ======================================
 	const textSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-text" });
@@ -1174,6 +1224,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		for (const [dot, w] of highlighterDots) dot.toggleClass("active", Math.abs(host.highlighterWidth - w) < 0.01);
 		for (const [b, v] of eraserBtns) b.toggleClass("active", host.eraserSize === v);
 		for (const [b, mode] of eraserModeBtns) b.toggleClass("active", host.eraserMode === mode);
+		refreshEraserPreview();
 		eraserHint.setText(host.eraserMode === "partial"
 			? tr("Corta el trazo justo donde pasas la goma, como en OneNote.")
 			: tr("Borra el trazo entero al tocarlo."));
@@ -1335,7 +1386,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 	const gridButtons: [HTMLElement, GridSize][] = [];
 	for (const opt of [{ id: "small" as GridSize, label: "Pequeña" }, { id: "medium" as GridSize, label: "Mediana" }, { id: "large" as GridSize, label: "Grande" }]) {
 		const b = gridRow.createEl("button", { cls: "notelens-settings-choice" });
-		b.createSpan({ cls: "notelens-settings-choice-label", text: opt.label });
+		b.createSpan({ cls: "notelens-settings-choice-label", text: tr(opt.label) });
 		b.onclick = () => {
 			host.setGridSize(opt.id);
 			for (const [btn, id] of gridButtons) btn.toggleClass("active", id === opt.id);

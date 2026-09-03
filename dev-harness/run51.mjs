@@ -47,6 +47,13 @@ await tool("eraser");
 await sleep(150);
 await shot(page, "01-eraser-panel");
 console.log("panel visible:", await page.evaluate(() => { const p = document.querySelector(".notelens-panel-eraser"); return p && !p.classList.contains("hidden") && getComputedStyle(p).display !== "none"; }));
+// clicking the card, the way a user switches mode
+await page.evaluate(() => document.querySelectorAll(".notelens-panel-eraser .notelens-choice-card")[1].click());
+await sleep(200);
+await shot(page, "01b-eraser-panel-partial");
+console.log("modo tras el clic:", await page.evaluate(() => __view.eraserMode), "| preview:", await page.evaluate(() => document.querySelector(".notelens-eraser-preview").className));
+await page.evaluate(() => document.querySelectorAll(".notelens-panel-eraser .notelens-choice-card")[0].click());
+await sleep(150);
 await page.keyboard.press("Escape");
 await sleep(80);
 

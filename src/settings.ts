@@ -2,6 +2,7 @@ import { requestUrl, Notice, App, PluginSettingTab, Setting } from "obsidian";
 import type OneNotePlugin from "./main";
 import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, PenStyle } from "./types";
 import { LocaleSetting, setLocale, tr } from "./i18n";
+import { detectMemoryGb, rankModels, recommendedVisionModel } from "./assistant";
 
 /** User preferences: defaults for new boards plus behaviour switches. */
 export interface NoteLensSettings {
@@ -214,7 +215,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.setName(tr("Tamaño de la cuadrícula"))
 			.setDesc(tr("Separación entre puntos, líneas o celdas de la rejilla."))
 			.addDropdown(d => d
-				.addOptions({ small: "Pequeña", medium: "Mediana", large: "Grande" })
+				.addOptions({ small: tr("Pequeña"), medium: tr("Mediana"), large: tr("Grande") })
 				.setValue(s.defaultGridSize)
 				.onChange(v => { s.defaultGridSize = v as GridSize; save(); }));
 
@@ -261,7 +262,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.setName(tr("Punta del lápiz"))
 			.setDesc(tr("Trazo con el que empieza la herramienta de lápiz."))
 			.addDropdown(d => d
-				.addOptions({ ballpoint: "Bolígrafo", pencil: "Lápiz", fountain: "Pluma", marker: "Rotulador", brush: "Pincel" })
+				.addOptions({ ballpoint: tr("Bolígrafo"), pencil: tr("Lápiz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") })
 				.setValue(s.penStyle)
 				.onChange(v => { s.penStyle = v as PenStyle; save(); }));
 
@@ -269,7 +270,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.setName(tr("Fuente del texto"))
 			.setDesc(tr("Tipografía con la que se crean los cuadros de texto."))
 			.addDropdown(d => d
-				.addOptions({ sans: "Sin remates", serif: "Con remates", rounded: "Redondeada", mono: "Monoespaciada" })
+				.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") })
 				.setValue(s.defaultTextFont)
 				.onChange(v => { s.defaultTextFont = v as CanvasFont; save(); }));
 
@@ -346,40 +347,66 @@ export class NoteLensSettingTab extends PluginSettingTab {
 					new Notice(tr("Leen volverá a su esquina al reabrir la pizarra"));
 				}));
 
-			new Setting(containerEl)
-				.setName(tr("Acciones locales"))
-				.setDesc(tr("Resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza, tinta y LaTeX funcionan al instante sin API ni configuración."));
-
-			new Setting(containerEl)
-				.setName(tr("Servidor del modelo local"))
-				.setDesc(tr("Solo para la pestaña opcional «Chat local». Las acciones de pizarra no lo necesitan. Si «localhost» falla, prueba con 127.0.0.1."))
-				.addText(t => t
-					.setPlaceholder(tr("http://127.0.0.1:11434"))
-					.setValue(s.aiBaseUrl)
-					.onChange(v => { s.aiBaseUrl = v.trim() || DEFAULT_SETTINGS.aiBaseUrl; save(); }))
-				.addButton(b => b.setButtonText(tr("Probar")).onClick(async () => {
-					const base = s.aiBaseUrl.replace(/\/+$/, "");
-					b.setButtonText(tr("Probando…"));
-					const models = await probeLocalServer(base);
-					b.setButtonText(tr("Probar"));
-					new Notice(models === null
-						? tr("No hay respuesta en {p0}. ¿Está arrancado el servidor?", { p0: base })
-						: `Conectado: ${models.length} modelo${models.length === 1 ? "" : "s"}${models.length ? ` (${models.slice(0, 3).join(", ")})` : ""}`, 6000);
-				}));
-
-			new Setting(containerEl)
-				.setName(tr("Modelo preferido"))
-				.setDesc(tr("Déjalo vacío para que Leen elija el mejor según la memoria de tu equipo."))
-				.addText(t => t
-					.setPlaceholder(tr("automático"))
-					.setValue(s.aiModel)
-					.onChange(v => { s.aiModel = v.trim(); save(); }));
-
-			new Setting(containerEl)
-				.setName(tr("Usar la pizarra como contexto"))
-				.setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."))
-				.addToggle(t => t.setValue(s.aiUseBoardContext).onChange(v => { s.aiUseBoardContext = v; save(); }));
 		}
+
+		// The local model is not the pet's: the translator asks the same server,
+		// so these settings stay visible whether or not Leen is on the board.
+		new Setting(containerEl).setName(tr("Modelo local")).setHeading();
+
+		const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
+		aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra → LaTeX se calculan aquí mismo.") });
+		aiIntro.createDiv({ text: tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducción sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") });
+
+		const memory = detectMemoryGb();
+		const suggestion = recommendedVisionModel(memory);
+		const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
+		const paintStatus = (text: string, kind: "info" | "ok" | "error" = "info") => {
+			aiStatus.setText(text);
+			aiStatus.toggleClass("is-ok", kind === "ok");
+			aiStatus.toggleClass("is-error", kind === "error");
+		};
+		paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM; para chat con dibujos encaja «{p1}».", { p0: memory, p1: suggestion.model }));
+
+		new Setting(containerEl)
+			.setName(tr("Servidor"))
+			.setDesc(tr("Ollama o LM Studio en tu propio equipo. Si «localhost» no responde, prueba con 127.0.0.1."))
+			.addText(t => t
+				.setPlaceholder(tr("http://127.0.0.1:11434"))
+				.setValue(s.aiBaseUrl)
+				.onChange(v => { s.aiBaseUrl = v.trim() || DEFAULT_SETTINGS.aiBaseUrl; save(); }))
+			.addButton(b => b.setButtonText(tr("Probar")).onClick(async () => {
+				const base = s.aiBaseUrl.replace(/\/+$/, "");
+				b.setButtonText(tr("Probando…"));
+				b.setDisabled(true);
+				const models = await probeLocalServer(base);
+				b.setButtonText(tr("Probar"));
+				b.setDisabled(false);
+				if (models === null) {
+					paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo «ollama serve») y vuelve a probar.", { p0: base }), "error");
+					return;
+				}
+				if (!models.length) {
+					paintStatus(tr("Responde, pero no tiene ningún modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
+					return;
+				}
+				// Ranking answers the question the raw list does not: which of
+				// these actually suits this computer.
+				const best = rankModels(models, memory)[0];
+				paintStatus(tr("Conectado · {p0} modelo(s). Leen usaría «{p1}»: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+			}));
+
+		new Setting(containerEl)
+			.setName(tr("Modelo preferido"))
+			.setDesc(tr("Vacío = el mejor que quepa en tu memoria. Para leer lo que dibujas hace falta uno multimodal, como «{p0}» ({p1}).", { p0: suggestion.model, p1: suggestion.why }))
+			.addText(t => t
+				.setPlaceholder(tr("automático"))
+				.setValue(s.aiModel)
+				.onChange(v => { s.aiModel = v.trim(); save(); }));
+
+		new Setting(containerEl)
+			.setName(tr("Usar la pizarra como contexto"))
+			.setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."))
+			.addToggle(t => t.setValue(s.aiUseBoardContext).onChange(v => { s.aiUseBoardContext = v; save(); }));
 
 		new Setting(containerEl).setName(tr("Traductor")).setHeading();
 

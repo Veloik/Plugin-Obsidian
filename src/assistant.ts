@@ -2,6 +2,7 @@ import { Notice, requestUrl, setIcon } from "obsidian";
 import { CAT_SPRITES } from "./cat-sprites";
 import { LocalStudyTool, runLocalStudyTool } from "./local-intelligence";
 import { recognizeInkFormula } from "./ink-math";
+import { tr } from "./i18n";
 
 export type PetMood = "idle" | "thinking" | "drawing" | "sleeping";
 
@@ -798,28 +799,28 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	avatar.src = CAT_SPRITES.idle;
 	header.createSpan({ cls: "notelens-assistant-name", text: petName() });
 	const modelSelect = header.createEl("select", { cls: "notelens-assistant-model" });
-	modelSelect.title = "Modelo local que responde";
+	modelSelect.title = tr("Modelo local que responde");
 	modelSelect.addClass("hidden");
 	// A plain glyph rather than an icon lookup: on some Obsidian versions the
 	// icon came out as an empty square and the chat looked like it had no close.
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-assistant-close is-glyph", text: "✕" });
-	closeBtn.title = "Cerrar el ayudante (Esc)";
-	closeBtn.setAttr("aria-label", "Cerrar el ayudante");
+	closeBtn.title = tr("Cerrar el ayudante (Esc)");
+	closeBtn.setAttr("aria-label", tr("Cerrar el ayudante"));
 	sprite.alt = petName();
 
 	const status = panel.createDiv({ cls: "notelens-assistant-status" });
 	const chooser = panel.createDiv({ cls: "notelens-assistant-chooser hidden" });
 	const chooserSelect = chooser.createEl("select", { cls: "notelens-assistant-chooser-select" });
 	const chooserCustom = chooser.createEl("input", { cls: "notelens-assistant-chooser-custom", type: "text" });
-	chooserCustom.placeholder = "…o escribe otro modelo";
-	chooserCustom.title = "Cualquier modelo multimodal que exista en Ollama";
+	chooserCustom.placeholder = tr("…o escribe otro modelo");
+	chooserCustom.title = tr("Cualquier modelo multimodal que exista en Ollama");
 	const serverBtn = panel.createEl("button", { cls: "notelens-assistant-server hidden" });
 
 	type InstantTool = LocalStudyTool | "board-latex" | BoardUtility;
 	const instantPane = panel.createDiv({ cls: "notelens-assistant-instant" });
 	const instantHeader = instantPane.createDiv({ cls: "notelens-assistant-instant-header" });
-	instantHeader.createSpan({ text: "Acciones locales" });
-	const instantScope = instantHeader.createSpan({ cls: "notelens-assistant-scope", text: "selección o página" });
+	instantHeader.createSpan({ text: tr("Acciones locales") });
+	const instantScope = instantHeader.createSpan({ cls: "notelens-assistant-scope", text: tr("selección o página") });
 	const instantGrid = instantPane.createDiv({ cls: "notelens-assistant-instant-grid" });
 	let runInstantTool: (tool: InstantTool) => void = () => {};
 	const instantTools: { id: InstantTool; icon: string; label: string; hint: string }[] = [
@@ -836,8 +837,8 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	for (const tool of instantTools) {
 		const button = instantGrid.createEl("button", { cls: "notelens-assistant-instant-tool" });
 		setIcon(button.createSpan({ cls: "notelens-assistant-instant-icon" }), tool.icon);
-		button.createSpan({ text: tool.label });
-		button.title = tool.hint;
+		button.createSpan({ text: tr(tool.label) });
+		button.title = tr(tool.hint);
 		button.onclick = () => runInstantTool(tool.id);
 	}
 
@@ -850,7 +851,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 				value: option.model,
 				text: `${option.model} · ${option.params} · ${option.downloadGb} GB`
 			});
-			entry.title = option.note;
+			entry.title = tr(option.note);
 		}
 		chooser.removeClass("hidden");
 		return () => chooserCustom.value.trim() || chooserSelect.value;
@@ -868,7 +869,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		log.empty();
 		if (messages.length === 0) {
 			const empty = log.createDiv({ cls: "notelens-assistant-empty" });
-			empty.createDiv({ text: "Selecciona una zona o usa la página completa. Estas herramientas actúan al instante y no envían nada fuera de Obsidian." });
+			empty.createDiv({ text: tr("Selecciona una zona o usa la página completa. Estas herramientas actúan al instante y no envían nada fuera de Obsidian.") });
 			return;
 		}
 		for (const message of messages) {
@@ -876,7 +877,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 			if (message.images?.length) {
 				const preview = row.createEl("img", { cls: "notelens-assistant-msg-image" });
 				preview.src = `data:image/png;base64,${message.images[0]}`;
-				preview.alt = "Lo que dibujaste";
+				preview.alt = tr("Lo que dibujaste");
 			}
 			if (message.content) row.createDiv({ cls: "notelens-assistant-msg-text", text: message.content });
 			if (message.role === "assistant") {
@@ -902,7 +903,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	runInstantTool = (tool: InstantTool) => {
 		wake();
 		if (tool === "board-latex") {
-			setStatus("Selecciona la región que contiene la fórmula.", "ok");
+			setStatus(tr("Selecciona la región que contiene la fórmula."), "ok");
 			if (open) toggle();
 			host.openFormulaReader();
 			return;
@@ -922,7 +923,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		instantScope.setText(selected ? "selección actual" : "página completa");
 		const result = runLocalStudyTool(tool, source);
 		if (result.empty || !result.content.trim()) {
-			setStatus("No hay texto legible en la selección ni en esta página.", "error");
+			setStatus(tr("No hay texto legible en la selección ni en esta página."), "error");
 			say("Necesito algo de texto", 1800);
 			return;
 		}
@@ -953,19 +954,19 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	const modeRow = panel.createDiv({ cls: "notelens-assistant-modes" });
 	const toolsModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
 	setIcon(toolsModeBtn.createSpan(), "wand-sparkles");
-	toolsModeBtn.createSpan({ text: "Acciones" });
+	toolsModeBtn.createSpan({ text: tr("Acciones") });
 	const textModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
 	setIcon(textModeBtn.createSpan(), "message-square-text");
-	textModeBtn.createSpan({ text: "Chat local" });
+	textModeBtn.createSpan({ text: tr("Chat local") });
 	const drawModeBtn = modeRow.createEl("button", { cls: "notelens-assistant-mode" });
 	setIcon(drawModeBtn.createSpan(), "pen-line");
-	drawModeBtn.createSpan({ text: "Fórmula rápida" });
+	drawModeBtn.createSpan({ text: tr("Fórmula rápida") });
 	panel.insertBefore(modeRow, instantPane);
 
 	const composer = panel.createDiv({ cls: "notelens-assistant-composer" });
 	const input = composer.createEl("textarea", { cls: "notelens-assistant-input" });
 	input.rows = 2;
-	input.placeholder = "Escribe tu pregunta y pulsa Enter";
+	input.placeholder = tr("Escribe tu pregunta y pulsa Enter");
 
 	const sketchPane = composer.createDiv({ cls: "notelens-assistant-sketch" });
 	const sketchCanvas = sketchPane.createEl("canvas");
@@ -976,13 +977,13 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	sketchCanvas.style.width = `${SKETCH_W}px`;
 	sketchCanvas.style.height = `${SKETCH_H}px`;
 	const sketchCtx = sketchCanvas.getContext("2d");
-	const sketchHint = sketchPane.createDiv({ cls: "notelens-assistant-sketch-hint", text: "Escribe una fórmula; se lee desde los trazos" });
+	const sketchHint = sketchPane.createDiv({ cls: "notelens-assistant-sketch-hint", text: tr("Escribe una fórmula; se lee desde los trazos") });
 	const requests = panel.createDiv({ cls: "notelens-assistant-requests" });
 	panel.insertBefore(requests, composer);
 	const REQUESTS: [string, string][] = [];
 	let chosenRequest = "";
 	const requestButtons: HTMLElement[] = [];
-	requests.createSpan({ cls: "notelens-assistant-requests-label", text: "Reconocimiento vectorial local · fracciones, potencias y operadores" });
+	requests.createSpan({ cls: "notelens-assistant-requests-label", text: tr("Reconocimiento vectorial local · fracciones, potencias y operadores") });
 	for (const [label, prompt] of REQUESTS) {
 		const chip = requests.createEl("button", { cls: "notelens-assistant-request", text: label });
 		chip.title = prompt;
@@ -995,7 +996,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	}
 	const sketchClear = sketchPane.createEl("button", { cls: "notelens-assistant-sketch-clear" });
 	setIcon(sketchClear, "eraser");
-	sketchClear.title = "Borrar el dibujo";
+	sketchClear.title = tr("Borrar el dibujo");
 	let sketchStrokes: { x: number; y: number }[][] = [];
 	let sketchCurrent: { x: number; y: number }[] | null = null;
 
@@ -1061,11 +1062,11 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		if (mode === "tools") {
 			serverBtn.addClass("hidden");
 			hideChooser();
-			setStatus("Acciones instantáneas · sin red ni modelos", "ok");
+			setStatus(tr("Acciones instantáneas · sin red ni modelos"), "ok");
 		} else if (mode === "draw") {
 			serverBtn.addClass("hidden");
 			hideChooser();
-			setStatus("Escribe y pulsa enviar · lectura vectorial local", "ok");
+			setStatus(tr("Escribe y pulsa enviar · lectura vectorial local"), "ok");
 		} else {
 			void refreshModels();
 			input.focus();
@@ -1112,7 +1113,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		setStatus(reason, "info");
 		showServerButton("Descargar el modelo elegido", "download", async () => {
 			const model = choice();
-			if (!model) { setStatus("Elige un modelo de la lista o escribe su nombre.", "error"); return; }
+			if (!model) { setStatus(tr("Elige un modelo de la lista o escribe su nombre."), "error"); return; }
 			const ok = await server.pull(model, text => setStatus(text));
 			if (!ok) { setStatus(`No he podido descargar ${model}. Prueba en una terminal: ollama pull ${model}`, "error"); return; }
 			client.forgetServer();
@@ -1123,7 +1124,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 	};
 
 	const refreshModels = async () => {
-		setStatus("Buscando un modelo local…");
+		setStatus(tr("Buscando un modelo local…"));
 		serverBtn.addClass("hidden");
 		hideChooser();
 		let { reachable, models } = await client.describeServer();
@@ -1157,7 +1158,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 				if (missingOllama) {
 					const plan = server.installPlan();
 					if (plan) {
-						setStatus("No tienes Ollama en este equipo. Puedo instalarlo por ti; todo se queda en tu ordenador.", "info");
+						setStatus(tr("No tienes Ollama en este equipo. Puedo instalarlo por ti; todo se queda en tu ordenador."), "info");
 						showServerButton(plan.label, "download", async () => {
 							const ok = await server.install(text => setStatus(text));
 							if (!ok) { setStatus(`No he podido instalarlo. Descárgalo a mano en ${plan.manual}`, "error"); return; }

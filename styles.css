@@ -2562,32 +2562,56 @@
   color: #d7dee8;
 }
 
-.notelens-eraser-modes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 8px;
+/* --------------------------------------------------------------------------
+   ERASER PANEL
+   -------------------------------------------------------------------------- */
+.notelens-eraser-preview {
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01)),
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.14) 1px, transparent 0) 0 0 / 12px 12px;
 }
 
-.notelens-eraser-mode {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 7px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #d1d5db;
-  font-size: 12px;
-  cursor: pointer;
+.notelens-eraser-preview-svg {
+  display: block;
+  width: 100%;
+  height: 52px;
 }
 
-.notelens-eraser-mode:hover,
-.notelens-eraser-mode.active {
-  border-color: var(--tool-accent, #0f6cbd);
-  background: var(--tool-accent-soft, rgba(15, 108, 189, 0.16));
-  color: #ffffff;
+/* The faint line is the ink that was there; the solid one is what survives. */
+.notelens-eraser-preview-ghost,
+.notelens-eraser-preview-ink {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 3.4;
+}
+
+.notelens-eraser-preview-ghost {
+  stroke: rgba(226, 232, 240, 0.16);
+  stroke-dasharray: 4 5;
+}
+
+.notelens-eraser-preview-ink {
+  stroke: #e2e8f0;
+  transition: opacity 120ms ease;
+}
+
+/* Whole-stroke mode: nothing survives, so only the ghost is left. */
+.notelens-eraser-preview.is-whole .notelens-eraser-preview-ink { opacity: 0; }
+.notelens-eraser-preview.is-whole .notelens-eraser-preview-ghost { stroke: rgba(239, 68, 68, 0.42); }
+
+.notelens-eraser-preview-disc {
+  fill: rgba(248, 250, 252, 0.1);
+  stroke: rgba(248, 250, 252, 0.85);
+  stroke-width: 1.6;
+}
+
+.notelens-eraser-preview.is-whole .notelens-eraser-preview-disc {
+  fill: rgba(239, 68, 68, 0.14);
+  stroke: rgba(248, 113, 113, 0.9);
 }
 
 .notelens-eraser-sizes {
@@ -2599,41 +2623,103 @@
 .notelens-eraser-choice {
   display: grid;
   place-items: center;
-  gap: 4px;
-  min-height: 54px;
-  padding: 5px 2px;
+  align-content: center;
+  gap: 5px;
+  min-height: 62px;
+  padding: 6px 2px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.035);
   color: #d7dee8;
   cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
 }
 
-.notelens-eraser-block {
-  width: 16px;
-  height: 11px;
-  transform: rotate(-22deg) skewX(-7deg);
-  border: 1px solid #64748b;
-  border-radius: 2px;
-  background: linear-gradient(135deg, #f8fafc 0 46%, #cbd5e1 47% 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76), 0 1px 2px rgba(0, 0, 0, 0.28);
+/* A disc at the size the eraser really is, not a picture of an eraser. */
+.notelens-eraser-disc {
+  width: var(--disc, 16px);
+  height: var(--disc, 16px);
+  border: 1.5px solid rgba(203, 213, 225, 0.85);
+  border-radius: 50%;
+  background: rgba(226, 232, 240, 0.14);
 }
-
-.notelens-eraser-choice:nth-child(2) .notelens-eraser-block { width: 21px; height: 13px; }
-.notelens-eraser-choice:nth-child(3) .notelens-eraser-block { width: 27px; height: 15px; }
-.notelens-eraser-choice:nth-child(4) .notelens-eraser-block { width: 34px; height: 17px; }
 
 .notelens-eraser-size-label {
   font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
-.notelens-eraser-choice:hover,
+.notelens-eraser-choice:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+}
+
 .notelens-eraser-choice.active {
   border-color: var(--tool-accent);
   background: var(--tool-accent-soft);
   color: #ffffff;
 }
+
+.notelens-eraser-choice.active .notelens-eraser-disc {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.notelens-choice-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.notelens-choice-card {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-height: 58px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #d1d5db;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.notelens-choice-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notelens-choice-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.notelens-choice-hint {
+  color: rgba(203, 213, 225, 0.62);
+  font-size: 10.5px;
+  line-height: 1.3;
+}
+
+.notelens-choice-card .notelens-mode-icon { display: grid; place-items: center; }
+.notelens-choice-card .svg-icon { width: 14px; height: 14px; }
+
+.notelens-choice-card:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.notelens-choice-card.active {
+  border-color: var(--tool-accent, #0f6cbd);
+  background: var(--tool-accent-soft, rgba(15, 108, 189, 0.16));
+  color: #ffffff;
+}
+
+.notelens-choice-card.active .notelens-choice-hint { color: rgba(255, 255, 255, 0.72); }
 
 .notelens-panel-hint {
   margin-top: 10px;
@@ -5359,3 +5445,94 @@ span.notelens-assistant-name {
 	.notelens-ink-preview { min-height: 58px; }
 	.notelens-ink-board { max-height: 220px; overflow-y: auto; }
 }
+
+/* --------------------------------------------------------------------------
+   EQUATION DIALOG: HANDWRITING AND KEYBOARD
+   -------------------------------------------------------------------------- */
+.notelens-ink-modes {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.notelens-ink-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted, #b6bfcc);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.notelens-ink-mode:hover { background: var(--background-modifier-hover, rgba(255, 255, 255, 0.06)); }
+
+.notelens-ink-mode.active {
+  border-color: var(--interactive-accent, #0f6cbd);
+  background: var(--interactive-accent, #0f6cbd);
+  color: var(--text-on-accent, #ffffff);
+}
+
+.notelens-ink-mode .svg-icon { width: 14px; height: 14px; }
+
+.notelens-ink-keyboard {
+  margin: 8px 0 4px;
+}
+
+.notelens-ink-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.notelens-ink-group {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--background-modifier-hover, rgba(255, 255, 255, 0.05));
+  color: var(--text-muted, #b6bfcc);
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.notelens-ink-group.active {
+  border-color: var(--interactive-accent, #0f6cbd);
+  color: var(--text-normal, #eaeef5);
+}
+
+.notelens-ink-keys {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 5px;
+}
+
+.notelens-ink-key {
+  min-height: 34px;
+  padding: 4px 6px;
+  border: 1px solid var(--background-modifier-border, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+  background: var(--background-secondary, rgba(255, 255, 255, 0.04));
+  color: var(--text-normal, #eaeef5);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.notelens-ink-key:hover {
+  border-color: var(--interactive-accent, #0f6cbd);
+  background: var(--background-modifier-hover, rgba(255, 255, 255, 0.09));
+}
+
+.notelens-ink-cheatsheet {
+  margin-top: 9px;
+  color: var(--text-faint, #8b949e);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* The board's `.hidden` rule is scoped to .onenote-workspace; a modal is not
+   inside it, so the class did nothing here and both panes showed at once. */
+.notelens-ink-equation .hidden { display: none; }
