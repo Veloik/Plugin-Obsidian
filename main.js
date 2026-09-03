@@ -38030,10 +38030,25 @@ function splitForTranslation(value) {
   if (current) chunks.push(current);
   return chunks.filter(Boolean);
 }
+var NAMED_ENTITIES = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: "\xA0"
+};
 function decodeEntities(value) {
-  const el = document.createElement("textarea");
-  el.innerHTML = value;
-  return el.value;
+  return value.replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (match, body) => {
+    if (body[0] === "#") {
+      const hex = body[1] === "x" || body[1] === "X";
+      const code = parseInt(hex ? body.slice(2) : body.slice(1), hex ? 16 : 10);
+      if (!Number.isFinite(code) || code <= 0 || code > 1114111) return match;
+      if (code >= 55296 && code <= 57343) return match;
+      return String.fromCodePoint(code);
+    }
+    return NAMED_ENTITIES[body.toLowerCase()] ?? match;
+  });
 }
 async function translateText(source, from, to) {
   if (!source.trim()) return "";
@@ -78339,6 +78354,17 @@ var GRID_CELLS = { small: 18, medium: 26, large: 40 };
 var A4_SCENE_W2 = 794;
 var A4_SCENE_H2 = 1123;
 var TEXT_COLORS2 = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
+function paintPrismTokens(parent, tokens) {
+  for (const token of Array.isArray(tokens) ? tokens : [tokens]) {
+    if (typeof token === "string") {
+      parent.appendText(token);
+      continue;
+    }
+    const aliases = Array.isArray(token.alias) ? token.alias : token.alias ? [token.alias] : [];
+    const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
+    paintPrismTokens(span, token.content);
+  }
+}
 var LIST_PREFIX = /^(\s*)(?:[•·]|\d+[.)]|→|-->|->|[-–])\s+/;
 var LIST_MARK = { bullet: "\u2022 ", number: "1. ", arrow: "\u2192 ", dash: "- " };
 function listKindOf(line) {
@@ -83443,7 +83469,7 @@ ${rows.join("\n")}`);
     }
     const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : void 0;
     if (grammar && this.prism) {
-      code.innerHTML = this.prism.highlight(tb.text, grammar, lang);
+      paintPrismTokens(code, this.prism.tokenize(tb.text, grammar));
     } else {
       code.setText(tb.text);
     }
@@ -84116,7 +84142,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.3.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.3.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian13.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

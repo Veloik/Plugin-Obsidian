@@ -53,10 +53,27 @@ function splitForTranslation(value: string): string[] {
 	return chunks.filter(Boolean);
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+	amp: "&", lt: "<", gt: ">", quot: "\"", apos: "'", nbsp: " ",
+};
+
+/**
+ * MyMemory answers with HTML entities (&quot;, &#39;) inside otherwise plain text.
+ * Decoding them by hand keeps the reply away from the DOM: parsing it as markup
+ * would run whatever the service decided to send back.
+ */
 function decodeEntities(value: string): string {
-	const el = document.createElement("textarea");
-	el.innerHTML = value;
-	return el.value;
+	return value.replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (match, body: string) => {
+		if (body[0] === "#") {
+			const hex = body[1] === "x" || body[1] === "X";
+			const code = parseInt(hex ? body.slice(2) : body.slice(1), hex ? 16 : 10);
+			// Lone surrogates and out-of-range points would throw; leave those written out.
+			if (!Number.isFinite(code) || code <= 0 || code > 0x10ffff) return match;
+			if (code >= 0xd800 && code <= 0xdfff) return match;
+			return String.fromCodePoint(code);
+		}
+		return NAMED_ENTITIES[body.toLowerCase()] ?? match;
+	});
 }
 
 /** Uses MyMemory's documented GET endpoint, without requiring a per-user API key. */

@@ -1,9 +1,9 @@
 {
   "id": "notelens",
   "name": "NoteLens",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "minAppVersion": "1.0.0",
-  "description": "NoteLens: Pizarra infinita profesional para Obsidian con soporte para lápiz óptico, etiquetas inteligentes, PDFs y vídeos interactivos.",
+  "description": "Infinite whiteboard with pressure-sensitive stylus ink, smart tags, PDFs and interactive videos on the canvas.",
   "author": "JotaTito",
   "authorUrl": "https://github.com/Veloik",
   "isDesktopOnly": false

@@ -36,6 +36,26 @@ const A4_SCENE_H = 1123;
 const TEXT_COLORS = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
 
 // ---------------------------------------------------------------------------
+// Syntax highlighting without markup
+// ---------------------------------------------------------------------------
+
+/** One node of Prism's token tree: a literal run, or a typed span holding more. */
+type PrismToken = string | { type: string; alias?: string | string[]; content: PrismToken | PrismToken[] };
+
+/** Paints Prism's tokens as elements, so highlighted code never travels as HTML. */
+function paintPrismTokens(parent: HTMLElement, tokens: PrismToken | PrismToken[]): void {
+	for (const token of Array.isArray(tokens) ? tokens : [tokens]) {
+		if (typeof token === "string") {
+			parent.appendText(token);
+			continue;
+		}
+		const aliases = Array.isArray(token.alias) ? token.alias : token.alias ? [token.alias] : [];
+		const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
+		paintPrismTokens(span, token.content);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // Lists in plain text boxes: bullets, numbers, arrows and dashes as line prefixes
 // ---------------------------------------------------------------------------
 
@@ -280,7 +300,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private eraserCursorEl: HTMLElement | null = null;
 	private textMeasurer: CanvasRenderingContext2D | null = null;
 	/** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
-	private prism: { highlight: (code: string, grammar: unknown, lang: string) => string; languages: Record<string, unknown> } | null = null;
+	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
 	private focusModeEnabled = false;
 	private activeTextEditor: HTMLTextAreaElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
@@ -5199,8 +5219,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : undefined;
 		if (grammar && this.prism) {
-			// Prism escapes the source itself; only its own markup goes in.
-			code.innerHTML = this.prism.highlight(tb.text, grammar, lang);
+			// Tokenize rather than highlight: the tokens become real elements, so no
+			// markup is ever parsed out of the code the user typed.
+			paintPrismTokens(code, this.prism.tokenize(tb.text, grammar));
 		} else {
 			code.setText(tb.text);
 		}

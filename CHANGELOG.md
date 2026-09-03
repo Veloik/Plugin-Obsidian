@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.1
+
+### Changed
+
+- Syntax highlighting in code blocks paints Prism's tokens as elements instead of assigning its markup, and the translator decodes the entities it gets back by hand, so no text coming from a code block or from the translation service is ever parsed as HTML.
+- The manifest description is in English and no longer repeats the plugin name, as the community catalogue requires.
+
 ## 2.3.0
 
 ### Added
