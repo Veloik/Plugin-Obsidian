@@ -575,19 +575,19 @@ function createShortcutsPanel(container: HTMLElement): { toggle: () => void; isO
 	const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
 	setIcon(closeBtn, "x");
 	const groups: [string, [string, string][]][] = [
-		["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["P", "Lápiz (pulsa de nuevo: bolígrafo, lápiz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
+		["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["M", "Mano: arrastra para moverte por la pizarra"], ["P", "Lápiz (pulsa de nuevo: bolígrafo, lápiz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
 		["Edición", [["Ctrl+Z / Ctrl+Y", "Deshacer / rehacer"], ["Ctrl+A", "Seleccionar todo"], ["Ctrl+D", "Duplicar selección"], ["Ctrl+C / X / V", "Copiar, cortar y pegar"], ["Supr", "Borrar selección"], ["Flechas", "Mover selección (Shift: ×10)"], ["Ctrl+F", "Buscar en la pizarra"]]],
 		["Dibujo y texto", [["Shift + lápiz", "Línea recta"], ["Doble clic", "Nuevo cuadro de texto"], ["Doble clic en objeto", "Editar tabla, fórmula o gráfico"], ["Asa circular", "Girar la selección (Shift: 15°)"], ["Tab", "Indentar en el editor"], ["Ctrl+Enter / Esc", "Terminar de editar"], ["$…$", "Fórmula LaTeX en un texto"], ["```lang", "Convertir en bloque de código"]]],
-		["Vista", [["Rueda", "Desplazar (Shift: horizontal)"], ["Ctrl + rueda", "Zoom"], ["Alt + arrastrar", "Mover la página"], ["Esc", "Cerrar paneles"]]]
+		["Vista", [["Rueda", "Desplazar (Shift: horizontal)"], ["Ctrl + rueda", "Zoom"], ["Alt + arrastrar", "Mover la página"], ["Botón del lápiz", "Mover la página sin cambiar de herramienta"], ["Dos dedos", "Mover la página y hacer zoom"], ["Esc", "Cerrar paneles"]]]
 	];
 	const body = panel.createDiv({ cls: "notelens-shortcuts-body" });
 	for (const [title, rows] of groups) {
 		const group = body.createDiv({ cls: "notelens-shortcuts-group" });
-		group.createDiv({ cls: "notelens-panel-label", text: title });
+		group.createDiv({ cls: "notelens-panel-label", text: tr(title) });
 		for (const [keys, label] of rows) {
 			const row = group.createDiv({ cls: "notelens-shortcut" });
-			row.createEl("kbd", { text: keys });
-			row.createSpan({ text: label });
+			row.createEl("kbd", { text: tr(keys) });
+			row.createSpan({ text: tr(label) });
 		}
 	}
 	let open = false;

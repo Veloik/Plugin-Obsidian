@@ -1570,7 +1570,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		// the tool you are drawing with.
 		const barrelPan = e.pointerType === "pen" && e.button === 2;
 		if ((e.pointerType === "touch" && !this.plugin.settings.fingerDraws)
-			|| e.button === 1 || barrelPan || (this.currentTool === "hand" && e.button === 0)) {
+			|| e.button === 1 || barrelPan
+			|| (e.button === 0 && (this.currentTool === "hand" || e.altKey))) {
 			// A barrel press also asks for the context menu; the drag wins.
 			if (barrelPan) this.swallowNextCanvasMenu = true;
 			this.startPan(e);

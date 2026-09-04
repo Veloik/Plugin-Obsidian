@@ -6435,6 +6435,45 @@ var en = {
   "No he reconocido este s\xEDmbolo. Elige uno de los parecidos, o escr\xEDbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again.",
   "S\xEDmbolo reconocido \xB7 {p0}%": "Symbol recognised \xB7 {p0}%",
   "Mano (M) \u2014 arrastra con el l\xE1piz o el dedo para moverte por la pizarra": "Hand (M) \u2014 drag with the pen or a finger to move around the board",
+  // The shortcuts panel. Keys that read the same in both languages (Ctrl+A,
+  // Tab, Esc, the tool letters) are left to fall through untouched.
+  "Lazo": "Lasso",
+  "Mano: arrastra para moverte por la pizarra": "Hand: drag to move around the board",
+  "L\xE1piz (pulsa de nuevo: bol\xEDgrafo, l\xE1piz, pluma, rotulador, pincel)": "Pen (press again: ballpoint, pencil, fountain, marker, brush)",
+  "Edici\xF3n": "Editing",
+  "Deshacer / rehacer": "Undo / redo",
+  "Seleccionar todo": "Select all",
+  "Duplicar selecci\xF3n": "Duplicate selection",
+  "Copiar, cortar y pegar": "Copy, cut and paste",
+  "Supr": "Delete",
+  "Borrar selecci\xF3n": "Delete selection",
+  "Flechas": "Arrows",
+  "Mover selecci\xF3n (Shift: \xD710)": "Move selection (Shift: \xD710)",
+  "Buscar en la pizarra": "Search the board",
+  "Dibujo y texto": "Drawing and text",
+  "Shift + l\xE1piz": "Shift + pen",
+  "L\xEDnea recta": "Straight line",
+  "Doble clic": "Double-click",
+  "Nuevo cuadro de texto": "New text box",
+  "Doble clic en objeto": "Double-click an object",
+  "Editar tabla, f\xF3rmula o gr\xE1fico": "Edit table, formula or chart",
+  "Asa circular": "Round handle",
+  "Girar la selecci\xF3n (Shift: 15\xB0)": "Rotate the selection (Shift: 15\xB0)",
+  "Indentar en el editor": "Indent in the editor",
+  "Terminar de editar": "Finish editing",
+  "F\xF3rmula LaTeX en un texto": "LaTeX formula inside text",
+  "Convertir en bloque de c\xF3digo": "Turn into a code block",
+  "Vista": "View",
+  "Rueda": "Wheel",
+  "Desplazar (Shift: horizontal)": "Scroll (Shift: sideways)",
+  "Ctrl + rueda": "Ctrl + wheel",
+  "Alt + arrastrar": "Alt + drag",
+  "Mover la p\xE1gina": "Move the page",
+  "Bot\xF3n del l\xE1piz": "Stylus button",
+  "Mover la p\xE1gina sin cambiar de herramienta": "Move the page without changing tool",
+  "Dos dedos": "Two fingers",
+  "Mover la p\xE1gina y hacer zoom": "Move the page and zoom",
+  "Cerrar paneles": "Close panels",
   // Quick tags: badges, their cards and the tag summary.
   "Explica por qu\xE9 marcaste esto. Aparece al pasar el cursor por la etiqueta.": "Explain why you marked this. It shows when you hover over the tag.",
   "Buscar etiquetas\u2026": "Search tags\u2026",
@@ -61258,19 +61297,19 @@ function createShortcutsPanel(container) {
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
   (0, import_obsidian12.setIcon)(closeBtn, "x");
   const groups = [
-    ["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["P", "L\xE1piz (pulsa de nuevo: bol\xEDgrafo, l\xE1piz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
+    ["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["M", "Mano: arrastra para moverte por la pizarra"], ["P", "L\xE1piz (pulsa de nuevo: bol\xEDgrafo, l\xE1piz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
     ["Edici\xF3n", [["Ctrl+Z / Ctrl+Y", "Deshacer / rehacer"], ["Ctrl+A", "Seleccionar todo"], ["Ctrl+D", "Duplicar selecci\xF3n"], ["Ctrl+C / X / V", "Copiar, cortar y pegar"], ["Supr", "Borrar selecci\xF3n"], ["Flechas", "Mover selecci\xF3n (Shift: \xD710)"], ["Ctrl+F", "Buscar en la pizarra"]]],
     ["Dibujo y texto", [["Shift + l\xE1piz", "L\xEDnea recta"], ["Doble clic", "Nuevo cuadro de texto"], ["Doble clic en objeto", "Editar tabla, f\xF3rmula o gr\xE1fico"], ["Asa circular", "Girar la selecci\xF3n (Shift: 15\xB0)"], ["Tab", "Indentar en el editor"], ["Ctrl+Enter / Esc", "Terminar de editar"], ["$\u2026$", "F\xF3rmula LaTeX en un texto"], ["```lang", "Convertir en bloque de c\xF3digo"]]],
-    ["Vista", [["Rueda", "Desplazar (Shift: horizontal)"], ["Ctrl + rueda", "Zoom"], ["Alt + arrastrar", "Mover la p\xE1gina"], ["Esc", "Cerrar paneles"]]]
+    ["Vista", [["Rueda", "Desplazar (Shift: horizontal)"], ["Ctrl + rueda", "Zoom"], ["Alt + arrastrar", "Mover la p\xE1gina"], ["Bot\xF3n del l\xE1piz", "Mover la p\xE1gina sin cambiar de herramienta"], ["Dos dedos", "Mover la p\xE1gina y hacer zoom"], ["Esc", "Cerrar paneles"]]]
   ];
   const body = panel.createDiv({ cls: "notelens-shortcuts-body" });
   for (const [title, rows] of groups) {
     const group = body.createDiv({ cls: "notelens-shortcuts-group" });
-    group.createDiv({ cls: "notelens-panel-label", text: title });
+    group.createDiv({ cls: "notelens-panel-label", text: tr(title) });
     for (const [keys, label] of rows) {
       const row = group.createDiv({ cls: "notelens-shortcut" });
-      row.createEl("kbd", { text: keys });
-      row.createSpan({ text: label });
+      row.createEl("kbd", { text: tr(keys) });
+      row.createSpan({ text: tr(label) });
     }
   }
   let open2 = false;
@@ -63587,7 +63626,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     if (this.activeTextEditor) this.commitTextEditor();
     const barrelPan = e.pointerType === "pen" && e.button === 2;
-    if (e.pointerType === "touch" && !this.plugin.settings.fingerDraws || e.button === 1 || barrelPan || this.currentTool === "hand" && e.button === 0) {
+    if (e.pointerType === "touch" && !this.plugin.settings.fingerDraws || e.button === 1 || barrelPan || e.button === 0 && (this.currentTool === "hand" || e.altKey)) {
       if (barrelPan) this.swallowNextCanvasMenu = true;
       this.startPan(e);
       return;
