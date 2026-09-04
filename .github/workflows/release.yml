@@ -19,7 +19,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # The dedicated release check handles dependency findings; avoid a duplicate
+      # advisory request during installation when npm's audit service is down.
+      - run: npm ci --no-audit
       - name: Verify tag and plugin version
         run: |
           node -e "const m = require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) { throw new Error('The tag must match the manifest version, which is ' + m.version); }"
