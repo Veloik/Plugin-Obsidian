@@ -5,12 +5,13 @@
 ### Added
 
 - A board can be made where every other thing in the vault is made: right-click a folder in the file explorer — or hold it down on a phone or tablet — and "New NoteLens board" sits next to "New note" and "New folder", in the language Obsidian is running in. The board lands inside that folder, and its name follows the language too (`Board_2026-09-04` in English, `Pizarra_2026-09-04` in Spanish). Until now the only ways in were the ribbon icon and the command palette, neither of which is where anyone looks on a tablet.
-- A hand tool (M) in the toolbar, so a stylus moves the board without putting a finger down: drag anywhere, over a note or a PDF included. The barrel button of a pen does the same without leaving the tool you are drawing with, and does not open the canvas menu while it pans.
+- A hand tool (M) in the toolbar, so a stylus moves the board without putting a finger down: drag anywhere, over a note or a PDF included. The barrel button of a pen does the same without leaving the tool you are drawing with, and does not open the canvas menu while it pans. Alt+drag, which the shortcuts sheet has always promised, now pans from any tool instead of only the selection one.
 
 ### Fixed
 
 - The board did not fit a phone. Obsidian floats its navigation bar over the bottom of the view, and the paper, bookmarks, pages, zoom and document rows all sat underneath it, out of reach; on a narrow phone the zoom pill also landed on top of the pages button. Everything anchored to the bottom now clears the bar — measured from the app when it is there, allowed for when it is not — and the bottom row is one line that fits a 360px screen. Held sideways, the insert and document tools stand up as columns against the sides instead of stealing three of the six rows a landscape phone has.
 - Tags spoke Spanish in an English Obsidian. Placing Important, Question, Key idea, Task or Floating note showed Spanish in the hover card heading, the badge tooltips, the step wording of a task ("paso a mano", "hecho", "pendiente"), the image errors of the note dialog, the search box and the empty states of the tag summary, and the text a tag prints on an exported PDF. Every one of them goes through the catalogue now, and `dev-harness/run73.mjs` places all five tags in English and reports anything that is still Spanish.
+- The shortcuts sheet was written in Spanish whatever the language — every key and every explanation in it. `dev-harness/run57.mjs` now opens it too, so it is audited with the rest of the interface.
 - The first page of a new board was called "Página 1" whatever the language, while every page added after it was named in the interface language; a board created in English now starts on "Page 1", which is also the name the tag summary shows next to each tag.
 
 ### Tooling

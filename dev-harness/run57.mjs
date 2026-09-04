@@ -123,6 +123,14 @@ for (const [title, name] of [["Scientific calculator", "calculator"], ["Translat
 	await esc();
 }
 
+// the shortcuts sheet, which only the small "?" in the zoom controls opens
+await page.evaluate(() => document.querySelector(".notelens-nav-help")?.click());
+await sleep(300);
+await record("panel:shortcuts");
+await shot(page, "shortcuts-en");
+await page.evaluate(() => document.querySelector(".notelens-shortcuts .notelens-embed-close")?.click());
+await esc();
+
 // the assistant
 await page.evaluate(() => document.querySelector(".notelens-pet")?.click());
 await sleep(500);
