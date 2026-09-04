@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>NoteLens harness</title>
 <style>
   :root {
@@ -13,6 +14,20 @@
   }
   html, body { margin: 0; height: 100%; background: #202020; color: var(--text-normal); font-family: var(--font-interface); font-size: 14px; }
   .view-container { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  /* Obsidian's own mobile chrome, reproduced so a run can see what it covers:
+     a header that takes space and a navigation bar that floats over the view. */
+  body.has-mobile-chrome .view-container { top: var(--chrome-header, 0px); }
+  #obsidian-header {
+    position: absolute; top: 0; left: 0; right: 0; height: var(--chrome-header, 0px);
+    display: flex; align-items: center; justify-content: center;
+    background: #000; color: #dcddde; font-weight: 700; z-index: 9000;
+  }
+  #obsidian-navbar {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: var(--chrome-navbar-gap, 10px); width: min(78%, 420px); height: var(--chrome-navbar, 0px);
+    border-radius: 999px; background: rgba(58, 58, 60, 0.92); z-index: 9000;
+    display: flex; align-items: center; justify-content: space-around; color: #d1d1d6;
+  }
   .view-header { height: 0; }
   .view-content { flex: 1; position: relative; overflow: hidden; }
   .svg-icon { width: 18px; height: 18px; }
@@ -49,11 +64,13 @@
   const PluginClass = window.module.exports.default || window.module.exports;
   const file = new window.__TFile("Pizarra_prueba.notelens");
   window.__saved = null;
+  window.__workspaceHandlers = {};
+  window.__created = [];
   const app = {
     vault: {
       read: async () => "",
       modify: async (f, content) => { window.__saved = content; },
-      create: async (p, c) => new window.__TFile(p),
+      create: async (p, c) => { window.__created.push(p); return new window.__TFile(p); },
       createBinary: async (p) => new window.__TFile(p),
       createFolder: async () => {},
       readBinary: async () => new ArrayBuffer(0),
@@ -64,8 +81,11 @@
     },
     workspace: {
       getActiveViewOfType: () => window.__view,
-      getLeaf: () => ({ openFile: async () => {} }),
+      getLeaf: () => ({ openFile: async (f) => { window.__opened = f; } }),
       openLinkText: () => {},
+      // Workspace events the plugin subscribes to, kept so a run can fire them.
+      on: (name, fn) => { (window.__workspaceHandlers[name] ||= []).push(fn); return { name, fn }; },
+      offref: () => {},
       activeLeaf: null
     },
     loadLocalStorage: (key) => { try { return JSON.parse(localStorage.getItem("harness:" + key) ?? "null"); } catch { return null; } },
@@ -82,6 +102,21 @@
   // Enough of the workspace API for the plugin to refresh open boards.
   app.workspace.getLeavesOfType = (type) => (type === "notelens-canvas-view" || type === view.getViewType?.()) ? [{ view }] : [];
   window.__assistantTest = window.module.exports.__assistantTest || null;
+  // Optional: the header and floating navigation bar Obsidian draws on a phone.
+  if (window.__mobileChrome) {
+    const chrome = window.__mobileChrome;
+    document.body.classList.add("has-mobile-chrome");
+    document.body.style.setProperty("--chrome-header", `${chrome.header ?? 92}px`);
+    document.body.style.setProperty("--chrome-navbar", `${chrome.navbar ?? 56}px`);
+    document.body.style.setProperty("--chrome-navbar-gap", `${chrome.navbarGap ?? 12}px`);
+    const header = document.body.createDiv();
+    header.id = "obsidian-header";
+    header.setText(file.basename);
+    // The real app calls it .mobile-navbar; the view measures it by that name.
+    const navbar = document.body.createDiv({ cls: "mobile-navbar" });
+    navbar.id = "obsidian-navbar";
+    for (const glyph of ["‹", "›", "○", "+", "▣", "≡"]) navbar.createSpan({ text: glyph });
+  }
   document.body.appendChild(view.containerEl);
   await view.onOpen();
   await view.onLoadFile(file);

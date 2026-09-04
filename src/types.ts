@@ -1,3 +1,5 @@
+import { tr } from "./i18n";
+
 export interface ViewTransform {
 	x: number;
 	y: number;
@@ -319,7 +321,7 @@ export function createDocumentPage(title: string, defaults: DocumentDefaults = {
 }
 
 export function createEmptyDocument(defaults: DocumentDefaults = {}): OneNoteDocument {
-	const firstPage = createDocumentPage("Página 1", defaults, "page_1");
+	const firstPage = createDocumentPage(tr("Página {p0}", { p0: 1 }), defaults, "page_1");
 	return {
 		version: DOC_VERSION,
 		pages: [firstPage],
@@ -360,7 +362,7 @@ export function migrateDocument(raw: any): OneNoteDocument {
 			const source = raw.pages[index];
 			if (!source || typeof source !== "object") continue;
 			const page = createDocumentPage(
-				typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : `Página ${index + 1}`,
+				typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : tr("Página {p0}", { p0: index + 1 }),
 				{},
 				typeof source.id === "string" && source.id ? source.id : genId("page")
 			);

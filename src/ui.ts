@@ -5,7 +5,7 @@ import { ERASER_SPRITE } from "./eraser-sprite";
 import { CanvasRenderer } from "./renderer";
 import { tr } from "./i18n";
 
-export type ToolId = "select" | "pen" | "highlighter" | "eraser" | "text" | "shape" | "place_badge";
+export type ToolId = "select" | "hand" | "pen" | "highlighter" | "eraser" | "text" | "shape" | "place_badge";
 /** "stroke" removes whole strokes; "partial" cuts only what the eraser touches. */
 export type EraserMode = "stroke" | "partial";
 /** Rectangle drag or a free-hand lasso, like OneNote's lasso select. */
@@ -298,6 +298,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const tools: { id: ToolId; icon: string; title: string }[] = [
 		{ id: "select", icon: "mouse-pointer-2", title: tr("Seleccionar (V) — arrastra para seleccionar en rectángulo") },
+		{ id: "hand", icon: "hand", title: tr("Mano (M) — arrastra con el lápiz o el dedo para moverte por la pizarra") },
 		{ id: "pen", icon: "pencil", title: tr("Lápiz (P) — opciones al pulsar de nuevo") },
 		{ id: "highlighter", icon: "highlighter", title: tr("Subrayador (H) — opciones al pulsar de nuevo") },
 		{ id: "eraser", icon: "eraser", title: tr("Borrador (E) — opciones al pulsar de nuevo") },
@@ -815,7 +816,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 		count.setText(String(Math.max(1, pages.findIndex(page => page.id === active) + 1)));
 		const visiblePages = pages
 			.map((page, index) => ({ page, index }))
-			.filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, `Página ${index + 1}`));
+			.filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, tr("Página {p0}", { p0: index + 1 })));
 		search.setCount(visiblePages.length, pages.length);
 		if (visiblePages.length === 0) {
 			list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay páginas que coincidan con la búsqueda.") });

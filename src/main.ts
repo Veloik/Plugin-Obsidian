@@ -1,5 +1,5 @@
 import { VISION_CATALOGUE, parseAssistantActions, rankModels, recommendedVisionModel, visionOptionsFor } from "./assistant";
-import { Plugin } from "obsidian";
+import { Plugin, TFolder } from "obsidian";
 import { OneNoteCanvasView, VIEW_TYPE_ONENOTE, tidyFormulaText } from "./view";
 import { disposePdfWorker } from "./embeds";
 import { recognizeFormula } from "./ocr";
@@ -34,6 +34,17 @@ export default class OneNotePlugin extends Plugin {
 			name: tr("Crear nueva pizarra NoteLens"),
 			callback: () => void this.createNewOneNoteFile()
 		});
+
+		// Right-clicking a folder — or holding it down on a phone or tablet — is
+		// where Obsidian offers "New note" and "New folder"; a board belongs in
+		// the same place, and it is the only way to make one without a ribbon.
+		this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
+			if (!(file instanceof TFolder)) return;
+			menu.addItem(item => item
+				.setTitle(tr("Nueva pizarra NoteLens"))
+				.setIcon("pencil")
+				.onClick(() => void this.createNewOneNoteFile(file)));
+		}));
 	}
 
 	override onunload(): void {
@@ -66,12 +77,15 @@ export default class OneNotePlugin extends Plugin {
 		return { background: s.defaultBackground, marginEnabled: s.defaultMargin, backgroundColor: s.defaultPageColor, lineColor: s.defaultLineColor, gridSize: s.defaultGridSize };
 	}
 
-	async createNewOneNoteFile(): Promise<void> {
+	/** Creates a board inside `folder`, or at the root of the vault without one. */
+	async createNewOneNoteFile(folder?: TFolder): Promise<void> {
 		const dateStr = new Date().toISOString().slice(0, 10);
-		let fileName = `Pizarra_${dateStr}.notelens`;
+		const dir = folder && !folder.isRoot() ? `${folder.path}/` : "";
+		const base = `${tr("Pizarra")}_${dateStr}`;
+		let fileName = `${dir}${base}.notelens`;
 		let n = 1;
 		while (this.app.vault.getAbstractFileByPath(fileName)) {
-			fileName = `Pizarra_${dateStr}_${n++}.notelens`;
+			fileName = `${dir}${base}_${n++}.notelens`;
 		}
 
 		const file = await this.app.vault.create(fileName, JSON.stringify(createEmptyDocument(this.documentDefaults()), null, 2));

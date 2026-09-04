@@ -1,6 +1,6 @@
 {
   "name": "notelens",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "NoteLens Canvas: Pizarra infinita inteligente para Obsidian con lápiz óptico, etiquetas OneNote, PDFs y vídeos.",
   "main": "main.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "deploy": "node esbuild.config.mjs production --deploy",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-core-tests.mjs",
+    "devices": "node dev-harness/run-devices.mjs",
     "validate": "node scripts/validate-release.mjs",
     "check": "npm run typecheck && npm test && npm run build && npm run validate",
     "release:check": "npm run check && node scripts/audit-dependencies.mjs",

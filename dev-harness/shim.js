@@ -63,6 +63,7 @@
 
 	// ---- core classes ----
 	class TFile { constructor(path) { this.path = path; const n = path.split("/").pop(); this.name = n; const i = n.lastIndexOf("."); this.basename = i > 0 ? n.slice(0, i) : n; this.extension = i > 0 ? n.slice(i + 1) : ""; this.stat = { mtime: Date.now(), ctime: Date.now(), size: 0 }; } }
+	class TFolder { constructor(path = "/") { this.path = path; this.name = path.split("/").pop() || "/"; this.children = []; } isRoot() { return this.path === "/"; } }
 	class Notice { constructor(msg, ms) { const n = document.body.createDiv({ cls: "notice", text: typeof msg === "string" ? msg : String(msg) }); this.noticeEl = n; window.__notices = (window.__notices || []); window.__notices.push(String(msg)); if (ms !== 0) setTimeout(() => n.remove(), ms || 4000); } hide() { this.noticeEl.remove(); } setMessage(m) { this.noticeEl.setText(m); return this; } }
 	class Component { constructor() { this._ev = []; } registerDomEvent(el, type, fn, opts) { el.addEventListener(type, fn, opts); this._ev.push([el, type, fn, opts]); } register(fn) { this._ev.push([null, null, fn]); } registerEvent() {} registerInterval(i) { return i; } addChild(c) { return c; } load() {} unload() { for (const [el, t, fn, o] of this._ev) if (el) el.removeEventListener(t, fn, o); else fn(); } }
 	class View extends Component { constructor(leaf) { super(); this.leaf = leaf; this.app = leaf.app; this.containerEl = document.createElement("div"); this.containerEl.className = "view-container"; this.containerEl.createDiv({ cls: "view-header" }); this.containerEl.createDiv({ cls: "view-content" }); } addAction() { return document.createElement("a"); } }
@@ -101,9 +102,9 @@
 
 	window.__obsidian = {
 		PluginSettingTab, SettingTab, renderMath, finishRenderMath, loadMathJax, loadPrism,
-		Plugin, Component, View, FileView, ItemView: View, Modal, FuzzySuggestModal, Setting, Menu, MenuItem, Notice, TFile, TFolder: class {}, TAbstractFile: class {},
+		Plugin, Component, View, FileView, ItemView: View, Modal, FuzzySuggestModal, Setting, Menu, MenuItem, Notice, TFile, TFolder, TAbstractFile: class {},
 		WorkspaceLeaf: class {}, App: class {}, setIcon, normalizePath: (p) => p.replace(/\\/g, "/").replace(/\/+/g, "/"),
-		requestUrl: async (opts) => { const o = typeof opts === "string" ? { url: opts } : opts; const r = await fetch(o.url, { method: o.method || "GET", headers: o.headers, body: o.body }); const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {} if (r.status >= 400 && o.throw !== false) throw new Error("Request failed, status " + r.status); return { status: r.status, text, json, headers: {} }; }, Platform: { isMobile: false, isDesktop: true, isMacOS: false, isIosApp: false }, getLanguage: () => "es", debounce: (f) => f, moment: null
+		requestUrl: async (opts) => { const o = typeof opts === "string" ? { url: opts } : opts; const r = await fetch(o.url, { method: o.method || "GET", headers: o.headers, body: o.body }); const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {} if (r.status >= 400 && o.throw !== false) throw new Error("Request failed, status " + r.status); return { status: r.status, text, json, headers: {} }; }, Platform: window.__presetPlatform || { isMobile: false, isDesktop: true, isMacOS: false, isIosApp: false }, getLanguage: () => window.__presetLanguage || "es", debounce: (f) => f, moment: null
 	};
 	window.__TFile = TFile;
 })();
