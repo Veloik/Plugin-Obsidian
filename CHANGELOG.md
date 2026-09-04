@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.8.8
+
+### Changed
+
+- A new board is called a Dashboard in English: `Dashboard_2026-09-04.notelens`, where a Spanish install still makes `Pizarra_2026-09-04.notelens`. Only the file's own name changed; the "Board" tab inside a tag's note keeps its word.
+
 ## 2.8.7
 
 Same plugin as 2.8.6, published again so the community catalogue check runs against a release made after its last attempt.

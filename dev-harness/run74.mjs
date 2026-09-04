@@ -33,7 +33,7 @@ const open = async (language) => {
 };
 
 // --- 1. The folder context menu -------------------------------------------
-for (const [language, title, prefix] of [["es", "Nueva pizarra NoteLens", "Pizarra_"], ["en", "New NoteLens board", "Board_"]]) {
+for (const [language, title, prefix] of [["es", "Nueva pizarra NoteLens", "Pizarra_"], ["en", "New NoteLens board", "Dashboard_"]]) {
 	const page = await open(language);
 	const result = await page.evaluate(() => {
 		const handlers = window.__workspaceHandlers["file-menu"] || [];

@@ -8,7 +8,7 @@ import { matchShape, prototypeShapes } from "./ink-shapes";
 import { runLocalStudyTool } from "./local-intelligence";
 import { DocumentDefaults, createEmptyDocument } from "./types";
 import { DEFAULT_SETTINGS, NoteLensSettingTab, NoteLensSettings, normalizeSettings } from "./settings";
-import { setLocale, tr } from "./i18n";
+import { getLocale, setLocale, tr } from "./i18n";
 
 export default class OneNotePlugin extends Plugin {
 	override settings: NoteLensSettings = { ...DEFAULT_SETTINGS };
@@ -81,7 +81,9 @@ export default class OneNotePlugin extends Plugin {
 	async createNewOneNoteFile(folder?: TFolder): Promise<void> {
 		const dateStr = new Date().toISOString().slice(0, 10);
 		const dir = folder && !folder.isRoot() ? `${folder.path}/` : "";
-		const base = `${tr("Pizarra")}_${dateStr}`;
+		// The name of the file itself, which is not the same word as the "Board"
+		// tab inside a tag: a board is called a Dashboard in the English build.
+		const base = `${getLocale() === "es" ? "Pizarra" : "Dashboard"}_${dateStr}`;
 		let fileName = `${dir}${base}.notelens`;
 		let n = 1;
 		while (this.app.vault.getAbstractFileByPath(fileName)) {

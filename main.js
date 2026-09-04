@@ -68346,7 +68346,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.7" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.8" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -68612,7 +68612,7 @@ var OneNotePlugin = class extends import_obsidian15.Plugin {
   async createNewOneNoteFile(folder) {
     const dateStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
     const dir = folder && !folder.isRoot() ? `${folder.path}/` : "";
-    const base = `${tr("Pizarra")}_${dateStr}`;
+    const base = `${getLocale() === "es" ? "Pizarra" : "Dashboard"}_${dateStr}`;
     let fileName = `${dir}${base}.notelens`;
     let n = 1;
     while (this.app.vault.getAbstractFileByPath(fileName)) {
