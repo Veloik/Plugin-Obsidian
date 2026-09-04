@@ -107,12 +107,12 @@ for (const device of DEVICES) {
 		const editor = document.querySelector(".notelens-rich-editor, .notelens-text-editor");
 		return {
 			after: Math.round(window.__view.data.viewTransform.y),
-            lift: parseFloat(window.__view.stageEl.style.translate.split(" ")[1] || "0"),
+			lift: window.__view.keyboardLift,
 			bottom: Math.round(editor.getBoundingClientRect().bottom),
 			line: Math.round(window.innerHeight * 0.55)
 		};
 	});
-	check(lifted.after === low.before && lifted.lift < 0, `${device.name}: la pizarra sube al abrirse el teclado (y ${low.before} → ${lifted.after})`);
+	check(lifted.after === low.before && lifted.lift > 0, `${device.name}: la pizarra sube al abrirse el teclado (y ${low.before} → ${lifted.after}, subida ${Math.round(lifted.lift)}px)`);
 	check(lifted.bottom <= lifted.line, `${device.name}: el cuadro queda por encima del teclado (${lifted.bottom} ≤ ${lifted.line})`);
 	await page.screenshot({ path: path.join(shots, `${device.name}-teclado.png`) });
 

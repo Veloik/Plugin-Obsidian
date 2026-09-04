@@ -35535,6 +35535,8 @@ var CanvasRenderer = class {
     this.dpr = 1;
     /** Snapshot of every finished stroke, used while a whole-path stroke is drawn live. */
     this.liveBase = null;
+    /** Temporary upward offset for a software keyboard; never part of the document. */
+    this.lift = 0;
     /** Marker bands, kept per stroke so panning never rebuilds them. */
     this.markerBands = /* @__PURE__ */ new WeakMap();
     this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
@@ -35555,8 +35557,16 @@ var CanvasRenderer = class {
     this.canvas.style.width = `${viewportW}px`;
     this.canvas.style.height = `${viewportH}px`;
   }
+  /**
+   * Presentation offset while a software keyboard is up: the ink is painted
+   * higher without the canvas leaving its place, so no strip of the board is
+   * left unpainted, and the saved view transform is untouched.
+   */
+  setLift(lift) {
+    this.lift = Number.isFinite(lift) ? Math.max(0, lift) : 0;
+  }
   applyViewTransform(vt2) {
-    this.ctx.setTransform(this.dpr * vt2.scale, 0, 0, this.dpr * vt2.scale, this.dpr * vt2.x, this.dpr * vt2.y);
+    this.ctx.setTransform(this.dpr * vt2.scale, 0, 0, this.dpr * vt2.scale, this.dpr * vt2.x, this.dpr * (vt2.y - this.lift));
   }
   clearDevice() {
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -35908,19 +35918,42 @@ var CanvasRenderer = class {
 };
 
 // src/mobile-editor.ts
-function trackMobileEditor(editor, move) {
+function trackMobileEditor(editor, move, board) {
   const win = editor.ownerDocument.defaultView;
   const viewport = win.visualViewport;
   let stopped = false;
   let lifted = 0;
   let frame2 = 0;
   const initialHeight = win.innerHeight;
+  const chain = [];
+  for (let el = board ?? null; el && el !== editor.ownerDocument.body; el = el.parentElement) {
+    chain.unshift({ el, resting: el.getBoundingClientRect().height, previous: el.style.minHeight });
+  }
+  let holding = false;
+  const releaseHeights = () => {
+    if (!holding) return;
+    holding = false;
+    for (const box of chain) box.el.style.minHeight = box.previous;
+  };
+  const holdHeights = (bottom) => {
+    for (const box of chain) {
+      const rect = box.el.getBoundingClientRect();
+      const room = Math.min(box.resting, bottom - rect.top);
+      if (room > 80 && rect.height < room - 8) {
+        box.el.style.minHeight = `${Math.round(room)}px`;
+        holding = true;
+      }
+    }
+  };
   const settle = () => {
     frame2 = 0;
     if (stopped || !editor.isConnected || !viewport) return;
     const keyboard = Math.max(initialHeight, win.innerHeight) - viewport.height > 120;
+    const visibleBottom = viewport.offsetTop + viewport.height;
+    if (keyboard) holdHeights(visibleBottom);
+    else releaseHeights();
     const box = editor.getBoundingClientRect();
-    const room = viewport.offsetTop + viewport.height - 12;
+    const room = visibleBottom - 12;
     const top = box.top + lifted;
     const bottom = box.bottom + lifted;
     const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;
@@ -35935,6 +35968,8 @@ function trackMobileEditor(editor, move) {
     if (!stopped && editor.isConnected && editor.ownerDocument.activeElement !== editor) editor.focus({ preventScroll: true });
   }, 0);
   const settleTimer = win.setTimeout(schedule, 250);
+  const observer = board ? new win.ResizeObserver(() => schedule()) : null;
+  if (board) observer?.observe(board);
   viewport?.addEventListener("resize", schedule);
   viewport?.addEventListener("scroll", schedule);
   win.addEventListener("resize", schedule);
@@ -35946,11 +35981,13 @@ function trackMobileEditor(editor, move) {
     win.clearTimeout(focusTimer);
     win.clearTimeout(settleTimer);
     win.cancelAnimationFrame(frame2);
+    observer?.disconnect();
     viewport?.removeEventListener("resize", schedule);
     viewport?.removeEventListener("scroll", schedule);
     win.removeEventListener("resize", schedule);
     editor.removeEventListener("input", schedule);
     editor.removeEventListener("focus", schedule);
+    releaseHeights();
     move(0);
   };
 }
@@ -62479,6 +62516,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.prism = null;
     this.focusModeEnabled = false;
     this.stopMobileEditor = null;
+    /** How far the board is shown lifted for a software keyboard. Presentation only. */
+    this.keyboardLift = 0;
     this.loadFailed = false;
     this.activeTextEditor = null;
     this.activeTextSourceEl = null;
@@ -62783,6 +62822,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.applyStageTransform();
     this.renderInk();
     this.updateMarginLinePosition();
+    this.workspaceEl.toggleClass("is-short", import_obsidian13.Platform.isMobile && rect.height < 260);
     if (rect.width <= 700 && this.lastOpenedPanel) this.closeOtherPanelsIfNarrow(this.lastOpenedPanel);
   }
   // ------------------------------------------------------------------
@@ -62812,7 +62852,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   applyStageTransform() {
     const { x: x4, y: y3, scale } = this.data.viewTransform;
-    this.stageEl.style.transform = `translate(${x4}px, ${y3}px) scale(${scale})`;
+    this.stageEl.style.transform = `translate(${x4}px, ${y3 - this.keyboardLift}px) scale(${scale})`;
     this.updateBackgroundPosition();
     this.renderA4Guides();
     this.renderMiniMap();
@@ -62865,7 +62905,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
   }
   updateBackgroundPosition() {
-    const { x: x4, y: y3, scale } = this.data.viewTransform;
+    const { x: x4, scale } = this.data.viewTransform;
+    const y3 = this.data.viewTransform.y - this.keyboardLift;
     const size = GRID_CELLS[this.data.gridSize ?? "medium"] * scale;
     if (this.data.background === "blank") {
       this.workspaceEl.setCssStyles({ backgroundSize: "", backgroundPosition: "" });
@@ -63741,7 +63782,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const vt2 = this.data.viewTransform;
     return {
       x: (clientX - rect.left - vt2.x) / vt2.scale,
-      y: (clientY - rect.top - vt2.y) / vt2.scale
+      y: (clientY - rect.top - vt2.y + this.keyboardLift) / vt2.scale
     };
   }
   /**
@@ -67351,14 +67392,24 @@ ${rows.join("\n")}`);
    * a box tapped low on the board sits. The board slides up so what is being
    * written stays in sight, and slides back when the keyboard goes away.
    */
+  /**
+   * Shows the board raised over a keyboard without moving the canvas element:
+   * the ink, the DOM layer, the page background and the pointer maths all take
+   * the same offset, so nothing is left unpainted and a touch still lands where
+   * it looks. The document never learns about it.
+   */
+  setKeyboardLift(lift) {
+    const next = Number.isFinite(lift) ? Math.max(0, lift) : 0;
+    if (next === this.keyboardLift) return;
+    this.keyboardLift = next;
+    this.renderer.setLift(next);
+    this.applyStageTransform();
+    this.renderInk();
+  }
   keepEditorUsableOnTouch(editor) {
     this.stopMobileEditor?.();
     if (!import_obsidian13.Platform.isMobile) return;
-    this.stopMobileEditor = trackMobileEditor(editor, (lift) => {
-      const offset = lift ? `0 ${-lift}px` : "";
-      this.stageEl.style.translate = offset;
-      this.renderer.canvas.style.translate = offset;
-    });
+    this.stopMobileEditor = trackMobileEditor(editor, (lift) => this.setKeyboardLift(lift), this.workspaceEl);
   }
   beginTextEdit(tb, el) {
     if (this.activeTextSourceEl === el && this.activeTextEditor) {
@@ -68474,7 +68525,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.9.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.9.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

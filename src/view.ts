@@ -286,6 +286,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
 	private focusModeEnabled = false;
 	private stopMobileEditor: (() => void) | null = null;
+	/** How far the board is shown lifted for a software keyboard. Presentation only. */
+	private keyboardLift = 0;
 	private loadFailed = false;
 	private activeTextEditor: HTMLTextAreaElement | HTMLElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
@@ -491,6 +493,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.applyStageTransform();
 		this.renderInk();
 		this.updateMarginLinePosition();
+		// A view left a strip tall by a keyboard: the little room there is belongs to the board.
+		this.workspaceEl.toggleClass("is-short", Platform.isMobile && rect.height < 260);
 		// Shrinking to a phone-sized pane with several panels open: keep the one used last.
 		if (rect.width <= 700 && this.lastOpenedPanel) this.closeOtherPanelsIfNarrow(this.lastOpenedPanel);
 	}
@@ -526,7 +530,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private applyStageTransform(): void {
 		const { x, y, scale } = this.data.viewTransform;
-		this.stageEl.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+		this.stageEl.style.transform = `translate(${x}px, ${y - this.keyboardLift}px) scale(${scale})`;
 		this.updateBackgroundPosition();
 		this.renderA4Guides();
 		this.renderMiniMap();
@@ -588,7 +592,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private updateBackgroundPosition(): void {
-		const { x, y, scale } = this.data.viewTransform;
+		const { x, scale } = this.data.viewTransform;
+		const y = this.data.viewTransform.y - this.keyboardLift;
 		const size = GRID_CELLS[this.data.gridSize ?? "medium"] * scale;
 		if (this.data.background === "blank") {
 			this.workspaceEl.setCssStyles({ backgroundSize: "", backgroundPosition: "" });
@@ -1534,7 +1539,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const vt = this.data.viewTransform;
 		return {
 			x: (clientX - rect.left - vt.x) / vt.scale,
-			y: (clientY - rect.top - vt.y) / vt.scale
+			y: (clientY - rect.top - vt.y + this.keyboardLift) / vt.scale
 		};
 	}
 
@@ -5200,15 +5205,25 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * a box tapped low on the board sits. The board slides up so what is being
 	 * written stays in sight, and slides back when the keyboard goes away.
 	 */
+	/**
+	 * Shows the board raised over a keyboard without moving the canvas element:
+	 * the ink, the DOM layer, the page background and the pointer maths all take
+	 * the same offset, so nothing is left unpainted and a touch still lands where
+	 * it looks. The document never learns about it.
+	 */
+	private setKeyboardLift(lift: number): void {
+		const next = Number.isFinite(lift) ? Math.max(0, lift) : 0;
+		if (next === this.keyboardLift) return;
+		this.keyboardLift = next;
+		this.renderer.setLift(next);
+		this.applyStageTransform();
+		this.renderInk();
+	}
+
 	private keepEditorUsableOnTouch(editor: HTMLElement): void {
 		this.stopMobileEditor?.();
 		if (!Platform.isMobile) return;
-		this.stopMobileEditor = trackMobileEditor(editor, lift => {
-			// A temporary presentation offset: never save keyboard movement or put it in undo history.
-			const offset = lift ? `0 ${-lift}px` : "";
-			this.stageEl.style.translate = offset;
-			this.renderer.canvas.style.translate = offset;
-		});
+		this.stopMobileEditor = trackMobileEditor(editor, lift => this.setKeyboardLift(lift), this.workspaceEl);
 	}
 
 	private beginTextEdit(tb: TextBox, el: HTMLElement): void {

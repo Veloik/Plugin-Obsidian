@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.9.1
+
+### Fixed
+
+- Writing on a phone left the board black. With the keyboard up, the app can take the keyboard's height off a view the system had already made smaller, and what was left was a strip of about ninety pixels: the toolbar cut in half, no board underneath and nothing to write on. The board now measures what each box was worth before the keyboard arrived and takes back the room that is really there, up to the top of the keyboard and never a pixel more, and gives it up again untouched when the keyboard goes.
+- The board is raised over the keyboard by painting it higher, not by moving the canvas: before, the canvas slid up and uncovered a band of unpainted page at the bottom, and a touch landed as far from the finger as the board had moved. The ink, the boxes, the page background and the pointer maths now share the same offset, and the document never sees it.
+- A view left as a strip — a keyboard over a small pane — keeps its board and its tools, and hides the secondary docks that would otherwise take the little room there is.
+
+### Tests
+
+- `dev-harness/run77.mjs` squeezes the view under a keyboard and checks the board comes back, that the canvas covers all of it, that a touch reads where the board shows it, and that the view is handed back its own height afterwards. Verified to fail without the fix.
+
 ## 2.9.0
 
 Same plugin as 2.8.9, published again so the community catalogue check runs against a release made after its last attempt.

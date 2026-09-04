@@ -128,6 +128,8 @@ export class CanvasRenderer {
 	private dpr = 1;
 	/** Snapshot of every finished stroke, used while a whole-path stroke is drawn live. */
 	private liveBase: HTMLCanvasElement | null = null;
+	/** Temporary upward offset for a software keyboard; never part of the document. */
+	private lift = 0;
 	/** Marker bands, kept per stroke so panning never rebuilds them. */
 	private markerBands = new WeakMap<Stroke, { count: number; width: number; band: Path2D }>();
 
@@ -155,8 +157,17 @@ export class CanvasRenderer {
 		this.canvas.style.height = `${viewportH}px`;
 	}
 
+	/**
+	 * Presentation offset while a software keyboard is up: the ink is painted
+	 * higher without the canvas leaving its place, so no strip of the board is
+	 * left unpainted, and the saved view transform is untouched.
+	 */
+	setLift(lift: number): void {
+		this.lift = Number.isFinite(lift) ? Math.max(0, lift) : 0;
+	}
+
 	private applyViewTransform(vt: ViewTransform): void {
-		this.ctx.setTransform(this.dpr * vt.scale, 0, 0, this.dpr * vt.scale, this.dpr * vt.x, this.dpr * vt.y);
+		this.ctx.setTransform(this.dpr * vt.scale, 0, 0, this.dpr * vt.scale, this.dpr * vt.x, this.dpr * (vt.y - this.lift));
 	}
 
 	private clearDevice(): void {

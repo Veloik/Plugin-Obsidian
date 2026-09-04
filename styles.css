@@ -5722,3 +5722,16 @@ span.notelens-assistant-name {
 .notelens-video-fallback a:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
 
 .onenote-workspace[data-pass-ink="true"] .notelens-video-fallback { pointer-events: auto; }
+
+/* A view squeezed into a strip — a phone keyboard over a small pane — keeps its
+   board and its tools, and gives up everything that would leave no board at all. */
+.onenote-workspace.is-short .notelens-insert-dock,
+.onenote-workspace.is-short .onenote-quick-tags,
+.onenote-workspace.is-short .notelens-document-dock,
+.onenote-workspace.is-short .notelens-bookmarks-dock,
+.onenote-workspace.is-short .notelens-pages-dock,
+.onenote-workspace.is-short .notelens-navigation-controls,
+.onenote-workspace.is-short .notelens-focus-toggle,
+.onenote-workspace.is-short .notelens-settings-btn,
+.onenote-workspace.is-short .notelens-minimap { display: none; }
+.onenote-workspace.is-short .onenote-ribbon-dock { top: 6px; padding: 3px 8px; }

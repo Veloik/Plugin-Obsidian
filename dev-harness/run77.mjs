@@ -59,9 +59,21 @@ try {
 		await pause(400);
 		const active = await page.evaluate(() => {
 			const v = window.__view, c = v.renderer.canvas;
-			return { y: v.data.viewTransform.y, savedY: JSON.parse(window.__saved).viewTransform.y, original: window.__originalY, offset: v.stageEl.style.translate, matches: c.style.translate === v.stageEl.style.translate, area: c.width * c.height, edge: Math.max(c.width, c.height) };
+			const box = v.workspaceEl.getBoundingClientRect();
+			const scene = v.getSceneCoords(box.left + 40, box.top + 40);
+			const vt = v.data.viewTransform;
+			return {
+				y: vt.y, savedY: JSON.parse(window.__saved).viewTransform.y, original: window.__originalY,
+				lift: v.keyboardLift, stageY: parseFloat(/translate\([^,]+,\s*(-?[\d.]+)px\)/.exec(v.stageEl.style.transform)?.[1] ?? "NaN"),
+				canvasMoved: c.style.translate !== "" || c.style.transform !== "",
+				canvasCovers: Math.abs(c.getBoundingClientRect().height - box.height) < 2,
+				scene: scene.y, expected: (40 - vt.y + v.keyboardLift) / vt.scale,
+				area: c.width * c.height, edge: Math.max(c.width, c.height)
+			};
 		});
-		check(active.offset !== "" && active.matches, profile.name + " moves text and ink together above keyboard");
+		check(active.lift > 0 && Math.abs(active.stageY - (active.y - active.lift)) < 0.5, profile.name + " moves text and ink together above keyboard");
+		check(!active.canvasMoved && active.canvasCovers, profile.name + " keeps the canvas covering the board while lifted");
+		check(Math.abs(active.scene - active.expected) < 0.01, profile.name + " reads a touch where the lifted board shows it");
 		check(active.y === active.original && active.savedY === active.original, profile.name + " does not save keyboard movement");
 		check(active.area <= 8_000_000 && active.edge <= 4096, profile.name + " caps canvas memory at high DPR");
 		const ime = await page.evaluate(() => {
@@ -75,7 +87,44 @@ try {
 		await page.evaluate(() => window.__view.commitTextEditor());
 		await page.evaluate(() => window.__keyboard(innerHeight * .4));
 		await pause(350);
-		check(await page.evaluate(() => !window.__view.stageEl.style.translate && !window.__view.renderer.canvas.style.translate), profile.name + " cleans up on direct commit without blur");
+		check(await page.evaluate(() => window.__view.keyboardLift === 0 && !window.__view.renderer.canvas.style.translate), profile.name + " cleans up on direct commit without blur");
+		const squeezed = await page.evaluate(async () => {
+			const v = window.__view;
+			const shell = document.querySelector(".view-container");
+			const settled = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 60))));
+			v.beginTextEdit(v.data.texts.at(-1), v.domLayerEl.querySelector('[data-id="text"]'));
+			const keyboardTop = Math.round(innerHeight * .5);
+			window.__keyboard(keyboardTop);
+			await settled();
+			// What a phone does: the keyboard taken off a viewport the system already shrank.
+			shell.style.height = "88px";
+			await settled();
+			const strip = v.workspaceEl.getBoundingClientRect();
+			const short = v.workspaceEl.classList.contains("is-short");
+			const canvas = v.renderer.canvas.getBoundingClientRect().height;
+			v.commitTextEditor();
+			await settled();
+			const released = shell.style.minHeight === "" && v.workspaceEl.style.minHeight === "";
+			shell.style.height = "";
+			await settled();
+			return { height: strip.height, top: strip.top, canvas, keyboardTop, short, released, back: v.workspaceEl.getBoundingClientRect().height };
+		});
+		check(squeezed.height > 200 && squeezed.top + squeezed.height <= squeezed.keyboardTop + 2, profile.name + " keeps a board when the app squeezes the view under a keyboard");
+		check(Math.abs(squeezed.canvas - squeezed.height) < 2, profile.name + " paints the whole board it was given back");
+		check(squeezed.released && squeezed.back > squeezed.height, profile.name + " hands the view back its own height when the keyboard goes");
+		const shortView = await page.evaluate(async () => {
+			const v = window.__view;
+			const shell = document.querySelector(".view-container");
+			const settled = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 60))));
+			shell.style.height = "180px";
+			await settled();
+			const hidden = getComputedStyle(document.querySelector(".notelens-insert-dock")).display === "none";
+			const tools = getComputedStyle(document.querySelector(".onenote-ribbon-dock")).display !== "none";
+			shell.style.height = "";
+			await settled();
+			return { hidden, tools, restored: !v.workspaceEl.classList.contains("is-short") };
+		});
+		check(shortView.hidden && shortView.tools && shortView.restored, profile.name + " gives a strip of a view to the board and its tools");
 		const recovery = await page.evaluate(() => {
 			const v = window.__view, c = v.renderer.canvas, ctx = c.getContext("2d");
 			v.handleResize();
