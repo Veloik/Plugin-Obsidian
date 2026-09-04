@@ -6,6 +6,7 @@ import { runLocalStudyTool } from "../src/local-intelligence";
 import { createEmptyDocument, migrateDocument } from "../src/types";
 import { hexToRgba, setColorAlpha, toRemoteVideoEmbed } from "../src/tools";
 import { setLocale, tr } from "../src/i18n";
+import { mergeRuns, notePreview, parseInline, planListToggle, runsFromInline, runsToMarked, stripInlineMarks } from "../src/rich-text";
 import { en } from "../src/locales/en";
 
 test("document migration keeps editable content and normalizes legacy paper", () => {
@@ -41,6 +42,60 @@ test("remote video links are normalized to safe provider embeds", () => {
 		assert.match(embed?.embedUrl ?? "", /^https:\/\//);
 	}
 	assert.equal(toRemoteVideoEmbed("https://example.com/video/123"), null);
+});
+
+test("inline marks style a fragment and survive a round trip", () => {
+	const runs = parseInline("normal **negrita** y ==resaltado==");
+	assert.deepEqual(runs.map(r => r.text), ["normal ", "negrita", " y ", "resaltado"]);
+	assert.equal(runs[1]?.bold, true);
+	assert.equal(runs[3]?.mark, true);
+	// Marks nest, and an orphan marker is text, not formatting.
+	const nested = parseInline("**==clave==**");
+	assert.equal(nested.length, 1);
+	assert.equal(nested[0]?.bold && nested[0]?.mark, true);
+	assert.deepEqual(parseInline("2 * 3 * 4").map(r => r.text), ["2 * 3 * 4"]);
+	assert.equal(stripInlineMarks("__hola__ `x` ~~no~~"), "hola x no");
+});
+
+test("a box written with marks opens as runs and is stored as marks again", () => {
+	const runs = runsFromInline("La __entropia__ mide el **desorden**", "#fde68a");
+	assert.deepEqual(runs.map(r => r.text), ["La ", "entropia", " mide el ", "desorden"]);
+	assert.equal(runs[1]?.underline, true);
+	assert.equal(runs[3]?.bold, true);
+	assert.equal(runsToMarked(runs), "La __entropia__ mide el **desorden**");
+	// A highlighted fragment keeps its own tint, which marks alone cannot say.
+	assert.equal(runsFromInline("==clave==", "#bfdbfe")[0]?.mark, "#bfdbfe");
+	// Blanks stay outside the marks, and neighbours that look alike become one run.
+	assert.equal(runsToMarked([{ text: "hola ", bold: true }]), "**hola** ");
+	assert.deepEqual(mergeRuns([{ text: "a", bold: true }, { text: "b", bold: true }, { text: "" }]), [{ text: "ab", bold: true }]);
+});
+
+test("a list prefix goes in and out line by line, keeping what is around it", () => {
+	const text = "Primero\nSegundo\nTercero";
+	// Nothing selected works on the whole box, and the numbers are counted as they go in.
+	const put = planListToggle(text, 0, 0, "number");
+	assert.deepEqual(put.map(e => e.text), ["1. ", "2. ", "3. "]);
+	assert.deepEqual(put.map(e => e.from), [0, 8, 16]);
+	// The same call on a bulleted box takes the bullets off instead.
+	const bulleted = "• Primero\n• Segundo";
+	const removed = planListToggle(bulleted, 0, 0, "bullet");
+	assert.deepEqual(removed.map(e => [e.from, e.to, e.text]), [[0, 2, ""], [10, 12, ""]]);
+	// A selection only covers the lines it touches, and blank lines are left alone.
+	assert.equal(planListToggle("Uno\n\nDos", 0, 3, "dash").length, 1);
+});
+
+test("the preview of a note shows its words, not its machinery", () => {
+	const note = [
+		"---", "tags: [clase]", "---",
+		"```js", "const suma = (a, b) => a + b;", "```",
+		"<div class=\"callout\">",
+		"# La entropía",
+		"Mide el **desorden** de un sistema.",
+		"- Repasar [[Induccion|la induccion]] y ![[diagrama.png]]",
+		"| a | b |", "| --- | --- |"
+	].join("\n");
+	assert.equal(notePreview(note), "La entropía\nMide el desorden de un sistema.\nRepasar la induccion y");
+	assert.equal(notePreview("uno\ndos\ntres", 2), "uno\ndos");
 });
 
 test("color alpha helpers preserve the selected transparency", () => {

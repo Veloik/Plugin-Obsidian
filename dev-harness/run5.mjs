@@ -47,7 +47,10 @@ await drag(curve(200, 420, 400, 40));
 
 // partial eraser cuts the wavy stroke in two
 await tool("eraser");
-await page.click(".notelens-panel-eraser .notelens-eraser-mode:nth-child(2)");
+// The mode cards are .notelens-choice-card now, and the panel opens on a second press.
+if (!(await page.evaluate(() => !!document.querySelector(".notelens-pen-panel:not(.hidden)")))) await page.click('.onenote-ribbon-dock [data-tool="eraser"]');
+await sleep(80);
+await page.evaluate(() => document.querySelectorAll(".notelens-panel-eraser .notelens-choice-card")[1].click());
 await drag([[400, 360], [400, 480]]);
 console.log("after partial erase (expect 3 strokes):", JSON.stringify(await counts()));
 await shot(page, "01-partial-eraser");

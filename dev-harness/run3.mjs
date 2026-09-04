@@ -30,20 +30,28 @@ const drag = async (pts) => {
 	await page.mouse.up();
 };
 const curve = (x0, y0, w, h, n = 24) => Array.from({ length: n }, (_, i) => [x0 + (w * i) / (n - 1), y0 + Math.sin((i / (n - 1)) * Math.PI * 2) * h]);
-const tool = async (id) => { await page.click(`.onenote-ribbon-dock [data-tool="${id}"]`); await sleep(60); };
+// The options panel opens when the button of the tool already in use is pressed
+// again, so how many presses it takes depends on where the toolbar was.
+const panelOpen = () => page.evaluate(() => !!document.querySelector(".notelens-pen-panel:not(.hidden)"));
+const tool = async (id, panel = false) => {
+	await page.click(`.onenote-ribbon-dock [data-tool="${id}"]`);
+	await sleep(60);
+	if (panel && !(await panelOpen())) await page.click(`.onenote-ribbon-dock [data-tool="${id}"]`);
+	await sleep(80);
+};
 const counts = async () => page.evaluate(() => ({
 	strokes: __view.data.strokes.length, shapes: __view.data.shapes.length, texts: __view.data.texts.length,
 	tables: __view.data.tables.length, badges: __view.data.badges.length, tool: __view.currentTool, scale: __view.data.viewTransform.scale
 }));
 
 // shapes: rectangle with fill, arrow, ellipse
-await tool("shape");
+await tool("shape", true);
 await page.click(".notelens-panel-shape .notelens-shape-choice[title='Rectángulo']");
 await drag([[200, 300], [420, 440]]);
-await tool("shape");
+await tool("shape", true);
 await page.click(".notelens-panel-shape .notelens-shape-choice[title='Flecha']");
 await drag([[440, 370], [640, 370]]);
-await tool("shape");
+await tool("shape", true);
 await page.click(".notelens-panel-shape .notelens-shape-choice[title='Elipse']");
 await drag([[660, 300], [860, 440]]);
 console.log("shapes:", JSON.stringify(await counts()));

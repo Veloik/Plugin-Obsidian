@@ -55,7 +55,8 @@ export interface NoteLensSettings {
 	/** Language the board reader expects when transcribing handwriting and images. */
 	ocrLanguage: string;
 	/** Never fall back to the web translator, so nothing depends on a quota. */
-	translationLocalOnly: boolean;
+	/** Translate only with a model on this computer: private, but slow. */
+	translationPrivateOnly: boolean;
 	/** Languages the one-click translator uses on selected text. */
 	translateFrom: string;
 	translateTo: string;
@@ -93,7 +94,7 @@ export const DEFAULT_SETTINGS: NoteLensSettings = {
 	defaultTextFont: "sans",
 	defaultStickyColor: "#fff2a8",
 	ocrLanguage: "es",
-	translationLocalOnly: true,
+	translationPrivateOnly: false,
 	translateFrom: "es",
 	translateTo: "en"
 };
@@ -120,7 +121,7 @@ export function normalizeSettings(raw: unknown): NoteLensSettings {
 	s.petBubbles = s.petBubbles !== false;
 	s.aiUseBoardContext = s.aiUseBoardContext === true;
 	if (typeof s.ocrLanguage !== "string" || !s.ocrLanguage) s.ocrLanguage = DEFAULT_SETTINGS.ocrLanguage;
-	s.translationLocalOnly = s.translationLocalOnly === true;
+	s.translationPrivateOnly = s.translationPrivateOnly === true;
 	if (!["sans", "serif", "rounded", "mono"].includes(s.defaultTextFont)) s.defaultTextFont = "sans";
 	if (!hex.test(s.defaultStickyColor)) s.defaultStickyColor = DEFAULT_SETTINGS.defaultStickyColor;
 	if (!hex.test(s.highlighterColor)) s.highlighterColor = DEFAULT_SETTINGS.highlighterColor;
@@ -421,9 +422,9 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			gl: "Galego", nl: "Nederlands", pl: "Polski", ru: "Русский", uk: "Українська", ar: "العربية", "zh-CN": "中文（简体）", ja: "日本語", ko: "한국어"
 		};
 		new Setting(containerEl)
-			.setName(tr("Traducir solo con el modelo local"))
-			.setDesc(tr("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado."))
-			.addToggle(t => t.setValue(s.translationLocalOnly).onChange(v => { s.translationLocalOnly = v; save(); }));
+			.setName(tr("Traducir solo en tu ordenador"))
+			.setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Actívalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante más."))
+			.addToggle(t => t.setValue(s.translationPrivateOnly).onChange(v => { s.translationPrivateOnly = v; save(); }));
 
 		new Setting(containerEl)
 			.setName(tr("Idioma de la transcripción"))
@@ -432,7 +433,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr("Traducir de … a …"))
-			.setDesc(tr("Idiomas que usa el botón Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave)."))
+			.setDesc(tr("Idiomas que usa el botón Traducir sobre el texto seleccionado."))
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateFrom).onChange(v => { s.translateFrom = v; save(); }))
 			.addDropdown(d => d.addOptions(languages).setValue(s.translateTo).onChange(v => { s.translateTo = v; save(); }));
 

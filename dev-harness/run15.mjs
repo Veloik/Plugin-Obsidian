@@ -70,7 +70,7 @@ const text = await page.evaluate(() => __view.readRegion({ x: 480, y: 180, w: 50
 console.log("ocr text:", JSON.stringify(text), "in", Math.round((Date.now() - started) / 1000), "s; last status:", await page.evaluate(() => window.__ocrStatus));
 
 // --- translator OCR button wiring (uses the capture overlay)
-await page.click(".notelens-insert-dock button[title='Traducir texto']");
+await page.evaluate(() => document.querySelector(".notelens-insert-dock button[title='Traducir texto']").click());
 await sleep(150);
 await page.click(".notelens-translator-capture");
 await sleep(100);

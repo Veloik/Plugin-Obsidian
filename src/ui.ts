@@ -1,5 +1,7 @@
 import { setIcon } from "obsidian";
 import { BackgroundPattern, CanvasFont, DocumentPage, GridSize, ShapeKind, ViewportBookmark, PenStyle, Stroke } from "./types";
+import { CANVAS_FONTS } from "./fonts";
+import { ERASER_SPRITE } from "./eraser-sprite";
 import { CanvasRenderer } from "./renderer";
 import { tr } from "./i18n";
 
@@ -42,6 +44,21 @@ export const PALETTE_COLORS = [
 	"#f87171", "#fb7185", "#c084fc", "#a78bfa", "#94a3b8"
 ];
 
+/**
+ * The eraser is a drawing rather than a line icon, so it goes on as an image.
+ * Everywhere the board offers the tool shows the same one.
+ */
+export function setEraserIcon(el: HTMLElement, size = 20): void {
+	el.empty();
+	el.addClass("notelens-eraser-icon");
+	const image = el.createEl("img", { cls: "notelens-eraser-image" });
+	image.src = ERASER_SPRITE;
+	image.alt = "";
+	image.width = size;
+	image.height = size;
+	image.draggable = false;
+}
+
 export const HIGHLIGHTER_COLORS = [
 	"#facc15", "#fde047", "#bef264", "#86efac", "#5eead4",
 	"#67e8f9", "#93c5fd", "#c4b5fd", "#f0abfc", "#fda4af"
@@ -67,12 +84,6 @@ const ERASER_SIZES: { label: string; value: number }[] = [
 ];
 const TEXT_SIZES = [12, 16, 20, 28, 36, 48];
 const TEXT_COLORS = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
-const FONT_OPTIONS: { id: CanvasFont; label: string; css: string }[] = [
-	{ id: "sans", label: "Interfaz", css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
-	{ id: "serif", label: "Clásica", css: "Georgia, 'Times New Roman', serif" },
-	{ id: "rounded", label: "Redondeada", css: "'Trebuchet MS', 'Segoe UI', sans-serif" },
-	{ id: "mono", label: "Monoespaciada", css: "ui-monospace, SFMono-Regular, Consolas, monospace" }
-];
 
 const BG_OPTIONS: { id: BackgroundPattern; label: string; icon: string }[] = [
 	{ id: "blank", label: "Liso", icon: "square" },
@@ -312,7 +323,8 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 			cls: `onenote-dock-btn ${host.currentTool === t.id ? "active" : ""}`
 		});
 		btn.setAttr("data-tool", t.id);
-		setIcon(btn, t.icon);
+		if (t.id === "eraser") setEraserIcon(btn, 21);
+		else setIcon(btn, t.icon);
 		btn.title = t.title;
 		btn.onclick = () => {
 			const reopening = host.currentTool === t.id;
@@ -881,7 +893,8 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	function createPanelHeader(section: HTMLElement, icon: string, title: string): void {
 		const header = section.createDiv({ cls: "notelens-tool-panel-header" });
 		const iconWrap = header.createDiv({ cls: "notelens-tool-panel-icon" });
-		setIcon(iconWrap, icon);
+		if (icon === "eraser") setEraserIcon(iconWrap, 19);
+		else setIcon(iconWrap, icon);
 		header.createDiv({ cls: "notelens-tool-heading", text: tr(title) });
 	}
 
@@ -1134,7 +1147,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	}
 	textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipografía") });
 	const fontSelect = textSection.createEl("select", { cls: "notelens-font-select" });
-	for (const font of FONT_OPTIONS) {
+	for (const font of CANVAS_FONTS) {
 		const option = fontSelect.createEl("option", { text: tr(font.label), value: font.id });
 		option.style.fontFamily = font.css;
 	}

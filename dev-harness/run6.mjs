@@ -49,7 +49,7 @@ await shot(page, "01-calculator");
 await page.click(".notelens-calculator-header .notelens-embed-close");
 
 // --- math block
-await page.click(".notelens-insert-dock button[title^='Insertar fórmula']");
+await page.click(".notelens-insert-dock button[title^='Insertar ecuación']");
 await sleep(150);
 await page.keyboard.type("\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}");
 await sleep(300);

@@ -47,7 +47,7 @@ for (const [tag, x, y] of placements) {
 		await sleep(100);
 	}
 }
-await page.evaluate(() => { __view.setTool("text"); __view.createTextBoxAt(430, 705, undefined, "text"); const ed = __view.activeTextEditor; if (ed) ed.value = "Entregar la práctica 3"; __view.commitTextEditor(); __view.setTool("select"); });
+await page.evaluate(() => { __view.setTool("text"); __view.createTextBoxAt(430, 705, undefined, "text"); const ed = __view.activeTextEditor; if (ed) { ed.focus(); document.execCommand("insertText", false, "Entregar la práctica 3"); } __view.commitTextEditor(); __view.setTool("select"); });
 await page.mouse.click(900, 850); await sleep(80);
 const badges = await page.$$(".onenote-placed-badge");
 for (const b of badges) {

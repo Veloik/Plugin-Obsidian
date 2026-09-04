@@ -4,6 +4,12 @@ import { tr } from "./i18n";
 
 export const HOVER_NOTE_BOARD_WIDTH = 560;
 export const HOVER_NOTE_BOARD_HEIGHT = 320;
+/**
+ * The pad is drawn on at more pixels than the coordinates it stores, so it can
+ * be shown as big as the window allows — and read back just as sharp on the
+ * note card — while a drawing made before this still lines up with its images.
+ */
+const BOARD_PIXEL_SCALE = 2;
 
 /** Everything saved by an Important, Question, Idea, Task or Floating Note badge. */
 export interface HoverNoteContent {
@@ -253,11 +259,11 @@ export class HoverNoteModal extends Modal {
 		const board = sketchPane.createDiv({ cls: "notelens-hover-note-board" });
 		const canvas = board.createEl("canvas");
 		canvas.tabIndex = 0;
-		const dpr = window.devicePixelRatio || 1;
+		// No width in pixels here: the stylesheet grows the pad to fill the dialog,
+		// and the canvas keeps its shape from the size of its own bitmap.
+		const dpr = (window.devicePixelRatio || 1) * BOARD_PIXEL_SCALE;
 		canvas.width = HOVER_NOTE_BOARD_WIDTH * dpr;
 		canvas.height = HOVER_NOTE_BOARD_HEIGHT * dpr;
-		canvas.style.width = `${HOVER_NOTE_BOARD_WIDTH}px`;
-		canvas.style.height = `${HOVER_NOTE_BOARD_HEIGHT}px`;
 		const ctx = canvas.getContext("2d");
 		const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: tr("Dibuja, pega o suelta una imagen") });
 		const imageTray = sketchPane.createDiv({ cls: "notelens-hover-note-images" });
@@ -630,6 +636,8 @@ export class HoverNoteModal extends Modal {
 			tabSketch.toggleClass("active", mode === "sketch");
 			textPane.style.display = mode === "text" ? "" : "none";
 			sketchPane.style.display = mode === "sketch" ? "" : "none";
+			// Drawing gets the whole width of the screen it can have; writing does not need it.
+			this.modalEl.toggleClass("is-sketch", mode === "sketch");
 			if (mode === "text") {
 				const target = this.taskMode ? checklistList?.querySelector(".notelens-task-checklist-input") as HTMLInputElement | null : area;
 				window.requestAnimationFrame(() => (target ?? area).focus());

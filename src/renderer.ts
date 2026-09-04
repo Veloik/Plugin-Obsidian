@@ -21,6 +21,103 @@ function opaqueColor(color: string): string {
 }
 
 /**
+ * A felt tip is cut flat, so the two ends of a stroke come out slanted at the
+ * angle the pen is held. Everything between them is one even band: a real
+ * highlighter does not get thinner because you moved sideways.
+ */
+const HIGHLIGHTER_NIB = -Math.PI * 0.36;
+
+/** Points too close together to change the shape of a fat nib are dropped before inking. */
+function simplifyPath(pts: StrokePoint[], tolerance: number): StrokePoint[] {
+	if (pts.length < 3) return pts;
+	const out: StrokePoint[] = [pts[0]];
+	for (let i = 1; i < pts.length - 1; i++) {
+		const last = out[out.length - 1];
+		if (Math.hypot(pts[i].x - last.x, pts[i].y - last.y) >= tolerance) out.push(pts[i]);
+	}
+	out.push(pts[pts.length - 1]);
+	return out;
+}
+
+/** One pass of Chaikin: takes the corners off a shaky centreline before it is inked. */
+function smoothCenterline(pts: StrokePoint[]): StrokePoint[] {
+	if (pts.length < 3) return pts;
+	const out: StrokePoint[] = [pts[0]];
+	for (let i = 0; i < pts.length - 1; i++) {
+		const a = pts[i], b = pts[i + 1];
+		out.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25, p: a.p });
+		out.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75, p: b.p });
+	}
+	out.push(pts[pts.length - 1]);
+	return out;
+}
+
+/**
+ * Adds a piece of the band, always wound the same way round. The band is filled
+ * in one go with the nonzero rule, and a piece turned the other way would punch
+ * a hole in the stroke wherever two of them overlap.
+ */
+function addPolygon(path: Path2D, corners: [number, number][]): void {
+	let area = 0;
+	for (let i = 0; i < corners.length; i++) {
+		const a = corners[i], b = corners[(i + 1) % corners.length];
+		area += a[0] * b[1] - b[0] * a[1];
+	}
+	const ring = area > 0 ? corners.slice().reverse() : corners;
+	path.moveTo(ring[0][0], ring[0][1]);
+	for (let i = 1; i < ring.length; i++) path.lineTo(ring[i][0], ring[i][1]);
+	path.closePath();
+}
+
+/**
+ * How far the two corners of an end slide apart so that the edge between them
+ * lies along the nib. Clamped, or a stroke drawn straight down the nib would
+ * end in a long spike instead of a flat tip.
+ */
+function capSlide(dx: number, dy: number, nx: number, ny: number, half: number): number {
+	const ux = Math.cos(HIGHLIGHTER_NIB), uy = Math.sin(HIGHLIGHTER_NIB);
+	const along = dx * uy - dy * ux;
+	if (Math.abs(along) < 1e-3) return 0;
+	return Math.max(-half * 1.2, Math.min(half * 1.2, -(nx * uy - ny * ux) / along));
+}
+
+/**
+ * The band a highlighter leaves: even width the whole way, round where it turns
+ * so corners never notch, and slanted at both ends the way a flat tip prints.
+ */
+function bandPath(pts: StrokePoint[], width: number): Path2D {
+	const half = width / 2;
+	const path = new Path2D();
+	if (pts.length === 1) {
+		// A single dab: the tip set down and lifted without moving.
+		const ux = Math.cos(HIGHLIGHTER_NIB) * half, uy = Math.sin(HIGHLIGHTER_NIB) * half;
+		const vx = -uy * 0.3, vy = ux * 0.3;
+		const { x, y } = pts[0];
+		addPolygon(path, [[x + ux + vx, y + uy + vy], [x - ux + vx, y - uy + vy], [x - ux - vx, y - uy - vy], [x + ux - vx, y + uy - vy]]);
+		return path;
+	}
+	for (let i = 0; i < pts.length - 1; i++) {
+		const p = pts[i], q = pts[i + 1];
+		const dx = q.x - p.x, dy = q.y - p.y;
+		const len = Math.hypot(dx, dy);
+		if (len < 1e-4) continue;
+		const ex = dx / len, ey = dy / len;
+		const nx = -ey * half, ny = ex * half;
+		const head = i === 0 ? capSlide(ex, ey, nx, ny, half) : 0;
+		const tail = i === pts.length - 2 ? capSlide(ex, ey, nx, ny, half) : 0;
+		addPolygon(path, [
+			[p.x + nx + ex * head, p.y + ny + ey * head],
+			[q.x + nx + ex * tail, q.y + ny + ey * tail],
+			[q.x - nx - ex * tail, q.y - ny - ey * tail],
+			[p.x - nx - ex * head, p.y - ny - ey * head]
+		]);
+		// A disc at the joint: without it every turn shows a notch on its outside.
+		if (i > 0) path.arc(p.x, p.y, half, 0, Math.PI * 2, true);
+	}
+	return path;
+}
+
+/**
  * DPR-aware stroke renderer. The canvas always matches the viewport size
  * (× devicePixelRatio) and the view transform is applied via ctx.setTransform,
  * so ink stays vector-crisp at any zoom level — no CSS upscaling blur.
@@ -31,6 +128,8 @@ export class CanvasRenderer {
 	private dpr = 1;
 	/** Snapshot of every finished stroke, used while a whole-path stroke is drawn live. */
 	private liveBase: HTMLCanvasElement | null = null;
+	/** Marker bands, kept per stroke so panning never rebuilds them. */
+	private markerBands = new WeakMap<Stroke, { count: number; width: number; band: Path2D }>();
 
 	constructor(parent: HTMLElement) {
 		this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
@@ -67,6 +166,10 @@ export class CanvasRenderer {
 
 	drawStroke(stroke: Stroke): void {
 		const pts = stroke.points;
+		if (stroke.type === "highlighter") {
+			this.drawHighlighter(stroke);
+			return;
+		}
 		if (pts.length === 1) {
 			this.drawDot(stroke, pts[0]);
 			return;
@@ -82,14 +185,44 @@ export class CanvasRenderer {
 	}
 
 	/**
-	 * Highlighter ink and any translucent ink are composited once as a single
-	 * path. Stroking them segment by segment doubles the alpha wherever
-	 * neighbouring segments overlap, so the ink looked blotchy and almost
-	 * opaque no matter the opacity chosen. Width follows the average pressure
-	 * of the whole stroke (the highlighter ignores pressure altogether).
+	 * Translucent ink is composited once as a single path. Stroking it segment
+	 * by segment doubles the alpha wherever neighbouring segments overlap, so
+	 * the ink looked blotchy and almost opaque no matter the opacity chosen.
+	 * Width follows the average pressure of the whole stroke. The highlighter
+	 * answers true as well: it has its own ribbon, but it is drawn the same way
+	 * — all at once, never live segment by segment.
 	 */
 	private usesWholePath(stroke: Stroke): boolean {
 		return stroke.type === "highlighter" || colorAlpha(stroke.color) < 1 || nibOf(stroke) === "pencil";
+	}
+
+	/**
+	 * Highlighter ink: one even band, laid down in a single pass at the chosen
+	 * opacity so the stroke never darkens against itself, and multiplied so two
+	 * strokes that cross deepen instead of washing each other out.
+	 */
+	private drawHighlighter(stroke: Stroke): void {
+		if (!stroke.points.length) return;
+		this.ctx.save();
+		this.ctx.globalCompositeOperation = "multiply";
+		this.ctx.globalAlpha = colorAlpha(stroke.color);
+		this.ctx.fillStyle = opaqueColor(stroke.color);
+		this.ctx.fill(this.markerBand(stroke));
+		this.ctx.restore();
+	}
+
+	/**
+	 * The band of a marker stroke, in board coordinates. It only depends on the
+	 * points and the width, so it is built once and reused on every pan, zoom and
+	 * redraw.
+	 */
+	private markerBand(stroke: Stroke): Path2D {
+		const cached = this.markerBands.get(stroke);
+		if (cached && cached.count === stroke.points.length && cached.width === stroke.width) return cached.band;
+		const width = Math.max(2, stroke.width);
+		const band = bandPath(smoothCenterline(simplifyPath(stroke.points, Math.max(1.5, width * 0.25))), width);
+		this.markerBands.set(stroke, { count: stroke.points.length, width: stroke.width, band });
+		return band;
 	}
 
 	private drawWholeStroke(stroke: Stroke): void {
@@ -322,7 +455,6 @@ export class CanvasRenderer {
 	 */
 	private nibWidth(stroke: Stroke, pressure: number, pts: StrokePoint[], i: number): number {
 		const w = stroke.width;
-		if (stroke.type === "highlighter") return w;
 		switch (nibOf(stroke)) {
 			case "marker":
 				return w * 1.5;
@@ -367,14 +499,6 @@ export class CanvasRenderer {
 		this.ctx.lineJoin = "round";
 		this.ctx.strokeStyle = stroke.color;
 		this.ctx.globalCompositeOperation = "source-over";
-		if (stroke.type === "highlighter") {
-			// A real marker: flat ends and constant width. It is painted under
-			// the pen ink (see renderAll), so normal blending keeps every ink
-			// color readable on light and dark pages alike.
-			this.ctx.lineCap = "butt";
-			this.ctx.lineWidth = stroke.width;
-			return;
-		}
 		this.ctx.lineCap = "round";
 		this.ctx.lineWidth = width;
 	}

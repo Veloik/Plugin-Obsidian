@@ -1,6 +1,8 @@
 import { jsPDF } from "jspdf";
 import { RasterImage } from "./dom-raster";
 import { OneNoteDocument, Shape, Stroke } from "./types";
+import { pdfFontFor } from "./fonts";
+import { stripInlineMarks } from "./rich-text";
 
 export interface SceneBounds { x: number; y: number; w: number; h: number; }
 
@@ -206,12 +208,14 @@ function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument, formulas:
 			pdf.setFillColor(sticky.r, sticky.g, sticky.b);
 			pdf.roundedRect(x, y, box.w * SCENE_TO_MM, box.h * SCENE_TO_MM, 1.5, 1.5, "F");
 		}
-		const family = text.fontFamily === "mono" || text.variant === "code" ? "courier" : text.fontFamily === "serif" ? "times" : "helvetica";
+		const family = text.variant === "code" ? "courier" : pdfFontFor(text.fontFamily);
 		const style = text.bold ? (text.italic ? "bolditalic" : "bold") : text.italic ? "italic" : "normal";
 		pdf.setFont(family, style);
 		pdf.setFontSize(Math.max(7, text.fontSize * 0.75));
 		pdf.setTextColor(color.r, color.g, color.b);
-		const lines = pdf.splitTextToSize(text.text, Math.max(12, box.w * SCENE_TO_MM - 3));
+		// On paper the inline marks are formatting, not characters: `**dato**` prints as dato.
+		const body = text.variant === "code" ? text.text : stripInlineMarks(text.text);
+		const lines = pdf.splitTextToSize(body, Math.max(12, box.w * SCENE_TO_MM - 3));
 		pdf.text(lines, x + 1.5, y + text.fontSize * 0.28 + 1.5);
 	}
 }

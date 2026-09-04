@@ -27,7 +27,7 @@ for (const nib of nibs) {
 	await page.evaluate((n) => __view.setPenStyle(n), nib);
 	await tool("pen");
 	await drag(wave(220, y, 520));
-	await page.evaluate((n, y) => { __view.setTool("text"); __view.setTextSize(18); __view.createTextBoxAt(780, y - 14, undefined, "text"); const ed = __view.activeTextEditor; if (ed) { ed.value = n; } __view.commitTextEditor(); __view.setTool("select"); }, nib, y);
+	await page.evaluate((n, y) => { __view.setTool("text"); __view.setTextSize(18); __view.createTextBoxAt(780, y - 14, undefined, "text"); const ed = __view.activeTextEditor; if (ed) { ed.focus(); document.execCommand("insertText", false, n); } __view.commitTextEditor(); __view.setTool("select"); }, nib, y);
 	y += 96;
 }
 console.log("styles saved:", JSON.stringify(await page.evaluate(() => __view.data.strokes.map(s => s.style))));

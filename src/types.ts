@@ -91,6 +91,25 @@ export interface BadgeImage {
 	h: number;
 }
 
+/**
+ * A stretch of text with its own look inside a box. Runs are what the rich
+ * editor writes; `TextBox.text` stays a plain copy of the same words so search,
+ * export and the older boxes that only ever had marks keep working.
+ */
+export interface TextRun {
+	text: string;
+	bold?: boolean;
+	italic?: boolean;
+	underline?: boolean;
+	strike?: boolean;
+	/** Inline code; drawn in a monospaced chip. */
+	code?: boolean;
+	/** Ink for this fragment. Absent means the colour of the box. */
+	color?: string;
+	/** Highlight tint behind this fragment. */
+	mark?: string;
+}
+
 export interface TextBox {
 	id: string;
 	/** Notebook page that owns this text box. */
@@ -103,6 +122,11 @@ export interface TextBox {
 	bold?: boolean;
 	italic?: boolean;
 	underline?: boolean;
+	strike?: boolean;
+	/** Tint used by the `==resaltado==` marks inside this box. */
+	highlight?: string;
+	/** What the rich editor wrote: every fragment with its own style. */
+	runs?: TextRun[];
 	/** Paragraph alignment of the whole box. */
 	align?: "left" | "center" | "right";
 	/** Present only on note cards created with the sticky-note command. */
@@ -121,7 +145,38 @@ export interface TextBox {
 	language?: string;
 }
 
-export type CanvasFont = "sans" | "serif" | "rounded" | "mono";
+/** Runs read back from disk: text is kept, everything else is a flag or a colour. */
+function sanitizeRuns(raw: unknown[]): TextRun[] | undefined {
+	const runs: TextRun[] = [];
+	for (const item of raw) {
+		const r = item as Record<string, unknown>;
+		const text = typeof r?.text === "string" ? r.text : "";
+		if (!text) continue;
+		runs.push({
+			text,
+			bold: r.bold === true || undefined,
+			italic: r.italic === true || undefined,
+			underline: r.underline === true || undefined,
+			strike: r.strike === true || undefined,
+			code: r.code === true || undefined,
+			color: typeof r.color === "string" ? r.color : undefined,
+			mark: typeof r.mark === "string" ? r.mark : undefined
+		});
+	}
+	return runs.length ? runs : undefined;
+}
+
+export type CanvasFont =
+	| "sans" | "serif" | "rounded" | "mono"
+	| "handwriting" | "marker" | "elegant" | "slab" | "condensed" | "typewriter" | "display";
+
+const CANVAS_FONT_IDS: CanvasFont[] = [
+	"sans", "serif", "rounded", "mono", "handwriting", "marker", "elegant", "slab", "condensed", "typewriter", "display"
+];
+
+/** True for a family this build can draw; anything else falls back to "sans". */
+export const isCanvasFont = (value: unknown): value is CanvasFont =>
+	typeof value === "string" && (CANVAS_FONT_IDS as string[]).includes(value);
 
 /** A resizable editable table stored directly on the canvas. */
 export interface CanvasTable {
@@ -437,11 +492,14 @@ export function migrateDocument(raw: any): OneNoteDocument {
 				bold: t.bold === true,
 				italic: t.italic === true,
 				underline: t.underline === true,
+				strike: t.strike === true,
+				highlight: typeof t.highlight === "string" ? t.highlight : undefined,
+				runs: Array.isArray(t.runs) ? sanitizeRuns(t.runs) : undefined,
 				align: t.align === "center" || t.align === "right" ? t.align : "left",
 				stickyColor: typeof t.stickyColor === "string" ? t.stickyColor : undefined,
 				w: typeof t.w === "number" ? Math.min(Math.max(t.w, 120), 900) : undefined,
 				h: typeof t.h === "number" ? Math.min(Math.max(t.h, 34), 900) : undefined,
-				fontFamily: t.fontFamily === "serif" || t.fontFamily === "rounded" || t.fontFamily === "mono" ? t.fontFamily : "sans",
+				fontFamily: isCanvasFont(t.fontFamily) ? t.fontFamily : "sans",
 				autoWidth: t.autoWidth === true,
 				rotation: typeof t.rotation === "number" ? t.rotation : undefined,
 				variant: t.variant === "code" || t.variant === "math" ? t.variant : "text",

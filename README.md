@@ -26,6 +26,16 @@ highlighter, shapes, text and a lasso. The eraser works either way: whole stroke
 only the part you pass over, splitting what is left into pieces. Undo and redo keep 100
 steps. Shortcuts: `V` select · `P` pen · `H` highlighter · `E` eraser · `T` text · `S` shapes.
 
+The highlighter lays down the print of a flat felt tip: one even band, the same width
+whichever way you swipe, slanted at both ends the way a real marker leaves them, and
+deepening where two strokes cross instead of washing out.
+
+Text boxes are edited as they will look, and take eleven typefaces. Select a word and make it
+bold, italic, underlined, struck through, highlighted or code, give it its own colour or its
+own highlight tint, from the floating bar or with Ctrl+B, Ctrl+I and Ctrl+U — and see it as
+you type. The words are also kept as plain Markdown (`**así**`, `==así==`), so the note still
+reads as text everywhere else.
+
 ### Formulas
 
 The formula button opens one dialog with two ways in. Write the equation by hand and it is
@@ -74,6 +84,10 @@ and paper. Bookmarks store the page as well, so opening one switches page and re
 exact area and zoom. The background can be dotted, gridded, ruled or plain, with paper
 colours from blackboard to sepia.
 
+Paste the path of a note, a board or a PDF from this vault and the board shows its card
+rather than the address: the full path from the file explorer, a path relative to the vault,
+a `[[wikilink]]` and `obsidian://` links all work.
+
 Zoom runs from 15 % to 400 % with the wheel or two fingers, and panning is unbounded. Saving
 is debounced at 350 ms through a write queue, with a flush on close so a fast exit cannot
 lose the last stroke. Files are `.notelens` JSON: readable, diffable, versionable with Git,
@@ -112,10 +126,13 @@ commands, so nobody drew a "2" — and their shapes are still written by hand in
 
 ### Privacy
 
-Formula recognition and everything drawn on the canvas runs locally. Local translation talks
-only to the server you configure, normally Ollama or LM Studio on `127.0.0.1`. The web
-translation fallback is off on new installs and is used only if you turn local-only mode off
-yourself. Embedded videos do load from whichever provider you embedded.
+Formula recognition and everything drawn on the canvas runs locally. Translation is the one
+thing that goes out by default: the text you translate is sent to free public endpoints that
+need no key and impose no quota (Google's `translate_a` services, with MyMemory as a last
+resort), which is what makes it answer in well under a second. Turning on "translate only on
+your computer" sends nothing anywhere — a local model does the work instead, more slowly, and
+it talks only to the server you configure, normally Ollama or LM Studio on `127.0.0.1`.
+Embedded videos do load from whichever provider you embedded.
 
 ### Building
 
@@ -190,6 +207,17 @@ de subrayador, formas, texto y lazo. La goma funciona de las dos maneras: el tra
 cortando solo por donde pasas y dejando los trozos que quedan. Deshacer y rehacer guardan 100
 pasos. Atajos: `V` seleccionar · `P` lápiz · `H` subrayador · `E` goma · `T` texto · `S` formas.
 
+El subrayador deja la huella de una punta plana de fieltro: una banda uniforme, del mismo
+grosor pases por donde pases, sesgada en los dos extremos como la deja un rotulador de
+verdad, y que se oscurece donde se cruzan dos trazos en lugar de lavarse.
+
+Los cuadros de texto se editan tal y como van a quedar, y traen once tipografías.
+Seleccionas una palabra y la pones en negrita, cursiva, subrayada, tachada, resaltada o como
+código, le das su propio color o su propio tinte de resaltado, desde la barra flotante o con
+Ctrl+B, Ctrl+I y Ctrl+U, y lo ves mientras escribes. Las palabras se guardan además como
+Markdown normal —`**así**`, `==así==`—, así que la nota se sigue leyendo como texto en
+cualquier otro sitio.
+
 ### Fórmulas
 
 El botón de fórmula abre un único diálogo con dos entradas. Escribes la ecuación a mano y se
@@ -239,6 +267,10 @@ Un archivo guarda muchas páginas: crearlas, renombrarlas, reordenarlas y borrar
 con su cámara y su papel. Los marcadores guardan también la página, así que abrir uno cambia
 de página y recupera la zona y el zoom exactos. El fondo puede ser de puntos, rejilla, rayas
 o liso, con colores de papel de pizarra a sepia.
+
+Pega la ruta de una nota, una pizarra o un PDF de esta bóveda y la pizarra muestra su
+tarjeta en vez de la dirección: vale la ruta completa del explorador de archivos, la ruta
+relativa a la bóveda, un `[[enlace]]` y las direcciones `obsidian://`.
 
 El zoom va del 15 % al 400 % con la rueda o dos dedos, y el paneo no tiene límite. El
 guardado se agrupa cada 350 ms en una cola de escrituras, con un volcado al cerrar para que

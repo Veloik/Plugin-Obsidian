@@ -56,8 +56,11 @@ await page.keyboard.type("Repasar el tema 3"); await page.mouse.click(1200, 820)
 await page.click(".notelens-insert-dock button[title='Insertar tabla']"); await sleep(120);
 await page.click(".onenote-quick-tags .onenote-tag-chip:nth-child(1)"); await page.mouse.click(1000, 700); await sleep(80);
 await clearNotices();
-await page.click(".notelens-nav-map");
-await sleep(200);
+// The minimap may already be up from an earlier step: aim at the state, not the click.
+const mapHidden = () => page.evaluate(() => document.querySelector(".notelens-minimap").classList.contains("hidden"));
+// Clicked from inside the page: other panels can sit over the button.
+const showMap = async (want) => { if (await mapHidden() === want) await page.evaluate(() => document.querySelector(".notelens-nav-map").click()); await sleep(220); };
+await showMap(true);
 const mapRect = await page.evaluate(() => { const r = document.querySelector(".notelens-minimap").getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; });
 await shot(page, "01-board");
 await page.evaluate(() => { const c = document.querySelector(".notelens-minimap canvas"); c.style.width = "624px"; c.style.height = "375px"; document.querySelector(".notelens-minimap").style.width = "640px"; });
@@ -65,7 +68,7 @@ await sleep(50);
 const bigRect = await page.evaluate(() => { const r = document.querySelector(".notelens-minimap").getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; });
 await shot(page, "02-map-zoomed", bigRect);
 await page.evaluate(() => { const c = document.querySelector(".notelens-minimap canvas"); c.style.width = ""; c.style.height = ""; document.querySelector(".notelens-minimap").style.width = ""; });
-await page.click(".notelens-nav-map");
+await showMap(false);
 
 // --- translator panel on the board
 await tool("select"); await sleep(50);

@@ -9,6 +9,9 @@ import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
 import { RasterImage, rasterizeMath } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer } from "./renderer";
+import { CANVAS_FONTS, fontStack } from "./fonts";
+import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
+import { BaseStyle, editableText, readRuns, renderRuns, selectOffsets, selectionOffsets, surroundSelection, unwrapCode } from "./rich-editor";
 import { HistoryManager } from "./history";
 import { PersistenceManager } from "./persistence";
 import {
@@ -25,7 +28,7 @@ import { HOVER_NOTE_BOARD_HEIGHT, HOVER_NOTE_BOARD_WIDTH, HoverNoteContent, Hove
 import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EXPERIMENTAL } from "./features";
-import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
+import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
 import { Locale, getLocale, tr } from "./i18n";
 
@@ -37,6 +40,9 @@ const GRID_CELLS: Record<GridSize, number> = { small: 18, medium: 26, large: 40 
 const A4_SCENE_W = 794;
 const A4_SCENE_H = 1123;
 const TEXT_COLORS = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
+/** Tints for `==resaltado==` inside a text box: the same felt colours as the marker. */
+const TEXT_HIGHLIGHTS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8", "#ddd6fe", "#a7f3d0", "#fed7aa"];
+const DEFAULT_TEXT_HIGHLIGHT = TEXT_HIGHLIGHTS[0];
 
 // ---------------------------------------------------------------------------
 // Syntax highlighting without markup
@@ -56,43 +62,6 @@ function paintPrismTokens(parent: HTMLElement, tokens: PrismToken | PrismToken[]
 		const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
 		paintPrismTokens(span, token.content);
 	}
-}
-
-// ---------------------------------------------------------------------------
-// Lists in plain text boxes: bullets, numbers, arrows and dashes as line prefixes
-// ---------------------------------------------------------------------------
-
-type ListKind = "bullet" | "number" | "arrow" | "dash";
-const LIST_PREFIX = /^(\s*)(?:[•·]|\d+[.)]|→|-->|->|[-–])\s+/;
-const LIST_MARK: Record<ListKind, string> = { bullet: "• ", number: "1. ", arrow: "→ ", dash: "- " };
-
-function listKindOf(line: string): ListKind | null {
-	const m = /^\s*(?:([•·])|(\d+[.)])|(→|-->|->)|([-–]))\s+/.exec(line);
-	if (!m) return null;
-	return m[1] ? "bullet" : m[2] ? "number" : m[3] ? "arrow" : "dash";
-}
-
-/** Adds the list prefix to the selected lines (all lines if nothing is selected); removes it when every line already has it. */
-function toggleListPrefix(editor: HTMLTextAreaElement, kind: ListKind): void {
-	const value = editor.value;
-	const selStart = editor.selectionStart;
-	const selEnd = editor.selectionEnd;
-	const wholeBox = selStart === selEnd;
-	const from = wholeBox ? 0 : value.lastIndexOf("\n", selStart - 1) + 1;
-	const toIdx = wholeBox ? value.length : (value.indexOf("\n", selEnd) === -1 ? value.length : value.indexOf("\n", selEnd));
-	const lines = value.slice(from, toIdx).split("\n");
-	const allHave = lines.every(l => !l.trim() || listKindOf(l) === kind);
-	let counter = 1;
-	const changed = lines.map(line => {
-		const indent = /^\s*/.exec(line)?.[0] ?? "";
-		const bare = line.replace(LIST_PREFIX, "$1").trimStart();
-		if (!line.trim()) return line;
-		if (allHave) return indent + bare;
-		const mark = kind === "number" ? `${counter++}. ` : LIST_MARK[kind];
-		return indent + mark + bare;
-	}).join("\n");
-	editor.setRangeText(changed, from, toIdx, "select");
-	if (wholeBox) editor.setSelectionRange(editor.value.length, editor.value.length);
 }
 
 /** Enter inside a list item starts the next item; Enter on an empty item ends the list. Returns false when the line is not a list. */
@@ -307,7 +276,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
 	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
 	private focusModeEnabled = false;
-	private activeTextEditor: HTMLTextAreaElement | null = null;
+	private activeTextEditor: HTMLTextAreaElement | HTMLElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
 	private a4GuidesEl: HTMLElement | null = null;
 	private miniMapEl: HTMLElement | null = null;
@@ -1267,6 +1236,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!img) {
 			if (!text.trim() && this.clipboardPayload) { e.preventDefault(); this.pasteObjects(this.clipboardPayload); return; }
 			if (text.trim()) {
+				// A path, a wikilink or an obsidian:// address to something in this
+				// vault comes in as the card that names it, not as its own address.
+				const linked = this.vaultFileFromText(text);
+				if (linked) {
+					e.preventDefault();
+					this.clearSelection(false);
+					this.insertVaultFile(linked, this.pasteTarget(320, 150));
+					this.pasteCount++;
+					return;
+				}
+				if (/^([a-zA-Z]:[\\/]|\/\/|file:\/\/)/.test(text.trim()) && /\.[a-z0-9]{2,5}$/i.test(text.trim())) {
+					new Notice(tr("Ese archivo está fuera de la bóveda, así que se pega como texto."), 4000);
+				}
 				// Plain text from anywhere becomes a text box under the pointer.
 				e.preventDefault();
 				this.history.push();
@@ -3021,7 +3003,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	/** Language the board reader transcribes in, from the settings. */
 	get ocrLanguage(): string { return this.plugin.settings.ocrLanguage || "es"; }
-	get translationLocalOnly(): boolean { return this.plugin.settings.translationLocalOnly === true; }
+	get translationPrivateOnly(): boolean { return this.plugin.settings.translationPrivateOnly === true; }
 
 	/** Drops a formula on the board and leaves it selected, ready to move. */
 	private placeFormula(source: string): void {
@@ -3259,7 +3241,57 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		picker.click();
 	}
 
-	private insertVaultFile(file: TFile): void {
+	/**
+	 * The file a piece of text names, when this vault holds it.
+	 *
+	 * Understands what people actually copy: the full path from the file
+	 * explorer (`C:\\…\\Bóveda\\Materia\\Nota.md`), a path relative to the vault,
+	 * a `[[wikilink]]`, a `file://` URL and Obsidian's own `obsidian://open`
+	 * address. Anything pointing outside the vault is not a file we can show.
+	 */
+	private vaultFileFromText(text: string): TFile | null {
+		const raw = text.trim().replace(/^"|"$/g, "");
+		if (!raw || /[\r\n]/.test(raw)) return null;
+		let candidate = raw;
+		const wiki = /^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]$/.exec(raw);
+		if (wiki) {
+			candidate = wiki[1];
+		} else if (/^obsidian:\/\//i.test(raw)) {
+			try {
+				candidate = new URL(raw).searchParams.get("file") ?? "";
+			} catch { return null; }
+		} else if (/^file:\/\//i.test(raw)) {
+			try {
+				candidate = decodeURIComponent(new URL(raw).pathname).replace(/^\/([A-Za-z]:)/, "$1");
+			} catch { return null; }
+		}
+		candidate = candidate.replace(/\\/g, "/").trim();
+		if (!candidate) return null;
+		const base = this.vaultBasePath();
+		if (base && candidate.toLowerCase().startsWith(`${base}/`)) candidate = candidate.slice(base.length + 1);
+		else if (/^([A-Za-z]:\/|\/)/.test(candidate)) return null;
+		const direct = this.app.vault.getAbstractFileByPath(candidate);
+		if (direct instanceof TFile) return direct;
+		// Only something written as a reference gets looked up by name: pasting a
+		// word that happens to match a note must stay the word you pasted.
+		const isReference = !!wiki || /^(obsidian|file):\/\//i.test(raw) || candidate.includes("/") || /\.[a-z0-9]{1,6}$/i.test(candidate);
+		if (!isReference) return null;
+		// A name without its folder, or without the extension, still finds its note.
+		return this.app.metadataCache?.getFirstLinkpathDest(candidate.replace(/\.md$/i, ""), this.currentPath ?? "") ?? null;
+	}
+
+	/** Where this vault lives on disk, in forward slashes; empty where the app cannot say. */
+	private vaultBasePath(): string {
+		const adapter = this.app.vault.adapter as { getBasePath?: () => string };
+		if (typeof adapter?.getBasePath !== "function") return "";
+		try {
+			return adapter.getBasePath().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+		} catch {
+			return "";
+		}
+	}
+
+	private insertVaultFile(file: TFile, at?: { x: number; y: number }): void {
 		if (file.extension.toLowerCase() === "pdf") {
 			this.insertPdfFile(file);
 			return;
@@ -3273,11 +3305,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			: kind === "note" ? { w: 320, h: 150 }
 			: kind === "board" ? { w: 320, h: 96 }
 			: { w: 360, h: 112 };
-		const at = this.getInsertionPoint(dimensions.w, dimensions.h || 120);
+		const spot = at ?? this.getInsertionPoint(dimensions.w, dimensions.h || 120);
+		// Cards land where they were asked for; media without a spot is centred on the view.
+		const centred = !at && kind !== "note" && kind !== "board";
 		const embed: Embed = {
 			id: genId("embed"), pageId: this.data.activePageId, kind, src: file.path,
-			x: kind === "note" || kind === "board" ? at.x : c.x - dimensions.w / 2,
-			y: kind === "note" || kind === "board" ? at.y : c.y - dimensions.h / 2,
+			x: centred ? c.x - dimensions.w / 2 : spot.x,
+			y: centred ? c.y - dimensions.h / 2 : spot.y,
 			w: dimensions.w, h: dimensions.h
 		};
 		this.data.embeds.push(embed);
@@ -4494,7 +4528,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	getTranslationSource(): TranslationSource {
 		const editor = this.activeTextEditor;
-		if (editor) return { text: editor.value, kind: "editor", count: 1 };
+		if (editor) return { text: this.editorPlainText(editor), kind: "editor", count: 1 };
 		const targets = this.translatableSelection();
 		if (targets.length) return { text: targets.map(t => t.text).join("\n\n"), kind: "selection", count: targets.length };
 		return { text: "", kind: "none", count: 0 };
@@ -4508,8 +4542,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const editor = this.activeTextEditor;
 		if (editor) {
 			this.pushEditSession();
-			editor.value = text;
-			editor.dispatchEvent(new Event("input"));
+			if (editor instanceof HTMLTextAreaElement) {
+				editor.value = text;
+				editor.dispatchEvent(new Event("input"));
+				return;
+			}
+			// A rich box: swap every word, which also reports the edit like typing does.
+			editor.focus();
+			selectOffsets(editor, 0, editableText(editor).length);
+			document.execCommand("insertText", false, text);
 			return;
 		}
 		const targets = this.translatableSelection();
@@ -4956,8 +4997,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			: tb.stickyColor ? `rotate(var(--sticky-tilt, 0deg))` : "";
 		el.contentEditable = "false";
 		el.setAttr("role", "textbox");
-		this.paintTextContent(el, tb);
+		// Styles first: a run only writes down what it changes about the box.
 		this.applyTextStyles(el, tb);
+		this.paintTextContent(el, tb);
 		this.syncFittedSize(el, tb);
 
 		this.attachBoxChrome(el, tb);
@@ -5012,6 +5054,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.commitTextEditor();
 		this.hideTextPlacementHint();
 		this.editSessionPushed = false;
+		// Prose is edited as it will look; code and formulas keep their source.
+		if (tb.variant !== "code" && tb.variant !== "math") { this.beginRichEdit(tb, el); return; }
 		const editor = this.domLayerEl.createEl("textarea", { cls: "notelens-text-editor" });
 		if (tb.variant === "code") {
 			editor.addClass("notelens-code-editor");
@@ -5093,6 +5137,177 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.showFormatBar(tb, editor);
 	}
 
+	/**
+	 * Opens a text box for editing in place: the words carry their own weight,
+	 * underline, colour and highlight while they are typed, because the box being
+	 * edited is the same rich element the board paints.
+	 */
+	private beginRichEdit(tb: TextBox, el: HTMLElement): void {
+		const editor = this.domLayerEl.createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
+		editor.contentEditable = "true";
+		editor.setAttr("role", "textbox");
+		editor.setAttr("aria-multiline", "true");
+		editor.setAttr("data-placeholder", tr("Escribe aquí"));
+		editor.style.left = `${tb.x}px`;
+		editor.style.top = `${tb.y}px`;
+		this.applyTextStyles(editor, tb);
+		this.fillRichEditor(editor, tb);
+		editor.toggleClass("is-empty", !editableText(editor).trim());
+		editor.style.height = `${Math.max(tb.h ?? 48, editor.scrollHeight + 4)}px`;
+		el.setCssStyles({ visibility: "hidden" });
+		this.activeTextEditor = editor;
+		this.activeTextSourceEl = el;
+		const openedAt = performance.now();
+		// Formatting as inline styles rather than <b>/<font>: one shape to read back.
+		try { document.execCommand("styleWithCSS", false, "true"); } catch { /* older builds format with tags; the reader copes */ }
+		editor.focus();
+		const end = editableText(editor).length;
+		selectOffsets(editor, end, end);
+
+		editor.addEventListener("pointerdown", (e) => e.stopPropagation());
+		editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+		editor.addEventListener("paste", (e) => {
+			// The words only: pasted HTML would drag foreign fonts and colours onto the board.
+			e.preventDefault();
+			const text = e.clipboardData?.getData("text/plain") ?? "";
+			if (text) document.execCommand("insertText", false, text);
+		});
+		editor.addEventListener("input", () => {
+			this.pushEditSession();
+			this.syncRichText(tb, editor);
+			this.resizeRichEditor(tb, editor);
+			this.save();
+		});
+		editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor));
+		editor.addEventListener("blur", (event) => {
+			const next = event.relatedTarget as Node | null;
+			if (next && this.formatBarEl?.contains(next)) return;
+			if (!next && editor.isConnected && performance.now() - openedAt < 250) {
+				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus(); });
+				return;
+			}
+			this.commitTextEditor();
+		});
+		this.showFormatBar(tb, editor);
+	}
+
+	/** Fills the editor with the runs of the box, or with what its old marks meant. */
+	private fillRichEditor(editor: HTMLElement, tb: TextBox): void {
+		editor.empty();
+		const runs = tb.runs?.length ? tb.runs : runsFromInline(tb.text, tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
+		renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => parent.appendText(text));
+	}
+
+	/** What the box looks like before any run overrides it. */
+	private baseStyle(el: HTMLElement, tb: TextBox): BaseStyle {
+		return {
+			bold: !!tb.bold,
+			italic: !!tb.italic,
+			underline: !!tb.underline,
+			strike: !!tb.strike,
+			color: getComputedStyle(el).color
+		};
+	}
+
+	/**
+	 * Stores what is on screen. The runs are the truth; `text` keeps the same
+	 * words with Markdown marks so search, the summary tools and the exports go
+	 * on reading a box as text.
+	 */
+	private syncRichText(tb: TextBox, editor: HTMLElement): void {
+		const runs = readRuns(editor, this.baseStyle(editor, tb));
+		tb.runs = runs.length ? runs : undefined;
+		tb.text = runs.length ? runsToMarked(runs) : "";
+	}
+
+	private resizeRichEditor(tb: TextBox, editor: HTMLElement): void {
+		// A box the browser left a stray <br> in is still empty to the eye, so the
+		// hint is decided by the words rather than by the markup.
+		editor.toggleClass("is-empty", !editableText(editor).trim());
+		if (tb.autoWidth) {
+			tb.w = this.measureAutoWidth(tb);
+			editor.style.width = `${tb.w}px`;
+		}
+		editor.setCssStyles({ height: "auto" });
+		tb.h = Math.max(48, editor.scrollHeight + 4);
+		editor.style.height = `${tb.h}px`;
+	}
+
+	private richEditorKey(e: KeyboardEvent, editor: HTMLElement): void {
+		const mod = e.ctrlKey || e.metaKey;
+		if (e.key === "Escape" || (mod && e.key === "Enter")) {
+			e.preventDefault();
+			this.commitTextEditor();
+			return;
+		}
+		// Ctrl+B, Ctrl+I and Ctrl+U are the browser's own: let them through, but
+		// keep them from reaching Obsidian's shortcuts behind the board.
+		if (mod && !e.altKey && ["b", "i", "u"].includes(e.key.toLowerCase())) {
+			e.stopPropagation();
+			return;
+		}
+		if (e.key === "Tab") {
+			e.preventDefault();
+			document.execCommand("insertText", false, "\t");
+			return;
+		}
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			if (!this.continueRichList(editor)) document.execCommand("insertLineBreak");
+		}
+	}
+
+	/** Enter inside a list item starts the next one; on an empty item it leaves the list. */
+	private continueRichList(editor: HTMLElement): boolean {
+		const text = editableText(editor);
+		const { from, to } = selectionOffsets(editor);
+		if (from !== to) return false;
+		const lineStart = text.lastIndexOf("\n", from - 1) + 1;
+		const line = text.slice(lineStart, from);
+		const kind = listKindOf(line);
+		if (!kind) return false;
+		if (!line.replace(LIST_PREFIX, "").trim()) {
+			selectOffsets(editor, lineStart, from);
+			document.execCommand("delete");
+			return true;
+		}
+		const indent = /^\s*/.exec(line)?.[0] ?? "";
+		const numbered = kind === "number" ? parseInt(line.trim(), 10) : NaN;
+		const mark = Number.isFinite(numbered) ? `${numbered + 1}. ` : LIST_MARK[kind];
+		document.execCommand("insertLineBreak");
+		document.execCommand("insertText", false, indent + mark);
+		return true;
+	}
+
+	/** Puts the list prefix in, or takes it out, on every line the selection touches. */
+	private toggleRichList(tb: TextBox, editor: HTMLElement, kind: ListKind): void {
+		const { from, to } = selectionOffsets(editor);
+		const wholeBox = from === to;
+		const edits = planListToggle(editableText(editor), from, to, kind);
+		if (!edits.length) return;
+		this.pushEditSession();
+		// Back to front: an edit never moves the ones still to come.
+		for (const edit of edits.reverse()) {
+			selectOffsets(editor, edit.from, edit.to);
+			if (edit.text) document.execCommand("insertText", false, edit.text);
+			else document.execCommand("delete");
+		}
+		editor.focus();
+		// Bulleting the whole box leaves the caret at the end, ready to write the next item.
+		if (wholeBox) {
+			const end = editableText(editor).length;
+			selectOffsets(editor, end, end);
+		}
+		this.syncRichText(tb, editor);
+		this.resizeRichEditor(tb, editor);
+		this.save();
+	}
+
+	/** The words in the editor, whichever kind it is. */
+	private editorPlainText(editor: HTMLElement): string {
+		return editor instanceof HTMLTextAreaElement ? editor.value : editableText(editor);
+	}
+
 	private commitTextEditor(): void {
 		const editor = this.activeTextEditor;
 		const source = this.activeTextSourceEl;
@@ -5109,9 +5324,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.hideFormatBar();
 		if (!tb) return;
 
+		const raw = this.editorPlainText(editor);
 		// A fenced block (```lang … ```) pasted into a plain box turns it into a
 		// code block with that language; inside a code block it just sets the language.
-		const fence = /^```([\w+#.-]*)[ \t]*\r?\n([\s\S]*?)\r?\n?```\s*$/.exec(editor.value);
+		let replacement: string | null = null;
+		const fence = /^```([\w+#.-]*)[ \t]*\r?\n([\s\S]*?)\r?\n?```\s*$/.exec(raw);
 		if (fence && (tb.variant === "code" || tb.variant === "text") && !tb.stickyColor) {
 			if (tb.variant !== "code") {
 				tb.variant = "code";
@@ -5122,17 +5339,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				source.addClass("notelens-code-block");
 			}
 			if (fence[1]) tb.language = normalizeLanguage(fence[1]);
-			editor.value = fence[2];
+			replacement = fence[2];
 		} else if (tb.variant === "code") {
 			// Inside a code block an opening fence alone (```python) is enough to pick the language.
-			const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(editor.value);
+			const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(raw);
 			if (openFence) {
 				tb.language = normalizeLanguage(openFence[1]);
-				editor.value = openFence[2];
+				replacement = openFence[2];
 			}
 		}
 
-		const empty = editor.value.trim() === "" && !tb.stickyColor;
+		const empty = (replacement ?? raw).trim() === "" && !tb.stickyColor;
 		if (empty) {
 			// An abandoned click must not leave an invisible box behind.
 			source.remove();
@@ -5142,7 +5359,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 			return;
 		}
-		tb.text = editor.value;
+		if (replacement !== null) {
+			// Fenced source replaced the prose: the runs of the old box mean nothing now.
+			tb.text = replacement;
+			tb.runs = undefined;
+		} else if (editor instanceof HTMLTextAreaElement) {
+			tb.text = editor.value;
+		}
 		this.applyTextStyles(source, tb);
 		this.paintTextContent(source, tb);
 		this.syncFittedSize(source, tb);
@@ -5174,21 +5397,56 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			return;
 		}
 		if (tb.variant === "code") { this.paintCode(el, tb); return; }
-		if (!tb.text.includes("$")) { this.appendLinkified(el, tb.text); return; }
+		// What the rich editor wrote wins; a box that never went through it still
+		// carries its formatting as marks in the text.
+		if (tb.runs?.length) {
+			renderRuns(el, tb.runs, this.baseStyle(el, tb), (parent, text) => this.paintFragment(parent, text));
+			return;
+		}
+		this.appendRich(el, tb.text);
+	}
+
+	/** A piece of plain text: inline $…$ and display $$…$$ typeset, links made clickable. */
+	private paintFragment(parent: HTMLElement, text: string): void {
+		if (!text.includes("$")) { this.appendLinkified(parent, text); return; }
 		let typeset = false;
-		for (const part of tb.text.split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g)) {
+		for (const part of text.split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g)) {
 			if (!part) continue;
 			if (part.length > 4 && part.startsWith("$$") && part.endsWith("$$")) {
-				el.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(2, -2)), true));
+				parent.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(2, -2)), true));
 				typeset = true;
 			} else if (part.length > 2 && part.startsWith("$") && part.endsWith("$")) {
-				el.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(1, -1)), false));
+				parent.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(1, -1)), false));
 				typeset = true;
 			} else {
-				this.appendLinkified(el, part);
+				this.appendLinkified(parent, part);
 			}
 		}
 		if (typeset) void finishRenderMath();
+	}
+
+	/**
+	 * Text with its inline marks turned into real formatting: `**negrita**`,
+	 * `*cursiva*`, `__subrayado__`, `~~tachado~~`, `==resaltado==` and
+	 * `` `código` ``. The marks stay in the stored text, so the box still saves
+	 * as plain Markdown and the editor shows exactly what will be exported.
+	 */
+	private appendRich(el: HTMLElement, text: string): void {
+		for (const run of parseInline(text)) {
+			if (!run.text) continue;
+			const classes = ["notelens-run"];
+			if (run.bold) classes.push("is-bold");
+			if (run.italic) classes.push("is-italic");
+			if (run.underline) classes.push("is-underline");
+			if (run.strike) classes.push("is-strike");
+			if (run.mark) classes.push("is-mark");
+			if (run.code) classes.push("is-code");
+			if (classes.length === 1) { this.paintFragment(el, run.text); continue; }
+			const span = el.createSpan({ cls: classes.join(" ") });
+			// Code is shown verbatim: a URL inside backticks is a sample, not a link.
+			if (run.code) span.setText(run.text);
+			else this.paintFragment(span, run.text);
+		}
 	}
 
 	/** Text with [[notas de la bóveda]] and http(s) URLs turned into clickable links. */
@@ -5307,9 +5565,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private measureAutoWidth(tb: TextBox): number {
 		const ctx = this.textMeasurer ?? (this.textMeasurer = createEl("canvas").getContext("2d"));
 		if (!ctx) return tb.w ?? 260;
-		ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${this.fontStack(tb.fontFamily ?? "sans")}`;
+		ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${fontStack(tb.fontFamily ?? "sans")}`;
 		let widest = 0;
-		for (const line of tb.text.split("\n")) widest = Math.max(widest, ctx.measureText(line).width);
+		const words = tb.runs?.length ? runsToPlain(tb.runs) : tb.text;
+		for (const line of words.split("\n")) widest = Math.max(widest, ctx.measureText(line).width);
 		return clamp(Math.ceil(widest) + 24, 160, 640);
 	}
 
@@ -5408,7 +5667,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.eraserCursorEl.setAttr("aria-hidden", "true");
 			this.eraserCursorEl.createDiv({ cls: "notelens-eraser-pointer-area" });
 			const tool = this.eraserCursorEl.createDiv({ cls: "notelens-eraser-pointer-tool" });
-			setIcon(tool, "eraser");
+			setEraserIcon(tool, 30);
 		}
 		this.syncEraserCursorSize();
 		this.eraserCursorEl.toggleClass("is-active", this.isErasing);
@@ -5433,7 +5692,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.style.color = tb.color;
 		el.style.fontWeight = tb.bold ? "700" : "400";
 		el.style.fontStyle = tb.italic ? "italic" : "normal";
-		el.style.textDecoration = tb.underline ? "underline" : "none";
+		el.style.textDecoration = [tb.underline ? "underline" : "", tb.strike ? "line-through" : ""].filter(Boolean).join(" ") || "none";
+		el.style.setProperty("--notelens-mark", tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
+		// Highlight tints are pale, so near-white ink written on a dark board
+		// would disappear inside them: those runs get dark ink instead.
+		el.style.setProperty("--notelens-mark-ink", isLightColor(tb.color) ? "#1f2937" : "");
 		el.style.textAlign = tb.align ?? "left";
 		el.style.backgroundColor = tb.stickyColor ?? "";
 		if (tb.stickyColor) {
@@ -5444,7 +5707,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			el.style.setProperty("--sticky-deep", shadeColor(tb.stickyColor, -0.32));
 			el.style.setProperty("--sticky-tilt", `${stickyTilt(tb.id)}deg`);
 		}
-		el.style.fontFamily = this.fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
+		el.style.fontFamily = fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
 		// A formula grows with what it shows unless the user resized it by hand.
 		const fitsContent = tb.variant === "math" && tb.autoWidth !== false;
 		el.style.width = fitsContent ? "max-content" : tb.w ? `${tb.w}px` : "";
@@ -5458,26 +5721,42 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (el.offsetHeight > 0) tb.h = el.offsetHeight;
 	}
 
-	private fontStack(font: CanvasFont): string {
-		switch (font) {
-			case "serif": return "Georgia, 'Times New Roman', serif";
-			case "rounded": return "'Trebuchet MS', 'Segoe UI', sans-serif";
-			case "mono": return "ui-monospace, SFMono-Regular, Consolas, monospace";
-			default: return "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-		}
-	}
-
 	// ------------------------------------------------------------------
 	// Floating text format bar
 	// ------------------------------------------------------------------
 
 	private formatBarEl: HTMLElement | null = null;
+	private formatBarWatch: (() => void) | null = null;
 	private editSessionPushed = false;
 
 	private pushEditSession(): void {
 		if (!this.editSessionPushed) {
 			this.history.push();
 			this.editSessionPushed = true;
+		}
+	}
+
+	/**
+	 * Runs one formatting command on the selection of a rich box and stores the
+	 * result. With nothing selected the command arms the style for what gets
+	 * typed next, the way it works in any editor.
+	 */
+	private formatRich(tb: TextBox, editor: HTMLElement, command: string, value?: string): void {
+		this.pushEditSession();
+		editor.focus();
+		document.execCommand(command, false, value);
+		this.syncRichText(tb, editor);
+		this.resizeRichEditor(tb, editor);
+		this.save();
+	}
+
+	/** The highlight tint under the caret, or none when the text is not highlighted. */
+	private markUnderCaret(): string {
+		try {
+			const value = document.queryCommandValue("hiliteColor");
+			return !value || value === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(value) ? "" : value;
+		} catch {
+			return "";
 		}
 	}
 
@@ -5492,7 +5771,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			e.stopPropagation();
 			if (!(e.target instanceof HTMLSelectElement)) e.preventDefault();
 		});
-		bar.addEventListener("change", () => { if (el.instanceOf(HTMLTextAreaElement)) el.focus(); });
+		// After picking a font or a language the caret goes back where it was.
+		bar.addEventListener("change", () => el.focus());
 
 		const apply = (mutate: () => void) => {
 			this.pushEditSession();
@@ -5513,21 +5793,52 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		// Code and math boxes have no use for weight, style or typeface controls.
 		const plainText = tb.variant !== "code" && tb.variant !== "math";
-		if (plainText) {
-			mkToggle("bold", "bold", "Negrita", () => { tb.bold = !tb.bold; });
-			mkToggle("italic", "italic", "Cursiva", () => { tb.italic = !tb.italic; });
-			mkToggle("underline", "underline", "Subrayado", () => { tb.underline = !tb.underline; });
+		// Prose is edited in a rich element; only there can a single word carry its
+		// own weight, underline, colour or tint.
+		const rich = plainText && !el.instanceOf(HTMLTextAreaElement) ? el : null;
+		const command = (key: string, icon: string, title: string, run: () => void) => {
+			const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
+			setIcon(b, icon);
+			b.title = tr(title);
+			b.onclick = () => { run(); refreshStates(); };
+			toggleButtons.set(key, b);
+		};
+
+		if (rich) {
+			command("bold", "bold", "Negrita (Ctrl+B)", () => this.formatRich(tb, rich, "bold"));
+			command("italic", "italic", "Cursiva (Ctrl+I)", () => this.formatRich(tb, rich, "italic"));
+			command("underline", "underline", "Subrayado (Ctrl+U)", () => this.formatRich(tb, rich, "underline"));
+			command("strike", "strikethrough", "Tachado", () => this.formatRich(tb, rich, "strikeThrough"));
+			command("mark", "highlighter", "Resaltar lo seleccionado", () => {
+				rich.focus();
+				const tint = this.markUnderCaret() ? "transparent" : (tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
+				this.formatRich(tb, rich, "hiliteColor", tint);
+			});
+			command("code", "code", "Código en línea", () => {
+				this.pushEditSession();
+				rich.focus();
+				if (!unwrapCode(rich)) surroundSelection(rich, "code");
+				this.syncRichText(tb, rich);
+				this.resizeRichEditor(tb, rich);
+				this.save();
+			});
+			command("clear", "remove-formatting", "Quitar el formato de lo seleccionado", () => {
+				unwrapCode(rich);
+				this.formatRich(tb, rich, "removeFormat");
+			});
 			bar.createDiv({ cls: "onenote-divider" });
+		}
+		if (plainText) {
 			mkToggle("align-left", "align-left", "Alinear a la izquierda", () => { tb.align = "left"; });
 			mkToggle("align-center", "align-center", "Centrar", () => { tb.align = "center"; });
 			mkToggle("align-right", "align-right", "Alinear a la derecha", () => { tb.align = "right"; });
 			bar.createDiv({ cls: "onenote-divider" });
-			if (el.instanceOf(HTMLTextAreaElement)) {
+			if (rich) {
 				const listButton = (icon: string, title: string, kind: ListKind) => {
 					const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 					setIcon(b, icon);
 					b.title = tr(title);
-					b.onclick = () => { this.pushEditSession(); toggleListPrefix(el, kind); el.dispatchEvent(new Event("input")); el.focus(); };
+					b.onclick = () => this.toggleRichList(tb, rich, kind);
 				};
 				listButton("list", "Lista con viñetas (•)", "bullet");
 				listButton("list-ordered", "Lista numerada (1. 2. 3.)", "number");
@@ -5537,8 +5848,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 		}
 		const fontSelect = bar.createEl("select", { cls: "notelens-format-font" });
-		for (const [value, label] of [["sans", "Interfaz"], ["serif", "Clásica"], ["rounded", "Redondeada"], ["mono", "Mono"]] as [CanvasFont, string][]) {
-			fontSelect.createEl("option", { value, text: tr(label) });
+		for (const font of CANVAS_FONTS) {
+			const option = fontSelect.createEl("option", { value: font.id, text: tr(font.label) });
+			option.style.fontFamily = font.css;
 		}
 		fontSelect.value = tb.fontFamily ?? "sans";
 		fontSelect.onchange = () => apply(() => { tb.fontFamily = fontSelect.value as CanvasFont; });
@@ -5565,11 +5877,38 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		if (tb.variant !== "code") {
 			bar.createDiv({ cls: "onenote-divider" });
+			// First in the row, the way back: paints the selection in the colour of the
+			// box again, which is what "no colour" means for a fragment.
+			if (rich) {
+				addPlainSwatch(bar, "Color normal del cuadro", () => this.formatRich(tb, rich, "foreColor", getComputedStyle(rich).color));
+			}
 			for (const c of TEXT_COLORS) {
 				const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color" });
 				dot.style.backgroundColor = c;
-				dot.title = c;
-				dot.onclick = () => apply(() => { tb.color = c; });
+				// In a rich box the colour paints what is selected; the box keeps its own
+				// colour for whatever is typed outside that.
+				dot.title = rich ? tr("Color del texto seleccionado") : c;
+				dot.onclick = () => {
+					if (rich) this.formatRich(tb, rich, "foreColor", c);
+					else apply(() => { tb.color = c; });
+				};
+			}
+		}
+
+		if (plainText) {
+			bar.createDiv({ cls: "onenote-divider" });
+			if (rich) {
+				addPlainSwatch(bar, "Sin resaltado", () => this.formatRich(tb, rich, "hiliteColor", "transparent"), true);
+			}
+			for (const c of TEXT_HIGHLIGHTS) {
+				const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color notelens-format-mark-color" });
+				dot.style.backgroundColor = c;
+				dot.title = tr("Color del resaltado");
+				dot.onclick = () => {
+					tb.highlight = c;
+					if (rich) this.formatRich(tb, rich, "hiliteColor", c);
+					else apply(() => { tb.highlight = c; });
+				};
 			}
 		}
 
@@ -5597,9 +5936,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 
 		const refreshStates = () => {
-			toggleButtons.get("bold")?.toggleClass("active", !!tb.bold);
-			toggleButtons.get("italic")?.toggleClass("active", !!tb.italic);
-			toggleButtons.get("underline")?.toggleClass("active", !!tb.underline);
+			// In a rich box the buttons show the style of the selection, not of the box.
+			const state = (cmd: string) => { try { return document.queryCommandState(cmd); } catch { return false; } };
+			toggleButtons.get("bold")?.toggleClass("active", rich ? state("bold") : !!tb.bold);
+			toggleButtons.get("italic")?.toggleClass("active", rich ? state("italic") : !!tb.italic);
+			toggleButtons.get("underline")?.toggleClass("active", rich ? state("underline") : !!tb.underline);
+			toggleButtons.get("strike")?.toggleClass("active", rich ? state("strikeThrough") : !!tb.strike);
+			toggleButtons.get("mark")?.toggleClass("active", !!rich && !!this.markUnderCaret());
 			toggleButtons.get("align-left")?.toggleClass("active", (tb.align ?? "left") === "left");
 			toggleButtons.get("align-center")?.toggleClass("active", tb.align === "center");
 			toggleButtons.get("align-right")?.toggleClass("active", tb.align === "right");
@@ -5652,9 +5995,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
 
 		this.formatBarEl = bar;
+		if (rich) {
+			// The buttons light up for wherever the caret is now.
+			this.formatBarWatch = () => { if (this.formatBarEl === bar) refreshStates(); };
+			document.addEventListener("selectionchange", this.formatBarWatch);
+		}
 	}
 
 	private hideFormatBar(): void {
+		if (this.formatBarWatch) {
+			document.removeEventListener("selectionchange", this.formatBarWatch);
+			this.formatBarWatch = null;
+		}
 		this.formatBarEl?.remove();
 		this.formatBarEl = null;
 	}
@@ -5783,6 +6135,14 @@ export function tidyFormulaText(raw: string): string {
 }
 
 /** Classic sticky-note paper colours, warmest first. */
+/** The crossed-out dot that takes a colour or a highlight back off a fragment. */
+function addPlainSwatch(bar: HTMLElement, title: string, clear: () => void, square = false): void {
+	const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color notelens-format-none" });
+	if (square) dot.addClass("notelens-format-mark-color");
+	dot.title = tr(title);
+	dot.onclick = clear;
+}
+
 const STICKY_COLORS = ["#fff2a8", "#ffd9a0", "#ffd7e5", "#d8f5c9", "#cde8ff", "#eadbff", "#f4f1e8"];
 
 /** Same colour, lighter (amount > 0) or darker (amount < 0). */
