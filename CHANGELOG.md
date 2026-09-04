@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.3
+
+Same plugin as 2.8.2, published again so the community catalogue check reads a release that matches `manifest.json`; its first attempt ran while the 2.8.2 release was still being published.
+
 ## 2.8.2
 
 ### Added
