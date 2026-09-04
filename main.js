@@ -5690,7 +5690,7 @@ var en = {
   "Abrir p\xE1gina": "Open page",
   "Acciones locales": "Local actions",
   "Acercar": "Zoom in",
-  "Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.": "On: your finger draws with the active tool; two fingers pan and zoom. Off: one finger always pans.",
+  "Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un l\xE1piz \xF3ptico, y a partir de ah\xED solo desplaza para no marcar la pizarra con la mano.": "On: your finger always draws with the active tool; two fingers pan and zoom. Off: your finger draws until you use a stylus, and only pans from then on so your hand never marks the board.",
   "Adjuntar archivo de la b\xF3veda": "Attach a file from the vault",
   "Adjuntar cualquier archivo de la b\xF3veda": "Attach any file from the vault",
   "Ajustar la vista a todo el contenido": "Fit the view to all the content",
@@ -60907,11 +60907,23 @@ function setEraserIcon(el, size = 20) {
   el.empty();
   el.addClass("notelens-eraser-icon");
   const image = el.createEl("img", { cls: "notelens-eraser-image" });
-  image.src = ERASER_SPRITE;
   image.alt = "";
   image.width = size;
   image.height = size;
+  image.setCssStyles({ width: `${size}px`, height: `${size}px` });
   image.draggable = false;
+  const fallback = () => {
+    if (!el.isConnected) return;
+    el.empty();
+    el.removeClass("notelens-eraser-icon");
+    (0, import_obsidian12.setIcon)(el, "eraser");
+  };
+  image.addEventListener("error", fallback);
+  image.addEventListener("load", () => {
+    if (!image.naturalWidth) fallback();
+  });
+  image.src = ERASER_SPRITE;
+  if (image.complete && !image.naturalWidth) fallback();
 }
 var HIGHLIGHTER_COLORS = [
   "#facc15",
@@ -62197,6 +62209,7 @@ function continueList(editor) {
   return true;
 }
 var CLIP_PREFIX = "notelens-clip:";
+var PEN_SEEN_KEY = "notelens-pen-seen";
 var CODE_LANGUAGES = [
   ["plaintext", "Texto"],
   ["javascript", "JavaScript"],
@@ -62310,6 +62323,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.isPanning = false;
     /** Set when a stylus barrel press started a pan, so its context menu is dropped. */
     this.swallowNextCanvasMenu = false;
+    /** The stylus currently on the glass, so a resting hand can be ignored. */
+    this.penPointerId = null;
+    /** Whether a stylus has ever been used here; decides what a finger does. */
+    this.penEverSeen = false;
     this.panStart = { x: 0, y: 0 };
     this.pinchStart = null;
     this.isDrawing = false;
@@ -62483,6 +62500,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     container.addClass("onenote-workspace-host");
     this.workspaceEl = container.createDiv({ cls: "onenote-workspace" });
     this.workspaceEl.setAttr("data-bg", this.data.background);
+    try {
+      this.penEverSeen = this.app.loadLocalStorage(PEN_SEEN_KEY) === true;
+    } catch {
+      this.penEverSeen = false;
+    }
     this.syncToolCursor();
     this.stageEl = this.workspaceEl.createDiv({ cls: "onenote-stage" });
     this.domLayerEl = this.stageEl.createDiv({ cls: "onenote-dom-layer" });
@@ -63609,6 +63631,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   // Pointer gestures (pan, pinch, ink, erase)
   // ------------------------------------------------------------------
   onPointerDown(e) {
+    if (e.pointerType === "pen") {
+      this.rememberPen();
+      this.penPointerId = e.pointerId;
+    }
+    if (e.pointerType === "touch" && this.penIsDown()) return;
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 2) {
       this.startPinch();
@@ -63626,7 +63653,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     if (this.activeTextEditor) this.commitTextEditor();
     const barrelPan = e.pointerType === "pen" && e.button === 2;
-    if (e.pointerType === "touch" && !this.plugin.settings.fingerDraws || e.button === 1 || barrelPan || e.button === 0 && (this.currentTool === "hand" || e.altKey)) {
+    if (e.pointerType === "touch" && !this.fingerDraws() || e.button === 1 || barrelPan || e.button === 0 && (this.currentTool === "hand" || e.altKey)) {
       if (barrelPan) this.swallowNextCanvasMenu = true;
       this.startPan(e);
       return;
@@ -63637,7 +63664,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (tipErase || this.currentTool === "eraser") {
       this.isErasing = true;
       this.tipErasing = tipErase;
-      if (tipErase) this.updateEraserCursor(e);
+      this.updateEraserCursor(e);
       this.eraserCursorEl?.addClass("is-active");
       this.erasedAny = false;
       this.eraseHistoryPushed = false;
@@ -63734,7 +63761,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       return;
     }
     if (this.isDrawing && this.currentStroke) {
-      const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [e];
+      const coalesced = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+      const events = coalesced.length ? coalesced : [e];
       for (const ev of events) {
         const pt2 = this.getDrawingSceneCoords(ev.clientX, ev.clientY);
         this.currentStroke.points.push({
@@ -63783,6 +63811,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   onPointerUp(e) {
     this.pointers.delete(e.pointerId);
+    if (this.penPointerId === e.pointerId) this.penPointerId = null;
     if (this.pinchStart) {
       if (this.pointers.size < 2) {
         this.pinchStart = null;
@@ -63820,12 +63849,34 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (this.isErasing) {
       this.isErasing = false;
       this.eraserCursorEl?.removeClass("is-active");
-      if (this.tipErasing) {
+      if (this.tipErasing || e.pointerType === "touch") {
         this.tipErasing = false;
         this.hideEraserCursor();
       }
       if (this.erasedAny) this.save();
     }
+  }
+  /**
+   * What a single finger does. A stylus user expects the palm and the spare
+   * hand to move the board and only the pen to write, which is what this did
+   * for everyone — leaving a phone, where there is no pen, unable to draw at
+   * all. So the finger writes until a stylus has been used in this vault, and
+   * moves the board after that. The setting forces writing either way.
+   */
+  fingerDraws() {
+    return this.plugin.settings.fingerDraws || !this.penEverSeen;
+  }
+  /** Remembers the stylus across boards and restarts, not just this session. */
+  rememberPen() {
+    if (this.penEverSeen) return;
+    this.penEverSeen = true;
+    try {
+      this.app.saveLocalStorage(PEN_SEEN_KEY, true);
+    } catch {
+    }
+  }
+  penIsDown() {
+    return this.penPointerId !== null;
   }
   startPan(e) {
     this.isPanning = true;
@@ -63838,11 +63889,20 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   startPinch() {
     if (this.isDrawing) {
       this.isDrawing = false;
+      const started = this.currentStroke;
+      if (started) this.data.strokes.remove(started);
       this.currentStroke = null;
       this.renderedPoints = 0;
       this.renderer.endLive();
       this.renderInk();
       this.save();
+    }
+    if (this.isShaping) {
+      this.isShaping = false;
+      const shape = this.currentShape;
+      this.currentShape = null;
+      if (shape) this.data.shapes.remove(shape);
+      this.renderInk();
     }
     this.isPanning = false;
     this.workspaceEl.removeClass("is-panning");
@@ -67690,7 +67750,7 @@ ${rows.join("\n")}`);
       this.updateTextPlacementHint(e);
       return;
     }
-    if ((this.currentTool === "eraser" || this.isErasing) && overPage && !typing && !this.isPanning) {
+    if ((this.currentTool === "eraser" || this.isErasing) && (overPage || this.isErasing) && !typing && !this.isPanning) {
       this.hideTextPlacementHint();
       this.updateEraserCursor(e);
       return;
@@ -68230,7 +68290,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.3" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.4" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -68321,7 +68381,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       s3.wheelZooms = v3;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Dibujar con el dedo")).setDesc(tr("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.")).addToggle((t3) => t3.setValue(s3.fingerDraws).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Dibujar con el dedo")).setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un l\xE1piz \xF3ptico, y a partir de ah\xED solo desplaza para no marcar la pizarra con la mano.")).addToggle((t3) => t3.setValue(s3.fingerDraws).onChange((v3) => {
       s3.fingerDraws = v3;
       save();
     }));
