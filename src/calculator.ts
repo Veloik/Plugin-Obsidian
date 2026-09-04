@@ -731,6 +731,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	};
 	const renderKeys = (page: string) => {
 		keys.empty();
+		keys.toggleClass("is-units", page === "Unidades");
 		for (const key of pages[page]) {
 			const b = keys.createEl("button", { cls: `notelens-calculator-key ${key.cls ?? ""}`, text: tr(key.label) });
 			if (key.title) b.title = tr(key.title);
