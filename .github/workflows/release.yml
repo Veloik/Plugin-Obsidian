@@ -23,6 +23,10 @@ jobs:
       - name: Verify tag and plugin version
         run: |
           node -e "const m = require('./manifest.json'); if (m.version !== process.env.GITHUB_REF_NAME) { throw new Error('The tag must match the manifest version, which is ' + m.version); }"
+      # Everything that must hold for a release: typecheck, tests, build,
+      # the release validator and the dependency audit. The audit tells a real
+      # finding apart from npm's advisory service being down, so an outage
+      # there cannot block a publication that is otherwise sound.
       - run: npm run release:check
       - name: Attest that the assets were built from this source
         uses: actions/attest-build-provenance@v2
