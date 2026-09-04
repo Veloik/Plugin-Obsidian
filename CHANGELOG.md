@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.7
+
+Same plugin as 2.8.6, published again so the community catalogue check runs against a release made after its last attempt.
+
 ## 2.8.6
 
 ### Fixed
