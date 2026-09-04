@@ -149,6 +149,8 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 		const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
 		setIcon(openBtn, "external-link");
 		openBtn.title = tr("Abrir publicación original");
+		openBtn.setAttr("aria-label", openBtn.title);
+		openBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
 		openBtn.onclick = (event) => {
 			event.stopPropagation();
 			host.openVaultFile(embed.originalUrl ?? embed.src);
@@ -181,11 +183,27 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	if (embed.kind === "pdf") {
 		void mountPdfViewer(host, header, body, embed);
 	} else if (embed.kind === "youtube" || embed.kind === "web-video") {
-		const iframe = body.createEl("iframe");
-		iframe.src = embed.src;
-		iframe.setAttr("frameborder", "0");
-		iframe.setAttr("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
-		iframe.setAttr("allowfullscreen", "true");
+		const remote = toRemoteVideoEmbed(embed.originalUrl ?? embed.src) ?? toRemoteVideoEmbed(embed.src);
+		body.addClass("notelens-remote-video");
+		if (remote?.embedUrl) {
+			const iframe = body.createEl("iframe");
+			iframe.src = remote.embedUrl;
+			iframe.title = embedTitle(embed);
+			iframe.referrerPolicy = "strict-origin-when-cross-origin";
+			iframe.setAttr("frameborder", "0");
+			iframe.setAttr("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen");
+			iframe.setAttr("allowfullscreen", "true");
+		}
+		const fallback = body.createDiv({ cls: "notelens-video-fallback" });
+		fallback.createSpan({ text: tr(remote?.embedUrl ? "¿No se reproduce dentro de Obsidian?" : "Este enlace se reproduce en su aplicación o navegador.") });
+		if (remote) {
+			const link = fallback.createEl("a", { text: tr("Abrir vídeo original") });
+			link.href = remote.originalUrl;
+			link.target = "_blank";
+			link.rel = "noopener noreferrer";
+			link.addEventListener("pointerdown", (event) => event.stopPropagation());
+			link.addEventListener("click", (event) => event.stopPropagation());
+		}
 	} else {
 		const file = host.app.vault.getAbstractFileByPath(embed.src);
 		if (file instanceof TFile) {
@@ -198,6 +216,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 				const video = body.createEl("video");
 				video.src = host.app.vault.getResourcePath(file);
 				video.controls = true;
+				video.playsInline = true;
 				video.preload = "metadata";
 				attachCaptionToVideo(host, embed, video);
 			}
@@ -811,7 +830,7 @@ export class VideoInsertModal extends Modal {
 			if (remote) {
 				this.close();
 				this.onPick({
-					id: genId("embed"), kind: "web-video", src: remote.embedUrl, originalUrl: remote.originalUrl,
+					id: genId("embed"), kind: "web-video", src: remote.embedUrl || remote.originalUrl, originalUrl: remote.originalUrl,
 					provider: remote.provider, x: 0, y: 0, w: remote.width, h: remote.height
 				});
 				return;

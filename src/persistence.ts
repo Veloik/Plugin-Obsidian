@@ -14,7 +14,16 @@ export class PersistenceManager {
 	private writeQueue: Promise<void> = Promise.resolve();
 	private lastPayload: string | null = null;
 
-	constructor(private app: App, private getFile: () => TFile | null) {}
+	constructor(private app: App, private getFile: () => TFile | null, private onError: (error: unknown) => void = () => {}) {}
+
+	/** A cached snapshot belongs to one file only. Call after flushing the old file. */
+	reset(): void {
+		if (this.timer !== null) window.clearTimeout(this.timer);
+		this.timer = null;
+		this.dirty = false;
+		this.lastPayload = null;
+		this.revision++;
+	}
 
 	scheduleSave(doc: OneNoteDocument): void {
 		this.dirty = true;
@@ -35,13 +44,14 @@ export class PersistenceManager {
 		return this.dirty ? null : this.lastPayload;
 	}
 
-	async flush(doc: OneNoteDocument): Promise<void> {
+	async flush(doc: OneNoteDocument): Promise<boolean> {
 		if (this.timer !== null) {
 			window.clearTimeout(this.timer);
 			this.timer = null;
 		}
 		if (this.dirty) await this.writeNow(doc);
 		else await this.writeQueue;
+		return !this.dirty;
 	}
 
 	private async writeNow(doc: OneNoteDocument): Promise<void> {
@@ -58,6 +68,7 @@ export class PersistenceManager {
 				}
 			} catch (e) {
 				console.error("NoteLens: error saving file", e);
+				this.onError(e);
 			}
 		};
 		this.writeQueue = this.writeQueue.then(job, job);

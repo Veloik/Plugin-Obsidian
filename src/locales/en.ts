@@ -5,6 +5,15 @@
  * to Spanish rather than breaking, so this file can grow without risk.
  */
 export const en: Record<string, string> = {
+"El paquete supera el límite de 64 MB comprimidos.": "The package exceeds the 64 MB compressed size limit.",
+"El paquete contiene demasiados archivos o supera el límite de memoria al descomprimir.": "The package contains too many files or exceeds the expanded memory limit.",
+
+"¿No se reproduce dentro de Obsidian?": "Not playing inside Obsidian?",
+"Este enlace se reproduce en su aplicación o navegador.": "Play this link in its app or your browser.",
+"Abrir vídeo original": "Open original video",
+"No se ha podido guardar la pizarra. Conserva esta pestaña abierta y comprueba el almacenamiento.": "Could not save the board. Keep this tab open and check your storage.",
+"No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando esté disponible.": "Could not read the board. The original file is protected; reopen it when it is available.",
+
 	"Añade el contexto de esta etiqueta. También puedes dibujar o adjuntar imágenes desde Pizarra.": "Add context to this tag. You can also draw or attach images from the Board tab.",
 	"Escribe la nota que aparecerá al pasar el cursor por la etiqueta. Enter añade líneas; Ctrl+Enter acepta.": "Write the note shown when you hover over the tag. Enter adds lines; Ctrl+Enter saves.",
 	"Lista": "List",

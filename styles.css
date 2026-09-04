@@ -5709,3 +5709,16 @@ span.notelens-assistant-name {
   .notelens-tag-summary { max-height: calc(100% - 190px); }
   .notelens-search { top: 96px; }
 }
+
+/* Keep an actionable original link even when a provider refuses its iframe. */
+.notelens-embed-body.notelens-remote-video { display: flex; flex-direction: column; }
+.notelens-remote-video iframe { flex: 1 1 auto; min-height: 0; }
+.notelens-video-fallback { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 10px; font-size: 12px; flex-wrap: wrap; background: var(--background-secondary); color: var(--text-muted); }
+.notelens-video-fallback a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; touch-action: manipulation; }
+
+.notelens-load-error { position: absolute; inset: 25% 12%; z-index: 100; padding: 24px; height: fit-content; border: 1px solid var(--text-error); border-radius: 12px; background: var(--background-primary); color: var(--text-normal); }
+
+.notelens-video-fallback a { color: var(--text-accent, #a99aff); font-weight: 600; border-radius: 6px; }
+.notelens-video-fallback a:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
+
+.onenote-workspace[data-pass-ink="true"] .notelens-video-fallback { pointer-events: auto; }

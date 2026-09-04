@@ -1,5 +1,6 @@
 import { App, TFile, normalizePath } from "obsidian";
-import { Zippable, strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { Zippable, strFromU8, strToU8, zipSync } from "fflate";
+import { MAX_SHARE_COMPRESSED, unpackShareArchive } from "./share-archive";
 import { OneNoteDocument, migrateDocument } from "./types";
 import { tr } from "./i18n";
 
@@ -142,7 +143,8 @@ async function attachmentPathFor(app: App, name: string, boardPath: string, fall
 
 /** Imports a package as a new editable canvas, keeping its bundled files in the recipient's vault. */
 export async function importSharePackage(app: App, source: File, destinationFolder = ""): Promise<ShareImportResult> {
-	const entries = unzipSync(new Uint8Array(await source.arrayBuffer()));
+	if (source.size > MAX_SHARE_COMPRESSED) throw new Error(tr("El paquete supera el límite de 64 MB comprimidos."));
+	const entries = unpackShareArchive(new Uint8Array(await source.arrayBuffer()));
 	const manifestEntry = entries["notelens.json"];
 	if (!manifestEntry) throw new Error("No se encontró el documento de NoteLens dentro del paquete.");
 	const manifest = parsePackage(JSON.parse(strFromU8(manifestEntry)));

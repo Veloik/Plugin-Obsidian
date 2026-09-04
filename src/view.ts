@@ -9,6 +9,7 @@ import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
 import { RasterImage, rasterizeMath } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer } from "./renderer";
+import { trackMobileEditor } from "./mobile-editor";
 import { CANVAS_FONTS, fontStack } from "./fonts";
 import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
 import { BaseStyle, editableText, readRuns, renderRuns, selectOffsets, selectionOffsets, surroundSelection, unwrapCode } from "./rich-editor";
@@ -284,6 +285,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
 	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
 	private focusModeEnabled = false;
+	private stopMobileEditor: (() => void) | null = null;
+	private loadFailed = false;
 	private activeTextEditor: HTMLTextAreaElement | HTMLElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
 	private a4GuidesEl: HTMLElement | null = null;
@@ -337,6 +340,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.domLayerEl = this.stageEl.createDiv({ cls: "onenote-dom-layer" });
 
 		this.renderer = new CanvasRenderer(this.workspaceEl);
+		this.registerDomEvent(this.renderer.canvas, "contextlost", (event) => event.preventDefault());
+		this.registerDomEvent(this.renderer.canvas, "contextrestored", () => this.handleResize());
+		this.register(() => { this.stopMobileEditor?.(); this.stopMobileEditor = null; });
 
 		this.history = new HistoryManager(
 			() => this.data,
@@ -352,7 +358,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			},
 			() => this.saver?.currentPayload() ?? null
 		);
-		this.saver = new PersistenceManager(this.app, () => this.file);
+		this.saver = new PersistenceManager(this.app, () => this.loadFailed ? null : this.file, () => {
+			new Notice(tr("No se ha podido guardar la pizarra. Conserva esta pestaña abierta y comprueba el almacenamiento."), 10000);
+		});
 		this.applySettings();
 		this.plugin.openBoards.add(this);
 
@@ -406,18 +414,33 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	override async onLoadFile(file: TFile): Promise<void> {
+		this.commitTextEditor();
+		if (this.saver && this.file && !await this.saver.flush(this.data)) {
+			throw new Error("NoteLens: cannot replace a document with unsaved changes");
+		}
+		this.saver?.reset();
 		await super.onLoadFile(file);
+		this.loadFailed = false;
 		this.file = file;
 		try {
 			const content = await this.app.vault.read(file);
-			if (content && content.trim().startsWith("{")) {
-				this.data = migrateDocument(JSON.parse(content));
+			if (content.trim()) {
+				const parsed = JSON.parse(content);
+				if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid board document");
+				this.data = migrateDocument(parsed);
 			} else {
 				this.data = createEmptyDocument(this.plugin.documentDefaults());
 			}
 		} catch (e) {
 			console.error("NoteLens: error loading file", e);
+			this.loadFailed = true;
 			this.data = createEmptyDocument();
+			new Notice(tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando esté disponible."), 10000);
+		}
+		if (this.workspaceEl) {
+			this.workspaceEl.inert = this.loadFailed;
+			this.workspaceEl.parentElement?.querySelector(".notelens-load-error")?.remove();
+			if (this.loadFailed) this.workspaceEl.parentElement?.createDiv({ cls: "notelens-load-error", text: tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando esté disponible.") });
 		}
 		this.history?.clear();
 		if (this.renderer) {
@@ -430,6 +453,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	override async onUnloadFile(file: TFile): Promise<void> {
+		this.commitTextEditor();
 		if (this.file?.path === file.path && this.saver) {
 			this.syncActivePageMeta();
 			await this.saver.flush(this.data);
@@ -462,6 +486,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!this.workspaceEl || !this.renderer) return;
 		this.updateSafeInsets();
 		const rect = this.workspaceEl.getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0) return;
 		this.renderer.resize(rect.width, rect.height);
 		this.applyStageTransform();
 		this.renderInk();
@@ -5176,49 +5201,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * written stays in sight, and slides back when the keyboard goes away.
 	 */
 	private keepEditorUsableOnTouch(editor: HTMLElement): void {
+		this.stopMobileEditor?.();
 		if (!Platform.isMobile) return;
-		// A synthesised tap can move focus away right after it was given.
-		window.setTimeout(() => {
-			if (editor.isConnected && document.activeElement !== editor) editor.focus();
-		}, 0);
-
-		const viewport = window.visualViewport;
-		if (!viewport) return;
-		let lifted = 0;
-		const settle = () => {
-			if (!editor.isConnected) return;
-			const covered = window.innerHeight - (viewport.height + viewport.offsetTop);
-			const keyboard = covered > 120 ? covered : 0;
-			const box = editor.getBoundingClientRect();
-			const room = window.innerHeight - keyboard - 12;
-			// Measured from where the box would sit with no lift at all, or the
-			// answer would change the moment it moved and the board would jitter.
-			const restingBottom = box.bottom + lifted;
-			const restingTop = box.top + lifted;
-			// Only ever move by what is needed, and never past the top docks.
-			const wanted = restingBottom > room ? Math.min(restingBottom - room, Math.max(0, restingTop - 150)) : 0;
-			const delta = wanted - lifted;
-			if (Math.abs(delta) < 1) return;
-			lifted = wanted;
-			this.data.viewTransform.y -= delta;
-			this.applyStageTransform();
-			this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
-		};
-		const stop = () => {
-			viewport.removeEventListener("resize", settle);
-			viewport.removeEventListener("scroll", settle);
-			if (lifted) {
-				this.data.viewTransform.y += lifted;
-				lifted = 0;
-				this.applyStageTransform();
-				this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
-			}
-		};
-		viewport.addEventListener("resize", settle);
-		viewport.addEventListener("scroll", settle);
-		editor.addEventListener("blur", stop, { once: true });
-		this.register(stop);
-		window.setTimeout(settle, 250);
+		this.stopMobileEditor = trackMobileEditor(editor, lift => {
+			// A temporary presentation offset: never save keyboard movement or put it in undo history.
+			const offset = lift ? `0 ${-lift}px` : "";
+			this.stageEl.style.translate = offset;
+			this.renderer.canvas.style.translate = offset;
+		});
 	}
 
 	private beginTextEdit(tb: TextBox, el: HTMLElement): void {
@@ -5278,6 +5268,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 		});
 		editor.addEventListener("keydown", (e) => {
+			if (e.isComposing || e.keyCode === 229) return;
 			if (e.key === "Escape") {
 				e.preventDefault();
 				this.commitTextEditor();
@@ -5411,6 +5402,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private richEditorKey(e: KeyboardEvent, editor: HTMLElement): void {
+		if (e.isComposing || e.keyCode === 229) return;
 		const mod = e.ctrlKey || e.metaKey;
 		if (e.key === "Escape" || (mod && e.key === "Enter")) {
 			e.preventDefault();
@@ -5486,6 +5478,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private commitTextEditor(): void {
+		this.stopMobileEditor?.();
+		this.stopMobileEditor = null;
 		const editor = this.activeTextEditor;
 		const source = this.activeTextSourceEl;
 		if (!editor || !source) return;
@@ -6256,6 +6250,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	// ------------------------------------------------------------------
 
 	save(): void {
+		if (this.loadFailed) return;
 		this.syncActivePageMeta();
 		this.saver?.scheduleSave(this.data);
 	}

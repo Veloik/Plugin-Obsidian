@@ -139,9 +139,18 @@ export class CanvasRenderer {
 	}
 
 	resize(viewportW: number, viewportH: number): void {
-		this.dpr = window.devicePixelRatio || 1;
-		this.canvas.width = Math.max(1, Math.round(viewportW * this.dpr));
-		this.canvas.height = Math.max(1, Math.round(viewportH * this.dpr));
+		// Hidden panes and keyboard transitions can briefly report zero. Keep the
+		// last usable bitmap until layout settles instead of discarding the ink.
+		if (!Number.isFinite(viewportW) || !Number.isFinite(viewportH) || viewportW <= 0 || viewportH <= 0) return;
+		// Bound both dimensions and total memory (including the live snapshot).
+		this.dpr = Math.min(window.devicePixelRatio || 1, 4096 / viewportW, 4096 / viewportH, Math.sqrt(8_000_000 / (viewportW * viewportH)));
+		const width = Math.max(1, Math.floor(viewportW * this.dpr));
+		const height = Math.max(1, Math.floor(viewportH * this.dpr));
+		if (this.canvas.width !== width || this.canvas.height !== height) {
+			this.liveBase = null;
+			if (this.canvas.width !== width) this.canvas.width = width;
+			if (this.canvas.height !== height) this.canvas.height = height;
+		}
 		this.canvas.style.width = `${viewportW}px`;
 		this.canvas.style.height = `${viewportH}px`;
 	}

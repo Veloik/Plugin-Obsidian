@@ -9,6 +9,85 @@ import { hexToRgba, setColorAlpha, toRemoteVideoEmbed } from "../src/tools";
 import { setLocale, tr } from "../src/i18n";
 import { mergeRuns, notePreview, parseInline, planListToggle, runsFromInline, runsToMarked, stripInlineMarks } from "../src/rich-text";
 import { en } from "../src/locales/en";
+import { PersistenceManager } from "../src/persistence";
+import { CanvasRenderer } from "../src/renderer";
+import { unpackShareArchive } from "../src/share-archive";
+import { zipSync, strToU8, strFromU8 } from "fflate";
+
+test("share archives stop at the expanded memory limit before importing files", () => {
+	const bytes = zipSync({ "notelens.json": strToU8('{"document":{}}'), "assets/data": new Uint8Array(1000) });
+	assert.equal(strFromU8(unpackShareArchive(bytes)["notelens.json"]), '{"document":{}}');
+	assert.throws(() => unpackShareArchive(bytes, 100), /memoria/);
+});
+
+test("mobile share URLs keep playable IDs, timestamps and private Vimeo hashes", () => {
+	assert.match(toRemoteVideoEmbed("Mira esto https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s")!.embedUrl, /start=90/);
+	const embedded = toRemoteVideoEmbed("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=12")!;
+	assert.match(embedded.originalUrl, /watch\?v=dQw4w9WgXcQ/);
+	assert.match(embedded.embedUrl, /start=12/);
+	assert.match(toRemoteVideoEmbed("https://vimeo.com/123456789/abcdef0123")!.embedUrl, /\?h=abcdef0123$/);
+	assert.match(toRemoteVideoEmbed("https://player.vimeo.com/video/123456789?h=abcdef0123")!.embedUrl, /\?h=abcdef0123$/);
+	for (const url of ["https://vm.tiktok.com/ABC123/", "https://vt.tiktok.com/ABC123/", "https://www.instagram.com/share/reel/ABC123/"]) {
+		const result = toRemoteVideoEmbed(url)!;
+		assert.ok(result);
+		assert.equal(result.embedUrl, "", "unresolved share links must not pretend to be players");
+		assert.equal(result.originalUrl, url);
+	}
+});
+
+test("video providers reject lookalike hosts, credentials and unsafe schemes", () => {
+	for (const url of ["https://evilyoutube.com/watch?v=dQw4w9WgXcQ", "https://eviltiktok.com/@u/video/123456789", "ftp://youtube.com/watch?v=dQw4w9WgXcQ", "https://user:password@youtube.com/watch?v=dQw4w9WgXcQ", "javascript:alert(1)", "https://example.com/?url=https://youtu.be/dQw4w9WgXcQ"]) {
+		assert.equal(toRemoteVideoEmbed(url), null, url);
+	}
+});
+
+test("canvas resize keeps the bitmap for unchanged or transient zero dimensions and caps high DPR", () => {
+	const previous = globalThis.window;
+	(globalThis as any).window = { devicePixelRatio: 4 };
+	let resets = 0, width = 1, height = 1;
+	const canvas = { style: {}, getContext: () => ({}) } as any;
+	Object.defineProperties(canvas, {
+		width: { get: () => width, set: v => { width = v; resets++; } },
+		height: { get: () => height, set: v => { height = v; resets++; } }
+	});
+	try {
+		const renderer = new CanvasRenderer({ createEl: () => canvas } as any);
+		renderer.resize(820, 1180);
+		assert.ok(width <= 4096 && height <= 4096 && width * height <= 8_000_000);
+		const before = resets;
+		renderer.resize(820, 1180);
+		renderer.resize(0, 0);
+		renderer.resize(Number.NaN, 1180);
+		assert.equal(resets, before);
+		renderer.resize(820, 500);
+		assert.ok(resets > before);
+	} finally { (globalThis as any).window = previous; }
+});
+
+test("failed saves remain pending, retry on flush, and cached history never crosses files", async () => {
+	const previous = globalThis.window;
+	(globalThis as any).window = globalThis;
+	let fail = true, errors = 0;
+	const written: string[] = [];
+	const app = { vault: { modify: async (_file: unknown, text: string) => {
+		if (fail) throw new Error("disk full");
+		written.push(text);
+	} } };
+	const manager = new PersistenceManager(app as any, () => ({ path: "a.notelens" }) as any, () => errors++);
+	const doc = createEmptyDocument();
+	try {
+		manager.scheduleSave(doc);
+		assert.equal(await manager.flush(doc), false);
+		assert.equal(errors, 1);
+		assert.equal(manager.currentPayload(), null);
+		fail = false;
+		assert.equal(await manager.flush(doc), true);
+		assert.equal(written.length, 1);
+		assert.equal(manager.currentPayload(), JSON.stringify(doc));
+		manager.reset();
+		assert.equal(manager.currentPayload(), null);
+	} finally { manager.reset(); (globalThis as any).window = previous; }
+});
 
 test("document migration keeps editable content and normalizes legacy paper", () => {
 	const migrated = migrateDocument({

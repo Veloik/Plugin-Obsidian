@@ -55,7 +55,7 @@ for (const profile of PROFILES) {
 	const page = await browser.newPage();
 	const errors = [];
 	page.on("pageerror", (e) => errors.push(e.message));
-	await page.setViewport({ width: profile.width, height: profile.height, deviceScaleFactor: 1, isMobile: profile.mobile, hasTouch: profile.mobile });
+	await page.setViewport({ width: profile.width, height: profile.height, deviceScaleFactor: profile.dpr, isMobile: profile.mobile, hasTouch: profile.mobile });
 	await page.evaluateOnNewDocument((p) => {
 		window.__mobileChrome = p.chrome;
 		window.__presetPlatform = { isMobile: p.mobile, isPhone: p.name.startsWith("phone"), isTablet: p.name.startsWith("tablet"), isDesktop: !p.mobile, isMacOS: false, isIosApp: false };
@@ -160,7 +160,7 @@ for (const entry of report) {
 	} else {
 		console.log(`\n✓ ${head} — sin solapes ni desbordes · lienzo libre ${entry.free}px (${share}%)`);
 	}
-	if (entry.errors.length) console.log("    errores de página:", entry.errors.slice(0, 2));
+	if (entry.errors.length) { failed++; console.log("    errores de página:", entry.errors.slice(0, 2)); }
 }
 console.log(`\n=== ${report.length - failed}/${report.length} perfiles correctos · capturas en dev-harness/shots-devices ===`);
 await browser.close();

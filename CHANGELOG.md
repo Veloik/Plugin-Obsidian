@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.8.9
+
+### Fixed
+
+- A board that cannot be read no longer opens as a blank page over the file that failed. Editing and saving are held back, the view says so, and the original is left untouched until it can be opened again. A save that fails now says so too, stays pending instead of being forgotten, and no other document can take the board's place while it is unsaved; the undo snapshots are cleared when the file changes, so one board's history can never land in another.
+- The board no longer resets when the view changes size. A resize to the same size, or to none at all, keeps the picture it already has, a screen with many pixels per point no longer asks for more canvas than it can hold, and ink is painted again when the browser gives the canvas back after taking it away.
+- The lift that keeps writing above the keyboard is undone as soon as the box is committed or the board is closed, so a board left over from typing no longer sits pushed up. Keys pressed while the phone's own input method is composing a word are left to it.
+- Video links shared from a phone are understood: a YouTube share with its `nocookie` host or a start time, a private Vimeo link with its hash, and the shortened TikTok and Instagram links, which open on their own site through a card rather than an empty frame. Every remote video keeps a link to the original for when the provider refuses to play inside Obsidian; a video from the vault still plays on the board.
+- An imported package is read within limits — how much it holds packed, how much it becomes unpacked, and how many files it carries — so a large or malformed archive cannot exhaust a phone's memory.
+
+### Tests
+
+- Core regressions and a browser suite for the above: a screen with many pixels per point, the keyboard going up and coming back down, a word being composed, a phone turned on its side, the canvas being taken away and given back, video links that cannot be embedded, and a file that fails to read. The device profiles now use the pixel density each device really has.
+
 ## 2.8.8
 
 ### Changed

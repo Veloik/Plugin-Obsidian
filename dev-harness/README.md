@@ -76,3 +76,7 @@ Escenarios que no pasan a proposito: run10 prueba una caja de formula en la barr
 existe (la sustituyo el dialogo de ecuacion, cubierto por run43/run59/run60/run61), y run15
 depende de que Tesseract reconozca texto real en la captura, asi que necesita red y una
 region legible. El resto del banco esta en verde.
+
+## Mobile regression coverage (2.8.9)
+
+`npm run test:mobile` runs keyboard and lifecycle regressions. `run77.mjs` serves the harness over loopback HTTP without disabling browser security and mocks video providers; it does not prove provider playback. `npm run devices` checks seven layouts at their declared DPR. These suites need puppeteer-core in dev-harness/node_modules and Chrome (`CHROME_PATH` can override run77). Physical Android/iOS validation is still required.

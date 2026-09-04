@@ -338,3 +338,9 @@ estándar y los firma con una atestación de compilación.
 ### Licencia
 
 MIT — consulta [LICENSE](LICENSE).
+
+### Mobile reliability (2.8.9)
+
+Keyboard movement is temporary and does not change saved page coordinates. Video cards keep an original link when a provider refuses embedded playback; shortened share URLs open in their original app/browser. This does not bypass provider restrictions.
+
+A board that cannot be read is protected against accidental overwriting. Import packages are limited to 64 MiB compressed, 128 MiB expanded and 5,000 entries to bound memory use on phones. Split larger packages before importing.

@@ -138,66 +138,86 @@ export interface RemoteVideoEmbed {
 
 /** Converts public video links into the standard iframe endpoints of known providers. */
 export function toRemoteVideoEmbed(rawUrl: string): RemoteVideoEmbed | null {
-	const originalUrl = rawUrl.trim();
+	const candidate = rawUrl.trim();
+	// Share sheets often copy a title followed by one URL. Never guess between several links.
+	const links = candidate.match(/https?:\/\/[^\s<>]+/gi);
+	const originalUrl = links?.length === 1 ? links[0].replace(/[)\].,;!]+$/, "") : candidate;
 	let url: URL;
 	try {
 		url = new URL(originalUrl);
 	} catch {
 		return null;
 	}
+	if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
 	const host = url.hostname.toLowerCase().replace(/^www\./, "");
+	const domain = (name: string) => host === name || host.endsWith(`.${name}`);
 	const parts = url.pathname.split("/").filter(Boolean);
 	const make = (provider: RemoteVideoProvider, embedUrl: string, portrait = false): RemoteVideoEmbed => ({
 		provider, embedUrl, originalUrl, width: portrait ? 390 : 560, height: portrait ? 640 : 315
 	});
 
-	if (host === "youtu.be" || host.endsWith("youtube.com")) {
+	if (host === "youtu.be" || domain("youtube.com") || domain("youtube-nocookie.com")) {
 		const id = host === "youtu.be"
 			? parts[0]
 			: url.searchParams.get("v") || (["shorts", "embed", "live"].includes(parts[0]) ? parts[1] : undefined);
-		if (id && /^[A-Za-z0-9_-]{6,}$/.test(id)) return make("youtube", `https://www.youtube-nocookie.com/embed/${id}?playsinline=1`);
+		if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+			const params = new URLSearchParams({ playsinline: "1" });
+			const time = url.searchParams.get("start") ?? url.searchParams.get("t") ?? "";
+			const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(time);
+			const seconds = /^\d+$/.test(time) ? Number(time) : match ? Number(match[1] || 0) * 3600 + Number(match[2] || 0) * 60 + Number(match[3] || 0) : 0;
+			if (Number.isSafeInteger(seconds) && seconds > 0) params.set("start", String(seconds));
+			const result = make("youtube", `https://www.youtube-nocookie.com/embed/${id}?${params}`);
+			result.originalUrl = `https://www.youtube.com/watch?v=${id}${seconds > 0 ? "&t=" + seconds : ""}`;
+			return result;
+		}
 	}
 
-	if (host.endsWith("tiktok.com")) {
+	if (domain("tiktok.com")) {
+		// Short share links cannot be embedded without resolving their redirect. Keep a usable original card.
+		if (["vm.tiktok.com", "vt.tiktok.com"].includes(host) && parts.length === 1) return make("tiktok", "", true);
 		const videoIndex = parts.indexOf("video");
 		const videoId = videoIndex >= 0 ? parts[videoIndex + 1] : undefined;
 		if (videoId && /^\d{8,}$/.test(videoId)) return make("tiktok", `https://www.tiktok.com/player/v1/${videoId}?controls=1&description=1`, true);
 	}
 
-	if (host.endsWith("instagram.com")) {
+	if (domain("instagram.com")) {
+		if (parts[0] === "share" && parts.length >= 2) return make("instagram", "", true);
 		const type = parts[0] === "p" || parts[0] === "reel" || parts[0] === "reels" || parts[0] === "tv" ? parts[0] : undefined;
 		const shortcode = type ? parts[1] : undefined;
 		if (shortcode && /^[A-Za-z0-9_-]{5,}$/.test(shortcode)) return make("instagram", `https://www.instagram.com/${type}/${shortcode}/embed/captioned/`, type !== "p");
 	}
 
-	if (host === "x.com" || host.endsWith("twitter.com")) {
+	if (host === "x.com" || domain("twitter.com")) {
 		const index = parts.indexOf("status");
 		const postId = index >= 0 ? parts[index + 1] : undefined;
 		if (postId && /^\d{8,}$/.test(postId)) return make("x", `https://platform.twitter.com/embed/Tweet.html?id=${postId}&dnt=true`, true);
 	}
 
-	if (host === "vimeo.com" || host.endsWith("vimeo.com")) {
+	if (host === "vimeo.com" || domain("vimeo.com")) {
 		const id = [...parts].reverse().find(part => /^\d+$/.test(part));
-		if (id) return make("vimeo", `https://player.vimeo.com/video/${id}`);
+		if (id) {
+			const hash = url.searchParams.get("h") ?? parts[parts.indexOf(id) + 1];
+			return make("vimeo", `https://player.vimeo.com/video/${id}${hash && /^[a-zA-Z0-9]+$/.test(hash) ? "?h=" + encodeURIComponent(hash) : ""}`);
+		}
 	}
 
-	if (host === "dai.ly" || host.endsWith("dailymotion.com")) {
+	if (host === "dai.ly" || domain("dailymotion.com")) {
 		const videoIndex = parts.indexOf("video");
 		const id = host === "dai.ly" ? parts[0] : videoIndex >= 0 ? parts[videoIndex + 1] : undefined;
 		if (id && /^[A-Za-z0-9]+$/.test(id)) return make("dailymotion", `https://www.dailymotion.com/embed/video/${id}`);
 	}
 
-	if (host === "streamable.com" || host.endsWith("streamable.com")) {
+	if (host === "streamable.com" || domain("streamable.com")) {
 		const id = parts[0] === "e" ? parts[1] : parts[0];
 		if (id && /^[A-Za-z0-9]+$/.test(id)) return make("streamable", `https://streamable.com/e/${id}`);
 	}
 
-	if (host.endsWith("loom.com")) {
-		const id = parts[0] === "share" ? parts[1] : undefined;
+	if (domain("loom.com")) {
+		const id = ["share", "embed"].includes(parts[0]) ? parts[1] : undefined;
 		if (id && /^[A-Za-z0-9]+$/.test(id)) return make("loom", `https://www.loom.com/embed/${id}`);
 	}
 
-	if (host.endsWith("facebook.com") && parts.length > 0) {
+	if (domain("facebook.com") && parts.length > 0) {
 		return make("facebook", `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(originalUrl)}&show_text=false&width=560`);
 	}
 

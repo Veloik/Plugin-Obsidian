@@ -5669,6 +5669,13 @@ var import_obsidian = require("obsidian");
 
 // src/locales/en.ts
 var en = {
+  "El paquete supera el l\xEDmite de 64 MB comprimidos.": "The package exceeds the 64 MB compressed size limit.",
+  "El paquete contiene demasiados archivos o supera el l\xEDmite de memoria al descomprimir.": "The package contains too many files or exceeds the expanded memory limit.",
+  "\xBFNo se reproduce dentro de Obsidian?": "Not playing inside Obsidian?",
+  "Este enlace se reproduce en su aplicaci\xF3n o navegador.": "Play this link in its app or your browser.",
+  "Abrir v\xEDdeo original": "Open original video",
+  "No se ha podido guardar la pizarra. Conserva esta pesta\xF1a abierta y comprueba el almacenamiento.": "Could not save the board. Keep this tab open and check your storage.",
+  "No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando est\xE9 disponible.": "Could not read the board. The original file is protected; reopen it when it is available.",
   "A\xF1ade el contexto de esta etiqueta. Tambi\xE9n puedes dibujar o adjuntar im\xE1genes desde Pizarra.": "Add context to this tag. You can also draw or attach images from the Board tab.",
   "Escribe la nota que aparecer\xE1 al pasar el cursor por la etiqueta. Enter a\xF1ade l\xEDneas; Ctrl+Enter acepta.": "Write the note shown when you hover over the tag. Enter adds lines; Ctrl+Enter saves.",
   "Lista": "List",
@@ -21112,6 +21119,22 @@ function unzipSync(data, opts) {
   return files;
 }
 
+// src/share-archive.ts
+var MAX_SHARE_COMPRESSED = 64 * 1024 * 1024;
+var MAX_SHARE_EXPANDED = 128 * 1024 * 1024;
+function unpackShareArchive(bytes, maxExpanded = MAX_SHARE_EXPANDED) {
+  if (bytes.byteLength > MAX_SHARE_COMPRESSED) throw new Error(tr("El paquete supera el l\xEDmite de 64 MB comprimidos."));
+  let expanded = 0;
+  let count = 0;
+  return unzipSync(bytes, { filter: (entry) => {
+    expanded += entry.originalSize;
+    if (++count > 5e3 || !Number.isSafeInteger(expanded) || expanded > maxExpanded) {
+      throw new Error(tr("El paquete contiene demasiados archivos o supera el l\xEDmite de memoria al descomprimir."));
+    }
+    return true;
+  } });
+}
+
 // src/types.ts
 function sanitizeRuns(raw) {
   const runs = [];
@@ -21532,7 +21555,8 @@ async function attachmentPathFor(app, name, boardPath, fallbackFolder) {
   }
 }
 async function importSharePackage(app, source, destinationFolder = "") {
-  const entries = unzipSync(new Uint8Array(await source.arrayBuffer()));
+  if (source.size > MAX_SHARE_COMPRESSED) throw new Error(tr("El paquete supera el l\xEDmite de 64 MB comprimidos."));
+  const entries = unpackShareArchive(new Uint8Array(await source.arrayBuffer()));
   const manifestEntry = entries["notelens.json"];
   if (!manifestEntry) throw new Error("No se encontr\xF3 el documento de NoteLens dentro del paquete.");
   const manifest = parsePackage(JSON.parse(strFromU8(manifestEntry)));
@@ -35519,9 +35543,15 @@ var CanvasRenderer = class {
     this.ctx = ctx;
   }
   resize(viewportW, viewportH) {
-    this.dpr = window.devicePixelRatio || 1;
-    this.canvas.width = Math.max(1, Math.round(viewportW * this.dpr));
-    this.canvas.height = Math.max(1, Math.round(viewportH * this.dpr));
+    if (!Number.isFinite(viewportW) || !Number.isFinite(viewportH) || viewportW <= 0 || viewportH <= 0) return;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 4096 / viewportW, 4096 / viewportH, Math.sqrt(8e6 / (viewportW * viewportH)));
+    const width = Math.max(1, Math.floor(viewportW * this.dpr));
+    const height = Math.max(1, Math.floor(viewportH * this.dpr));
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.liveBase = null;
+      if (this.canvas.width !== width) this.canvas.width = width;
+      if (this.canvas.height !== height) this.canvas.height = height;
+    }
     this.canvas.style.width = `${viewportW}px`;
     this.canvas.style.height = `${viewportH}px`;
   }
@@ -35877,6 +35907,54 @@ var CanvasRenderer = class {
   }
 };
 
+// src/mobile-editor.ts
+function trackMobileEditor(editor, move) {
+  const win = editor.ownerDocument.defaultView;
+  const viewport = win.visualViewport;
+  let stopped = false;
+  let lifted = 0;
+  let frame2 = 0;
+  const initialHeight = win.innerHeight;
+  const settle = () => {
+    frame2 = 0;
+    if (stopped || !editor.isConnected || !viewport) return;
+    const keyboard = Math.max(initialHeight, win.innerHeight) - viewport.height > 120;
+    const box = editor.getBoundingClientRect();
+    const room = viewport.offsetTop + viewport.height - 12;
+    const top = box.top + lifted;
+    const bottom = box.bottom + lifted;
+    const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;
+    if (Math.abs(wanted - lifted) < 0.5) return;
+    lifted = wanted;
+    move(lifted);
+  };
+  const schedule = () => {
+    if (!stopped && !frame2) frame2 = win.requestAnimationFrame(settle);
+  };
+  const focusTimer = win.setTimeout(() => {
+    if (!stopped && editor.isConnected && editor.ownerDocument.activeElement !== editor) editor.focus({ preventScroll: true });
+  }, 0);
+  const settleTimer = win.setTimeout(schedule, 250);
+  viewport?.addEventListener("resize", schedule);
+  viewport?.addEventListener("scroll", schedule);
+  win.addEventListener("resize", schedule);
+  editor.addEventListener("input", schedule);
+  editor.addEventListener("focus", schedule);
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    win.clearTimeout(focusTimer);
+    win.clearTimeout(settleTimer);
+    win.cancelAnimationFrame(frame2);
+    viewport?.removeEventListener("resize", schedule);
+    viewport?.removeEventListener("scroll", schedule);
+    win.removeEventListener("resize", schedule);
+    editor.removeEventListener("input", schedule);
+    editor.removeEventListener("focus", schedule);
+    move(0);
+  };
+}
+
 // src/rich-editor.ts
 var BLOCK_TAGS = /^(DIV|P|LI|UL|OL|BLOCKQUOTE|PRE|H[1-6]|TABLE|TR)$/;
 var transparent = (color) => !color || color === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(color);
@@ -36108,14 +36186,24 @@ var HistoryManager = class {
 // src/persistence.ts
 var SAVE_DEBOUNCE_MS = 350;
 var PersistenceManager = class {
-  constructor(app, getFile) {
+  constructor(app, getFile, onError = () => {
+  }) {
     this.app = app;
     this.getFile = getFile;
+    this.onError = onError;
     this.timer = null;
     this.dirty = false;
     this.revision = 0;
     this.writeQueue = Promise.resolve();
     this.lastPayload = null;
+  }
+  /** A cached snapshot belongs to one file only. Call after flushing the old file. */
+  reset() {
+    if (this.timer !== null) window.clearTimeout(this.timer);
+    this.timer = null;
+    this.dirty = false;
+    this.lastPayload = null;
+    this.revision++;
   }
   scheduleSave(doc) {
     this.dirty = true;
@@ -36141,6 +36229,7 @@ var PersistenceManager = class {
     }
     if (this.dirty) await this.writeNow(doc);
     else await this.writeQueue;
+    return !this.dirty;
   }
   async writeNow(doc) {
     const file = this.getFile();
@@ -36156,6 +36245,7 @@ var PersistenceManager = class {
         }
       } catch (e) {
         console.error("NoteLens: error saving file", e);
+        this.onError(e);
       }
     };
     this.writeQueue = this.writeQueue.then(job, job);
@@ -36270,14 +36360,18 @@ function hitTestStrokes(strokes, x4, y3, slop = 8) {
   return -1;
 }
 function toRemoteVideoEmbed(rawUrl) {
-  const originalUrl = rawUrl.trim();
+  const candidate = rawUrl.trim();
+  const links = candidate.match(/https?:\/\/[^\s<>]+/gi);
+  const originalUrl = links?.length === 1 ? links[0].replace(/[)\].,;!]+$/, "") : candidate;
   let url;
   try {
     url = new URL(originalUrl);
   } catch {
     return null;
   }
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return null;
   const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  const domain = (name) => host === name || host.endsWith(`.${name}`);
   const parts = url.pathname.split("/").filter(Boolean);
   const make = (provider, embedUrl, portrait = false) => ({
     provider,
@@ -36286,43 +36380,57 @@ function toRemoteVideoEmbed(rawUrl) {
     width: portrait ? 390 : 560,
     height: portrait ? 640 : 315
   });
-  if (host === "youtu.be" || host.endsWith("youtube.com")) {
+  if (host === "youtu.be" || domain("youtube.com") || domain("youtube-nocookie.com")) {
     const id = host === "youtu.be" ? parts[0] : url.searchParams.get("v") || (["shorts", "embed", "live"].includes(parts[0]) ? parts[1] : void 0);
-    if (id && /^[A-Za-z0-9_-]{6,}$/.test(id)) return make("youtube", `https://www.youtube-nocookie.com/embed/${id}?playsinline=1`);
+    if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+      const params = new URLSearchParams({ playsinline: "1" });
+      const time = url.searchParams.get("start") ?? url.searchParams.get("t") ?? "";
+      const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(time);
+      const seconds = /^\d+$/.test(time) ? Number(time) : match ? Number(match[1] || 0) * 3600 + Number(match[2] || 0) * 60 + Number(match[3] || 0) : 0;
+      if (Number.isSafeInteger(seconds) && seconds > 0) params.set("start", String(seconds));
+      const result = make("youtube", `https://www.youtube-nocookie.com/embed/${id}?${params}`);
+      result.originalUrl = `https://www.youtube.com/watch?v=${id}${seconds > 0 ? "&t=" + seconds : ""}`;
+      return result;
+    }
   }
-  if (host.endsWith("tiktok.com")) {
+  if (domain("tiktok.com")) {
+    if (["vm.tiktok.com", "vt.tiktok.com"].includes(host) && parts.length === 1) return make("tiktok", "", true);
     const videoIndex = parts.indexOf("video");
     const videoId = videoIndex >= 0 ? parts[videoIndex + 1] : void 0;
     if (videoId && /^\d{8,}$/.test(videoId)) return make("tiktok", `https://www.tiktok.com/player/v1/${videoId}?controls=1&description=1`, true);
   }
-  if (host.endsWith("instagram.com")) {
+  if (domain("instagram.com")) {
+    if (parts[0] === "share" && parts.length >= 2) return make("instagram", "", true);
     const type = parts[0] === "p" || parts[0] === "reel" || parts[0] === "reels" || parts[0] === "tv" ? parts[0] : void 0;
     const shortcode = type ? parts[1] : void 0;
     if (shortcode && /^[A-Za-z0-9_-]{5,}$/.test(shortcode)) return make("instagram", `https://www.instagram.com/${type}/${shortcode}/embed/captioned/`, type !== "p");
   }
-  if (host === "x.com" || host.endsWith("twitter.com")) {
+  if (host === "x.com" || domain("twitter.com")) {
     const index = parts.indexOf("status");
     const postId = index >= 0 ? parts[index + 1] : void 0;
     if (postId && /^\d{8,}$/.test(postId)) return make("x", `https://platform.twitter.com/embed/Tweet.html?id=${postId}&dnt=true`, true);
   }
-  if (host === "vimeo.com" || host.endsWith("vimeo.com")) {
+  if (host === "vimeo.com" || domain("vimeo.com")) {
     const id = [...parts].reverse().find((part) => /^\d+$/.test(part));
-    if (id) return make("vimeo", `https://player.vimeo.com/video/${id}`);
+    if (id) {
+      const hash = url.searchParams.get("h") ?? parts[parts.indexOf(id) + 1];
+      return make("vimeo", `https://player.vimeo.com/video/${id}${hash && /^[a-zA-Z0-9]+$/.test(hash) ? "?h=" + encodeURIComponent(hash) : ""}`);
+    }
   }
-  if (host === "dai.ly" || host.endsWith("dailymotion.com")) {
+  if (host === "dai.ly" || domain("dailymotion.com")) {
     const videoIndex = parts.indexOf("video");
     const id = host === "dai.ly" ? parts[0] : videoIndex >= 0 ? parts[videoIndex + 1] : void 0;
     if (id && /^[A-Za-z0-9]+$/.test(id)) return make("dailymotion", `https://www.dailymotion.com/embed/video/${id}`);
   }
-  if (host === "streamable.com" || host.endsWith("streamable.com")) {
+  if (host === "streamable.com" || domain("streamable.com")) {
     const id = parts[0] === "e" ? parts[1] : parts[0];
     if (id && /^[A-Za-z0-9]+$/.test(id)) return make("streamable", `https://streamable.com/e/${id}`);
   }
-  if (host.endsWith("loom.com")) {
-    const id = parts[0] === "share" ? parts[1] : void 0;
+  if (domain("loom.com")) {
+    const id = ["share", "embed"].includes(parts[0]) ? parts[1] : void 0;
     if (id && /^[A-Za-z0-9]+$/.test(id)) return make("loom", `https://www.loom.com/embed/${id}`);
   }
-  if (host.endsWith("facebook.com") && parts.length > 0) {
+  if (domain("facebook.com") && parts.length > 0) {
     return make("facebook", `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(originalUrl)}&show_text=false&width=560`);
   }
   return null;
@@ -58682,6 +58790,8 @@ function renderEmbedFrame(host, layer, embed) {
     const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
     (0, import_obsidian8.setIcon)(openBtn, "external-link");
     openBtn.title = tr("Abrir publicaci\xF3n original");
+    openBtn.setAttr("aria-label", openBtn.title);
+    openBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
     openBtn.onclick = (event) => {
       event.stopPropagation();
       host.openVaultFile(embed.originalUrl ?? embed.src);
@@ -58710,11 +58820,27 @@ function renderEmbedFrame(host, layer, embed) {
   if (embed.kind === "pdf") {
     void mountPdfViewer(host, header, body, embed);
   } else if (embed.kind === "youtube" || embed.kind === "web-video") {
-    const iframe = body.createEl("iframe");
-    iframe.src = embed.src;
-    iframe.setAttr("frameborder", "0");
-    iframe.setAttr("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture");
-    iframe.setAttr("allowfullscreen", "true");
+    const remote = toRemoteVideoEmbed(embed.originalUrl ?? embed.src) ?? toRemoteVideoEmbed(embed.src);
+    body.addClass("notelens-remote-video");
+    if (remote?.embedUrl) {
+      const iframe = body.createEl("iframe");
+      iframe.src = remote.embedUrl;
+      iframe.title = embedTitle(embed);
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      iframe.setAttr("frameborder", "0");
+      iframe.setAttr("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen");
+      iframe.setAttr("allowfullscreen", "true");
+    }
+    const fallback = body.createDiv({ cls: "notelens-video-fallback" });
+    fallback.createSpan({ text: tr(remote?.embedUrl ? "\xBFNo se reproduce dentro de Obsidian?" : "Este enlace se reproduce en su aplicaci\xF3n o navegador.") });
+    if (remote) {
+      const link = fallback.createEl("a", { text: tr("Abrir v\xEDdeo original") });
+      link.href = remote.originalUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.addEventListener("pointerdown", (event) => event.stopPropagation());
+      link.addEventListener("click", (event) => event.stopPropagation());
+    }
   } else {
     const file = host.app.vault.getAbstractFileByPath(embed.src);
     if (file instanceof import_obsidian8.TFile) {
@@ -58727,6 +58853,7 @@ function renderEmbedFrame(host, layer, embed) {
         const video = body.createEl("video");
         video.src = host.app.vault.getResourcePath(file);
         video.controls = true;
+        video.playsInline = true;
         video.preload = "metadata";
         attachCaptionToVideo(host, embed, video);
       }
@@ -59247,7 +59374,7 @@ var VideoInsertModal = class extends import_obsidian8.Modal {
         this.onPick({
           id: genId("embed"),
           kind: "web-video",
-          src: remote.embedUrl,
+          src: remote.embedUrl || remote.originalUrl,
           originalUrl: remote.originalUrl,
           provider: remote.provider,
           x: 0,
@@ -62351,6 +62478,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     /** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
     this.prism = null;
     this.focusModeEnabled = false;
+    this.stopMobileEditor = null;
+    this.loadFailed = false;
     this.activeTextEditor = null;
     this.activeTextSourceEl = null;
     this.a4GuidesEl = null;
@@ -62509,6 +62638,12 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.stageEl = this.workspaceEl.createDiv({ cls: "onenote-stage" });
     this.domLayerEl = this.stageEl.createDiv({ cls: "onenote-dom-layer" });
     this.renderer = new CanvasRenderer(this.workspaceEl);
+    this.registerDomEvent(this.renderer.canvas, "contextlost", (event) => event.preventDefault());
+    this.registerDomEvent(this.renderer.canvas, "contextrestored", () => this.handleResize());
+    this.register(() => {
+      this.stopMobileEditor?.();
+      this.stopMobileEditor = null;
+    });
     this.history = new HistoryManager(
       () => this.data,
       (doc) => {
@@ -62523,7 +62658,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       },
       () => this.saver?.currentPayload() ?? null
     );
-    this.saver = new PersistenceManager(this.app, () => this.file);
+    this.saver = new PersistenceManager(this.app, () => this.loadFailed ? null : this.file, () => {
+      new import_obsidian13.Notice(tr("No se ha podido guardar la pizarra. Conserva esta pesta\xF1a abierta y comprueba el almacenamiento."), 1e4);
+    });
     this.applySettings();
     this.plugin.openBoards.add(this);
     this.buildChrome();
@@ -62573,18 +62710,33 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (this.saver) await this.saver.flush(this.data);
   }
   async onLoadFile(file) {
+    this.commitTextEditor();
+    if (this.saver && this.file && !await this.saver.flush(this.data)) {
+      throw new Error("NoteLens: cannot replace a document with unsaved changes");
+    }
+    this.saver?.reset();
     await super.onLoadFile(file);
+    this.loadFailed = false;
     this.file = file;
     try {
       const content = await this.app.vault.read(file);
-      if (content && content.trim().startsWith("{")) {
-        this.data = migrateDocument(JSON.parse(content));
+      if (content.trim()) {
+        const parsed = JSON.parse(content);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid board document");
+        this.data = migrateDocument(parsed);
       } else {
         this.data = createEmptyDocument(this.plugin.documentDefaults());
       }
     } catch (e) {
       console.error("NoteLens: error loading file", e);
+      this.loadFailed = true;
       this.data = createEmptyDocument();
+      new import_obsidian13.Notice(tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando est\xE9 disponible."), 1e4);
+    }
+    if (this.workspaceEl) {
+      this.workspaceEl.inert = this.loadFailed;
+      this.workspaceEl.parentElement?.querySelector(".notelens-load-error")?.remove();
+      if (this.loadFailed) this.workspaceEl.parentElement?.createDiv({ cls: "notelens-load-error", text: tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando est\xE9 disponible.") });
     }
     this.history?.clear();
     if (this.renderer) {
@@ -62596,6 +62748,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
   }
   async onUnloadFile(file) {
+    this.commitTextEditor();
     if (this.file?.path === file.path && this.saver) {
       this.syncActivePageMeta();
       await this.saver.flush(this.data);
@@ -62625,6 +62778,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (!this.workspaceEl || !this.renderer) return;
     this.updateSafeInsets();
     const rect = this.workspaceEl.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     this.renderer.resize(rect.width, rect.height);
     this.applyStageTransform();
     this.renderInk();
@@ -67198,44 +67352,13 @@ ${rows.join("\n")}`);
    * written stays in sight, and slides back when the keyboard goes away.
    */
   keepEditorUsableOnTouch(editor) {
+    this.stopMobileEditor?.();
     if (!import_obsidian13.Platform.isMobile) return;
-    window.setTimeout(() => {
-      if (editor.isConnected && document.activeElement !== editor) editor.focus();
-    }, 0);
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-    let lifted = 0;
-    const settle = () => {
-      if (!editor.isConnected) return;
-      const covered = window.innerHeight - (viewport.height + viewport.offsetTop);
-      const keyboard = covered > 120 ? covered : 0;
-      const box = editor.getBoundingClientRect();
-      const room = window.innerHeight - keyboard - 12;
-      const restingBottom = box.bottom + lifted;
-      const restingTop = box.top + lifted;
-      const wanted = restingBottom > room ? Math.min(restingBottom - room, Math.max(0, restingTop - 150)) : 0;
-      const delta = wanted - lifted;
-      if (Math.abs(delta) < 1) return;
-      lifted = wanted;
-      this.data.viewTransform.y -= delta;
-      this.applyStageTransform();
-      this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
-    };
-    const stop = () => {
-      viewport.removeEventListener("resize", settle);
-      viewport.removeEventListener("scroll", settle);
-      if (lifted) {
-        this.data.viewTransform.y += lifted;
-        lifted = 0;
-        this.applyStageTransform();
-        this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
-      }
-    };
-    viewport.addEventListener("resize", settle);
-    viewport.addEventListener("scroll", settle);
-    editor.addEventListener("blur", stop, { once: true });
-    this.register(stop);
-    window.setTimeout(settle, 250);
+    this.stopMobileEditor = trackMobileEditor(editor, (lift) => {
+      const offset = lift ? `0 ${-lift}px` : "";
+      this.stageEl.style.translate = offset;
+      this.renderer.canvas.style.translate = offset;
+    });
   }
   beginTextEdit(tb, el) {
     if (this.activeTextSourceEl === el && this.activeTextEditor) {
@@ -67296,6 +67419,7 @@ ${rows.join("\n")}`);
       this.save();
     });
     editor.addEventListener("keydown", (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
       if (e.key === "Escape") {
         e.preventDefault();
         this.commitTextEditor();
@@ -67421,6 +67545,7 @@ ${rows.join("\n")}`);
     editor.style.height = `${tb.h}px`;
   }
   richEditorKey(e, editor) {
+    if (e.isComposing || e.keyCode === 229) return;
     const mod = e.ctrlKey || e.metaKey;
     if (e.key === "Escape" || mod && e.key === "Enter") {
       e.preventDefault();
@@ -67488,6 +67613,8 @@ ${rows.join("\n")}`);
     return editor instanceof HTMLTextAreaElement ? editor.value : editableText(editor);
   }
   commitTextEditor() {
+    this.stopMobileEditor?.();
+    this.stopMobileEditor = null;
     const editor = this.activeTextEditor;
     const source = this.activeTextSourceEl;
     if (!editor || !source) return;
@@ -68210,6 +68337,7 @@ ${rows.join("\n")}`);
   }
   // ------------------------------------------------------------------
   save() {
+    if (this.loadFailed) return;
     this.syncActivePageMeta();
     this.saver?.scheduleSave(this.data);
   }
@@ -68346,7 +68474,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.8" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.9" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

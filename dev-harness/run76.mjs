@@ -28,7 +28,7 @@ const DEVICES = [
 for (const device of DEVICES) {
 	const page = await browser.newPage();
 	page.on("pageerror", (e) => failures.push(`error de página: ${e.message}`));
-	await page.setViewport({ width: device.width, height: device.height, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+	await page.setViewport({ width: device.width, height: device.height, deviceScaleFactor: device.phone ? 3 : 2, isMobile: true, hasTouch: true });
 	await page.evaluateOnNewDocument((d) => {
 		try { localStorage.clear(); } catch {}
 		window.__mobileChrome = d.chrome;
@@ -107,11 +107,12 @@ for (const device of DEVICES) {
 		const editor = document.querySelector(".notelens-rich-editor, .notelens-text-editor");
 		return {
 			after: Math.round(window.__view.data.viewTransform.y),
+            lift: parseFloat(window.__view.stageEl.style.translate.split(" ")[1] || "0"),
 			bottom: Math.round(editor.getBoundingClientRect().bottom),
 			line: Math.round(window.innerHeight * 0.55)
 		};
 	});
-	check(lifted.after < low.before, `${device.name}: la pizarra sube al abrirse el teclado (y ${low.before} → ${lifted.after})`);
+	check(lifted.after === low.before && lifted.lift < 0, `${device.name}: la pizarra sube al abrirse el teclado (y ${low.before} → ${lifted.after})`);
 	check(lifted.bottom <= lifted.line, `${device.name}: el cuadro queda por encima del teclado (${lifted.bottom} ≤ ${lifted.line})`);
 	await page.screenshot({ path: path.join(shots, `${device.name}-teclado.png`) });
 
