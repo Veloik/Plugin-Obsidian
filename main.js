@@ -62596,7 +62596,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     const navbar = document.querySelector(".mobile-navbar");
     const measured = navbar?.offsetHeight ?? 0;
-    const reserved = measured > 0 ? measured + 10 : 68;
+    const reserved = measured > 0 ? measured + 10 : import_obsidian13.Platform.isPhone ? 68 : 0;
     host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
   }
   handleResize() {

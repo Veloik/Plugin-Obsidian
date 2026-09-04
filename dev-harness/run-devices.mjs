@@ -58,7 +58,7 @@ for (const profile of PROFILES) {
 	await page.setViewport({ width: profile.width, height: profile.height, deviceScaleFactor: 1, isMobile: profile.mobile, hasTouch: profile.mobile });
 	await page.evaluateOnNewDocument((p) => {
 		window.__mobileChrome = p.chrome;
-		window.__presetPlatform = { isMobile: p.mobile, isDesktop: !p.mobile, isMacOS: false, isIosApp: false };
+		window.__presetPlatform = { isMobile: p.mobile, isPhone: p.name.startsWith("phone"), isTablet: p.name.startsWith("tablet"), isDesktop: !p.mobile, isMacOS: false, isIosApp: false };
 		window.__presetSettings = { showAssistantPet: false };
 	}, profile);
 	await page.goto(pathToFileURL(path.join(here, "index.html")).href, { waitUntil: "load" });

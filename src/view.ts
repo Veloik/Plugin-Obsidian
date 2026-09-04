@@ -444,7 +444,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		const navbar = document.querySelector(".mobile-navbar") as HTMLElement | null;
 		const measured = navbar?.offsetHeight ?? 0;
-		const reserved = measured > 0 ? measured + 10 : 68;
+		// A tablet with no bar underneath keeps every pixel of its board.
+		const reserved = measured > 0 ? measured + 10 : (Platform.isPhone ? 68 : 0);
 		host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
 	}
 
