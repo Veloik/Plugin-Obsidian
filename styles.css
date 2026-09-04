@@ -3036,10 +3036,11 @@
 }
 .notelens-eraser-pointer-tool.notelens-eraser-icon::after { display: none; }
 
+/* The drawing is sized on the element itself, in pixels: a percentage here
+   resolved against the button, and Obsidian's mobile styles leave that width to
+   its content — so the sprite measured itself against itself and disappeared. */
 .notelens-eraser-image {
   display: block;
-  width: 100%;
-  height: 100%;
   object-fit: contain;
   pointer-events: none;
   user-select: none;

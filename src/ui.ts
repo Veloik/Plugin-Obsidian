@@ -52,11 +52,28 @@ export function setEraserIcon(el: HTMLElement, size = 20): void {
 	el.empty();
 	el.addClass("notelens-eraser-icon");
 	const image = el.createEl("img", { cls: "notelens-eraser-image" });
-	image.src = ERASER_SPRITE;
 	image.alt = "";
 	image.width = size;
 	image.height = size;
+	// The size is stated on the element itself. A percentage would be measured
+	// against the button, and Obsidian's mobile styles leave that width to the
+	// content — which is the image, so it settled at nothing and vanished.
+	image.setCssStyles({ width: `${size}px`, height: `${size}px` });
 	image.draggable = false;
+	// Obsidian on a phone can refuse to paint an embedded image, and a tool
+	// button with nothing in it is worse than a plain icon: fall back to the
+	// line drawing the rest of the bar uses if the sprite does not arrive.
+	const fallback = () => {
+		if (!el.isConnected) return;
+		el.empty();
+		el.removeClass("notelens-eraser-icon");
+		setIcon(el, "eraser");
+	};
+	image.addEventListener("error", fallback);
+	image.addEventListener("load", () => { if (!image.naturalWidth) fallback(); });
+	image.src = ERASER_SPRITE;
+	// Some engines report the failure before a listener can run.
+	if (image.complete && !image.naturalWidth) fallback();
 }
 
 export const HIGHLIGHTER_COLORS = [

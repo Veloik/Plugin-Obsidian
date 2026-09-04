@@ -26,7 +26,7 @@ export const en: Record<string, string> = {
 	"Abrir página": "Open page",
 	"Acciones locales": "Local actions",
 	"Acercar": "Zoom in",
-	"Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.": "On: your finger draws with the active tool; two fingers pan and zoom. Off: one finger always pans.",
+	"Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano.": "On: your finger always draws with the active tool; two fingers pan and zoom. Off: your finger draws until you use a stylus, and only pans from then on so your hand never marks the board.",
 	"Adjuntar archivo de la bóveda": "Attach a file from the vault",
 	"Adjuntar cualquier archivo de la bóveda": "Attach any file from the vault",
 	"Ajustar la vista a todo el contenido": "Fit the view to all the content",

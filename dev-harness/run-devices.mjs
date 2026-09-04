@@ -104,6 +104,19 @@ for (const profile of PROFILES) {
 				}
 			}
 		}
+		// No tool button may be empty: every one shows an icon or a drawing, and
+		// an image that failed or collapsed leaves a blank square behind.
+		for (const btn of document.querySelectorAll(".onenote-ribbon-dock .onenote-dock-btn, .notelens-insert-dock button, .notelens-document-dock button")) {
+			if (!btn.offsetWidth || !btn.offsetHeight) continue;
+			const svg = btn.querySelector("svg");
+			const img = btn.querySelector("img");
+			const paintedSvg = !!svg && svg.getBoundingClientRect().height > 2;
+			const paintedImg = !!img && img.naturalWidth > 0 && img.getBoundingClientRect().height > 2;
+			const swatch = btn.querySelector(".onenote-color-dot, .onenote-current-color");
+			if (!paintedSvg && !paintedImg && !swatch && !btn.textContent.trim()) {
+				problems.push(`el botón ${btn.getAttribute("data-tool") || btn.title || "(sin nombre)"} sale vacío`);
+			}
+		}
 		// The canvas must never make the page itself scroll.
 		if (document.documentElement.scrollWidth > window.innerWidth + 1) {
 			problems.push(`la página se desplaza ${document.documentElement.scrollWidth - window.innerWidth}px en horizontal`);

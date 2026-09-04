@@ -298,7 +298,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr("Dibujar con el dedo"))
-			.setDesc(tr("Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza."))
+			.setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano."))
 			.addToggle(t => t.setValue(s.fingerDraws).onChange(v => { s.fingerDraws = v; save(); }));
 
 		new Setting(containerEl).setName(tr("Interfaz")).setHeading();

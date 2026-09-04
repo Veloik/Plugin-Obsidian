@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.8.4
+
+### Fixed
+
+- Nothing could be drawn on a phone. A finger only ever moved the board — palm rejection written for a tablet held with a stylus, applied to a device that has no stylus — so the pen, the highlighter, the shapes and the eraser all did nothing at all. A finger now writes with the tool that is selected, and starts moving the board only once a stylus has actually been used in this vault (remembered from then on). Two fingers still pan and zoom, and "Draw with your finger" in the settings forces writing either way.
+- The eraser button was an empty square on a phone. The drawing on it was sized as a percentage of the button, and Obsidian's mobile styles leave a button's width to its content — so the sprite measured itself against itself and came out at nothing. It is sized in pixels now, and if the drawing cannot be painted at all a plain line icon takes its place instead of leaving a blank.
+- The rubber was invisible on a touch screen. It was only ever drawn while a mouse hovered, which never happens on a phone: it now appears where the finger lands, follows it, and leaves when it does. It also stays visible if the pointer crosses a toolbar mid-erase.
+- A hand resting on the screen while the stylus wrote turned the stroke into a gesture: the board moved and the writing stopped. Touches are ignored while the pen is on the glass.
+- A second finger arriving mid-stroke left a dot — or a stray shape — where the first one had touched. The started stroke goes with the gesture now.
+- A stroke could come out as a single point on a browser that reports no coalesced events for a move; the move itself is used when that happens.
+
+### Tooling
+
+- `dev-harness/run75.mjs` covers what no other run did: a finger drawing and erasing on a phone, two fingers panning, a stylus taking over palm rejection, a palm landing mid-stroke, the stylus being remembered across sessions, and the eraser button surviving both the app's mobile button styles and a sprite that will not load. `run-devices.mjs` fails on any tool button that comes out blank.
+
 ## 2.8.3
 
 Same plugin as 2.8.2, published again so the community catalogue check reads a release that matches `manifest.json`; its first attempt ran while the 2.8.2 release was still being published.

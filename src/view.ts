@@ -90,6 +90,8 @@ function continueList(editor: HTMLTextAreaElement): boolean {
 
 /** Board objects travel through the clipboard as text with this prefix, so they paste into any board. */
 const CLIP_PREFIX = "notelens-clip:";
+/** Remembers that this vault is used with a stylus, so fingers stop drawing. */
+const PEN_SEEN_KEY = "notelens-pen-seen";
 interface ClipboardPayload {
 	notelens: 1;
 	strokes: Stroke[];
@@ -254,6 +256,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private isPanning = false;
 	/** Set when a stylus barrel press started a pan, so its context menu is dropped. */
 	private swallowNextCanvasMenu = false;
+	/** The stylus currently on the glass, so a resting hand can be ignored. */
+	private penPointerId: number | null = null;
+	/** Whether a stylus has ever been used here; decides what a finger does. */
+	private penEverSeen = false;
 	private panStart = { x: 0, y: 0 };
 	private pinchStart: { d: number; cx: number; cy: number; vt: { x: number; y: number; scale: number } } | null = null;
 	private isDrawing = false;
@@ -320,6 +326,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		this.workspaceEl = container.createDiv({ cls: "onenote-workspace" });
 		this.workspaceEl.setAttr("data-bg", this.data.background);
+		try {
+			this.penEverSeen = this.app.loadLocalStorage(PEN_SEEN_KEY) === true;
+		} catch { this.penEverSeen = false; }
 		this.syncToolCursor();
 
 		// DOM layer first, ink canvas on top: ink draws OVER pdf pages, images
@@ -1539,6 +1548,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	// ------------------------------------------------------------------
 
 	private onPointerDown(e: PointerEvent): void {
+		if (e.pointerType === "pen") {
+			this.rememberPen();
+			this.penPointerId = e.pointerId;
+		}
+		// A hand resting on the screen while the pen writes is not a gesture.
+		if (e.pointerType === "touch" && this.penIsDown()) return;
 		this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
 		if (this.pointers.size === 2) {
@@ -1565,12 +1580,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		if (this.activeTextEditor) this.commitTextEditor();
 
-		// Palm rejection: fingers only pan unless the settings allow finger inking.
+		// Palm rejection, but only for someone who actually holds a stylus: a
+		// finger draws until a pen has touched this vault, and pans from then on.
 		// The hand tool drags the board with whatever is touching it — a stylus
 		// included — and the barrel button of a pen does the same without leaving
 		// the tool you are drawing with.
 		const barrelPan = e.pointerType === "pen" && e.button === 2;
-		if ((e.pointerType === "touch" && !this.plugin.settings.fingerDraws)
+		if ((e.pointerType === "touch" && !this.fingerDraws())
 			|| e.button === 1 || barrelPan
 			|| (e.button === 0 && (this.currentTool === "hand" || e.altKey))) {
 			// A barrel press also asks for the context menu; the drag wins.
@@ -1587,7 +1603,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (tipErase || this.currentTool === "eraser") {
 			this.isErasing = true;
 			this.tipErasing = tipErase;
-			if (tipErase) this.updateEraserCursor(e);
+			// A finger has no hover, so the rubber is only ever drawn once it is
+			// touching: place it here rather than waiting for the first move.
+			this.updateEraserCursor(e);
 			this.eraserCursorEl?.addClass("is-active");
 			this.erasedAny = false;
 			this.eraseHistoryPushed = false;
@@ -1687,7 +1705,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 
 		if (this.isDrawing && this.currentStroke) {
-			const events = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [e];
+			// Coalesced events carry the points a fast pen made between frames.
+			// A browser that has none for this move still moved the pointer.
+			const coalesced = typeof e.getCoalescedEvents === "function" ? e.getCoalescedEvents() : [];
+			const events = coalesced.length ? coalesced : [e];
 			for (const ev of events) {
 				const pt = this.getDrawingSceneCoords(ev.clientX, ev.clientY);
 				this.currentStroke.points.push({
@@ -1742,6 +1763,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private onPointerUp(e: PointerEvent): void {
 		this.pointers.delete(e.pointerId);
+		if (this.penPointerId === e.pointerId) this.penPointerId = null;
 
 		if (this.pinchStart) {
 			if (this.pointers.size < 2) {
@@ -1784,12 +1806,40 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.isErasing) {
 			this.isErasing = false;
 			this.eraserCursorEl?.removeClass("is-active");
-			if (this.tipErasing) {
+			// Nothing hovers on a touch screen, so the rubber leaves with the
+			// finger instead of sitting where it was last seen.
+			if (this.tipErasing || e.pointerType === "touch") {
 				this.tipErasing = false;
 				this.hideEraserCursor();
 			}
 			if (this.erasedAny) this.save();
 		}
+	}
+
+	/**
+	 * What a single finger does. A stylus user expects the palm and the spare
+	 * hand to move the board and only the pen to write, which is what this did
+	 * for everyone — leaving a phone, where there is no pen, unable to draw at
+	 * all. So the finger writes until a stylus has been used in this vault, and
+	 * moves the board after that. The setting forces writing either way.
+	 */
+	private fingerDraws(): boolean {
+		return this.plugin.settings.fingerDraws || !this.penEverSeen;
+	}
+
+	/** Remembers the stylus across boards and restarts, not just this session. */
+	private rememberPen(): void {
+		if (this.penEverSeen) return;
+		this.penEverSeen = true;
+		try {
+			this.app.saveLocalStorage(PEN_SEEN_KEY, true);
+		} catch {
+			// A vault that cannot store this simply asks again next time.
+		}
+	}
+
+	private penIsDown(): boolean {
+		return this.penPointerId !== null;
 	}
 
 	private startPan(e: PointerEvent): void {
@@ -1804,11 +1854,22 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private startPinch(): void {
 		if (this.isDrawing) {
 			this.isDrawing = false;
+			// The second finger means "move the board", not "leave a dot where I
+			// happened to touch first": the started stroke goes with the gesture.
+			const started = this.currentStroke;
+			if (started) this.data.strokes.remove(started);
 			this.currentStroke = null;
 			this.renderedPoints = 0;
 			this.renderer.endLive();
 			this.renderInk();
 			this.save();
+		}
+		if (this.isShaping) {
+			this.isShaping = false;
+			const shape = this.currentShape;
+			this.currentShape = null;
+			if (shape) this.data.shapes.remove(shape);
+			this.renderInk();
 		}
 		this.isPanning = false;
 		this.workspaceEl.removeClass("is-panning");
@@ -5680,7 +5741,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.updateTextPlacementHint(e);
 			return;
 		}
-		if ((this.currentTool === "eraser" || this.isErasing) && overPage && !typing && !this.isPanning) {
+		// While the rubber is actually on the paper it stays drawn, even if the
+		// pointer passes over a dock button on its way.
+		if ((this.currentTool === "eraser" || this.isErasing) && (overPage || this.isErasing) && !typing && !this.isPanning) {
 			this.hideTextPlacementHint();
 			this.updateEraserCursor(e);
 			return;
