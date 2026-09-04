@@ -15,7 +15,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # The dedicated release check handles dependency findings; avoid a duplicate
+      # advisory request during installation when npm's audit service is down.
+      - run: npm ci --no-audit
       - run: npm run release:check
       - name: Ensure generated bundle is committed
         run: git diff --exit-code -- main.js
