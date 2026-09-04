@@ -5,6 +5,10 @@
  * to Spanish rather than breaking, so this file can grow without risk.
  */
 export const en: Record<string, string> = {
+	"Añade el contexto de esta etiqueta. También puedes dibujar o adjuntar imágenes desde Pizarra.": "Add context to this tag. You can also draw or attach images from the Board tab.",
+	"Escribe la nota que aparecerá al pasar el cursor por la etiqueta. Enter añade líneas; Ctrl+Enter acepta.": "Write the note shown when you hover over the tag. Enter adds lines; Ctrl+Enter saves.",
+	"Lista": "List",
+	"Nota": "Note",
 	" Color de página personalizado": " Custom page color",
 	" Dictado: {p0} y habla. Se escribe aquí. Esc termina.": " Dictation: {p0} and speak. It types here. Esc ends it.",
 	" Fluor personalizado...": " Custom highlighter…",
@@ -766,4 +770,27 @@ export const en: Record<string, string> = {
 	"Sin reconocer": "Not recognised",
 	"No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again.",
 	"Símbolo reconocido · {p0}%": "Symbol recognised · {p0}%",
+	"Mano (M) — arrastra con el lápiz o el dedo para moverte por la pizarra": "Hand (M) — drag with the pen or a finger to move around the board",
+	// Quick tags: badges, their cards and the tag summary.
+	"Explica por qué marcaste esto. Aparece al pasar el cursor por la etiqueta.": "Explain why you marked this. It shows when you hover over the tag.",
+	"Buscar etiquetas…": "Search tags…",
+	"Paso": "Step",
+	"Paso escrito a mano": "Handwritten step",
+	"Marcar paso {p0}": "Tick step {p0}",
+	"hecho": "done",
+	"pendiente": "pending",
+	"completada resuelta": "done completed answered",
+	"Duda pendiente": "Open question",
+	"Junto a: «{p0}»": "Next to: “{p0}”",
+	"{p0} · Siguiente: {p1}": "{p0} · Next: {p1}",
+	"{p0}. Clic completa un paso: «{p1}». Pasa el cursor para marcar el que quieras": "{p0}. A click completes one step: “{p1}”. Hover over it to tick whichever you want",
+	"{p0}. Todos los pasos hechos; clic reabre el último": "{p0}. Every step done; a click reopens the last one",
+	"1 pendiente entre tareas y dudas.": "1 pending item across tasks and questions.",
+	"{p0} pendientes entre tareas y dudas.": "{p0} pending items across tasks and questions.",
+	"No hay tareas ni dudas pendientes.": "No pending tasks or questions.",
+	"Lectura del portapapeles no disponible": "Clipboard reading is not available",
+	"No se pudo leer {p0}.": "Could not read {p0}.",
+	"{p0} supera el límite de 20 MB.": "{p0} is over the 20 MB limit.",
+	"{p0} no contiene una imagen compatible.": "{p0} does not hold a supported image.",
+	"{p0} sigue siendo demasiado grande después de optimizarla.": "{p0} is still too large after optimising it.",
 };

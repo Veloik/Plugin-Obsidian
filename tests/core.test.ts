@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import test from "node:test";
 import { toRenderableLatex } from "../src/asciimath";
 import { recognizeInkFormula } from "../src/ink-math";
@@ -138,6 +139,41 @@ test("the English catalogue keeps every placeholder its message needs", () => {
 	}
 	assert.deepEqual(broken, []);
 	assert.ok(Object.keys(en).length > 400, "the catalogue should cover the interface");
+});
+
+test("the quick tags say nothing in Spanish to an English reader", () => {
+	setLocale("en");
+	// Everything the five tags print: their names, the wording of a task's steps
+	// and the empty states of the summary pane.
+	for (const spanish of [
+		"Importante", "Duda", "Idea clave", "Tarea", "Nota flotante",
+		"Nueva etiqueta: {p0}", "Editar etiqueta: {p0}", "Buscar etiquetas…",
+		"Paso", "Paso a mano", "paso a mano", "Paso escrito a mano", "Marcar paso {p0}",
+		"hecho", "pendiente", "Duda pendiente", "Duda resuelta", "Tarea hecha",
+		"Junto a: «{p0}»", "{p0} · Siguiente: {p1}", "No hay tareas ni dudas pendientes.",
+		"Nada que mostrar con estos filtros.",
+		"Explica por qué marcaste esto. Aparece al pasar el cursor por la etiqueta.",
+		"Añade el contexto de esta etiqueta. También puedes dibujar o adjuntar imágenes desde Pizarra."
+	]) {
+		assert.notEqual(tr(spanish), spanish, `sin traducir: ${spanish}`);
+	}
+	// The tag files must not ask for a message the catalogue cannot answer;
+	// a key made only of placeholders and punctuation reads the same either way.
+	const untranslated: string[] = [];
+	let checked = 0;
+	for (const file of ["src/view.ts", "src/hover-note.ts", "src/ui.ts", "src/pdf-export.ts"]) {
+		const source = fs.readFileSync(file, "utf8");
+		for (const match of source.matchAll(/\btr\(\s*"((?:[^"\\]|\\.)*)"/g)) {
+			const key = JSON.parse(`"${match[1]}"`) as string;
+			if (!/\p{L}/u.test(key.replace(/\{\w+\}/g, ""))) continue;
+			checked++;
+			if (!(key in en)) untranslated.push(`${file}: ${key}`);
+		}
+	}
+	assert.deepEqual(untranslated, []);
+	// A scan that stops matching would pass silently; these files ask for hundreds.
+	assert.ok(checked > 300, `only ${checked} messages scanned`);
+	setLocale("es");
 });
 
 test("translation falls back to Spanish and fills placeholders", () => {

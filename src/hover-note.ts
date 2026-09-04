@@ -89,7 +89,7 @@ export class HoverNoteModal extends Modal {
 		const tabs = contentEl.createDiv({ cls: "notelens-hover-note-tabs" });
 		const tabText = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
 		setIcon(tabText.createSpan(), this.taskMode ? "list-checks" : "type");
-		tabText.createSpan({ text: this.taskMode ? "Lista" : "Nota" });
+		tabText.createSpan({ text: this.taskMode ? tr("Lista") : tr("Nota") });
 		const tabSketch = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
 		setIcon(tabSketch.createSpan(), "pen-tool");
 		tabSketch.createSpan({ text: tr("Pizarra") });
@@ -117,7 +117,7 @@ export class HoverNoteModal extends Modal {
 				row.toggleClass("is-done", item.done);
 				const checkbox = row.createEl("input", { cls: "notelens-task-checklist-box", type: "checkbox" });
 				checkbox.checked = item.done;
-				checkbox.setAttr("aria-label", `Marcar paso ${index + 1}`);
+				checkbox.setAttr("aria-label", tr("Marcar paso {p0}", { p0: index + 1 }));
 				const input = row.createEl("input", { cls: "notelens-task-checklist-input", type: "text" });
 				input.value = item.text;
 				input.maxLength = 500;
@@ -200,7 +200,7 @@ export class HoverNoteModal extends Modal {
 
 		const area = textPane.createEl("textarea", { cls: `notelens-prompt-textarea ${this.taskMode ? "notelens-task-description" : ""}` });
 		area.value = this.text;
-		area.placeholder = this.taskMode ? tr("Descripción, fecha, enlaces o detalles opcionales…") : this.placeholder;
+		area.placeholder = this.taskMode ? tr("Descripción, fecha, enlaces o detalles opcionales…") : tr(this.placeholder);
 		area.rows = this.taskMode ? 3 : 7;
 		area.addEventListener("input", () => { this.text = area.value; });
 		area.addEventListener("keydown", (event) => {
@@ -536,7 +536,7 @@ export class HoverNoteModal extends Modal {
 		const readClipboardImages = async () => {
 			try {
 				const clipboard = navigator.clipboard as Clipboard & { read?: () => Promise<ClipboardItem[]> };
-				if (!clipboard || typeof clipboard.read !== "function") throw new Error("Lectura del portapapeles no disponible");
+				if (!clipboard || typeof clipboard.read !== "function") throw new Error(tr("Lectura del portapapeles no disponible"));
 				const files: File[] = [];
 				for (const entry of await clipboard.read()) {
 					for (const type of entry.types.filter(type => type.startsWith("image/"))) {
@@ -653,17 +653,17 @@ export class HoverNoteModal extends Modal {
 	}
 
 	private async prepareImage(file: File, index: number, anchor: { x: number; y: number }): Promise<BadgeImage> {
-		if (file.size > MAX_IMAGE_FILE_BYTES) throw new Error(`${file.name} supera el límite de 20 MB.`);
+		if (file.size > MAX_IMAGE_FILE_BYTES) throw new Error(tr("{p0} supera el límite de 20 MB.", { p0: file.name }));
 		const source = await new Promise<string>((resolve, reject) => {
 			const reader = new FileReader();
-			reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error(`No se pudo leer ${file.name}.`));
-			reader.onerror = () => reject(new Error(`No se pudo leer ${file.name}.`));
+			reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error(tr("No se pudo leer {p0}.", { p0: file.name })));
+			reader.onerror = () => reject(new Error(tr("No se pudo leer {p0}.", { p0: file.name })));
 			reader.readAsDataURL(file);
 		});
 		const node = await new Promise<HTMLImageElement>((resolve, reject) => {
 			const image = new Image();
 			image.onload = () => resolve(image);
-			image.onerror = () => reject(new Error(`${file.name} no contiene una imagen compatible.`));
+			image.onerror = () => reject(new Error(tr("{p0} no contiene una imagen compatible.", { p0: file.name })));
 			image.src = source;
 		});
 		let src = source;
@@ -679,7 +679,7 @@ export class HoverNoteModal extends Modal {
 			src = encode(MAX_IMAGE_SOURCE_EDGE, 0.88);
 			if (src.length > 5_000_000) src = encode(1100, 0.78);
 		}
-		if (src.length > 6_000_000) throw new Error(`${file.name} sigue siendo demasiado grande después de optimizarla.`);
+		if (src.length > 6_000_000) throw new Error(tr("{p0} sigue siendo demasiado grande después de optimizarla.", { p0: file.name }));
 		let scale = Math.min(260 / node.naturalWidth, 180 / node.naturalHeight, 1);
 		if (Math.max(node.naturalWidth * scale, node.naturalHeight * scale) < 72) {
 			scale = 72 / Math.max(node.naturalWidth, node.naturalHeight);

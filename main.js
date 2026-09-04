@@ -5669,6 +5669,10 @@ var import_obsidian = require("obsidian");
 
 // src/locales/en.ts
 var en = {
+  "A\xF1ade el contexto de esta etiqueta. Tambi\xE9n puedes dibujar o adjuntar im\xE1genes desde Pizarra.": "Add context to this tag. You can also draw or attach images from the Board tab.",
+  "Escribe la nota que aparecer\xE1 al pasar el cursor por la etiqueta. Enter a\xF1ade l\xEDneas; Ctrl+Enter acepta.": "Write the note shown when you hover over the tag. Enter adds lines; Ctrl+Enter saves.",
+  "Lista": "List",
+  "Nota": "Note",
   " Color de p\xE1gina personalizado": " Custom page color",
   " Dictado: {p0} y habla. Se escribe aqu\xED. Esc termina.": " Dictation: {p0} and speak. It types here. Esc ends it.",
   " Fluor personalizado...": " Custom highlighter\u2026",
@@ -6429,7 +6433,30 @@ var en = {
   "Lectura vectorial \xB7 {p0}%": "Vector reading \xB7 {p0}%",
   "Sin reconocer": "Not recognised",
   "No he reconocido este s\xEDmbolo. Elige uno de los parecidos, o escr\xEDbelo otra vez.": "I did not recognise this symbol. Pick one of the near matches, or write it again.",
-  "S\xEDmbolo reconocido \xB7 {p0}%": "Symbol recognised \xB7 {p0}%"
+  "S\xEDmbolo reconocido \xB7 {p0}%": "Symbol recognised \xB7 {p0}%",
+  "Mano (M) \u2014 arrastra con el l\xE1piz o el dedo para moverte por la pizarra": "Hand (M) \u2014 drag with the pen or a finger to move around the board",
+  // Quick tags: badges, their cards and the tag summary.
+  "Explica por qu\xE9 marcaste esto. Aparece al pasar el cursor por la etiqueta.": "Explain why you marked this. It shows when you hover over the tag.",
+  "Buscar etiquetas\u2026": "Search tags\u2026",
+  "Paso": "Step",
+  "Paso escrito a mano": "Handwritten step",
+  "Marcar paso {p0}": "Tick step {p0}",
+  "hecho": "done",
+  "pendiente": "pending",
+  "completada resuelta": "done completed answered",
+  "Duda pendiente": "Open question",
+  "Junto a: \xAB{p0}\xBB": "Next to: \u201C{p0}\u201D",
+  "{p0} \xB7 Siguiente: {p1}": "{p0} \xB7 Next: {p1}",
+  "{p0}. Clic completa un paso: \xAB{p1}\xBB. Pasa el cursor para marcar el que quieras": "{p0}. A click completes one step: \u201C{p1}\u201D. Hover over it to tick whichever you want",
+  "{p0}. Todos los pasos hechos; clic reabre el \xFAltimo": "{p0}. Every step done; a click reopens the last one",
+  "1 pendiente entre tareas y dudas.": "1 pending item across tasks and questions.",
+  "{p0} pendientes entre tareas y dudas.": "{p0} pending items across tasks and questions.",
+  "No hay tareas ni dudas pendientes.": "No pending tasks or questions.",
+  "Lectura del portapapeles no disponible": "Clipboard reading is not available",
+  "No se pudo leer {p0}.": "Could not read {p0}.",
+  "{p0} supera el l\xEDmite de 20 MB.": "{p0} is over the 20 MB limit.",
+  "{p0} no contiene una imagen compatible.": "{p0} does not hold a supported image.",
+  "{p0} sigue siendo demasiado grande despu\xE9s de optimizarla.": "{p0} is still too large after optimising it."
 };
 
 // src/i18n.ts
@@ -21098,7 +21125,7 @@ function createDocumentPage(title, defaults = {}, id = genId("page")) {
   };
 }
 function createEmptyDocument(defaults = {}) {
-  const firstPage = createDocumentPage("P\xE1gina 1", defaults, "page_1");
+  const firstPage = createDocumentPage(tr("P\xE1gina {p0}", { p0: 1 }), defaults, "page_1");
   return {
     version: DOC_VERSION,
     pages: [firstPage],
@@ -21132,7 +21159,7 @@ function migrateDocument(raw) {
       const source = raw.pages[index];
       if (!source || typeof source !== "object") continue;
       const page = createDocumentPage(
-        typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : `P\xE1gina ${index + 1}`,
+        typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : tr("P\xE1gina {p0}", { p0: index + 1 }),
         {},
         typeof source.id === "string" && source.id ? source.id : genId("page")
       );
@@ -35201,7 +35228,7 @@ function drawBadgesAndEmbeds(pdf, page, doc) {
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8);
     pdf.setTextColor(15, 23, 42);
-    pdf.text(badge.label, x4 + 3, y3 + 4.6);
+    pdf.text(tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "")), x4 + 3, y3 + 4.6);
   }
   for (const embed of doc.embeds) {
     const box = { x: embed.x, y: embed.y, w: embed.w, h: embed.h };
@@ -59651,7 +59678,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     const tabs = contentEl.createDiv({ cls: "notelens-hover-note-tabs" });
     const tabText = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
     (0, import_obsidian10.setIcon)(tabText.createSpan(), this.taskMode ? "list-checks" : "type");
-    tabText.createSpan({ text: this.taskMode ? "Lista" : "Nota" });
+    tabText.createSpan({ text: this.taskMode ? tr("Lista") : tr("Nota") });
     const tabSketch = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
     (0, import_obsidian10.setIcon)(tabSketch.createSpan(), "pen-tool");
     tabSketch.createSpan({ text: tr("Pizarra") });
@@ -59679,7 +59706,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
         row.toggleClass("is-done", item.done);
         const checkbox = row.createEl("input", { cls: "notelens-task-checklist-box", type: "checkbox" });
         checkbox.checked = item.done;
-        checkbox.setAttr("aria-label", `Marcar paso ${index + 1}`);
+        checkbox.setAttr("aria-label", tr("Marcar paso {p0}", { p0: index + 1 }));
         const input = row.createEl("input", { cls: "notelens-task-checklist-input", type: "text" });
         input.value = item.text;
         input.maxLength = 500;
@@ -59771,7 +59798,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     }
     const area = textPane.createEl("textarea", { cls: `notelens-prompt-textarea ${this.taskMode ? "notelens-task-description" : ""}` });
     area.value = this.text;
-    area.placeholder = this.taskMode ? tr("Descripci\xF3n, fecha, enlaces o detalles opcionales\u2026") : this.placeholder;
+    area.placeholder = this.taskMode ? tr("Descripci\xF3n, fecha, enlaces o detalles opcionales\u2026") : tr(this.placeholder);
     area.rows = this.taskMode ? 3 : 7;
     area.addEventListener("input", () => {
       this.text = area.value;
@@ -60112,7 +60139,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     const readClipboardImages = async () => {
       try {
         const clipboard = navigator.clipboard;
-        if (!clipboard || typeof clipboard.read !== "function") throw new Error("Lectura del portapapeles no disponible");
+        if (!clipboard || typeof clipboard.read !== "function") throw new Error(tr("Lectura del portapapeles no disponible"));
         const files = [];
         for (const entry of await clipboard.read()) {
           for (const type of entry.types.filter((type2) => type2.startsWith("image/"))) {
@@ -60239,17 +60266,17 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     showMode(this.mode);
   }
   async prepareImage(file, index, anchor) {
-    if (file.size > MAX_IMAGE_FILE_BYTES) throw new Error(`${file.name} supera el l\xEDmite de 20 MB.`);
+    if (file.size > MAX_IMAGE_FILE_BYTES) throw new Error(tr("{p0} supera el l\xEDmite de 20 MB.", { p0: file.name }));
     const source = await new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error(`No se pudo leer ${file.name}.`));
-      reader.onerror = () => reject(new Error(`No se pudo leer ${file.name}.`));
+      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error(tr("No se pudo leer {p0}.", { p0: file.name })));
+      reader.onerror = () => reject(new Error(tr("No se pudo leer {p0}.", { p0: file.name })));
       reader.readAsDataURL(file);
     });
     const node = await new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error(`${file.name} no contiene una imagen compatible.`));
+      image.onerror = () => reject(new Error(tr("{p0} no contiene una imagen compatible.", { p0: file.name })));
       image.src = source;
     });
     let src = source;
@@ -60265,7 +60292,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       src = encode2(MAX_IMAGE_SOURCE_EDGE, 0.88);
       if (src.length > 5e6) src = encode2(1100, 0.78);
     }
-    if (src.length > 6e6) throw new Error(`${file.name} sigue siendo demasiado grande despu\xE9s de optimizarla.`);
+    if (src.length > 6e6) throw new Error(tr("{p0} sigue siendo demasiado grande despu\xE9s de optimizarla.", { p0: file.name }));
     let scale = Math.min(260 / node.naturalWidth, 180 / node.naturalHeight, 1);
     if (Math.max(node.naturalWidth * scale, node.naturalHeight * scale) < 72) {
       scale = 72 / Math.max(node.naturalWidth, node.naturalHeight);
@@ -60994,6 +61021,7 @@ function createToolbar(host, container) {
   const toolButtons = /* @__PURE__ */ new Map();
   const tools = [
     { id: "select", icon: "mouse-pointer-2", title: tr("Seleccionar (V) \u2014 arrastra para seleccionar en rect\xE1ngulo") },
+    { id: "hand", icon: "hand", title: tr("Mano (M) \u2014 arrastra con el l\xE1piz o el dedo para moverte por la pizarra") },
     { id: "pen", icon: "pencil", title: tr("L\xE1piz (P) \u2014 opciones al pulsar de nuevo") },
     { id: "highlighter", icon: "highlighter", title: tr("Subrayador (H) \u2014 opciones al pulsar de nuevo") },
     { id: "eraser", icon: "eraser", title: tr("Borrador (E) \u2014 opciones al pulsar de nuevo") },
@@ -61479,7 +61507,7 @@ function createPagesControl(host, container) {
     const pages = host.getDocumentPages();
     const active2 = host.getActivePageId();
     count.setText(String(Math.max(1, pages.findIndex((page) => page.id === active2) + 1)));
-    const visiblePages = pages.map((page, index) => ({ page, index })).filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, `P\xE1gina ${index + 1}`));
+    const visiblePages = pages.map((page, index) => ({ page, index })).filter(({ page, index }) => matchesPanelSearch(searchQuery, page.title, index + 1, tr("P\xE1gina {p0}", { p0: index + 1 })));
     search.setCount(visiblePages.length, pages.length);
     if (visiblePages.length === 0) {
       list.createDiv({ cls: "notelens-bookmarks-empty", text: tr("No hay p\xE1ginas que coincidan con la b\xFAsqueda.") });
@@ -62241,6 +62269,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     // --- Gesture state ---
     this.pointers = /* @__PURE__ */ new Map();
     this.isPanning = false;
+    /** Set when a stylus barrel press started a pan, so its context menu is dropped. */
+    this.swallowNextCanvasMenu = false;
     this.panStart = { x: 0, y: 0 };
     this.pinchStart = null;
     this.isDrawing = false;
@@ -62511,8 +62541,28 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     await super.onUnloadFile(file);
   }
+  /**
+   * On a phone, Obsidian floats its own navigation bar over the bottom of the
+   * view and the system keeps a home indicator under it. Everything the board
+   * anchors to its bottom edge reads this, so nothing ends up underneath. The
+   * bar is measured when it is there and assumed otherwise, because a plugin
+   * cannot count on the class names of the app around it.
+   */
+  updateSafeInsets() {
+    if (!this.workspaceEl) return;
+    const host = this.workspaceEl.parentElement ?? this.workspaceEl;
+    if (!import_obsidian13.Platform.isMobile) {
+      host.style.removeProperty("--nl-safe-bottom");
+      return;
+    }
+    const navbar = document.querySelector(".mobile-navbar");
+    const measured = navbar?.offsetHeight ?? 0;
+    const reserved = measured > 0 ? measured + 10 : 68;
+    host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
+  }
   handleResize() {
     if (!this.workspaceEl || !this.renderer) return;
+    this.updateSafeInsets();
     const rect = this.workspaceEl.getBoundingClientRect();
     this.renderer.resize(rect.width, rect.height);
     this.applyStageTransform();
@@ -63182,6 +63232,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.registerDomEvent(this.workspaceEl, "contextmenu", (e) => {
       if (e.target.closest(".onenote-placed-badge, .onenote-textbox, .notelens-embed, .notelens-pdf-stack, .notelens-loose-image")) return;
       e.preventDefault();
+      if (this.swallowNextCanvasMenu) {
+        this.swallowNextCanvasMenu = false;
+        return;
+      }
       this.showCanvasMenu(e);
     });
     this.registerDomEvent(window, "keydown", (e) => this.onKeyDown(e));
@@ -63388,6 +63442,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     const map = {
       v: "select",
+      m: "hand",
       p: "pen",
       h: "highlighter",
       e: "eraser",
@@ -63531,7 +63586,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       active2.blur();
     }
     if (this.activeTextEditor) this.commitTextEditor();
-    if (e.pointerType === "touch" && !this.plugin.settings.fingerDraws || e.button === 1) {
+    const barrelPan = e.pointerType === "pen" && e.button === 2;
+    if (e.pointerType === "touch" && !this.plugin.settings.fingerDraws || e.button === 1 || barrelPan || this.currentTool === "hand" && e.button === 0) {
+      if (barrelPan) this.swallowNextCanvasMenu = true;
       this.startPan(e);
       return;
     }
@@ -64682,7 +64739,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   syncToolCursor() {
     if (!this.workspaceEl) return;
     this.workspaceEl.setAttr("data-tool", this.currentTool);
-    this.workspaceEl.setAttr("data-pass-ink", ["pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
+    this.workspaceEl.setAttr("data-pass-ink", ["hand", "pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
     if (this.currentTool !== "text") this.hideTextPlacementHint();
     if (this.currentTool !== "eraser") this.hideEraserCursor();
   }
@@ -65378,7 +65435,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     new import_obsidian13.Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
   }
   createBadgeAt(x4, y3, tag) {
-    const defaultTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+    const sourceTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+    const defaultTitle = tr(sourceTitle);
     const place = (content) => {
       this.history.push();
       const checklist = content.checklist?.length ? content.checklist : void 0;
@@ -65428,7 +65486,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     el.toggleClass("is-done", !!badge.done);
     const iconEl = el.createSpan({ cls: "onenote-tag-icon" });
     (0, import_obsidian13.setIcon)(iconEl, badge.done ? "check-circle-2" : tag.icon);
-    const fallback = badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "");
+    const fallback = tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, ""));
     const excerpt = badge.title?.trim() || (badge.tagId === "tag_hover" && badge.tooltip ? badge.tooltip.split("\n")[0].slice(0, 48) + (badge.tooltip.length > 48 ? "\u2026" : "") : fallback);
     el.createSpan({ cls: "onenote-badge-label", text: excerpt });
     if (badge.tagId === "tag_todo" && badge.checklist?.length) {
@@ -65453,7 +65511,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     });
     if (badge.tagId === "tag_todo" && badge.checklist?.length) {
       const pending = badge.checklist.find((item) => !item.done);
-      el.title = pending ? `${excerpt}. Clic completa un paso: \xAB${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}\xBB. Pasa el cursor para marcar el que quieras` : `${excerpt}. Todos los pasos hechos; clic reabre el \xFAltimo`;
+      el.title = pending ? tr("{p0}. Clic completa un paso: \xAB{p1}\xBB. Pasa el cursor para marcar el que quieras", { p0: excerpt, p1: pending.text || (pending.sketch ? tr("paso a mano") : tr("sin nombre")) }) : tr("{p0}. Todos los pasos hechos; clic reabre el \xFAltimo", { p0: excerpt });
     } else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
     else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
     else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
@@ -65556,7 +65614,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.refreshBadge(badge);
     if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
     const completed = checklist.filter((item) => item.done).length;
-    new import_obsidian13.Notice(tr("{p0}: {p1} \xB7 {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
+    new import_obsidian13.Notice(tr("{p0}: {p1} \xB7 {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : tr("Paso")), p1: target.done ? tr("hecho") : tr("pendiente"), p2: completed, p3: checklist.length }), 2200);
   }
   /** The "todas de esa tarea" path: every step at once, from the context menu. */
   setChecklistAll(badge, done) {
@@ -65611,7 +65669,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   /** Text near a badge, so the summary shows what the tag is about. */
   badgeContext(badge) {
     if (badge.tooltip) return badge.tooltip;
-    if (badge.checklist?.length) return badge.checklist.map((item) => item.text || (item.sketch ? "paso a mano" : "")).filter(Boolean).join(" \xB7 ");
+    if (badge.checklist?.length) return badge.checklist.map((item) => item.text || (item.sketch ? tr("paso a mano") : "")).filter(Boolean).join(" \xB7 ");
     let best = null;
     for (const t3 of this.data.texts.filter((text) => (text.pageId ?? this.data.activePageId) === (badge.pageId ?? this.data.activePageId))) {
       if (!t3.text.trim()) continue;
@@ -65633,7 +65691,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     closeBtn.onclick = () => this.toggleTagSummary();
     let applySearch = () => {
     };
-    const search = createPanelSearch(panel, "Buscar etiquetas\u2026", this.tagSummaryQuery, (query) => {
+    const search = createPanelSearch(panel, tr("Buscar etiquetas\u2026"), this.tagSummaryQuery, (query) => {
       this.tagSummaryQuery = query;
       applySearch();
     });
@@ -65709,21 +65767,22 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       }
       const body = row.createDiv({ cls: "notelens-tag-summary-body" });
       const meta = body.createDiv({ cls: "notelens-tag-summary-meta" });
-      meta.createSpan({ cls: "notelens-tag-summary-kind", text: tag.label });
+      meta.createSpan({ cls: "notelens-tag-summary-kind", text: tr(tag.label) });
       meta.createSpan({ cls: "notelens-tag-summary-page", text: pageTitle });
       body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || tr("Sin t\xEDtulo. Doble clic en la etiqueta para editarla.") });
       if (badge.tagId === "tag_todo" && badge.checklist?.length) {
         const completed = badge.checklist.filter((item) => item.done).length;
         const nextItem = badge.checklist.find((item) => !item.done);
-        const next = nextItem ? nextItem.text || (nextItem.sketch ? "paso a mano" : "") : void 0;
-        body.createDiv({ cls: "notelens-tag-summary-note", text: `${completed}/${badge.checklist.length} completados${next ? ` \xB7 Siguiente: ${next}` : ""}` });
+        const next = nextItem ? nextItem.text || (nextItem.sketch ? tr("paso a mano") : "") : void 0;
+        const progress = tr("{p0}/{p1} completados", { p0: completed, p1: badge.checklist.length });
+        body.createDiv({ cls: "notelens-tag-summary-note", text: next ? tr("{p0} \xB7 Siguiente: {p1}", { p0: progress, p1: next }) : progress });
       }
       if (badge.title?.trim() && context && context !== badge.title.trim()) {
         body.createDiv({ cls: "notelens-tag-summary-note", text: context });
       }
       searchableRows.push({
         row,
-        values: [tag.label, badge.label, badge.title, context, pageTitle, ...(badge.checklist ?? []).map((item) => item.text), ...(badge.images ?? []).map((image) => image.name), badge.done ? "completada resuelta" : "pendiente"]
+        values: [tag.label, tr(tag.label), badge.label, badge.title, context, pageTitle, ...(badge.checklist ?? []).map((item) => item.text), ...(badge.images ?? []).map((image) => image.name), badge.done ? tr("completada resuelta") : tr("pendiente")]
       });
       row.onclick = () => {
         const pageId = badge.pageId ?? this.data.activePageId;
@@ -65744,7 +65803,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         if (matches) visible++;
       }
       if (items.length === 0) {
-        empty3.setText(this.data.badges.length ? "Nada que mostrar con estos filtros." : "Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante.");
+        empty3.setText(this.data.badges.length ? tr("Nada que mostrar con estos filtros.") : tr("Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante."));
         empty3.removeClass("hidden");
       } else if (visible === 0) {
         empty3.setText(tr("No hay etiquetas que coincidan con la b\xFAsqueda."));
@@ -65756,7 +65815,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     };
     applySearch();
     const pending = pageScoped.filter((b3) => (b3.tagId === "tag_todo" || b3.tagId === "tag_question") && !b3.done).length;
-    panel.createDiv({ cls: "notelens-calculator-help", text: pending ? `${pending} pendiente${pending === 1 ? "" : "s"} entre tareas y dudas.` : "No hay tareas ni dudas pendientes." });
+    panel.createDiv({
+      cls: "notelens-calculator-help",
+      text: pending ? pending === 1 ? tr("1 pendiente entre tareas y dudas.") : tr("{p0} pendientes entre tareas y dudas.", { p0: pending }) : tr("No hay tareas ni dudas pendientes.")
+    });
   }
   /**
    * Hover card of a placed tag. Every tag type gets its own card: colour,
@@ -65775,13 +65837,13 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const head = el.createDiv({ cls: "onenote-top-tooltip-head" });
     (0, import_obsidian13.setIcon)(head.createSpan({ cls: "onenote-top-tooltip-icon" }), badge.done ? "check-circle-2" : tag.icon);
     const heading = {
-      tag_star: "Importante",
-      tag_question: badge.done ? "Duda resuelta" : "Duda pendiente",
-      tag_idea: "Idea clave",
+      tag_star: tr("Importante"),
+      tag_question: badge.done ? tr("Duda resuelta") : tr("Duda pendiente"),
+      tag_idea: tr("Idea clave"),
       tag_todo: badge.done ? tr("Tarea hecha") : tr("Tarea pendiente"),
       tag_hover: badge.sketch && !badge.tooltip ? tr("Nota dibujada") : tr("Nota flotante")
     };
-    head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tag.label });
+    head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tr(tag.label) });
     if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
     if (badge.title?.trim()) el.createDiv({ cls: "onenote-top-tooltip-note-title", text: badge.title.trim() });
     if (checklist.length) {
@@ -65793,7 +65855,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         if (item.sketch) {
           const handwriting = row.createEl("img", { cls: "onenote-top-tooltip-step-sketch" });
           handwriting.src = item.sketch;
-          handwriting.alt = item.text || "Paso escrito a mano";
+          handwriting.alt = item.text || tr("Paso escrito a mano");
           handwriting.setCssStyles({ display: "block", width: "auto", height: "auto", maxWidth: "100%", maxHeight: "68px" });
         } else {
           row.createSpan({ text: item.text });
@@ -65846,7 +65908,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         tag_hover: tr("Doble clic para escribir o dibujar la nota.")
       };
       const near = this.badgeContext(badge);
-      el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? `Junto a: \xAB${near}\xBB` : hints[badge.tagId] ?? "" });
+      el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? tr("Junto a: \xAB{p0}\xBB", { p0: near }) : hints[badge.tagId] ?? "" });
       if (near) el.createDiv({ cls: "onenote-top-tooltip-hint", text: hints[badge.tagId] ?? "" });
     }
     const badgeEl = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`);
@@ -68129,7 +68191,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.1" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.2" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -68367,6 +68429,10 @@ var OneNotePlugin = class extends import_obsidian15.Plugin {
       name: tr("Crear nueva pizarra NoteLens"),
       callback: () => void this.createNewOneNoteFile()
     });
+    this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
+      if (!(file instanceof import_obsidian15.TFolder)) return;
+      menu.addItem((item) => item.setTitle(tr("Nueva pizarra NoteLens")).setIcon("pencil").onClick(() => void this.createNewOneNoteFile(file)));
+    }));
   }
   onunload() {
     disposePdfWorker();
@@ -68387,12 +68453,15 @@ var OneNotePlugin = class extends import_obsidian15.Plugin {
     const s3 = this.settings;
     return { background: s3.defaultBackground, marginEnabled: s3.defaultMargin, backgroundColor: s3.defaultPageColor, lineColor: s3.defaultLineColor, gridSize: s3.defaultGridSize };
   }
-  async createNewOneNoteFile() {
+  /** Creates a board inside `folder`, or at the root of the vault without one. */
+  async createNewOneNoteFile(folder) {
     const dateStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-    let fileName = `Pizarra_${dateStr}.notelens`;
+    const dir = folder && !folder.isRoot() ? `${folder.path}/` : "";
+    const base = `${tr("Pizarra")}_${dateStr}`;
+    let fileName = `${dir}${base}.notelens`;
     let n = 1;
     while (this.app.vault.getAbstractFileByPath(fileName)) {
-      fileName = `Pizarra_${dateStr}_${n++}.notelens`;
+      fileName = `${dir}${base}_${n++}.notelens`;
     }
     const file = await this.app.vault.create(fileName, JSON.stringify(createEmptyDocument(this.documentDefaults()), null, 2));
     const leaf = this.app.workspace.getLeaf(true);

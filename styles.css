@@ -8,6 +8,11 @@
   overflow: hidden;
   container-type: inline-size;
   container-name: workspace;
+  /* Room the phone keeps for itself at the bottom of the view: Obsidian's own
+     navigation bar plus the home indicator. Measured by the view on mobile and
+     left at zero on a desktop, so every control anchored to the bottom of the
+     board clears it instead of hiding underneath. */
+  --nl-safe-bottom: 0px;
 }
 
 /* Bookmarks, ruler, minimap and A4 guides all rely on this class; without a
@@ -970,7 +975,7 @@
 .notelens-settings-btn {
   position: absolute;
   left: 14px;
-  bottom: 14px;
+  bottom: calc(14px + var(--nl-safe-bottom, 0px));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -996,7 +1001,7 @@
 .notelens-settings-panel {
   position: absolute;
   left: 14px;
-  bottom: 64px;
+  bottom: calc(64px + var(--nl-safe-bottom, 0px));
   width: 240px;
   background: rgba(18, 22, 34, 0.96);
   backdrop-filter: blur(18px) saturate(180%);
@@ -1687,7 +1692,7 @@
 .notelens-shortcuts {
   position: absolute;
   right: 14px;
-  bottom: 64px;
+  bottom: calc(64px + var(--nl-safe-bottom, 0px));
   width: 440px;
   max-width: calc(100% - 28px);
   max-height: calc(100% - 90px);
@@ -2392,6 +2397,11 @@
   cursor: crosshair;
 }
 
+/* The hand tool: an open hand until the drag starts, then the grabbing one. */
+.onenote-workspace[data-tool="hand"] {
+  cursor: grab;
+}
+
 .onenote-ribbon-dock {
   gap: 3px;
   padding: 5px 7px;
@@ -2863,7 +2873,7 @@
 .notelens-navigation-controls {
   position: absolute;
   right: 14px;
-  bottom: 14px;
+  bottom: calc(14px + var(--nl-safe-bottom, 0px));
   display: flex;
   align-items: center;
   gap: 2px;
@@ -3255,7 +3265,7 @@
 .notelens-minimap {
   position: absolute;
   right: 14px;
-  bottom: 66px;
+  bottom: calc(66px + var(--nl-safe-bottom, 0px));
   z-index: 900;
   width: 220px;
   padding: 0 0 6px;
@@ -3295,7 +3305,7 @@
 .notelens-bookmarks-dock {
   position: absolute;
   left: 58px;
-  bottom: 14px;
+  bottom: calc(14px + var(--nl-safe-bottom, 0px));
   z-index: 1000;
 }
 
@@ -3316,7 +3326,7 @@
 
 .notelens-bookmarks-panel {
   position: absolute;
-  bottom: 44px;
+  bottom: calc(44px + var(--nl-safe-bottom, 0px));
   left: 0;
   display: flex;
   width: 280px;
@@ -3524,7 +3534,7 @@
 .onenote-workspace.is-focus-mode .notelens-smart-ruler { opacity: 0; pointer-events: none; }
 
 @container workspace (max-width: 700px) {
-  .notelens-minimap { width: 180px; right: 10px; bottom: 60px; }
+  .notelens-minimap { width: 180px; right: 10px; bottom: calc(60px + var(--nl-safe-bottom, 0px)); }
   .notelens-minimap canvas { width: 168px; height: 100px; }
 }
 
@@ -4047,7 +4057,7 @@
   .notelens-insert-dock::-webkit-scrollbar { display: none; }
   .notelens-document-dock {
     top: auto;
-    bottom: 66px;
+    bottom: calc(66px + var(--nl-safe-bottom, 0px));
     right: auto;
     left: 50%;
     transform: translateX(-50%);
@@ -4058,15 +4068,15 @@
     border-radius: 14px;
   }
   .notelens-document-dock::-webkit-scrollbar { display: none; }
-  .notelens-minimap { bottom: 122px; }
-  .notelens-shortcuts { bottom: 122px; }
+  .notelens-minimap { bottom: calc(122px + var(--nl-safe-bottom, 0px)); }
+  .notelens-shortcuts { bottom: calc(122px + var(--nl-safe-bottom, 0px)); }
   .notelens-calculator,
   .notelens-translator,
   .notelens-recorder,
   .notelens-navigator,
   .notelens-tag-summary {
     top: auto !important;
-    bottom: 122px;
+    bottom: calc(122px + var(--nl-safe-bottom, 0px));
     left: 50% !important;
     right: auto;
     transform: translateX(-50%);
@@ -4113,18 +4123,24 @@
   .notelens-document-dock::-webkit-scrollbar { display: none; }
   .onenote-ribbon-dock { top: 12px; }
   .notelens-insert-dock { top: 62px; }
-  .notelens-document-dock { bottom: 64px; }
+  .notelens-document-dock { bottom: calc(64px + var(--nl-safe-bottom, 0px)); }
   .onenote-quick-tags { top: 112px; }
   .notelens-pen-panel { top: 154px; width: calc(100% - 24px); left: 12px; transform: none; }
-  .notelens-focus-toggle { top: auto; bottom: 14px; right: 14px; }
-  .notelens-navigation-controls { right: 58px; }
+  .notelens-focus-toggle { top: auto; bottom: calc(14px + var(--nl-safe-bottom, 0px)); right: 14px; }
+  /* The bottom row is one line on a phone: paper, bookmarks and pages on the
+     left, zoom on the right, focus at the corner. Anything that would push zoom
+     onto the left cluster is dropped — it all lives in the panels anyway. */
+  .notelens-navigation-controls { right: 52px; gap: 2px; padding: 3px 5px; }
   .notelens-nav-reset,
-  .notelens-nav-fullscreen { display: none; }
+  .notelens-nav-fullscreen,
+  .notelens-nav-map,
+  .notelens-nav-help { display: none; }
+  .notelens-zoom-label { min-width: 40px; font-size: 11px; }
   .notelens-calculator,
   .notelens-translator,
   .notelens-recorder,
   .notelens-navigator,
-  .notelens-tag-summary { bottom: 118px; width: calc(100% - 24px); max-height: calc(100% - 290px); }
+  .notelens-tag-summary { bottom: calc(118px + var(--nl-safe-bottom, 0px)); width: calc(100% - 24px); max-height: calc(100% - 290px); }
   .notelens-shortcuts-body { grid-template-columns: 1fr; }
   .notelens-search { top: 158px; left: 12px; right: 12px; transform: none; width: auto; }
 }
@@ -4431,7 +4447,7 @@
 .notelens-pages-dock {
   position: absolute;
   left: 102px;
-  bottom: 14px;
+  bottom: calc(14px + var(--nl-safe-bottom, 0px));
   z-index: 1000;
 }
 .notelens-pages-toggle { position: relative; }
@@ -4579,7 +4595,7 @@
 
 @container workspace (max-width: 1100px) {
   .notelens-bookmarks-panel,
-  .notelens-pages-panel { bottom: 110px; }
+  .notelens-pages-panel { bottom: calc(110px + var(--nl-safe-bottom, 0px)); }
 }
 
 @container workspace (max-width: 700px) {
@@ -4869,7 +4885,7 @@ button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3f
 .notelens-pet {
   position: absolute;
   right: 18px;
-  bottom: 112px;
+  bottom: calc(112px + var(--nl-safe-bottom, 0px));
   width: 78px;
   height: 78px;
   display: grid;
@@ -4913,7 +4929,7 @@ button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3f
 .notelens-assistant {
   position: absolute;
   right: 18px;
-  bottom: 200px;
+  bottom: calc(200px + var(--nl-safe-bottom, 0px));
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -5030,8 +5046,8 @@ button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3f
 .onenote-workspace.is-focus-mode .notelens-assistant { opacity: 0; pointer-events: none; }
 
 @container workspace (max-width: 700px) {
-  .notelens-pet { right: 12px; bottom: 128px; width: 62px; height: 62px; }
-  .notelens-assistant { right: 12px; left: 12px; width: auto; bottom: 196px; }
+  .notelens-pet { right: 12px; bottom: calc(128px + var(--nl-safe-bottom, 0px)); width: 62px; height: 62px; }
+  .notelens-assistant { right: 12px; left: 12px; width: auto; bottom: calc(196px + var(--nl-safe-bottom, 0px)); }
 }
 
 /* Assistant: name field, avatar, mode switch and the little sketch board. */
@@ -5333,7 +5349,7 @@ span.notelens-assistant-name {
 .notelens-ocr-formula {
   position: absolute;
   left: 50%;
-  bottom: 92px;
+  bottom: calc(92px + var(--nl-safe-bottom, 0px));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -5653,4 +5669,42 @@ span.notelens-assistant-name {
   border-color: #f59e0b;
   background: rgba(245, 158, 11, 0.12);
   font-weight: 700;
+}
+
+/* ==========================================================================
+   SHORT VIEWS: a phone held sideways, or a board sharing a split desktop pane.
+   The rows keep their order but lose their padding, so there is still a board
+   left between the tools on top and the ones underneath.
+   ========================================================================== */
+@media (max-height: 580px) {
+  .onenote-dock-btn { width: 30px; height: 30px; }
+  .onenote-ribbon-dock,
+  .notelens-insert-dock,
+  .notelens-document-dock { padding: 3px 6px; gap: 2px; }
+  .onenote-ribbon-dock { top: 8px; }
+  .onenote-quick-tags { top: 50px; padding: 3px 6px; gap: 2px; }
+  .onenote-tag-chip { padding: 4px 6px; }
+  /* Height is what is scarce here, and width is not: insert and document tools
+     stand up as columns against the sides and give the rows back to the board. */
+  .notelens-insert-dock,
+  .notelens-document-dock {
+    top: 56px;
+    bottom: calc(58px + var(--nl-safe-bottom, 0px));
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    transform: none;
+  }
+  .notelens-insert-dock::-webkit-scrollbar,
+  .notelens-document-dock::-webkit-scrollbar { display: none; }
+  .notelens-insert-dock { left: 10px; right: auto; }
+  .notelens-document-dock { right: 10px; left: auto; }
+  .notelens-pen-panel { top: 92px; max-height: calc(100% - 150px); overflow-y: auto; }
+  .notelens-calculator,
+  .notelens-translator,
+  .notelens-recorder,
+  .notelens-navigator,
+  .notelens-tag-summary { max-height: calc(100% - 190px); }
+  .notelens-search { top: 96px; }
 }

@@ -252,6 +252,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	// --- Gesture state ---
 	private pointers = new Map<number, { x: number; y: number }>();
 	private isPanning = false;
+	/** Set when a stylus barrel press started a pan, so its context menu is dropped. */
+	private swallowNextCanvasMenu = false;
 	private panStart = { x: 0, y: 0 };
 	private pinchStart: { d: number; cx: number; cy: number; vt: { x: number; y: number; scale: number } } | null = null;
 	private isDrawing = false;
@@ -426,8 +428,29 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		await super.onUnloadFile(file);
 	}
 
+	/**
+	 * On a phone, Obsidian floats its own navigation bar over the bottom of the
+	 * view and the system keeps a home indicator under it. Everything the board
+	 * anchors to its bottom edge reads this, so nothing ends up underneath. The
+	 * bar is measured when it is there and assumed otherwise, because a plugin
+	 * cannot count on the class names of the app around it.
+	 */
+	private updateSafeInsets(): void {
+		if (!this.workspaceEl) return;
+		const host = this.workspaceEl.parentElement ?? this.workspaceEl;
+		if (!Platform.isMobile) {
+			host.style.removeProperty("--nl-safe-bottom");
+			return;
+		}
+		const navbar = document.querySelector(".mobile-navbar") as HTMLElement | null;
+		const measured = navbar?.offsetHeight ?? 0;
+		const reserved = measured > 0 ? measured + 10 : 68;
+		host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
+	}
+
 	private handleResize(): void {
 		if (!this.workspaceEl || !this.renderer) return;
+		this.updateSafeInsets();
 		const rect = this.workspaceEl.getBoundingClientRect();
 		this.renderer.resize(rect.width, rect.height);
 		this.applyStageTransform();
@@ -1120,6 +1143,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.registerDomEvent(this.workspaceEl, "contextmenu", (e) => {
 			if ((e.target as HTMLElement).closest(".onenote-placed-badge, .onenote-textbox, .notelens-embed, .notelens-pdf-stack, .notelens-loose-image")) return;
 			e.preventDefault();
+			// The barrel button of a stylus pans; it must not also open the menu.
+			if (this.swallowNextCanvasMenu) {
+				this.swallowNextCanvasMenu = false;
+				return;
+			}
 			this.showCanvasMenu(e);
 		});
 
@@ -1379,7 +1407,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		if (key === "l") { this.setSelectionMode("lasso"); return; }
 		const map: Record<string, ToolId> = {
-			v: "select", p: "pen", h: "highlighter", e: "eraser", t: "text", s: "shape"
+			v: "select", m: "hand", p: "pen", h: "highlighter", e: "eraser", t: "text", s: "shape"
 		};
 		if (map[key]) {
 			if (map[key] === "select") this.setSelectionMode("rect"); else this.setTool(map[key]);
@@ -1537,7 +1565,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.activeTextEditor) this.commitTextEditor();
 
 		// Palm rejection: fingers only pan unless the settings allow finger inking.
-		if ((e.pointerType === "touch" && !this.plugin.settings.fingerDraws) || e.button === 1) {
+		// The hand tool drags the board with whatever is touching it — a stylus
+		// included — and the barrel button of a pen does the same without leaving
+		// the tool you are drawing with.
+		const barrelPan = e.pointerType === "pen" && e.button === 2;
+		if ((e.pointerType === "touch" && !this.plugin.settings.fingerDraws)
+			|| e.button === 1 || barrelPan || (this.currentTool === "hand" && e.button === 0)) {
+			// A barrel press also asks for the context menu; the drag wins.
+			if (barrelPan) this.swallowNextCanvasMenu = true;
 			this.startPan(e);
 			return;
 		}
@@ -2686,7 +2721,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private syncToolCursor(): void {
 		if (!this.workspaceEl) return;
 		this.workspaceEl.setAttr("data-tool", this.currentTool);
-		this.workspaceEl.setAttr("data-pass-ink", ["pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
+		// The hand joins the ink tools here: dragging must move the board even
+		// when the pen lands on a note, a table or a PDF.
+		this.workspaceEl.setAttr("data-pass-ink", ["hand", "pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
 		if (this.currentTool !== "text") this.hideTextPlacementHint();
 		if (this.currentTool !== "eraser") this.hideEraserCursor();
 	}
@@ -3380,7 +3417,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private createBadgeAt(x: number, y: number, tag: QuickTag): void {
-		const defaultTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+		const sourceTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+		const defaultTitle = tr(sourceTitle);
 		const place = (content: HoverNoteContent) => {
 			this.history.push();
 			const checklist = content.checklist?.length ? content.checklist : undefined;
@@ -3427,7 +3465,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.toggleClass("is-done", !!badge.done);
 		const iconEl = el.createSpan({ cls: "onenote-tag-icon" });
 		setIcon(iconEl, badge.done ? "check-circle-2" : tag.icon);
-		const fallback = badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "");
+		const fallback = tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, ""));
 		const excerpt = badge.title?.trim()
 			|| (badge.tagId === "tag_hover" && badge.tooltip ? badge.tooltip.split("\n")[0].slice(0, 48) + (badge.tooltip.length > 48 ? "…" : "") : fallback);
 		el.createSpan({ cls: "onenote-badge-label", text: excerpt });
@@ -3454,8 +3492,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (badge.tagId === "tag_todo" && badge.checklist?.length) {
 			const pending = badge.checklist.find(item => !item.done);
 			el.title = pending
-				? `${excerpt}. Clic completa un paso: «${pending.text || (pending.sketch ? "paso a mano" : "sin nombre")}». Pasa el cursor para marcar el que quieras`
-				: `${excerpt}. Todos los pasos hechos; clic reabre el último`;
+				? tr("{p0}. Clic completa un paso: «{p1}». Pasa el cursor para marcar el que quieras", { p0: excerpt, p1: pending.text || (pending.sketch ? tr("paso a mano") : tr("sin nombre")) })
+				: tr("{p0}. Todos los pasos hechos; clic reabre el último", { p0: excerpt });
 		} else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
 		else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
 		else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
@@ -3587,7 +3625,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.refreshBadge(badge);
 		if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
 		const completed = checklist.filter(item => item.done).length;
-		new Notice(tr("{p0}: {p1} · {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : "Paso"), p1: target.done ? "hecho" : "pendiente", p2: completed, p3: checklist.length }), 2200);
+		new Notice(tr("{p0}: {p1} · {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : tr("Paso")), p1: target.done ? tr("hecho") : tr("pendiente"), p2: completed, p3: checklist.length }), 2200);
 	}
 
 	/** The "todas de esa tarea" path: every step at once, from the context menu. */
@@ -3656,7 +3694,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Text near a badge, so the summary shows what the tag is about. */
 	private badgeContext(badge: Badge): string {
 		if (badge.tooltip) return badge.tooltip;
-		if (badge.checklist?.length) return badge.checklist.map(item => item.text || (item.sketch ? "paso a mano" : "")).filter(Boolean).join(" · ");
+		if (badge.checklist?.length) return badge.checklist.map(item => item.text || (item.sketch ? tr("paso a mano") : "")).filter(Boolean).join(" · ");
 		let best: { text: string; d: number } | null = null;
 		for (const t of this.data.texts.filter(text => (text.pageId ?? this.data.activePageId) === (badge.pageId ?? this.data.activePageId))) {
 			if (!t.text.trim()) continue;
@@ -3678,7 +3716,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		setIcon(closeBtn, "x");
 		closeBtn.onclick = () => this.toggleTagSummary();
 		let applySearch = () => {};
-		const search = createPanelSearch(panel, "Buscar etiquetas…", this.tagSummaryQuery, query => {
+		const search = createPanelSearch(panel, tr("Buscar etiquetas…"), this.tagSummaryQuery, query => {
 			this.tagSummaryQuery = query;
 			applySearch();
 		});
@@ -3748,21 +3786,22 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 			const body = row.createDiv({ cls: "notelens-tag-summary-body" });
 			const meta = body.createDiv({ cls: "notelens-tag-summary-meta" });
-			meta.createSpan({ cls: "notelens-tag-summary-kind", text: tag.label });
+			meta.createSpan({ cls: "notelens-tag-summary-kind", text: tr(tag.label) });
 			meta.createSpan({ cls: "notelens-tag-summary-page", text: pageTitle });
 			body.createDiv({ cls: "notelens-tag-summary-text", text: badge.title?.trim() || context || tr("Sin título. Doble clic en la etiqueta para editarla.") });
 			if (badge.tagId === "tag_todo" && badge.checklist?.length) {
 				const completed = badge.checklist.filter(item => item.done).length;
 				const nextItem = badge.checklist.find(item => !item.done);
-				const next = nextItem ? (nextItem.text || (nextItem.sketch ? "paso a mano" : "")) : undefined;
-				body.createDiv({ cls: "notelens-tag-summary-note", text: `${completed}/${badge.checklist.length} completados${next ? ` · Siguiente: ${next}` : ""}` });
+				const next = nextItem ? (nextItem.text || (nextItem.sketch ? tr("paso a mano") : "")) : undefined;
+				const progress = tr("{p0}/{p1} completados", { p0: completed, p1: badge.checklist.length });
+				body.createDiv({ cls: "notelens-tag-summary-note", text: next ? tr("{p0} · Siguiente: {p1}", { p0: progress, p1: next }) : progress });
 			}
 			if (badge.title?.trim() && context && context !== badge.title.trim()) {
 				body.createDiv({ cls: "notelens-tag-summary-note", text: context });
 			}
 			searchableRows.push({
 				row,
-				values: [tag.label, badge.label, badge.title, context, pageTitle, ...(badge.checklist ?? []).map(item => item.text), ...(badge.images ?? []).map(image => image.name), badge.done ? "completada resuelta" : "pendiente"]
+				values: [tag.label, tr(tag.label), badge.label, badge.title, context, pageTitle, ...(badge.checklist ?? []).map(item => item.text), ...(badge.images ?? []).map(image => image.name), badge.done ? tr("completada resuelta") : tr("pendiente")]
 			});
 			row.onclick = () => {
 				const pageId = badge.pageId ?? this.data.activePageId;
@@ -3783,7 +3822,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				if (matches) visible++;
 			}
 			if (items.length === 0) {
-				empty.setText(this.data.badges.length ? "Nada que mostrar con estos filtros." : "Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante.");
+				empty.setText(this.data.badges.length ? tr("Nada que mostrar con estos filtros.") : tr("Coloca etiquetas desde la fila superior: Importante, Duda, Idea clave, Tarea o Nota flotante."));
 				empty.removeClass("hidden");
 			} else if (visible === 0) {
 				empty.setText(tr("No hay etiquetas que coincidan con la búsqueda."));
@@ -3795,7 +3834,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		applySearch();
 		const pending = pageScoped.filter(b => (b.tagId === "tag_todo" || b.tagId === "tag_question") && !b.done).length;
-		panel.createDiv({ cls: "notelens-calculator-help", text: pending ? `${pending} pendiente${pending === 1 ? "" : "s"} entre tareas y dudas.` : "No hay tareas ni dudas pendientes." });
+		panel.createDiv({
+			cls: "notelens-calculator-help",
+			text: pending
+				? (pending === 1 ? tr("1 pendiente entre tareas y dudas.") : tr("{p0} pendientes entre tareas y dudas.", { p0: pending }))
+				: tr("No hay tareas ni dudas pendientes.")
+		});
 	}
 
 	/**
@@ -3815,13 +3859,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const head = el.createDiv({ cls: "onenote-top-tooltip-head" });
 		setIcon(head.createSpan({ cls: "onenote-top-tooltip-icon" }), badge.done ? "check-circle-2" : tag.icon);
 		const heading: Record<string, string> = {
-			tag_star: "Importante",
-			tag_question: badge.done ? "Duda resuelta" : "Duda pendiente",
-			tag_idea: "Idea clave",
+			tag_star: tr("Importante"),
+			tag_question: badge.done ? tr("Duda resuelta") : tr("Duda pendiente"),
+			tag_idea: tr("Idea clave"),
 			tag_todo: badge.done ? tr("Tarea hecha") : tr("Tarea pendiente"),
 			tag_hover: badge.sketch && !badge.tooltip ? tr("Nota dibujada") : tr("Nota flotante")
 		};
-		head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tag.label });
+		head.createSpan({ cls: "onenote-top-tooltip-title", text: heading[badge.tagId] ?? tr(tag.label) });
 		if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
 		if (badge.title?.trim()) el.createDiv({ cls: "onenote-top-tooltip-note-title", text: badge.title.trim() });
 		if (checklist.length) {
@@ -3834,7 +3878,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				if (item.sketch) {
 					const handwriting = row.createEl("img", { cls: "onenote-top-tooltip-step-sketch" });
 					handwriting.src = item.sketch;
-					handwriting.alt = item.text || "Paso escrito a mano";
+					handwriting.alt = item.text || tr("Paso escrito a mano");
 					// Inline, so a stale stylesheet can never let the ink spill out of the card.
 					handwriting.setCssStyles({ display: "block", width: "auto", height: "auto", maxWidth: "100%", maxHeight: "68px" });
 				} else {
@@ -3888,7 +3932,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				tag_hover: tr("Doble clic para escribir o dibujar la nota.")
 			};
 			const near = this.badgeContext(badge);
-			el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? `Junto a: «${near}»` : (hints[badge.tagId] ?? "") });
+			el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? tr("Junto a: «{p0}»", { p0: near }) : (hints[badge.tagId] ?? "") });
 			if (near) el.createDiv({ cls: "onenote-top-tooltip-hint", text: hints[badge.tagId] ?? "" });
 		}
 		// Choose the side using the card's real size, so image notes never cover the top docks.

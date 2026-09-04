@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import { RasterImage } from "./dom-raster";
 import { OneNoteDocument, Shape, Stroke } from "./types";
 import { pdfFontFor } from "./fonts";
+import { tr } from "./i18n";
 import { stripInlineMarks } from "./rich-text";
 
 export interface SceneBounds { x: number; y: number; w: number; h: number; }
@@ -263,7 +264,7 @@ function drawBadgesAndEmbeds(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument
 		pdf.setFont("helvetica", "bold");
 		pdf.setFontSize(8);
 		pdf.setTextColor(15, 23, 42);
-		pdf.text(badge.label, x + 3, y + 4.6);
+		pdf.text(tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "")), x + 3, y + 4.6);
 	}
 	for (const embed of doc.embeds) {
 		const box = { x: embed.x, y: embed.y, w: embed.w, h: embed.h };
