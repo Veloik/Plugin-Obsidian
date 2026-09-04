@@ -63289,6 +63289,13 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.registerDomEvent(window, "pointermove", (e) => this.onPointerMove(e));
     this.registerDomEvent(window, "pointerup", (e) => this.onPointerUp(e));
     this.registerDomEvent(window, "pointercancel", (e) => this.onPointerUp(e));
+    for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"]) {
+      this.registerDomEvent(this.workspaceEl, type, (e) => {
+        const target = e.target;
+        if (target?.closest("input, textarea, [contenteditable='true']")) return;
+        e.stopPropagation();
+      });
+    }
     this.registerDomEvent(this.workspaceEl, "wheel", (e) => this.onWheel(e), { passive: false });
     this.registerDomEvent(this.workspaceEl, "contextmenu", (e) => {
       if (e.target.closest(".onenote-placed-badge, .onenote-textbox, .notelens-embed, .notelens-pdf-stack, .notelens-loose-image")) return;
@@ -63699,7 +63706,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     if (this.currentTool === "text") {
       this.hideTextPlacementHint();
-      e.preventDefault();
+      if (e.pointerType !== "touch") e.preventDefault();
       if (wasEditing) return;
       this.createTextBoxAt(pt2.x, pt2.y);
       return;
@@ -67183,6 +67190,53 @@ ${rows.join("\n")}`);
     });
     return el;
   }
+  /**
+   * Writing on a phone. The tap that makes a box is also what raises the
+   * keyboard, so the focus has to survive the rest of that gesture; and the
+   * keyboard then covers the bottom half of the screen, which is exactly where
+   * a box tapped low on the board sits. The board slides up so what is being
+   * written stays in sight, and slides back when the keyboard goes away.
+   */
+  keepEditorUsableOnTouch(editor) {
+    if (!import_obsidian13.Platform.isMobile) return;
+    window.setTimeout(() => {
+      if (editor.isConnected && document.activeElement !== editor) editor.focus();
+    }, 0);
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    let lifted = 0;
+    const settle = () => {
+      if (!editor.isConnected) return;
+      const covered = window.innerHeight - (viewport.height + viewport.offsetTop);
+      const keyboard = covered > 120 ? covered : 0;
+      const box = editor.getBoundingClientRect();
+      const room = window.innerHeight - keyboard - 12;
+      const restingBottom = box.bottom + lifted;
+      const restingTop = box.top + lifted;
+      const wanted = restingBottom > room ? Math.min(restingBottom - room, Math.max(0, restingTop - 150)) : 0;
+      const delta = wanted - lifted;
+      if (Math.abs(delta) < 1) return;
+      lifted = wanted;
+      this.data.viewTransform.y -= delta;
+      this.applyStageTransform();
+      this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+    };
+    const stop = () => {
+      viewport.removeEventListener("resize", settle);
+      viewport.removeEventListener("scroll", settle);
+      if (lifted) {
+        this.data.viewTransform.y += lifted;
+        lifted = 0;
+        this.applyStageTransform();
+        this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+      }
+    };
+    viewport.addEventListener("resize", settle);
+    viewport.addEventListener("scroll", settle);
+    editor.addEventListener("blur", stop, { once: true });
+    this.register(stop);
+    window.setTimeout(settle, 250);
+  }
   beginTextEdit(tb, el) {
     if (this.activeTextSourceEl === el && this.activeTextEditor) {
       this.activeTextEditor.focus();
@@ -67225,6 +67279,7 @@ ${rows.join("\n")}`);
     const openedAt = performance.now();
     editor.focus();
     editor.setSelectionRange(editor.value.length, editor.value.length);
+    this.keepEditorUsableOnTouch(editor);
     editor.addEventListener("pointerdown", (e) => e.stopPropagation());
     editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
     editor.addEventListener("input", () => {
@@ -67301,6 +67356,7 @@ ${rows.join("\n")}`);
     editor.focus();
     const end = editableText(editor).length;
     selectOffsets(editor, end, end);
+    this.keepEditorUsableOnTouch(editor);
     editor.addEventListener("pointerdown", (e) => e.stopPropagation());
     editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
     editor.addEventListener("paste", (e) => {
@@ -68290,7 +68346,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.5" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.6" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
