@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.8.6
+
+### Fixed
+
+- A gesture that starts on the board belongs to the board. Obsidian reads swipes across the app to open its sidebars and its own panels, so a stroke drawn from one side, or a hand moving across the page, could be interrupted by the app sliding something over it. Touches that land on the canvas stop there now, on a phone and on a tablet alike; a touch inside a text box still reaches the app, which is what places the caret and raises the keyboard.
+- Writing on a phone. Tapping with the text tool cancelled its own press, which is what stops a phone from raising the keyboard for the box that just appeared, and the box was left focused only until the tap finished. A finger's press is left alone now and the focus is held through the rest of the gesture.
+- The keyboard covered what was being written: a box tapped low on the page sat behind it with no way to see the words. The board slides up by exactly what is needed — never past the top bars — and slides back when the keyboard closes.
+
+### Tooling
+
+- `dev-harness/run76.mjs` runs the phone and the tablet through it: a gesture on the canvas reaching the app, a gesture inside a text box not reaching it, the tap that makes a box keeping its focus, what is typed being kept, and a raised keyboard moving the board up and letting it back down.
+
 ## 2.8.5
 
 Same plugin as 2.8.4, published again so the community catalogue check runs against a release made after its last attempt.

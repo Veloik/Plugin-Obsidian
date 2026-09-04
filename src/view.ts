@@ -1148,6 +1148,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.registerDomEvent(window, "pointerup", (e) => this.onPointerUp(e));
 		this.registerDomEvent(window, "pointercancel", (e) => this.onPointerUp(e));
 
+		// A touch that lands on the board belongs to the board. Obsidian reads
+		// swipes across the app to open its sidebars and its own menus, and one
+		// of those starting inside a stroke means the drawing is interrupted by
+		// a panel. The gesture stops here instead of reaching the app around us.
+		for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"]) {
+			this.registerDomEvent(this.workspaceEl, type as "touchstart", (e: TouchEvent) => {
+				// Typing in a box needs the app's own handling of the caret.
+				const target = e.target as HTMLElement | null;
+				if (target?.closest("input, textarea, [contenteditable='true']")) return;
+				e.stopPropagation();
+			});
+		}
+
 		this.registerDomEvent(this.workspaceEl, "wheel", (e) => this.onWheel(e), { passive: false });
 
 		this.registerDomEvent(this.workspaceEl, "contextmenu", (e) => {
@@ -1643,7 +1656,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.hideTextPlacementHint();
 			// Cancelling pointerdown stops the browser's own focus change,
 			// which otherwise blurred the freshly focused editor immediately.
-			e.preventDefault();
+			// A finger is left alone: cancelling its press is what stops a phone
+			// from raising its keyboard for the box that just appeared.
+			if (e.pointerType !== "touch") e.preventDefault();
 			// Like OneNote: the first click outside only finishes the edit.
 			if (wasEditing) return;
 			this.createTextBoxAt(pt.x, pt.y);
@@ -5153,6 +5168,59 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		return el;
 	}
 
+	/**
+	 * Writing on a phone. The tap that makes a box is also what raises the
+	 * keyboard, so the focus has to survive the rest of that gesture; and the
+	 * keyboard then covers the bottom half of the screen, which is exactly where
+	 * a box tapped low on the board sits. The board slides up so what is being
+	 * written stays in sight, and slides back when the keyboard goes away.
+	 */
+	private keepEditorUsableOnTouch(editor: HTMLElement): void {
+		if (!Platform.isMobile) return;
+		// A synthesised tap can move focus away right after it was given.
+		window.setTimeout(() => {
+			if (editor.isConnected && document.activeElement !== editor) editor.focus();
+		}, 0);
+
+		const viewport = window.visualViewport;
+		if (!viewport) return;
+		let lifted = 0;
+		const settle = () => {
+			if (!editor.isConnected) return;
+			const covered = window.innerHeight - (viewport.height + viewport.offsetTop);
+			const keyboard = covered > 120 ? covered : 0;
+			const box = editor.getBoundingClientRect();
+			const room = window.innerHeight - keyboard - 12;
+			// Measured from where the box would sit with no lift at all, or the
+			// answer would change the moment it moved and the board would jitter.
+			const restingBottom = box.bottom + lifted;
+			const restingTop = box.top + lifted;
+			// Only ever move by what is needed, and never past the top docks.
+			const wanted = restingBottom > room ? Math.min(restingBottom - room, Math.max(0, restingTop - 150)) : 0;
+			const delta = wanted - lifted;
+			if (Math.abs(delta) < 1) return;
+			lifted = wanted;
+			this.data.viewTransform.y -= delta;
+			this.applyStageTransform();
+			this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+		};
+		const stop = () => {
+			viewport.removeEventListener("resize", settle);
+			viewport.removeEventListener("scroll", settle);
+			if (lifted) {
+				this.data.viewTransform.y += lifted;
+				lifted = 0;
+				this.applyStageTransform();
+				this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+			}
+		};
+		viewport.addEventListener("resize", settle);
+		viewport.addEventListener("scroll", settle);
+		editor.addEventListener("blur", stop, { once: true });
+		this.register(stop);
+		window.setTimeout(settle, 250);
+	}
+
 	private beginTextEdit(tb: TextBox, el: HTMLElement): void {
 		if (this.activeTextSourceEl === el && this.activeTextEditor) {
 			this.activeTextEditor.focus();
@@ -5193,6 +5261,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const openedAt = performance.now();
 		editor.focus();
 		editor.setSelectionRange(editor.value.length, editor.value.length);
+		this.keepEditorUsableOnTouch(editor);
 		editor.addEventListener("pointerdown", (e) => e.stopPropagation());
 		editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
 		editor.addEventListener("input", () => {
@@ -5270,6 +5339,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		editor.focus();
 		const end = editableText(editor).length;
 		selectOffsets(editor, end, end);
+		this.keepEditorUsableOnTouch(editor);
 
 		editor.addEventListener("pointerdown", (e) => e.stopPropagation());
 		editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
