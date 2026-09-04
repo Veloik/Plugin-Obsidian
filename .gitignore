@@ -9,3 +9,4 @@ dev-harness/node_modules/
 /dev-harness/video/
 *.log
 .DS_Store
+dev-harness/missing-en.json

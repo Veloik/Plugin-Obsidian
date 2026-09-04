@@ -62,3 +62,17 @@ node run42.mjs  # registro de pizarras para ajustes en vivo, X de glifo y OCR de
 node run43.mjs  # diálogo de ecuación a mano (estilo OneNote) detrás del botón de fórmula
 node run45.mjs  # reconocimiento de fórmulas (Tesseract eng + PSM 7 + lista blanca ASCII)
 node run46.mjs  # traducción con el modelo local, respaldo web y modo estrictamente local
+node run62.mjs  # subrayador de punta biselada sobre texto, marcas en linea y tipografias nuevas
+node run65.mjs  # texto enriquecido: subrayado, negrita, color y tinte por palabra, listas
+node run66.mjs  # cuadros antiguos con marcas, notas adhesivas, saltos de linea y deshacer
+node run67.mjs  # quitar el color y el resaltado de un fragmento (puntos tachados y boton Tx)
+node run68.mjs  # traductor: servicios gratuitos, tiempo de respuesta y estado
+node run69.mjs  # traductor: el segundo servicio cuando el primero falla, y el modo privado sin red
+node run70.mjs  # lienzo de dibujo grande en la nota y su reflejo en la tarjeta
+node run71.mjs  # pegar rutas, wikilinks y obsidian:// como tarjeta de nota
+node run72.mjs  # la goma dibujada (boton, cursor y panel) y la vista previa de una nota con codigo
+
+Escenarios que no pasan a proposito: run10 prueba una caja de formula en la barra que ya no
+existe (la sustituyo el dialogo de ecuacion, cubierto por run43/run59/run60/run61), y run15
+depende de que Tesseract reconozca texto real en la captura, asi que necesita red y una
+region legible. El resto del banco esta en verde.

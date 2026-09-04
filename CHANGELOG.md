@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.8.0
+
+### Added
+
+- The eraser on the board is the one drawn for it — the tool button, the pointer that follows the pen and the header of its panel all show the same drawing, keyed onto transparency and embedded in the plugin (`src/eraser-sprite.ts`, rebuilt by `dev-harness/make-eraser-sprite.py`).
+- Pasting the path of something in the vault drops its card on the board, the same card the notes and boards panel shows, instead of the address as text. It understands the full path copied from the file explorer, a path relative to the vault, a `[[wikilink]]`, a `file://` URL and Obsidian's own `obsidian://open` address; a file outside the vault still pastes as text and says why.
+- Text boxes are edited as they will look. A box used to be a textarea, so formatting was typed as marks and only turned into formatting once you left the box, and a colour could only ever belong to the whole box. Prose now edits in place: select a word and make it bold, italic, underlined, struck through, highlighted or code, give it its own ink colour or its own highlight tint, and see it while you type. Ctrl+B, Ctrl+I and Ctrl+U work as everywhere else, and with nothing selected a command arms the style for what you type next.
+- Every fragment can carry its own highlight tint, picked from the seven felt colours in the bar, and its own colour from the ink row next to them. Each row opens with a crossed-out dot that takes it back off — the ink of the box again, or no highlight at all — and a button next to the style ones clears every bit of formatting from the selection at once.
+- An empty text box says what it is for instead of showing a bare caret.
+- Seven more typefaces for text boxes — handwritten, marker, elegant, slab, condensed, typewriter and display — next to the four that were already there. Every family lives in one table now (`src/fonts.ts`), which the ribbon panel, the format bar, the canvas and the PDF export all read.
+
+### Changed
+
+- The preview on a note card reads like the note. It used to print the first five lines whatever they were, so a note that opens with a code block showed its JavaScript on the board; fenced code, HTML, embedded images and the punctuation of links and emphasis are now dropped, and what is left is the prose.
+- Translating answers straight away. It used to go to a model on this computer first, which meant tens of seconds for a paragraph and nothing at all on a machine with no model; it now asks two free public endpoints that need no key, no account and have no daily cap, and comes back in about half a second (MyMemory stays behind them as the last door). A model on this computer is still used when the web is unreachable, and the "translate only on your computer" setting — off by default now — keeps everything local for anyone who prefers that.
+- The drawing pad of a note is as big as the window allows. The dialog opens out to about twice the width when you switch to the board tab and comes back in for writing, the pad grows with it (996 x 569 on a 1400 x 900 window, against the old fixed 560 x 320), and it is drawn at twice the pixels so a note shown large stays sharp. The card that appears on hover shows the drawing at 522 x 299 rather than 320 x 183. Drawings made before this still line up with the images pinned around them.
+- The highlighter lays down one even band. It used to be a plain translucent line; it is now the print of a flat felt tip, slanted at both ends the way a real marker leaves them, the same width whichever way you swipe, and multiplied where two strokes cross so they deepen instead of washing each other out. The band of a stroke is built once and kept, so panning and zooming a board covered in markers costs about two milliseconds a frame.
+- A box keeps its words in `text` as plain Markdown (`**negrita**`, `==resaltado==`) next to the runs the editor writes, so search, the summary tools, the shared boards and the Markdown exports go on reading a box as text. Colours are the one thing marks cannot say: they live only in the runs. Boxes written before this release open with their marks already turned into real formatting.
+
+### Fixed
+
+- Bulleting a whole box left the caret on its first line, so the next thing typed went in the wrong place; it now waits at the end, ready for the next item.
+- The floating format bar folded into three rows on a normal window. Its buttons and swatches are a size smaller and it fits in two.
+
 ## 2.7.0
 
 ### Added

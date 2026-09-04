@@ -50,7 +50,11 @@ await shot(page, "01-lasso");
 await tool("text");
 await page.mouse.click(1000, 300);
 await sleep(120);
-await page.evaluate(() => { const ed = document.querySelector(".notelens-text-editor"); ed.value = "Ver [[Apuntes de física|los apuntes]] y https://es.wikipedia.org/wiki/Fuerza para repasar"; ed.dispatchEvent(new Event("input")); });
+await page.evaluate(() => {
+	const ed = document.querySelector(".notelens-text-editor");
+	ed.focus();
+	document.execCommand("insertText", false, "Ver [[Apuntes de física|los apuntes]] y https://es.wikipedia.org/wiki/Fuerza para repasar");
+});
 await page.mouse.click(1200, 820);
 await sleep(150);
 console.log("links:", await page.evaluate(() => [...document.querySelectorAll(".notelens-link")].map(a => [a.className, a.textContent, a.title])));

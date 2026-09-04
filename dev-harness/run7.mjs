@@ -51,7 +51,11 @@ await shot(page, "02-code-rendered");
 await tool("text");
 await page.mouse.click(300, 650);
 await sleep(120);
-await page.evaluate(() => { const ed = document.querySelector(".notelens-text-editor"); ed.value = "```ts\nconst saludo: string = \"hola\";\nconsole.log(saludo);\n```"; ed.dispatchEvent(new Event("input")); });
+await page.evaluate(() => {
+	const ed = document.querySelector(".notelens-text-editor");
+	ed.focus();
+	document.execCommand("insertText", false, "```ts\nconst saludo: string = \"hola\";\nconsole.log(saludo);\n```");
+});
 await page.mouse.click(1200, 820);
 await sleep(200);
 console.log("fenced:", JSON.stringify(await texts()));

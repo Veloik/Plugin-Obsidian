@@ -23,7 +23,7 @@ await page.evaluate(() => { __view.setTool("select"); __view.setPenColor("#e2e8f
 await tool("pen"); await drag([[260, 300], [420, 260], [560, 320]]);
 await page.evaluate(() => { __view.setTool("shape"); __view.setShapeKind("rectangle"); });
 await drag([[280, 380], [520, 480]]);
-await page.evaluate(() => { __view.setTool("text"); __view.createTextBoxAt(300, 520, undefined, "text"); const ed = __view.activeTextEditor; if (ed) ed.value = "Girar esto"; __view.commitTextEditor(); __view.insertTableAt(600, 380); __view.setTool("select"); });
+await page.evaluate(() => { __view.setTool("text"); __view.createTextBoxAt(300, 520, undefined, "text"); const ed = __view.activeTextEditor; if (ed) { ed.focus(); document.execCommand("insertText", false, "Girar esto"); } __view.commitTextEditor(); __view.insertTableAt(600, 380); __view.setTool("select"); });
 await page.mouse.click(1100, 800); await sleep(80);
 await tool("select");
 await drag([[200, 220], [1200, 720]]); await sleep(100);

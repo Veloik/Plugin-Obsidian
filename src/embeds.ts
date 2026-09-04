@@ -5,6 +5,7 @@ import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
 import { VIDEO_EXTENSIONS, clamp, toRemoteVideoEmbed } from "./tools";
 import { tr } from "./i18n";
+import { notePreview } from "./rich-text";
 
 /** Callbacks the embed frames need from the view. */
 export interface EmbedHost {
@@ -314,8 +315,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 		card.addClass("is-missing");
 	} else if (embed.kind === "note") {
 		void host.app.vault.cachedRead(file).then(content => {
-			const lines = content.replace(/^---[\s\S]*?---\s*/, "").split(/\r?\n/).map(l => l.replace(/^#+\s*/, "").replace(/[*_`>]/g, "").trim()).filter(Boolean);
-			preview.setText(lines.slice(0, 5).join("\n") || tr("Nota vacía"));
+			preview.setText(notePreview(content) || tr("Nota vacía"));
 		}).catch(() => preview.setText(""));
 	} else {
 		preview.setText(tr("Doble clic para ir a esta pizarra."));

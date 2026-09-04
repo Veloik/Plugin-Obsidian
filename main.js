@@ -5686,7 +5686,6 @@ var en = {
   "Abrir p\xE1gina": "Open page",
   "Acciones locales": "Local actions",
   "Acercar": "Zoom in",
-  "Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.": "On by default: your text never leaves your computer and there are no quotas. You need a local model downloaded.",
   "Activado: el dedo dibuja con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: un dedo siempre desplaza.": "On: your finger draws with the active tool; two fingers pan and zoom. Off: one finger always pans.",
   "Adjuntar archivo de la b\xF3veda": "Attach a file from the vault",
   "Adjuntar cualquier archivo de la b\xF3veda": "Attach any file from the vault",
@@ -6124,14 +6123,21 @@ var en = {
   "Traducci\xF3n": "Translation",
   "Traducci\xF3n a\xF1adida a la pizarra.": "Translation added to the board.",
   "Traducci\xF3n copiada": "Translation copied",
-  "Traduciendo con el servicio gratuito\u2026": "Translating with the free service\u2026",
   "Traduciendo con tu modelo local\u2026": "Translating with your local model\u2026",
   "Traduciendo\u2026": "Translating\u2026",
   "Traducir": "Translate",
   "Traducir de \u2026 a \u2026": "Translate from \u2026 to \u2026",
   "Traducir este cuadro": "Translate this box",
-  "Traducir solo con el modelo local": "Translate with the local model only",
   "Traducir texto": "Translate text",
+  "Traducir solo en tu ordenador": "Translate only on your computer",
+  "Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Act\xEDvalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante m\xE1s.": "Off, it translates instantly through free services with no key and no quota. Turn it on to keep your text on this computer: the local model translates it, which is private but takes considerably longer.",
+  "Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado.": "Languages the Translate button uses on the selected text.",
+  "Traducidos {p0} cuadros seleccionados": "Translated {p0} selected boxes",
+  "Traducido el cuadro seleccionado": "Translated the selected box",
+  "Traducido el cuadro que est\xE1s editando": "Translated the box you are editing",
+  "Traducci\xF3n lista": "Translation ready",
+  "traducci\xF3n instant\xE1nea": "instant translation",
+  "modelo local": "local model",
   "Traductor": "Translator",
   "Trazo ancho": "Wide stroke",
   "Trazo con el que empieza la herramienta de l\xE1piz.": "The stroke the pencil tool starts with.",
@@ -6196,6 +6202,24 @@ var en = {
   "Lista con flechas (\u2192)": "Arrow list (\u2192)",
   "Lista con guiones (-)": "Dashed list (-)",
   "Mono": "Mono",
+  "C\xF3digo en l\xEDnea": "Inline code",
+  "Negrita (Ctrl+B)": "Bold (Ctrl+B)",
+  "Cursiva (Ctrl+I)": "Italic (Ctrl+I)",
+  "Subrayado (Ctrl+U)": "Underline (Ctrl+U)",
+  "Tachado": "Strikethrough",
+  "Resaltar lo seleccionado": "Highlight the selection",
+  "Quitar el formato de lo seleccionado": "Clear the formatting of the selection",
+  "Color del texto seleccionado": "Colour of the selected text",
+  "Color normal del cuadro": "The normal colour of the box",
+  "Sin resaltado": "No highlight",
+  "Escribe aqu\xED": "Write here",
+  "Ese archivo est\xE1 fuera de la b\xF3veda, as\xED que se pega como texto.": "That file is outside the vault, so it is pasted as text.",
+  "Color del resaltado": "Highlight colour",
+  "Manuscrita": "Handwritten",
+  "Elegante": "Elegant",
+  "Estrecha": "Condensed",
+  "M\xE1quina de escribir": "Typewriter",
+  "Titular": "Display",
   "Duplicar (Ctrl+D)": "Duplicate (Ctrl+D)",
   "Girar 90\xB0 a la izquierda": "Rotate 90\xB0 left",
   "Girar 90\xB0 a la derecha": "Rotate 90\xB0 right",
@@ -21022,6 +21046,39 @@ function unzipSync(data, opts) {
 }
 
 // src/types.ts
+function sanitizeRuns(raw) {
+  const runs = [];
+  for (const item of raw) {
+    const r = item;
+    const text = typeof r?.text === "string" ? r.text : "";
+    if (!text) continue;
+    runs.push({
+      text,
+      bold: r.bold === true || void 0,
+      italic: r.italic === true || void 0,
+      underline: r.underline === true || void 0,
+      strike: r.strike === true || void 0,
+      code: r.code === true || void 0,
+      color: typeof r.color === "string" ? r.color : void 0,
+      mark: typeof r.mark === "string" ? r.mark : void 0
+    });
+  }
+  return runs.length ? runs : void 0;
+}
+var CANVAS_FONT_IDS = [
+  "sans",
+  "serif",
+  "rounded",
+  "mono",
+  "handwriting",
+  "marker",
+  "elegant",
+  "slab",
+  "condensed",
+  "typewriter",
+  "display"
+];
+var isCanvasFont = (value) => typeof value === "string" && CANVAS_FONT_IDS.includes(value);
 var DOC_VERSION = 10;
 var DEFAULT_BG_COLOR = "#0b0e14";
 var DEFAULT_LINE_COLOR = "#64748b";
@@ -21202,11 +21259,14 @@ function migrateDocument(raw) {
         bold: t3.bold === true,
         italic: t3.italic === true,
         underline: t3.underline === true,
+        strike: t3.strike === true,
+        highlight: typeof t3.highlight === "string" ? t3.highlight : void 0,
+        runs: Array.isArray(t3.runs) ? sanitizeRuns(t3.runs) : void 0,
         align: t3.align === "center" || t3.align === "right" ? t3.align : "left",
         stickyColor: typeof t3.stickyColor === "string" ? t3.stickyColor : void 0,
         w: typeof t3.w === "number" ? Math.min(Math.max(t3.w, 120), 900) : void 0,
         h: typeof t3.h === "number" ? Math.min(Math.max(t3.h, 34), 900) : void 0,
-        fontFamily: t3.fontFamily === "serif" || t3.fontFamily === "rounded" || t3.fontFamily === "mono" ? t3.fontFamily : "sans",
+        fontFamily: isCanvasFont(t3.fontFamily) ? t3.fontFamily : "sans",
         autoWidth: t3.autoWidth === true,
         rotation: typeof t3.rotation === "number" ? t3.rotation : void 0,
         variant: t3.variant === "code" || t3.variant === "math" ? t3.variant : "text",
@@ -21463,30 +21523,29 @@ var LANGUAGES = [
   { code: "ja", label: "\u65E5\u672C\u8A9E" },
   { code: "ko", label: "\uD55C\uAD6D\uC5B4" }
 ];
-var MAX_REQUEST_BYTES = 450;
 function byteLength(value) {
   return new TextEncoder().encode(value).byteLength;
 }
-function splitForTranslation(value) {
+function splitForTranslation(value, maxBytes) {
   const parts = value.split(/(\s+)/);
   const chunks = [];
   let current = "";
   for (const part of parts) {
-    if (byteLength(part) > MAX_REQUEST_BYTES) {
+    if (byteLength(part) > maxBytes) {
       if (current) {
         chunks.push(current);
         current = "";
       }
       let segment = "";
       for (const char of part) {
-        if (byteLength(segment + char) > MAX_REQUEST_BYTES) {
+        if (byteLength(segment + char) > maxBytes) {
           chunks.push(segment);
           segment = "";
         }
         segment += char;
       }
       if (segment) chunks.push(segment);
-    } else if (byteLength(current + part) > MAX_REQUEST_BYTES) {
+    } else if (byteLength(current + part) > maxBytes) {
       chunks.push(current);
       current = part;
     } else {
@@ -21516,10 +21575,28 @@ function decodeEntities(value) {
     return NAMED_ENTITIES[body.toLowerCase()] ?? match;
   });
 }
-async function translateText(source, from, to) {
-  if (!source.trim()) return "";
-  if (from === to) return source;
-  const chunks = splitForTranslation(source);
+async function translateFast(source, from, to, endpoint) {
+  const out = [];
+  for (const chunk of splitForTranslation(source, 1400)) {
+    const query = encodeURIComponent(chunk);
+    const url = endpoint === "gtx" ? `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${query}` : `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${from}&tl=${to}&q=${query}`;
+    const response = await (0, import_obsidian6.requestUrl)({ url, method: "GET", throw: false });
+    if (response.status >= 400) throw new Error(`El servicio de traducci\xF3n respondi\xF3 ${response.status}.`);
+    let data;
+    try {
+      data = JSON.parse(response.text);
+    } catch {
+      throw new Error("El servicio de traducci\xF3n devolvi\xF3 una respuesta ilegible.");
+    }
+    const pieces = endpoint === "gtx" ? (Array.isArray(data) && Array.isArray(data[0]) ? data[0] : []).map((part) => Array.isArray(part) && typeof part[0] === "string" ? part[0] : "") : (Array.isArray(data) ? data : []).map((part) => typeof part === "string" ? part : "");
+    const text = pieces.join("");
+    if (!text.trim()) throw new Error("El servicio no ha devuelto ninguna traducci\xF3n para este texto.");
+    out.push(text);
+  }
+  return out.join("");
+}
+async function translateViaMyMemory(source, from, to) {
+  const chunks = splitForTranslation(source, 450);
   const translated = [];
   for (const chunk of chunks) {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${encodeURIComponent(`${from}|${to}`)}&mt=1`;
@@ -21548,6 +21625,24 @@ async function translateText(source, from, to) {
     translated.push(decodeEntities(result));
   }
   return translated.join("");
+}
+async function translateText(source, from, to) {
+  if (!source.trim()) return "";
+  if (from === to) return source;
+  let last = null;
+  for (const attempt of [
+    () => translateFast(source, from, to, "gtx"),
+    () => translateFast(source, from, to, "dict"),
+    () => translateViaMyMemory(source, from, to)
+  ]) {
+    try {
+      const text = await attempt();
+      if (text.trim()) return text;
+    } catch (error) {
+      last = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+  throw last ?? new Error("No se pudo traducir. Comprueba la conexi\xF3n e int\xE9ntalo de nuevo.");
 }
 var LANGUAGE_NAMES = {
   es: "espa\xF1ol",
@@ -21646,30 +21741,41 @@ function createTranslatorPanel(host, container) {
     translateBtn.disabled = true;
     status.setText(tr("Traduciendo\u2026"));
     try {
-      let translated = null;
-      let engine = "";
-      try {
-        const client = new LocalModelClient(host);
+      const onModel = async () => {
         status.setText(tr("Traduciendo con tu modelo local\u2026"));
-        translated = await client.translate(
+        return new LocalModelClient(host).translate(
           source.value,
           LANGUAGE_NAMES[fromSelect.value] ?? fromSelect.value,
           LANGUAGE_NAMES[toSelect.value] ?? toSelect.value
         );
-        if (translated) engine = "modelo local";
-      } catch {
-      }
-      if (!translated && host.translationLocalOnly) {
-        throw new Error("No hay ning\xFAn modelo local disponible y has pedido traducir solo en local. Descarga uno o desactiva esa opci\xF3n en los ajustes.");
-      }
-      if (!translated) {
-        status.setText(tr("Traduciendo con el servicio gratuito\u2026"));
-        translated = await translateText(source.value, fromSelect.value, toSelect.value);
-        engine = "servicio web";
+      };
+      let translated = null;
+      let engine = "";
+      if (host.translationPrivateOnly) {
+        translated = await onModel();
+        engine = tr("modelo local");
+        if (!translated) throw new Error("No hay ning\xFAn modelo local disponible y has pedido traducir solo en tu ordenador. Descarga uno o desactiva esa opci\xF3n en los ajustes.");
+      } else {
+        let webError = null;
+        try {
+          translated = await translateText(source.value, fromSelect.value, toSelect.value);
+          engine = tr("traducci\xF3n instant\xE1nea");
+        } catch (error) {
+          webError = error instanceof Error ? error : new Error(String(error));
+        }
+        if (!translated) {
+          try {
+            translated = await onModel();
+            if (translated) engine = tr("modelo local");
+          } catch {
+          }
+        }
+        if (!translated && webError) throw webError;
       }
       if (id !== running) return;
+      if (!translated) throw new Error("No se pudo traducir. Comprueba la conexi\xF3n e int\xE9ntalo de nuevo.");
       result.value = translated;
-      const targetStatus = current.kind === "selection" ? current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados` : "Traducido el cuadro seleccionado" : current.kind === "editor" ? "Traducido el cuadro que est\xE1s editando" : "Traducci\xF3n lista";
+      const targetStatus = current.kind === "selection" ? current.count > 1 ? tr("Traducidos {p0} cuadros seleccionados", { p0: current.count }) : tr("Traducido el cuadro seleccionado") : current.kind === "editor" ? tr("Traducido el cuadro que est\xE1s editando") : tr("Traducci\xF3n lista");
       status.setText(tr("{p0} \xB7 {p1}.", { p0: targetStatus, p1: engine }));
     } catch (error) {
       if (id !== running) return;
@@ -34717,6 +34823,154 @@ E.API.PDFObject = (function() {
   }, e;
 })();
 
+// src/fonts.ts
+var CANVAS_FONTS = [
+  { id: "sans", label: "Interfaz", css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", pdf: "helvetica" },
+  { id: "serif", label: "Cl\xE1sica", css: "Georgia, 'Times New Roman', serif", pdf: "times" },
+  { id: "rounded", label: "Redondeada", css: "'Trebuchet MS', 'Segoe UI', sans-serif", pdf: "helvetica" },
+  { id: "mono", label: "Monoespaciada", css: "ui-monospace, SFMono-Regular, Consolas, monospace", pdf: "courier" },
+  { id: "handwriting", label: "Manuscrita", css: "'Segoe Script', 'Bradley Hand', 'Brush Script MT', cursive", pdf: "times" },
+  { id: "marker", label: "Rotulador", css: "'Comic Sans MS', 'Segoe Print', 'Chalkboard SE', cursive", pdf: "helvetica" },
+  { id: "elegant", label: "Elegante", css: "Garamond, 'Palatino Linotype', 'Book Antiqua', Palatino, serif", pdf: "times" },
+  { id: "slab", label: "Slab", css: "Rockwell, 'Roboto Slab', 'Bookman Old Style', Georgia, serif", pdf: "times" },
+  { id: "condensed", label: "Estrecha", css: "'Arial Narrow', 'Roboto Condensed', 'Segoe UI', sans-serif", pdf: "helvetica" },
+  { id: "typewriter", label: "M\xE1quina de escribir", css: "'Courier New', Courier, monospace", pdf: "courier" },
+  { id: "display", label: "Titular", css: "Impact, Haettenschweiler, 'Arial Black', sans-serif", pdf: "helvetica" }
+];
+function fontStack(font) {
+  return (CANVAS_FONTS.find((f3) => f3.id === font) ?? CANVAS_FONTS[0]).css;
+}
+function pdfFontFor(font) {
+  return (CANVAS_FONTS.find((f3) => f3.id === font) ?? CANVAS_FONTS[0]).pdf;
+}
+
+// src/rich-text.ts
+var INLINE_MARKERS = [
+  { marker: "**", style: "bold" },
+  { marker: "__", style: "underline" },
+  { marker: "==", style: "mark" },
+  { marker: "~~", style: "strike" },
+  { marker: "*", style: "italic" },
+  { marker: "`", style: "code" }
+];
+function closingIndex(text, marker, from) {
+  const stop = text.indexOf("\n\n", from);
+  const limit = stop === -1 ? text.length : stop;
+  if (/\s/.test(text[from] ?? " ")) return -1;
+  for (let at2 = text.indexOf(marker, from); at2 !== -1 && at2 < limit; at2 = text.indexOf(marker, at2 + 1)) {
+    if (at2 > from && !/\s/.test(text[at2 - 1])) return at2;
+  }
+  return -1;
+}
+function parseInline(text, style = {}, depth = 0) {
+  const runs = [];
+  let plain = "";
+  const flush = () => {
+    if (plain) {
+      runs.push({ ...style, text: plain });
+      plain = "";
+    }
+  };
+  for (let i4 = 0; i4 < text.length; ) {
+    const hit = depth < 4 ? INLINE_MARKERS.find((m3) => text.startsWith(m3.marker, i4) && !style[m3.style]) : void 0;
+    const close = hit ? closingIndex(text, hit.marker, i4 + hit.marker.length) : -1;
+    if (!hit || close === -1) {
+      plain += text[i4];
+      i4 += 1;
+      continue;
+    }
+    flush();
+    const inner = text.slice(i4 + hit.marker.length, close);
+    if (hit.style === "code") runs.push({ ...style, code: true, text: inner });
+    else runs.push(...parseInline(inner, { ...style, [hit.style]: true }, depth + 1));
+    i4 = close + hit.marker.length;
+  }
+  flush();
+  return runs;
+}
+function stripInlineMarks(text) {
+  return text.split("\n").map((line2) => parseInline(line2).map((run) => run.text).join("")).join("\n");
+}
+function runsFromInline(text, tint) {
+  return parseInline(text).map((run) => ({
+    text: run.text,
+    bold: run.bold,
+    italic: run.italic,
+    underline: run.underline,
+    strike: run.strike,
+    code: run.code,
+    mark: run.mark ? tint : void 0
+  }));
+}
+function runsToMarked(runs) {
+  let out = "";
+  for (const run of runs) {
+    if (!run.text) continue;
+    const [, lead, body, trail] = /^(\s*)([\s\S]*?)(\s*)$/.exec(run.text);
+    if (!body) {
+      out += run.text;
+      continue;
+    }
+    let piece = body;
+    if (run.code) piece = `\`${piece}\``;
+    if (run.mark) piece = `==${piece}==`;
+    if (run.strike) piece = `~~${piece}~~`;
+    if (run.underline) piece = `__${piece}__`;
+    if (run.italic) piece = `*${piece}*`;
+    if (run.bold) piece = `**${piece}**`;
+    out += lead + piece + trail;
+  }
+  return out;
+}
+function runsToPlain(runs) {
+  return runs.map((run) => run.text).join("");
+}
+function mergeRuns(runs) {
+  const out = [];
+  for (const run of runs) {
+    if (!run.text) continue;
+    const last = out[out.length - 1];
+    const same = last && !!last.bold === !!run.bold && !!last.italic === !!run.italic && !!last.underline === !!run.underline && !!last.strike === !!run.strike && !!last.code === !!run.code && last.color === run.color && last.mark === run.mark;
+    if (same) last.text += run.text;
+    else out.push({ ...run });
+  }
+  return out;
+}
+var LIST_PREFIX = /^(\s*)(?:[•·]|\d+[.)]|→|-->|->|[-–])\s+/;
+var LIST_MARK = { bullet: "\u2022 ", number: "1. ", arrow: "\u2192 ", dash: "- " };
+function listKindOf(line2) {
+  const m3 = /^\s*(?:([•·])|(\d+[.)])|(→|-->|->)|([-–]))\s+/.exec(line2);
+  if (!m3) return null;
+  return m3[1] ? "bullet" : m3[2] ? "number" : m3[3] ? "arrow" : "dash";
+}
+function planListToggle(value, selStart, selEnd, kind) {
+  const wholeBox = selStart === selEnd;
+  const from = wholeBox ? 0 : value.lastIndexOf("\n", selStart - 1) + 1;
+  const until = wholeBox ? value.length : value.indexOf("\n", selEnd) === -1 ? value.length : value.indexOf("\n", selEnd);
+  const lines = value.slice(from, until).split("\n");
+  const allHave = lines.every((l3) => !l3.trim() || listKindOf(l3) === kind);
+  const edits = [];
+  let at2 = from;
+  let counter = 1;
+  for (const line2 of lines) {
+    const indent = /^\s*/.exec(line2)?.[0] ?? "";
+    const present = LIST_PREFIX.exec(line2);
+    if (line2.trim()) {
+      if (allHave && present) edits.push({ from: at2 + indent.length, to: at2 + present[0].length, text: "" });
+      else if (!allHave) {
+        const mark = kind === "number" ? `${counter++}. ` : LIST_MARK[kind];
+        edits.push({ from: at2 + indent.length, to: at2 + (present?.[0].length ?? indent.length), text: mark });
+      }
+    }
+    at2 += line2.length + 1;
+  }
+  return edits;
+}
+function notePreview(content, lines = 5) {
+  const body = content.replace(/^---[\s\S]*?---\s*/, "").replace(/```[\s\S]*?(```|$)/g, " ").replace(/~~~[\s\S]*?(~~~|$)/g, " ").replace(/<[^>]*>/g, " ").replace(/!\[\[[^\]]*\]\]/g, " ").replace(/!\[[^\]]*\]\([^)]*\)/g, " ").replace(/\[\[([^\]|]+)(?:\|([^\]]*))?\]\]/g, (_m, target, alias) => alias || target).replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/`([^`]*)`/g, "$1");
+  return body.split(/\r?\n/).map((line2) => line2.replace(/^\s*>+\s*/, "").replace(/^\s*#{1,6}\s*/, "").replace(/^\s*[-*+]\s+/, "").replace(/^\s*\d+[.)]\s+/, "").replace(/[*_~]/g, "").trim()).filter((line2) => line2 && !/^\|/.test(line2) && !/^[-=:|\s]{3,}$/.test(line2)).slice(0, lines).join("\n");
+}
+
 // src/pdf-export.ts
 var A4_SCENE_W = 794;
 var A4_SCENE_H = 1123;
@@ -34894,12 +35148,13 @@ function drawText(pdf, page, doc, formulas) {
       pdf.setFillColor(sticky.r, sticky.g, sticky.b);
       pdf.roundedRect(x4, y3, box.w * SCENE_TO_MM, box.h * SCENE_TO_MM, 1.5, 1.5, "F");
     }
-    const family = text.fontFamily === "mono" || text.variant === "code" ? "courier" : text.fontFamily === "serif" ? "times" : "helvetica";
+    const family = text.variant === "code" ? "courier" : pdfFontFor(text.fontFamily);
     const style = text.bold ? text.italic ? "bolditalic" : "bold" : text.italic ? "italic" : "normal";
     pdf.setFont(family, style);
     pdf.setFontSize(Math.max(7, text.fontSize * 0.75));
     pdf.setTextColor(color.r, color.g, color.b);
-    const lines = pdf.splitTextToSize(text.text, Math.max(12, box.w * SCENE_TO_MM - 3));
+    const body = text.variant === "code" ? text.text : stripInlineMarks(text.text);
+    const lines = pdf.splitTextToSize(body, Math.max(12, box.w * SCENE_TO_MM - 3));
     pdf.text(lines, x4 + 1.5, y3 + text.fontSize * 0.28 + 1.5);
   }
 }
@@ -35116,11 +35371,81 @@ function opaqueColor(color) {
   const [r, g3, b3] = m3[1].split(",").map((s3) => s3.trim());
   return `rgb(${r}, ${g3}, ${b3})`;
 }
+var HIGHLIGHTER_NIB = -Math.PI * 0.36;
+function simplifyPath(pts, tolerance) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i4 = 1; i4 < pts.length - 1; i4++) {
+    const last = out[out.length - 1];
+    if (Math.hypot(pts[i4].x - last.x, pts[i4].y - last.y) >= tolerance) out.push(pts[i4]);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function smoothCenterline(pts) {
+  if (pts.length < 3) return pts;
+  const out = [pts[0]];
+  for (let i4 = 0; i4 < pts.length - 1; i4++) {
+    const a3 = pts[i4], b3 = pts[i4 + 1];
+    out.push({ x: a3.x * 0.75 + b3.x * 0.25, y: a3.y * 0.75 + b3.y * 0.25, p: a3.p });
+    out.push({ x: a3.x * 0.25 + b3.x * 0.75, y: a3.y * 0.25 + b3.y * 0.75, p: b3.p });
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function addPolygon(path2, corners) {
+  let area = 0;
+  for (let i4 = 0; i4 < corners.length; i4++) {
+    const a3 = corners[i4], b3 = corners[(i4 + 1) % corners.length];
+    area += a3[0] * b3[1] - b3[0] * a3[1];
+  }
+  const ring2 = area > 0 ? corners.slice().reverse() : corners;
+  path2.moveTo(ring2[0][0], ring2[0][1]);
+  for (let i4 = 1; i4 < ring2.length; i4++) path2.lineTo(ring2[i4][0], ring2[i4][1]);
+  path2.closePath();
+}
+function capSlide(dx, dy, nx, ny, half) {
+  const ux = Math.cos(HIGHLIGHTER_NIB), uy = Math.sin(HIGHLIGHTER_NIB);
+  const along = dx * uy - dy * ux;
+  if (Math.abs(along) < 1e-3) return 0;
+  return Math.max(-half * 1.2, Math.min(half * 1.2, -(nx * uy - ny * ux) / along));
+}
+function bandPath(pts, width) {
+  const half = width / 2;
+  const path2 = new Path2D();
+  if (pts.length === 1) {
+    const ux = Math.cos(HIGHLIGHTER_NIB) * half, uy = Math.sin(HIGHLIGHTER_NIB) * half;
+    const vx = -uy * 0.3, vy = ux * 0.3;
+    const { x: x4, y: y3 } = pts[0];
+    addPolygon(path2, [[x4 + ux + vx, y3 + uy + vy], [x4 - ux + vx, y3 - uy + vy], [x4 - ux - vx, y3 - uy - vy], [x4 + ux - vx, y3 + uy - vy]]);
+    return path2;
+  }
+  for (let i4 = 0; i4 < pts.length - 1; i4++) {
+    const p3 = pts[i4], q3 = pts[i4 + 1];
+    const dx = q3.x - p3.x, dy = q3.y - p3.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-4) continue;
+    const ex = dx / len, ey = dy / len;
+    const nx = -ey * half, ny = ex * half;
+    const head = i4 === 0 ? capSlide(ex, ey, nx, ny, half) : 0;
+    const tail = i4 === pts.length - 2 ? capSlide(ex, ey, nx, ny, half) : 0;
+    addPolygon(path2, [
+      [p3.x + nx + ex * head, p3.y + ny + ey * head],
+      [q3.x + nx + ex * tail, q3.y + ny + ey * tail],
+      [q3.x - nx - ex * tail, q3.y - ny - ey * tail],
+      [p3.x - nx - ex * head, p3.y - ny - ey * head]
+    ]);
+    if (i4 > 0) path2.arc(p3.x, p3.y, half, 0, Math.PI * 2, true);
+  }
+  return path2;
+}
 var CanvasRenderer = class {
   constructor(parent) {
     this.dpr = 1;
     /** Snapshot of every finished stroke, used while a whole-path stroke is drawn live. */
     this.liveBase = null;
+    /** Marker bands, kept per stroke so panning never rebuilds them. */
+    this.markerBands = /* @__PURE__ */ new WeakMap();
     this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
     const ctx = this.canvas.getContext("2d");
     if (!ctx) throw new Error("NoteLens: Canvas 2D context unavailable");
@@ -35150,6 +35475,10 @@ var CanvasRenderer = class {
   }
   drawStroke(stroke) {
     const pts = stroke.points;
+    if (stroke.type === "highlighter") {
+      this.drawHighlighter(stroke);
+      return;
+    }
     if (pts.length === 1) {
       this.drawDot(stroke, pts[0]);
       return;
@@ -35164,14 +35493,42 @@ var CanvasRenderer = class {
     }
   }
   /**
-   * Highlighter ink and any translucent ink are composited once as a single
-   * path. Stroking them segment by segment doubles the alpha wherever
-   * neighbouring segments overlap, so the ink looked blotchy and almost
-   * opaque no matter the opacity chosen. Width follows the average pressure
-   * of the whole stroke (the highlighter ignores pressure altogether).
+   * Translucent ink is composited once as a single path. Stroking it segment
+   * by segment doubles the alpha wherever neighbouring segments overlap, so
+   * the ink looked blotchy and almost opaque no matter the opacity chosen.
+   * Width follows the average pressure of the whole stroke. The highlighter
+   * answers true as well: it has its own ribbon, but it is drawn the same way
+   * — all at once, never live segment by segment.
    */
   usesWholePath(stroke) {
     return stroke.type === "highlighter" || colorAlpha2(stroke.color) < 1 || nibOf(stroke) === "pencil";
+  }
+  /**
+   * Highlighter ink: one even band, laid down in a single pass at the chosen
+   * opacity so the stroke never darkens against itself, and multiplied so two
+   * strokes that cross deepen instead of washing each other out.
+   */
+  drawHighlighter(stroke) {
+    if (!stroke.points.length) return;
+    this.ctx.save();
+    this.ctx.globalCompositeOperation = "multiply";
+    this.ctx.globalAlpha = colorAlpha2(stroke.color);
+    this.ctx.fillStyle = opaqueColor(stroke.color);
+    this.ctx.fill(this.markerBand(stroke));
+    this.ctx.restore();
+  }
+  /**
+   * The band of a marker stroke, in board coordinates. It only depends on the
+   * points and the width, so it is built once and reused on every pan, zoom and
+   * redraw.
+   */
+  markerBand(stroke) {
+    const cached = this.markerBands.get(stroke);
+    if (cached && cached.count === stroke.points.length && cached.width === stroke.width) return cached.band;
+    const width = Math.max(2, stroke.width);
+    const band = bandPath(smoothCenterline(simplifyPath(stroke.points, Math.max(1.5, width * 0.25))), width);
+    this.markerBands.set(stroke, { count: stroke.points.length, width: stroke.width, band });
+    return band;
   }
   drawWholeStroke(stroke) {
     if (nibOf(stroke) === "pencil" && stroke.type !== "highlighter") {
@@ -35388,7 +35745,6 @@ var CanvasRenderer = class {
    */
   nibWidth(stroke, pressure, pts, i4) {
     const w3 = stroke.width;
-    if (stroke.type === "highlighter") return w3;
     switch (nibOf(stroke)) {
       case "marker":
         return w3 * 1.5;
@@ -35428,11 +35784,6 @@ var CanvasRenderer = class {
     this.ctx.lineJoin = "round";
     this.ctx.strokeStyle = stroke.color;
     this.ctx.globalCompositeOperation = "source-over";
-    if (stroke.type === "highlighter") {
-      this.ctx.lineCap = "butt";
-      this.ctx.lineWidth = stroke.width;
-      return;
-    }
     this.ctx.lineCap = "round";
     this.ctx.lineWidth = width;
   }
@@ -35458,6 +35809,189 @@ var CanvasRenderer = class {
     this.ctx.restore();
   }
 };
+
+// src/rich-editor.ts
+var BLOCK_TAGS = /^(DIV|P|LI|UL|OL|BLOCKQUOTE|PRE|H[1-6]|TABLE|TR)$/;
+var transparent = (color) => !color || color === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(color);
+function renderRuns(root, runs, base, paint2) {
+  for (const run of runs) {
+    if (!run.text) continue;
+    const differs = !!run.bold !== base.bold || !!run.italic !== base.italic || !!run.underline !== base.underline || !!run.strike !== base.strike || !!run.color || !!run.mark || !!run.code;
+    if (!differs) {
+      paint2(root, run.text);
+      continue;
+    }
+    const span = run.code ? root.createEl("code", { cls: "notelens-run-code" }) : root.createSpan();
+    if (!!run.bold !== base.bold) span.style.fontWeight = run.bold ? "700" : "400";
+    if (!!run.italic !== base.italic) span.style.fontStyle = run.italic ? "italic" : "normal";
+    if (!!run.underline !== base.underline || !!run.strike !== base.strike) {
+      const lines = [run.underline ? "underline" : "", run.strike ? "line-through" : ""].filter(Boolean).join(" ");
+      span.style.textDecoration = lines || "none";
+    }
+    if (run.color) span.style.color = run.color;
+    if (run.mark) {
+      span.addClass("notelens-run-mark");
+      span.style.backgroundColor = run.mark;
+    }
+    paint2(span, run.text);
+  }
+}
+function readRuns(root, base) {
+  const runs = [];
+  collect(root, root, base, runs);
+  return mergeRuns(runs);
+}
+function collect(node, root, base, out) {
+  for (let child = node.firstChild; child; child = child.nextSibling) {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const text = child.nodeValue ?? "";
+      if (text) out.push({ ...styleOf(child.parentElement, root, base), text });
+      continue;
+    }
+    if (!(child instanceof HTMLElement)) continue;
+    if (child.tagName === "BR") {
+      out.push({ text: "\n" });
+      continue;
+    }
+    if (BLOCK_TAGS.test(child.tagName) && out.length && !out[out.length - 1].text.endsWith("\n")) out.push({ text: "\n" });
+    collect(child, root, base, out);
+  }
+}
+function styleOf(el, root, base) {
+  if (!el) return {};
+  let underline = false, strike = false, code = false;
+  let mark;
+  for (let node = el; node; node = node.parentElement) {
+    const style = getComputedStyle(node);
+    const lines = style.textDecorationLine;
+    if (lines.includes("underline")) underline = true;
+    if (lines.includes("line-through")) strike = true;
+    if (node.tagName === "CODE") code = true;
+    if (!mark && node !== root && !transparent(style.backgroundColor)) mark = style.backgroundColor;
+    if (node === root) break;
+  }
+  const own = getComputedStyle(el);
+  const color = own.color;
+  return {
+    bold: (parseInt(own.fontWeight, 10) || 400) >= 600 || void 0,
+    italic: own.fontStyle === "italic" || void 0,
+    underline: underline || void 0,
+    strike: strike || void 0,
+    code: code || void 0,
+    color: color && color !== base.color ? color : void 0,
+    mark
+  };
+}
+function atoms(root) {
+  const list = [];
+  let at2 = 0;
+  const visit = (node) => {
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const length = (child.nodeValue ?? "").length;
+        if (length) {
+          list.push({ node: child, from: at2, length });
+          at2 += length;
+        }
+        continue;
+      }
+      if (!(child instanceof HTMLElement)) continue;
+      if (child.tagName === "BR") {
+        list.push({ node: null, from: at2, length: 1 });
+        at2 += 1;
+        continue;
+      }
+      if (BLOCK_TAGS.test(child.tagName) && at2 > 0) {
+        list.push({ node: null, from: at2, length: 1 });
+        at2 += 1;
+      }
+      visit(child);
+    }
+  };
+  visit(root);
+  return list;
+}
+function editableText(root) {
+  let out = "";
+  for (const atom of atoms(root)) out += atom.node ? atom.node.nodeValue ?? "" : "\n";
+  return out;
+}
+function offsetOf(root, node, offset) {
+  const list = atoms(root);
+  if (node.nodeType === Node.TEXT_NODE) {
+    const atom = list.find((a3) => a3.node === node);
+    if (atom) return atom.from + Math.min(offset, atom.length);
+    return 0;
+  }
+  const child = node.childNodes[offset] ?? null;
+  if (!child) return list.length ? list[list.length - 1].from + list[list.length - 1].length : 0;
+  const inside = list.find((a3) => a3.node && (a3.node === child || child.contains(a3.node)));
+  return inside ? inside.from : 0;
+}
+function selectionOffsets(root) {
+  const selection = root.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0) return { from: 0, to: 0 };
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.startContainer)) return { from: 0, to: 0 };
+  return {
+    from: offsetOf(root, range.startContainer, range.startOffset),
+    to: offsetOf(root, range.endContainer, range.endOffset)
+  };
+}
+function pointAt(root, offset) {
+  const list = atoms(root);
+  for (const atom of list) {
+    if (!atom.node) continue;
+    if (offset <= atom.from + atom.length) return { node: atom.node, offset: Math.max(0, offset - atom.from) };
+  }
+  const last = list.filter((a3) => a3.node).pop();
+  return last?.node ? { node: last.node, offset: last.length } : { node: root, offset: root.childNodes.length };
+}
+function selectOffsets(root, from, to) {
+  const selection = root.ownerDocument.getSelection();
+  if (!selection) return;
+  const start = pointAt(root, from);
+  const end = pointAt(root, to);
+  const range = root.ownerDocument.createRange();
+  range.setStart(start.node, start.offset);
+  range.setEnd(end.node, end.offset);
+  selection.removeAllRanges();
+  selection.addRange(range);
+}
+function surroundSelection(root, tag) {
+  const selection = root.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.commonAncestorContainer)) return false;
+  const wrapper = root.ownerDocument.createElement(tag);
+  wrapper.className = "notelens-run-code";
+  try {
+    range.surroundContents(wrapper);
+  } catch {
+    wrapper.appendChild(range.extractContents());
+    range.insertNode(wrapper);
+  }
+  selection.removeAllRanges();
+  const after = root.ownerDocument.createRange();
+  after.selectNodeContents(wrapper);
+  selection.addRange(after);
+  return true;
+}
+function unwrapCode(root) {
+  const selection = root.ownerDocument.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+  const range = selection.getRangeAt(0);
+  const inside = Array.from(root.querySelectorAll("code")).filter((el) => range.intersectsNode(el));
+  if (!inside.length) return false;
+  for (const el of inside) {
+    const parent = el.parentNode;
+    if (!parent) continue;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    el.remove();
+  }
+  root.normalize();
+  return true;
+}
 
 // src/history.ts
 var MAX_UNDO = 100;
@@ -58246,8 +58780,7 @@ function mountLinkCard(host, layer, embed) {
     card.addClass("is-missing");
   } else if (embed.kind === "note") {
     void host.app.vault.cachedRead(file).then((content) => {
-      const lines = content.replace(/^---[\s\S]*?---\s*/, "").split(/\r?\n/).map((l3) => l3.replace(/^#+\s*/, "").replace(/[*_`>]/g, "").trim()).filter(Boolean);
-      preview.setText(lines.slice(0, 5).join("\n") || tr("Nota vac\xEDa"));
+      preview.setText(notePreview(content) || tr("Nota vac\xEDa"));
     }).catch(() => preview.setText(""));
   } else {
     preview.setText(tr("Doble clic para ir a esta pizarra."));
@@ -59072,6 +59605,7 @@ async function recognizeFormula(canvas, onProgress) {
 var import_obsidian10 = require("obsidian");
 var HOVER_NOTE_BOARD_WIDTH = 560;
 var HOVER_NOTE_BOARD_HEIGHT = 320;
+var BOARD_PIXEL_SCALE = 2;
 var SKETCH_COLORS = ["#f8fafc", "#38bdf8", "#f472b6", "#facc15", "#4ade80", "#a78bfa"];
 var MAX_IMAGE_SOURCE_EDGE = 1600;
 var MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024;
@@ -59303,11 +59837,9 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     const board = sketchPane.createDiv({ cls: "notelens-hover-note-board" });
     const canvas = board.createEl("canvas");
     canvas.tabIndex = 0;
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = (window.devicePixelRatio || 1) * BOARD_PIXEL_SCALE;
     canvas.width = HOVER_NOTE_BOARD_WIDTH * dpr;
     canvas.height = HOVER_NOTE_BOARD_HEIGHT * dpr;
-    canvas.style.width = `${HOVER_NOTE_BOARD_WIDTH}px`;
-    canvas.style.height = `${HOVER_NOTE_BOARD_HEIGHT}px`;
     const ctx = canvas.getContext("2d");
     const hint = board.createDiv({ cls: "notelens-hover-note-hint", text: tr("Dibuja, pega o suelta una imagen") });
     const imageTray = sketchPane.createDiv({ cls: "notelens-hover-note-images" });
@@ -59443,7 +59975,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       image.src = this.sketch;
     }
     let action = null;
-    const pointAt = (event) => {
+    const pointAt2 = (event) => {
       const rect = canvas.getBoundingClientRect();
       return {
         x: (event.clientX - rect.left) * (HOVER_NOTE_BOARD_WIDTH / rect.width),
@@ -59457,7 +59989,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       event.preventDefault();
       canvas.focus({ preventScroll: true });
       canvas.setPointerCapture(event.pointerId);
-      const point = pointAt(event);
+      const point = pointAt2(event);
       lastBoardPoint = point;
       if (this.boardTool === "select") {
         const selected = this.images.find((image) => image.id === this.selectedImageId);
@@ -59479,7 +60011,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       redraw();
     });
     canvas.addEventListener("pointermove", (event) => {
-      const point = pointAt(event);
+      const point = pointAt2(event);
       lastBoardPoint = point;
       if (!action) return;
       if (action.kind === "draw") {
@@ -59545,16 +60077,16 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       if (!transfer) return [];
       const files = [];
       const seen = /* @__PURE__ */ new Set();
-      const collect = (file) => {
+      const collect2 = (file) => {
         if (!file || !file.type.startsWith("image/")) return;
         const key2 = `${file.name}:${file.type}:${file.size}:${file.lastModified}`;
         if (seen.has(key2)) return;
         seen.add(key2);
         files.push(file);
       };
-      Array.from(transfer.files ?? []).forEach(collect);
+      Array.from(transfer.files ?? []).forEach(collect2);
       for (const item of Array.from(transfer.items ?? [])) {
-        if (item.kind === "file" && item.type.startsWith("image/")) collect(item.getAsFile());
+        if (item.kind === "file" && item.type.startsWith("image/")) collect2(item.getAsFile());
       }
       return files;
     };
@@ -59613,7 +60145,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     board.addEventListener("drop", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      void addFiles(Array.from(event.dataTransfer?.files ?? []), pointAt(event));
+      void addFiles(Array.from(event.dataTransfer?.files ?? []), pointAt2(event));
     });
     contentEl.addEventListener("paste", (event) => {
       if (this.mode !== "sketch") return;
@@ -59689,6 +60221,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       tabSketch.toggleClass("active", mode2 === "sketch");
       textPane.style.display = mode2 === "text" ? "" : "none";
       sketchPane.style.display = mode2 === "sketch" ? "" : "none";
+      this.modalEl.toggleClass("is-sketch", mode2 === "sketch");
       if (mode2 === "text") {
         const target = this.taskMode ? checklistList?.querySelector(".notelens-task-checklist-input") : area;
         window.requestAnimationFrame(() => (target ?? area).focus());
@@ -60042,7 +60575,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       hint.toggleClass("hidden-hint", this.strokes.length > 0);
     };
     redraw();
-    const pointAt = (event) => {
+    const pointAt2 = (event) => {
       const rect = canvas.getBoundingClientRect();
       return { x: (event.clientX - rect.left) * (BOARD_W / rect.width), y: (event.clientY - rect.top) * (BOARD_H / rect.height) };
     };
@@ -60059,21 +60592,21 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
       if (this.tool === "erase") {
-        eraseAt(pointAt(event));
+        eraseAt(pointAt2(event));
         return;
       }
       this.redoStack = [];
-      this.current = { points: [pointAt(event)], width: this.penWidth };
+      this.current = { points: [pointAt2(event)], width: this.penWidth };
       this.strokes.push(this.current);
       redraw();
     });
     canvas.addEventListener("pointermove", (event) => {
       if (this.tool === "erase") {
-        if (event.buttons === 1) eraseAt(pointAt(event));
+        if (event.buttons === 1) eraseAt(pointAt2(event));
         return;
       }
       if (!this.current) return;
-      this.current.points.push(pointAt(event));
+      this.current.points.push(pointAt2(event));
       redraw();
     });
     const endStroke = () => {
@@ -60264,6 +60797,11 @@ var EXPERIMENTAL = {
 
 // src/ui.ts
 var import_obsidian12 = require("obsidian");
+
+// src/eraser-sprite.ts
+var ERASER_SPRITE = "data:image/png;base64,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";
+
+// src/ui.ts
 var QUICK_TAGS = [
   { id: "tag_star", label: "Importante", icon: "star", color: "#eab308" },
   { id: "tag_question", label: "Duda", icon: "help-circle", color: "#a855f7" },
@@ -60298,6 +60836,16 @@ var PALETTE_COLORS = [
   "#a78bfa",
   "#94a3b8"
 ];
+function setEraserIcon(el, size = 20) {
+  el.empty();
+  el.addClass("notelens-eraser-icon");
+  const image = el.createEl("img", { cls: "notelens-eraser-image" });
+  image.src = ERASER_SPRITE;
+  image.alt = "";
+  image.width = size;
+  image.height = size;
+  image.draggable = false;
+}
 var HIGHLIGHTER_COLORS = [
   "#facc15",
   "#fde047",
@@ -60328,12 +60876,6 @@ var ERASER_SIZES = [
 ];
 var TEXT_SIZES = [12, 16, 20, 28, 36, 48];
 var TEXT_COLORS = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
-var FONT_OPTIONS = [
-  { id: "sans", label: "Interfaz", css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
-  { id: "serif", label: "Cl\xE1sica", css: "Georgia, 'Times New Roman', serif" },
-  { id: "rounded", label: "Redondeada", css: "'Trebuchet MS', 'Segoe UI', sans-serif" },
-  { id: "mono", label: "Monoespaciada", css: "ui-monospace, SFMono-Regular, Consolas, monospace" }
-];
 var BG_OPTIONS = [
   { id: "blank", label: "Liso", icon: "square" },
   { id: "dots", label: "Puntos", icon: "grip" },
@@ -60473,7 +61015,8 @@ function createToolbar(host, container) {
       cls: `onenote-dock-btn ${host.currentTool === t3.id ? "active" : ""}`
     });
     btn.setAttr("data-tool", t3.id);
-    (0, import_obsidian12.setIcon)(btn, t3.icon);
+    if (t3.id === "eraser") setEraserIcon(btn, 21);
+    else (0, import_obsidian12.setIcon)(btn, t3.icon);
     btn.title = t3.title;
     btn.onclick = () => {
       const reopening = host.currentTool === t3.id;
@@ -61008,7 +61551,8 @@ function createOptionsPanel(host, container, close) {
   function createPanelHeader(section, icon, title) {
     const header = section.createDiv({ cls: "notelens-tool-panel-header" });
     const iconWrap = header.createDiv({ cls: "notelens-tool-panel-icon" });
-    (0, import_obsidian12.setIcon)(iconWrap, icon);
+    if (icon === "eraser") setEraserIcon(iconWrap, 19);
+    else (0, import_obsidian12.setIcon)(iconWrap, icon);
     header.createDiv({ cls: "notelens-tool-heading", text: tr(title) });
   }
   const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
@@ -61257,7 +61801,7 @@ function createOptionsPanel(host, container, close) {
   }
   textSection.createDiv({ cls: "notelens-panel-label", text: tr("Tipograf\xEDa") });
   const fontSelect = textSection.createEl("select", { cls: "notelens-font-select" });
-  for (const font of FONT_OPTIONS) {
+  for (const font of CANVAS_FONTS) {
     const option = fontSelect.createEl("option", { text: tr(font.label), value: font.id });
     option.style.fontFamily = font.css;
   }
@@ -61550,6 +62094,8 @@ var GRID_CELLS = { small: 18, medium: 26, large: 40 };
 var A4_SCENE_W2 = 794;
 var A4_SCENE_H2 = 1123;
 var TEXT_COLORS2 = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
+var TEXT_HIGHLIGHTS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8", "#ddd6fe", "#a7f3d0", "#fed7aa"];
+var DEFAULT_TEXT_HIGHLIGHT = TEXT_HIGHLIGHTS[0];
 function paintPrismTokens(parent, tokens) {
   for (const token of Array.isArray(tokens) ? tokens : [tokens]) {
     if (typeof token === "string") {
@@ -61560,34 +62106,6 @@ function paintPrismTokens(parent, tokens) {
     const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
     paintPrismTokens(span, token.content);
   }
-}
-var LIST_PREFIX = /^(\s*)(?:[•·]|\d+[.)]|→|-->|->|[-–])\s+/;
-var LIST_MARK = { bullet: "\u2022 ", number: "1. ", arrow: "\u2192 ", dash: "- " };
-function listKindOf(line2) {
-  const m3 = /^\s*(?:([•·])|(\d+[.)])|(→|-->|->)|([-–]))\s+/.exec(line2);
-  if (!m3) return null;
-  return m3[1] ? "bullet" : m3[2] ? "number" : m3[3] ? "arrow" : "dash";
-}
-function toggleListPrefix(editor, kind) {
-  const value = editor.value;
-  const selStart = editor.selectionStart;
-  const selEnd = editor.selectionEnd;
-  const wholeBox = selStart === selEnd;
-  const from = wholeBox ? 0 : value.lastIndexOf("\n", selStart - 1) + 1;
-  const toIdx = wholeBox ? value.length : value.indexOf("\n", selEnd) === -1 ? value.length : value.indexOf("\n", selEnd);
-  const lines = value.slice(from, toIdx).split("\n");
-  const allHave = lines.every((l3) => !l3.trim() || listKindOf(l3) === kind);
-  let counter = 1;
-  const changed = lines.map((line2) => {
-    const indent = /^\s*/.exec(line2)?.[0] ?? "";
-    const bare = line2.replace(LIST_PREFIX, "$1").trimStart();
-    if (!line2.trim()) return line2;
-    if (allHave) return indent + bare;
-    const mark = kind === "number" ? `${counter++}. ` : LIST_MARK[kind];
-    return indent + mark + bare;
-  }).join("\n");
-  editor.setRangeText(changed, from, toIdx, "select");
-  if (wholeBox) editor.setSelectionRange(editor.value.length, editor.value.length);
 }
 function continueList(editor) {
   const value = editor.value;
@@ -61791,6 +62309,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     // Floating text format bar
     // ------------------------------------------------------------------
     this.formatBarEl = null;
+    this.formatBarWatch = null;
     this.editSessionPushed = false;
     this.plugin = plugin;
   }
@@ -62721,6 +63240,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         return;
       }
       if (text.trim()) {
+        const linked = this.vaultFileFromText(text);
+        if (linked) {
+          e.preventDefault();
+          this.clearSelection(false);
+          this.insertVaultFile(linked, this.pasteTarget(320, 150));
+          this.pasteCount++;
+          return;
+        }
+        if (/^([a-zA-Z]:[\\/]|\/\/|file:\/\/)/.test(text.trim()) && /\.[a-z0-9]{2,5}$/i.test(text.trim())) {
+          new import_obsidian13.Notice(tr("Ese archivo est\xE1 fuera de la b\xF3veda, as\xED que se pega como texto."), 4e3);
+        }
         e.preventDefault();
         this.history.push();
         this.clearSelection(false);
@@ -64469,8 +64999,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   get ocrLanguage() {
     return this.plugin.settings.ocrLanguage || "es";
   }
-  get translationLocalOnly() {
-    return this.plugin.settings.translationLocalOnly === true;
+  get translationPrivateOnly() {
+    return this.plugin.settings.translationPrivateOnly === true;
   }
   /** Drops a formula on the board and leaves it selected, ready to move. */
   placeFormula(source) {
@@ -64715,7 +65245,56 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     };
     picker.click();
   }
-  insertVaultFile(file) {
+  /**
+   * The file a piece of text names, when this vault holds it.
+   *
+   * Understands what people actually copy: the full path from the file
+   * explorer (`C:\\…\\Bóveda\\Materia\\Nota.md`), a path relative to the vault,
+   * a `[[wikilink]]`, a `file://` URL and Obsidian's own `obsidian://open`
+   * address. Anything pointing outside the vault is not a file we can show.
+   */
+  vaultFileFromText(text) {
+    const raw = text.trim().replace(/^"|"$/g, "");
+    if (!raw || /[\r\n]/.test(raw)) return null;
+    let candidate = raw;
+    const wiki = /^\[\[([^\]|]+)(?:\|[^\]]*)?\]\]$/.exec(raw);
+    if (wiki) {
+      candidate = wiki[1];
+    } else if (/^obsidian:\/\//i.test(raw)) {
+      try {
+        candidate = new URL(raw).searchParams.get("file") ?? "";
+      } catch {
+        return null;
+      }
+    } else if (/^file:\/\//i.test(raw)) {
+      try {
+        candidate = decodeURIComponent(new URL(raw).pathname).replace(/^\/([A-Za-z]:)/, "$1");
+      } catch {
+        return null;
+      }
+    }
+    candidate = candidate.replace(/\\/g, "/").trim();
+    if (!candidate) return null;
+    const base = this.vaultBasePath();
+    if (base && candidate.toLowerCase().startsWith(`${base}/`)) candidate = candidate.slice(base.length + 1);
+    else if (/^([A-Za-z]:\/|\/)/.test(candidate)) return null;
+    const direct = this.app.vault.getAbstractFileByPath(candidate);
+    if (direct instanceof import_obsidian13.TFile) return direct;
+    const isReference = !!wiki || /^(obsidian|file):\/\//i.test(raw) || candidate.includes("/") || /\.[a-z0-9]{1,6}$/i.test(candidate);
+    if (!isReference) return null;
+    return this.app.metadataCache?.getFirstLinkpathDest(candidate.replace(/\.md$/i, ""), this.currentPath ?? "") ?? null;
+  }
+  /** Where this vault lives on disk, in forward slashes; empty where the app cannot say. */
+  vaultBasePath() {
+    const adapter = this.app.vault.adapter;
+    if (typeof adapter?.getBasePath !== "function") return "";
+    try {
+      return adapter.getBasePath().replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+    } catch {
+      return "";
+    }
+  }
+  insertVaultFile(file, at2) {
     if (file.extension.toLowerCase() === "pdf") {
       this.insertPdfFile(file);
       return;
@@ -64724,14 +65303,15 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const kind = this.embedKindFor(file);
     const c3 = this.getViewportCenterScene();
     const dimensions = kind === "video" ? { w: 560, h: 315 } : kind === "audio" ? { w: 430, h: 130 } : kind === "image" ? { w: 480, h: 0 } : kind === "note" ? { w: 320, h: 150 } : kind === "board" ? { w: 320, h: 96 } : { w: 360, h: 112 };
-    const at2 = this.getInsertionPoint(dimensions.w, dimensions.h || 120);
+    const spot = at2 ?? this.getInsertionPoint(dimensions.w, dimensions.h || 120);
+    const centred = !at2 && kind !== "note" && kind !== "board";
     const embed = {
       id: genId("embed"),
       pageId: this.data.activePageId,
       kind,
       src: file.path,
-      x: kind === "note" || kind === "board" ? at2.x : c3.x - dimensions.w / 2,
-      y: kind === "note" || kind === "board" ? at2.y : c3.y - dimensions.h / 2,
+      x: centred ? c3.x - dimensions.w / 2 : spot.x,
+      y: centred ? c3.y - dimensions.h / 2 : spot.y,
       w: dimensions.w,
       h: dimensions.h
     };
@@ -65939,7 +66519,7 @@ ${rows.join("\n")}`);
   }
   getTranslationSource() {
     const editor = this.activeTextEditor;
-    if (editor) return { text: editor.value, kind: "editor", count: 1 };
+    if (editor) return { text: this.editorPlainText(editor), kind: "editor", count: 1 };
     const targets = this.translatableSelection();
     if (targets.length) return { text: targets.map((t3) => t3.text).join("\n\n"), kind: "selection", count: targets.length };
     return { text: "", kind: "none", count: 0 };
@@ -65951,8 +66531,14 @@ ${rows.join("\n")}`);
     const editor = this.activeTextEditor;
     if (editor) {
       this.pushEditSession();
-      editor.value = text;
-      editor.dispatchEvent(new Event("input"));
+      if (editor instanceof HTMLTextAreaElement) {
+        editor.value = text;
+        editor.dispatchEvent(new Event("input"));
+        return;
+      }
+      editor.focus();
+      selectOffsets(editor, 0, editableText(editor).length);
+      document.execCommand("insertText", false, text);
       return;
     }
     const targets = this.translatableSelection();
@@ -66399,8 +66985,8 @@ ${rows.join("\n")}`);
     el.style.transform = tb.rotation ? `rotate(${tb.rotation}deg)` : tb.stickyColor ? `rotate(var(--sticky-tilt, 0deg))` : "";
     el.contentEditable = "false";
     el.setAttr("role", "textbox");
-    this.paintTextContent(el, tb);
     this.applyTextStyles(el, tb);
+    this.paintTextContent(el, tb);
     this.syncFittedSize(el, tb);
     this.attachBoxChrome(el, tb);
     el.addEventListener("pointerdown", (e) => {
@@ -66443,6 +67029,10 @@ ${rows.join("\n")}`);
     this.commitTextEditor();
     this.hideTextPlacementHint();
     this.editSessionPushed = false;
+    if (tb.variant !== "code" && tb.variant !== "math") {
+      this.beginRichEdit(tb, el);
+      return;
+    }
     const editor = this.domLayerEl.createEl("textarea", { cls: "notelens-text-editor" });
     if (tb.variant === "code") {
       editor.addClass("notelens-code-editor");
@@ -66521,6 +67111,164 @@ ${rows.join("\n")}`);
     });
     this.showFormatBar(tb, editor);
   }
+  /**
+   * Opens a text box for editing in place: the words carry their own weight,
+   * underline, colour and highlight while they are typed, because the box being
+   * edited is the same rich element the board paints.
+   */
+  beginRichEdit(tb, el) {
+    const editor = this.domLayerEl.createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
+    editor.contentEditable = "true";
+    editor.setAttr("role", "textbox");
+    editor.setAttr("aria-multiline", "true");
+    editor.setAttr("data-placeholder", tr("Escribe aqu\xED"));
+    editor.style.left = `${tb.x}px`;
+    editor.style.top = `${tb.y}px`;
+    this.applyTextStyles(editor, tb);
+    this.fillRichEditor(editor, tb);
+    editor.toggleClass("is-empty", !editableText(editor).trim());
+    editor.style.height = `${Math.max(tb.h ?? 48, editor.scrollHeight + 4)}px`;
+    el.setCssStyles({ visibility: "hidden" });
+    this.activeTextEditor = editor;
+    this.activeTextSourceEl = el;
+    const openedAt = performance.now();
+    try {
+      document.execCommand("styleWithCSS", false, "true");
+    } catch {
+    }
+    editor.focus();
+    const end = editableText(editor).length;
+    selectOffsets(editor, end, end);
+    editor.addEventListener("pointerdown", (e) => e.stopPropagation());
+    editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+    editor.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const text = e.clipboardData?.getData("text/plain") ?? "";
+      if (text) document.execCommand("insertText", false, text);
+    });
+    editor.addEventListener("input", () => {
+      this.pushEditSession();
+      this.syncRichText(tb, editor);
+      this.resizeRichEditor(tb, editor);
+      this.save();
+    });
+    editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor));
+    editor.addEventListener("blur", (event) => {
+      const next = event.relatedTarget;
+      if (next && this.formatBarEl?.contains(next)) return;
+      if (!next && editor.isConnected && performance.now() - openedAt < 250) {
+        window.requestAnimationFrame(() => {
+          if (this.activeTextEditor === editor) editor.focus();
+        });
+        return;
+      }
+      this.commitTextEditor();
+    });
+    this.showFormatBar(tb, editor);
+  }
+  /** Fills the editor with the runs of the box, or with what its old marks meant. */
+  fillRichEditor(editor, tb) {
+    editor.empty();
+    const runs = tb.runs?.length ? tb.runs : runsFromInline(tb.text, tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
+    renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => parent.appendText(text));
+  }
+  /** What the box looks like before any run overrides it. */
+  baseStyle(el, tb) {
+    return {
+      bold: !!tb.bold,
+      italic: !!tb.italic,
+      underline: !!tb.underline,
+      strike: !!tb.strike,
+      color: getComputedStyle(el).color
+    };
+  }
+  /**
+   * Stores what is on screen. The runs are the truth; `text` keeps the same
+   * words with Markdown marks so search, the summary tools and the exports go
+   * on reading a box as text.
+   */
+  syncRichText(tb, editor) {
+    const runs = readRuns(editor, this.baseStyle(editor, tb));
+    tb.runs = runs.length ? runs : void 0;
+    tb.text = runs.length ? runsToMarked(runs) : "";
+  }
+  resizeRichEditor(tb, editor) {
+    editor.toggleClass("is-empty", !editableText(editor).trim());
+    if (tb.autoWidth) {
+      tb.w = this.measureAutoWidth(tb);
+      editor.style.width = `${tb.w}px`;
+    }
+    editor.setCssStyles({ height: "auto" });
+    tb.h = Math.max(48, editor.scrollHeight + 4);
+    editor.style.height = `${tb.h}px`;
+  }
+  richEditorKey(e, editor) {
+    const mod = e.ctrlKey || e.metaKey;
+    if (e.key === "Escape" || mod && e.key === "Enter") {
+      e.preventDefault();
+      this.commitTextEditor();
+      return;
+    }
+    if (mod && !e.altKey && ["b", "i", "u"].includes(e.key.toLowerCase())) {
+      e.stopPropagation();
+      return;
+    }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      document.execCommand("insertText", false, "	");
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!this.continueRichList(editor)) document.execCommand("insertLineBreak");
+    }
+  }
+  /** Enter inside a list item starts the next one; on an empty item it leaves the list. */
+  continueRichList(editor) {
+    const text = editableText(editor);
+    const { from, to } = selectionOffsets(editor);
+    if (from !== to) return false;
+    const lineStart = text.lastIndexOf("\n", from - 1) + 1;
+    const line2 = text.slice(lineStart, from);
+    const kind = listKindOf(line2);
+    if (!kind) return false;
+    if (!line2.replace(LIST_PREFIX, "").trim()) {
+      selectOffsets(editor, lineStart, from);
+      document.execCommand("delete");
+      return true;
+    }
+    const indent = /^\s*/.exec(line2)?.[0] ?? "";
+    const numbered = kind === "number" ? parseInt(line2.trim(), 10) : NaN;
+    const mark = Number.isFinite(numbered) ? `${numbered + 1}. ` : LIST_MARK[kind];
+    document.execCommand("insertLineBreak");
+    document.execCommand("insertText", false, indent + mark);
+    return true;
+  }
+  /** Puts the list prefix in, or takes it out, on every line the selection touches. */
+  toggleRichList(tb, editor, kind) {
+    const { from, to } = selectionOffsets(editor);
+    const wholeBox = from === to;
+    const edits = planListToggle(editableText(editor), from, to, kind);
+    if (!edits.length) return;
+    this.pushEditSession();
+    for (const edit of edits.reverse()) {
+      selectOffsets(editor, edit.from, edit.to);
+      if (edit.text) document.execCommand("insertText", false, edit.text);
+      else document.execCommand("delete");
+    }
+    editor.focus();
+    if (wholeBox) {
+      const end = editableText(editor).length;
+      selectOffsets(editor, end, end);
+    }
+    this.syncRichText(tb, editor);
+    this.resizeRichEditor(tb, editor);
+    this.save();
+  }
+  /** The words in the editor, whichever kind it is. */
+  editorPlainText(editor) {
+    return editor instanceof HTMLTextAreaElement ? editor.value : editableText(editor);
+  }
   commitTextEditor() {
     const editor = this.activeTextEditor;
     const source = this.activeTextSourceEl;
@@ -66536,7 +67284,9 @@ ${rows.join("\n")}`);
     this.editSessionPushed = false;
     this.hideFormatBar();
     if (!tb) return;
-    const fence = /^```([\w+#.-]*)[ \t]*\r?\n([\s\S]*?)\r?\n?```\s*$/.exec(editor.value);
+    const raw = this.editorPlainText(editor);
+    let replacement = null;
+    const fence = /^```([\w+#.-]*)[ \t]*\r?\n([\s\S]*?)\r?\n?```\s*$/.exec(raw);
     if (fence && (tb.variant === "code" || tb.variant === "text") && !tb.stickyColor) {
       if (tb.variant !== "code") {
         tb.variant = "code";
@@ -66547,15 +67297,15 @@ ${rows.join("\n")}`);
         source.addClass("notelens-code-block");
       }
       if (fence[1]) tb.language = normalizeLanguage(fence[1]);
-      editor.value = fence[2];
+      replacement = fence[2];
     } else if (tb.variant === "code") {
-      const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(editor.value);
+      const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(raw);
       if (openFence) {
         tb.language = normalizeLanguage(openFence[1]);
-        editor.value = openFence[2];
+        replacement = openFence[2];
       }
     }
-    const empty3 = editor.value.trim() === "" && !tb.stickyColor;
+    const empty3 = (replacement ?? raw).trim() === "" && !tb.stickyColor;
     if (empty3) {
       source.remove();
       this.data.texts.remove(tb);
@@ -66564,7 +67314,12 @@ ${rows.join("\n")}`);
       this.save();
       return;
     }
-    tb.text = editor.value;
+    if (replacement !== null) {
+      tb.text = replacement;
+      tb.runs = void 0;
+    } else if (editor instanceof HTMLTextAreaElement) {
+      tb.text = editor.value;
+    }
     this.applyTextStyles(source, tb);
     this.paintTextContent(source, tb);
     this.syncFittedSize(source, tb);
@@ -66599,24 +67354,57 @@ ${rows.join("\n")}`);
       this.paintCode(el, tb);
       return;
     }
-    if (!tb.text.includes("$")) {
-      this.appendLinkified(el, tb.text);
+    if (tb.runs?.length) {
+      renderRuns(el, tb.runs, this.baseStyle(el, tb), (parent, text) => this.paintFragment(parent, text));
+      return;
+    }
+    this.appendRich(el, tb.text);
+  }
+  /** A piece of plain text: inline $…$ and display $$…$$ typeset, links made clickable. */
+  paintFragment(parent, text) {
+    if (!text.includes("$")) {
+      this.appendLinkified(parent, text);
       return;
     }
     let typeset = false;
-    for (const part of tb.text.split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g)) {
+    for (const part of text.split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g)) {
       if (!part) continue;
       if (part.length > 4 && part.startsWith("$$") && part.endsWith("$$")) {
-        el.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(2, -2)), true));
+        parent.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(2, -2)), true));
         typeset = true;
       } else if (part.length > 2 && part.startsWith("$") && part.endsWith("$")) {
-        el.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(1, -1)), false));
+        parent.appendChild(this.renderMathSafe(toRenderableLatex(part.slice(1, -1)), false));
         typeset = true;
       } else {
-        this.appendLinkified(el, part);
+        this.appendLinkified(parent, part);
       }
     }
     if (typeset) void (0, import_obsidian13.finishRenderMath)();
+  }
+  /**
+   * Text with its inline marks turned into real formatting: `**negrita**`,
+   * `*cursiva*`, `__subrayado__`, `~~tachado~~`, `==resaltado==` and
+   * `` `código` ``. The marks stay in the stored text, so the box still saves
+   * as plain Markdown and the editor shows exactly what will be exported.
+   */
+  appendRich(el, text) {
+    for (const run of parseInline(text)) {
+      if (!run.text) continue;
+      const classes = ["notelens-run"];
+      if (run.bold) classes.push("is-bold");
+      if (run.italic) classes.push("is-italic");
+      if (run.underline) classes.push("is-underline");
+      if (run.strike) classes.push("is-strike");
+      if (run.mark) classes.push("is-mark");
+      if (run.code) classes.push("is-code");
+      if (classes.length === 1) {
+        this.paintFragment(el, run.text);
+        continue;
+      }
+      const span = el.createSpan({ cls: classes.join(" ") });
+      if (run.code) span.setText(run.text);
+      else this.paintFragment(span, run.text);
+    }
   }
   /** Text with [[notas de la bóveda]] and http(s) URLs turned into clickable links. */
   appendLinkified(el, text) {
@@ -66735,9 +67523,10 @@ ${rows.join("\n")}`);
   measureAutoWidth(tb) {
     const ctx = this.textMeasurer ?? (this.textMeasurer = createEl("canvas").getContext("2d"));
     if (!ctx) return tb.w ?? 260;
-    ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${this.fontStack(tb.fontFamily ?? "sans")}`;
+    ctx.font = `${tb.italic ? "italic " : ""}${tb.bold ? "700" : "400"} ${tb.fontSize}px ${fontStack(tb.fontFamily ?? "sans")}`;
     let widest = 0;
-    for (const line2 of tb.text.split("\n")) widest = Math.max(widest, ctx.measureText(line2).width);
+    const words2 = tb.runs?.length ? runsToPlain(tb.runs) : tb.text;
+    for (const line2 of words2.split("\n")) widest = Math.max(widest, ctx.measureText(line2).width);
     return clamp(Math.ceil(widest) + 24, 160, 640);
   }
   /** Resize handle and close button every text box carries. */
@@ -66829,7 +67618,7 @@ ${rows.join("\n")}`);
       this.eraserCursorEl.setAttr("aria-hidden", "true");
       this.eraserCursorEl.createDiv({ cls: "notelens-eraser-pointer-area" });
       const tool = this.eraserCursorEl.createDiv({ cls: "notelens-eraser-pointer-tool" });
-      (0, import_obsidian13.setIcon)(tool, "eraser");
+      setEraserIcon(tool, 30);
     }
     this.syncEraserCursorSize();
     this.eraserCursorEl.toggleClass("is-active", this.isErasing);
@@ -66851,7 +67640,9 @@ ${rows.join("\n")}`);
     el.style.color = tb.color;
     el.style.fontWeight = tb.bold ? "700" : "400";
     el.style.fontStyle = tb.italic ? "italic" : "normal";
-    el.style.textDecoration = tb.underline ? "underline" : "none";
+    el.style.textDecoration = [tb.underline ? "underline" : "", tb.strike ? "line-through" : ""].filter(Boolean).join(" ") || "none";
+    el.style.setProperty("--notelens-mark", tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
+    el.style.setProperty("--notelens-mark-ink", isLightColor(tb.color) ? "#1f2937" : "");
     el.style.textAlign = tb.align ?? "left";
     el.style.backgroundColor = tb.stickyColor ?? "";
     if (tb.stickyColor) {
@@ -66860,7 +67651,7 @@ ${rows.join("\n")}`);
       el.style.setProperty("--sticky-deep", shadeColor(tb.stickyColor, -0.32));
       el.style.setProperty("--sticky-tilt", `${stickyTilt(tb.id)}deg`);
     }
-    el.style.fontFamily = this.fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
+    el.style.fontFamily = fontStack(tb.fontFamily ?? (tb.variant === "code" ? "mono" : "sans"));
     const fitsContent = tb.variant === "math" && tb.autoWidth !== false;
     el.style.width = fitsContent ? "max-content" : tb.w ? `${tb.w}px` : "";
     el.style.minHeight = tb.h && !fitsContent ? `${tb.h}px` : "";
@@ -66871,22 +67662,32 @@ ${rows.join("\n")}`);
     if (el.offsetWidth > 0) tb.w = el.offsetWidth;
     if (el.offsetHeight > 0) tb.h = el.offsetHeight;
   }
-  fontStack(font) {
-    switch (font) {
-      case "serif":
-        return "Georgia, 'Times New Roman', serif";
-      case "rounded":
-        return "'Trebuchet MS', 'Segoe UI', sans-serif";
-      case "mono":
-        return "ui-monospace, SFMono-Regular, Consolas, monospace";
-      default:
-        return "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-    }
-  }
   pushEditSession() {
     if (!this.editSessionPushed) {
       this.history.push();
       this.editSessionPushed = true;
+    }
+  }
+  /**
+   * Runs one formatting command on the selection of a rich box and stores the
+   * result. With nothing selected the command arms the style for what gets
+   * typed next, the way it works in any editor.
+   */
+  formatRich(tb, editor, command, value) {
+    this.pushEditSession();
+    editor.focus();
+    document.execCommand(command, false, value);
+    this.syncRichText(tb, editor);
+    this.resizeRichEditor(tb, editor);
+    this.save();
+  }
+  /** The highlight tint under the caret, or none when the text is not highlighted. */
+  markUnderCaret() {
+    try {
+      const value = document.queryCommandValue("hiliteColor");
+      return !value || value === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(value) ? "" : value;
+    } catch {
+      return "";
     }
   }
   showFormatBar(tb, el) {
@@ -66896,9 +67697,7 @@ ${rows.join("\n")}`);
       e.stopPropagation();
       if (!(e.target instanceof HTMLSelectElement)) e.preventDefault();
     });
-    bar.addEventListener("change", () => {
-      if (el.instanceOf(HTMLTextAreaElement)) el.focus();
-    });
+    bar.addEventListener("change", () => el.focus());
     const apply = (mutate) => {
       this.pushEditSession();
       mutate();
@@ -66915,17 +67714,42 @@ ${rows.join("\n")}`);
       toggleButtons.set(key2, b3);
     };
     const plainText = tb.variant !== "code" && tb.variant !== "math";
-    if (plainText) {
-      mkToggle("bold", "bold", "Negrita", () => {
-        tb.bold = !tb.bold;
+    const rich = plainText && !el.instanceOf(HTMLTextAreaElement) ? el : null;
+    const command = (key2, icon, title, run) => {
+      const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
+      (0, import_obsidian13.setIcon)(b3, icon);
+      b3.title = tr(title);
+      b3.onclick = () => {
+        run();
+        refreshStates();
+      };
+      toggleButtons.set(key2, b3);
+    };
+    if (rich) {
+      command("bold", "bold", "Negrita (Ctrl+B)", () => this.formatRich(tb, rich, "bold"));
+      command("italic", "italic", "Cursiva (Ctrl+I)", () => this.formatRich(tb, rich, "italic"));
+      command("underline", "underline", "Subrayado (Ctrl+U)", () => this.formatRich(tb, rich, "underline"));
+      command("strike", "strikethrough", "Tachado", () => this.formatRich(tb, rich, "strikeThrough"));
+      command("mark", "highlighter", "Resaltar lo seleccionado", () => {
+        rich.focus();
+        const tint = this.markUnderCaret() ? "transparent" : tb.highlight || DEFAULT_TEXT_HIGHLIGHT;
+        this.formatRich(tb, rich, "hiliteColor", tint);
       });
-      mkToggle("italic", "italic", "Cursiva", () => {
-        tb.italic = !tb.italic;
+      command("code", "code", "C\xF3digo en l\xEDnea", () => {
+        this.pushEditSession();
+        rich.focus();
+        if (!unwrapCode(rich)) surroundSelection(rich, "code");
+        this.syncRichText(tb, rich);
+        this.resizeRichEditor(tb, rich);
+        this.save();
       });
-      mkToggle("underline", "underline", "Subrayado", () => {
-        tb.underline = !tb.underline;
+      command("clear", "remove-formatting", "Quitar el formato de lo seleccionado", () => {
+        unwrapCode(rich);
+        this.formatRich(tb, rich, "removeFormat");
       });
       bar.createDiv({ cls: "onenote-divider" });
+    }
+    if (plainText) {
       mkToggle("align-left", "align-left", "Alinear a la izquierda", () => {
         tb.align = "left";
       });
@@ -66936,17 +67760,12 @@ ${rows.join("\n")}`);
         tb.align = "right";
       });
       bar.createDiv({ cls: "onenote-divider" });
-      if (el.instanceOf(HTMLTextAreaElement)) {
+      if (rich) {
         const listButton = (icon, title, kind) => {
           const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
           (0, import_obsidian13.setIcon)(b3, icon);
           b3.title = tr(title);
-          b3.onclick = () => {
-            this.pushEditSession();
-            toggleListPrefix(el, kind);
-            el.dispatchEvent(new Event("input"));
-            el.focus();
-          };
+          b3.onclick = () => this.toggleRichList(tb, rich, kind);
         };
         listButton("list", "Lista con vi\xF1etas (\u2022)", "bullet");
         listButton("list-ordered", "Lista numerada (1. 2. 3.)", "number");
@@ -66956,8 +67775,9 @@ ${rows.join("\n")}`);
       }
     }
     const fontSelect = bar.createEl("select", { cls: "notelens-format-font" });
-    for (const [value, label] of [["sans", "Interfaz"], ["serif", "Cl\xE1sica"], ["rounded", "Redondeada"], ["mono", "Mono"]]) {
-      fontSelect.createEl("option", { value, text: tr(label) });
+    for (const font of CANVAS_FONTS) {
+      const option = fontSelect.createEl("option", { value: font.id, text: tr(font.label) });
+      option.style.fontFamily = font.css;
     }
     fontSelect.value = tb.fontFamily ?? "sans";
     fontSelect.onchange = () => apply(() => {
@@ -66985,13 +67805,37 @@ ${rows.join("\n")}`);
     });
     if (tb.variant !== "code") {
       bar.createDiv({ cls: "onenote-divider" });
+      if (rich) {
+        addPlainSwatch(bar, "Color normal del cuadro", () => this.formatRich(tb, rich, "foreColor", getComputedStyle(rich).color));
+      }
       for (const c3 of TEXT_COLORS2) {
         const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color" });
         dot.style.backgroundColor = c3;
-        dot.title = c3;
-        dot.onclick = () => apply(() => {
-          tb.color = c3;
-        });
+        dot.title = rich ? tr("Color del texto seleccionado") : c3;
+        dot.onclick = () => {
+          if (rich) this.formatRich(tb, rich, "foreColor", c3);
+          else apply(() => {
+            tb.color = c3;
+          });
+        };
+      }
+    }
+    if (plainText) {
+      bar.createDiv({ cls: "onenote-divider" });
+      if (rich) {
+        addPlainSwatch(bar, "Sin resaltado", () => this.formatRich(tb, rich, "hiliteColor", "transparent"), true);
+      }
+      for (const c3 of TEXT_HIGHLIGHTS) {
+        const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color notelens-format-mark-color" });
+        dot.style.backgroundColor = c3;
+        dot.title = tr("Color del resaltado");
+        dot.onclick = () => {
+          tb.highlight = c3;
+          if (rich) this.formatRich(tb, rich, "hiliteColor", c3);
+          else apply(() => {
+            tb.highlight = c3;
+          });
+        };
       }
     }
     if (tb.stickyColor) {
@@ -67018,9 +67862,18 @@ ${rows.join("\n")}`);
       });
     }
     const refreshStates = () => {
-      toggleButtons.get("bold")?.toggleClass("active", !!tb.bold);
-      toggleButtons.get("italic")?.toggleClass("active", !!tb.italic);
-      toggleButtons.get("underline")?.toggleClass("active", !!tb.underline);
+      const state = (cmd) => {
+        try {
+          return document.queryCommandState(cmd);
+        } catch {
+          return false;
+        }
+      };
+      toggleButtons.get("bold")?.toggleClass("active", rich ? state("bold") : !!tb.bold);
+      toggleButtons.get("italic")?.toggleClass("active", rich ? state("italic") : !!tb.italic);
+      toggleButtons.get("underline")?.toggleClass("active", rich ? state("underline") : !!tb.underline);
+      toggleButtons.get("strike")?.toggleClass("active", rich ? state("strikeThrough") : !!tb.strike);
+      toggleButtons.get("mark")?.toggleClass("active", !!rich && !!this.markUnderCaret());
       toggleButtons.get("align-left")?.toggleClass("active", (tb.align ?? "left") === "left");
       toggleButtons.get("align-center")?.toggleClass("active", tb.align === "center");
       toggleButtons.get("align-right")?.toggleClass("active", tb.align === "right");
@@ -67064,8 +67917,18 @@ ${rows.join("\n")}`);
     const above = r.top - wr.top - barH - 10;
     bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
     this.formatBarEl = bar;
+    if (rich) {
+      this.formatBarWatch = () => {
+        if (this.formatBarEl === bar) refreshStates();
+      };
+      document.addEventListener("selectionchange", this.formatBarWatch);
+    }
   }
   hideFormatBar() {
+    if (this.formatBarWatch) {
+      document.removeEventListener("selectionchange", this.formatBarWatch);
+      this.formatBarWatch = null;
+    }
     this.formatBarEl?.remove();
     this.formatBarEl = null;
   }
@@ -67142,6 +68005,12 @@ function tidyFormulaText(raw) {
   value = value.replace(/\bsqrt\s*[({]\s*([^)}]+)\s*[)}]/gi, "\\sqrt{$1}").replace(/\bsqrt\s*([A-Za-z0-9]+)/gi, "\\sqrt{$1}").replace(/([A-Za-z0-9)\]])\s*\^\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base, grouped, simple) => `${base}^{${grouped || simple}}`).replace(/([A-Za-z0-9)\]])\s*_\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base, grouped, simple) => `${base}_{${grouped || simple}}`).replace(/\bpi\b/g, "\\pi").replace(/\binfty\b|\boo\b/g, "\\infty").replace(/\bsum\b/g, "\\sum").replace(/\bint\b/g, "\\int").replace(/\s*<=\s*/g, " \\le ").replace(/\s*>=\s*/g, " \\ge ").replace(/\s*!=\s*/g, " \\ne ").replace(/\s+/g, " ").trim();
   return value;
 }
+function addPlainSwatch(bar, title, clear, square = false) {
+  const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color notelens-format-none" });
+  if (square) dot.addClass("notelens-format-mark-color");
+  dot.title = tr(title);
+  dot.onclick = clear;
+}
 var STICKY_COLORS = ["#fff2a8", "#ffd9a0", "#ffd7e5", "#d8f5c9", "#cde8ff", "#eadbff", "#f4f1e8"];
 function shadeColor(hex, amount) {
   const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -67194,7 +68063,7 @@ var DEFAULT_SETTINGS = {
   defaultTextFont: "sans",
   defaultStickyColor: "#fff2a8",
   ocrLanguage: "es",
-  translationLocalOnly: true,
+  translationPrivateOnly: false,
   translateFrom: "es",
   translateTo: "en"
 };
@@ -67219,7 +68088,7 @@ function normalizeSettings(raw) {
   s3.petBubbles = s3.petBubbles !== false;
   s3.aiUseBoardContext = s3.aiUseBoardContext === true;
   if (typeof s3.ocrLanguage !== "string" || !s3.ocrLanguage) s3.ocrLanguage = DEFAULT_SETTINGS.ocrLanguage;
-  s3.translationLocalOnly = s3.translationLocalOnly === true;
+  s3.translationPrivateOnly = s3.translationPrivateOnly === true;
   if (!["sans", "serif", "rounded", "mono"].includes(s3.defaultTextFont)) s3.defaultTextFont = "sans";
   if (!hex.test(s3.defaultStickyColor)) s3.defaultStickyColor = DEFAULT_SETTINGS.defaultStickyColor;
   if (!hex.test(s3.highlighterColor)) s3.highlighterColor = DEFAULT_SETTINGS.highlighterColor;
@@ -67259,7 +68128,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.7.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -67453,15 +68322,15 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       ja: "\u65E5\u672C\u8A9E",
       ko: "\uD55C\uAD6D\uC5B4"
     };
-    new import_obsidian14.Setting(containerEl).setName(tr("Traducir solo con el modelo local")).setDesc(tr("Activado por defecto: el texto no sale de tu ordenador y no hay cuotas. Necesitas un modelo local descargado.")).addToggle((t3) => t3.setValue(s3.translationLocalOnly).onChange((v3) => {
-      s3.translationLocalOnly = v3;
+    new import_obsidian14.Setting(containerEl).setName(tr("Traducir solo en tu ordenador")).setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Act\xEDvalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante m\xE1s.")).addToggle((t3) => t3.setValue(s3.translationPrivateOnly).onChange((v3) => {
+      s3.translationPrivateOnly = v3;
       save();
     }));
     new import_obsidian14.Setting(containerEl).setName(tr("Idioma de la transcripci\xF3n")).setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.ocrLanguage).onChange((v3) => {
       s3.ocrLanguage = v3;
       save();
     }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Traducir de \u2026 a \u2026")).setDesc(tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado (servicio gratuito MyMemory, sin clave).")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateFrom).onChange((v3) => {
+    new import_obsidian14.Setting(containerEl).setName(tr("Traducir de \u2026 a \u2026")).setDesc(tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateFrom).onChange((v3) => {
       s3.translateFrom = v3;
       save();
     })).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateTo).onChange((v3) => {

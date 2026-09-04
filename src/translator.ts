@@ -19,30 +19,28 @@ export const LANGUAGES: Language[] = [
 	{ code: "zh-CN", label: "中文（简体）" }, { code: "ja", label: "日本語" }, { code: "ko", label: "한국어" }
 ];
 
-const MAX_REQUEST_BYTES = 450;
-
 function byteLength(value: string): number {
 	return new TextEncoder().encode(value).byteLength;
 }
 
-/** Splits on whitespace where possible so each API request stays below the service limit. */
-function splitForTranslation(value: string): string[] {
+/** Splits on whitespace where possible so each request stays below the service limit. */
+function splitForTranslation(value: string, maxBytes: number): string[] {
 	const parts = value.split(/(\s+)/);
 	const chunks: string[] = [];
 	let current = "";
 	for (const part of parts) {
-		if (byteLength(part) > MAX_REQUEST_BYTES) {
+		if (byteLength(part) > maxBytes) {
 			if (current) { chunks.push(current); current = ""; }
 			let segment = "";
 			for (const char of part) {
-				if (byteLength(segment + char) > MAX_REQUEST_BYTES) {
+				if (byteLength(segment + char) > maxBytes) {
 					chunks.push(segment);
 					segment = "";
 				}
 				segment += char;
 			}
 			if (segment) chunks.push(segment);
-		} else if (byteLength(current + part) > MAX_REQUEST_BYTES) {
+		} else if (byteLength(current + part) > maxBytes) {
 			chunks.push(current);
 			current = part;
 		} else {
@@ -76,11 +74,45 @@ function decodeEntities(value: string): string {
 	});
 }
 
+/**
+ * Free translation with no account behind it.
+ *
+ * Two public endpoints answer without a key, a sign-up or a daily cap, and both
+ * come back in well under a second — which is the whole point: a model running
+ * on the computer translates a paragraph in tens of seconds, and waiting that
+ * long to read one sentence is not worth the privacy for most notes. MyMemory
+ * stays behind them as the last door, and it is the only one with a quota.
+ */
+async function translateFast(source: string, from: string, to: string, endpoint: "gtx" | "dict"): Promise<string> {
+	const out: string[] = [];
+	for (const chunk of splitForTranslation(source, 1400)) {
+		const query = encodeURIComponent(chunk);
+		const url = endpoint === "gtx"
+			? `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${query}`
+			: `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${from}&tl=${to}&q=${query}`;
+		const response = await requestUrl({ url, method: "GET", throw: false });
+		if (response.status >= 400) throw new Error(`El servicio de traducción respondió ${response.status}.`);
+		let data: unknown;
+		try {
+			data = JSON.parse(response.text);
+		} catch {
+			throw new Error("El servicio de traducción devolvió una respuesta ilegible.");
+		}
+		// gtx answers [[[piece, original, …], …], …]; the dictionary endpoint answers ["texto"].
+		const pieces = endpoint === "gtx"
+			? (Array.isArray(data) && Array.isArray(data[0]) ? data[0] : [])
+				.map(part => (Array.isArray(part) && typeof part[0] === "string" ? part[0] : ""))
+			: (Array.isArray(data) ? data : []).map(part => (typeof part === "string" ? part : ""));
+		const text = pieces.join("");
+		if (!text.trim()) throw new Error("El servicio no ha devuelto ninguna traducción para este texto.");
+		out.push(text);
+	}
+	return out.join("");
+}
+
 /** Uses MyMemory's documented GET endpoint, without requiring a per-user API key. */
-export async function translateText(source: string, from: string, to: string): Promise<string> {
-	if (!source.trim()) return "";
-	if (from === to) return source;
-	const chunks = splitForTranslation(source);
+async function translateViaMyMemory(source: string, from: string, to: string): Promise<string> {
+	const chunks = splitForTranslation(source, 450);
 	const translated: string[] = [];
 	for (const chunk of chunks) {
 		const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${encodeURIComponent(`${from}|${to}`)}&mt=1`;
@@ -121,6 +153,29 @@ export async function translateText(source: string, from: string, to: string): P
 	return translated.join("");
 }
 
+/**
+ * Translates on the web, trying the instant services first and MyMemory last.
+ * Every one of them is free and needs no key; the first that answers wins.
+ */
+export async function translateText(source: string, from: string, to: string): Promise<string> {
+	if (!source.trim()) return "";
+	if (from === to) return source;
+	let last: Error | null = null;
+	for (const attempt of [
+		() => translateFast(source, from, to, "gtx"),
+		() => translateFast(source, from, to, "dict"),
+		() => translateViaMyMemory(source, from, to)
+	]) {
+		try {
+			const text = await attempt();
+			if (text.trim()) return text;
+		} catch (error) {
+			last = error instanceof Error ? error : new Error(String(error));
+		}
+	}
+	throw last ?? new Error("No se pudo traducir. Comprueba la conexión e inténtalo de nuevo.");
+}
+
 /** Where the text to translate comes from. */
 export interface TranslationSource {
 	text: string;
@@ -142,8 +197,8 @@ export interface TranslatorHost {
 	/** Local model settings, so translating can run on this computer. */
 	aiBaseUrl: string;
 	aiModel: string;
-	/** When true the web service is never used, so nothing depends on a quota. */
-	translationLocalOnly: boolean;
+	/** When true nothing is sent anywhere: only a model on this computer translates. */
+	translationPrivateOnly: boolean;
 	translateFrom: string;
 	translateTo: string;
 	setTranslateLanguages(from: string, to: string): void;
@@ -231,32 +286,45 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 		translateBtn.disabled = true;
 		status.setText(tr("Traduciendo…"));
 		try {
-			// A model on this computer first: free, offline and with no daily cap.
-			let translated: string | null = null;
-			let engine = "";
-			try {
-				const client = new LocalModelClient(host as never);
+			const onModel = async () => {
 				status.setText(tr("Traduciendo con tu modelo local…"));
-				translated = await client.translate(
+				return new LocalModelClient(host as never).translate(
 					source.value,
 					LANGUAGE_NAMES[fromSelect.value] ?? fromSelect.value,
 					LANGUAGE_NAMES[toSelect.value] ?? toSelect.value
 				);
-				if (translated) engine = "modelo local";
-			} catch { /* no local model: use the web service */ }
-			if (!translated && host.translationLocalOnly) {
-				throw new Error("No hay ningún modelo local disponible y has pedido traducir solo en local. Descarga uno o desactiva esa opción en los ajustes.");
-			}
-			if (!translated) {
-				status.setText(tr("Traduciendo con el servicio gratuito…"));
-				translated = await translateText(source.value, fromSelect.value, toSelect.value);
-				engine = "servicio web";
+			};
+			let translated: string | null = null;
+			let engine = "";
+			if (host.translationPrivateOnly) {
+				translated = await onModel();
+				engine = tr("modelo local");
+				if (!translated) throw new Error("No hay ningún modelo local disponible y has pedido traducir solo en tu ordenador. Descarga uno o desactiva esa opción en los ajustes.");
+			} else {
+				// The free services first: they answer in a moment, where a model on
+				// this computer takes long enough to give up on reading the sentence.
+				let webError: Error | null = null;
+				try {
+					translated = await translateText(source.value, fromSelect.value, toSelect.value);
+					engine = tr("traducción instantánea");
+				} catch (error) {
+					webError = error instanceof Error ? error : new Error(String(error));
+				}
+				if (!translated) {
+					// Off line, or every service refused: a local model is better than nothing.
+					try {
+						translated = await onModel();
+						if (translated) engine = tr("modelo local");
+					} catch { /* no model either: report what the web said */ }
+				}
+				if (!translated && webError) throw webError;
 			}
 			if (id !== running) return;
+			if (!translated) throw new Error("No se pudo traducir. Comprueba la conexión e inténtalo de nuevo.");
 			result.value = translated;
 			const targetStatus = current.kind === "selection"
-				? (current.count > 1 ? `Traducidos ${current.count} cuadros seleccionados` : "Traducido el cuadro seleccionado")
-				: current.kind === "editor" ? "Traducido el cuadro que estás editando" : "Traducción lista";
+				? (current.count > 1 ? tr("Traducidos {p0} cuadros seleccionados", { p0: current.count }) : tr("Traducido el cuadro seleccionado"))
+				: current.kind === "editor" ? tr("Traducido el cuadro que estás editando") : tr("Traducción lista");
 			status.setText(tr("{p0} · {p1}.", { p0: targetStatus, p1: engine }));
 		} catch (error) {
 			if (id !== running) return;

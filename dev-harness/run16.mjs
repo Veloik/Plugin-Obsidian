@@ -23,7 +23,11 @@ await page.goto(pathToFileURL(path.join(here, "index.html")).href, { waitUntil: 
 await page.waitForFunction(() => window.__ready || window.__bootError, { timeout: 20000 });
 console.log("boot:", await page.evaluate(() => window.__bootError || "ok"));
 const tool = async (id) => { await page.click(`.onenote-ribbon-dock [data-tool="${id}"]`); await sleep(60); };
-const editorValue = () => page.evaluate(() => document.querySelector(".notelens-text-editor")?.value ?? null);
+const editorValue = () => page.evaluate(() => {
+	const ed = document.querySelector(".notelens-text-editor");
+	if (!ed) return null;
+	return ed.value !== undefined ? ed.value : ed.innerText;
+});
 const clickBar = async (title) => { await page.evaluate((t) => document.querySelector(`.notelens-format-bar button[title='${t}']`).click(), title); await sleep(60); };
 
 // lists and alignment
@@ -57,8 +61,8 @@ await tool("pen"); await page.mouse.click(700, 700);
 await page.mouse.move(600, 600); await page.mouse.down(); await page.mouse.move(900, 620, { steps: 5 }); await page.mouse.up();
 await tool("select"); await page.mouse.move(580, 580); await page.mouse.down(); await page.mouse.move(920, 640, { steps: 4 }); await page.mouse.up();
 await sleep(80);
-console.log("selected strokes:", await page.evaluate(() => __view.selStrokes.size), "frame X:", await page.evaluate(() => !!document.querySelector(".notelens-selection-close")));
-await page.evaluate(() => document.querySelector(".notelens-selection-close").click());
+console.log("selected strokes:", await page.evaluate(() => __view.selStrokes.size), "frame X:", await page.evaluate(() => !!document.querySelector(".notelens-selection-action[title^='Eliminar']")));
+await page.evaluate(() => document.querySelector(".notelens-selection-action[title^='Eliminar']").click());
 await sleep(80);
 console.log("strokes after X:", await page.evaluate(() => __view.data.strokes.length));
 
