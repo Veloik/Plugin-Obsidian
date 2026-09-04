@@ -9336,6 +9336,7 @@ function createCalculatorPanel(host, container) {
   };
   const renderKeys = (page) => {
     keys.empty();
+    keys.toggleClass("is-units", page === "Unidades");
     for (const key2 of pages[page]) {
       const b3 = keys.createEl("button", { cls: `notelens-calculator-key ${key2.cls ?? ""}`, text: tr(key2.label) });
       if (key2.title) b3.title = tr(key2.title);
@@ -68128,7 +68129,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.8.0" : "desconocida";
+var NOTELENS_BUILD = true ? "2.8.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

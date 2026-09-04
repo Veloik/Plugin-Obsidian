@@ -3677,12 +3677,14 @@
 
 .notelens-calculator-keys {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 5px;
+  min-width: 0;
 }
 
 .notelens-calculator-key {
   height: 34px;
+  min-width: 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
@@ -3700,6 +3702,19 @@
 .notelens-calculator-key.equals { background: rgba(15, 108, 189, 0.5); border-color: rgba(140, 200, 255, 0.5); font-size: 18px; }
 .notelens-calculator-key.insert { background: rgba(34, 197, 94, 0.22); border-color: rgba(74, 222, 128, 0.45); font-size: 12px; }
 .notelens-calculator-key.wide { grid-column: span 2; }
+
+/* Conversion names need more room than the scientific keypad labels. */
+.notelens-calculator-keys.is-units {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.notelens-calculator-keys.is-units .notelens-calculator-key {
+  height: 30px;
+  padding: 1px 2px;
+  font-size: 10px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 
 .notelens-calculator-history {
   max-height: 150px;
