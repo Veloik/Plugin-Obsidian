@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.9.2
+
+### Fixed
+
+- Mobile text editing now preserves the board when the native keyboard resizes the view during focus.
+
+## Unreleased
+
+### Fixed
+
+- Capture the mobile board and viewport dimensions before focusing text, code or formula editors. A native keyboard that resizes both viewports during focus previously left the recovery logic with an already collapsed baseline. Prevent automatic focus scrolling from displacing the board.
+
+### Tests
+
+- `dev-harness/run78.mjs` reproduces synchronous keyboard resize at 65% zoom for all three editors, checks visible typing and canvas coverage, and verifies layout cleanup.
+
 ## 2.9.1
 
 ### Fixed

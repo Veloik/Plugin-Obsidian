@@ -5228,7 +5228,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private beginTextEdit(tb: TextBox, el: HTMLElement): void {
 		if (this.activeTextSourceEl === el && this.activeTextEditor) {
-			this.activeTextEditor.focus();
+			this.activeTextEditor.focus({ preventScroll: true });
 			return;
 		}
 		this.commitTextEditor();
@@ -5264,9 +5264,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.activeTextEditor = editor;
 		this.activeTextSourceEl = el;
 		const openedAt = performance.now();
-		editor.focus();
-		editor.setSelectionRange(editor.value.length, editor.value.length);
+		// Capture the full layout before focus can synchronously open the native keyboard.
 		this.keepEditorUsableOnTouch(editor);
+		editor.focus({ preventScroll: true });
+		editor.setSelectionRange(editor.value.length, editor.value.length);
 		editor.addEventListener("pointerdown", (e) => e.stopPropagation());
 		editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
 		editor.addEventListener("input", () => {
@@ -5311,7 +5312,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// A focus steal in the same click that opened the editor is not
 			// the user leaving: take the focus back instead of committing.
 			if (!next && editor.isConnected && performance.now() - openedAt < 250) {
-				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus(); });
+				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus({ preventScroll: true }); });
 				return;
 			}
 			this.commitTextEditor();
@@ -5342,10 +5343,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const openedAt = performance.now();
 		// Formatting as inline styles rather than <b>/<font>: one shape to read back.
 		try { document.execCommand("styleWithCSS", false, "true"); } catch { /* older builds format with tags; the reader copes */ }
-		editor.focus();
+		// Native webviews may resize both viewports before focus() returns.
+		this.keepEditorUsableOnTouch(editor);
+		editor.focus({ preventScroll: true });
 		const end = editableText(editor).length;
 		selectOffsets(editor, end, end);
-		this.keepEditorUsableOnTouch(editor);
 
 		editor.addEventListener("pointerdown", (e) => e.stopPropagation());
 		editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
@@ -5366,7 +5368,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const next = event.relatedTarget as Node | null;
 			if (next && this.formatBarEl?.contains(next)) return;
 			if (!next && editor.isConnected && performance.now() - openedAt < 250) {
-				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus(); });
+				window.requestAnimationFrame(() => { if (this.activeTextEditor === editor) editor.focus({ preventScroll: true }); });
 				return;
 			}
 			this.commitTextEditor();

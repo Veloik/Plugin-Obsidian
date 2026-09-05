@@ -67413,7 +67413,7 @@ ${rows.join("\n")}`);
   }
   beginTextEdit(tb, el) {
     if (this.activeTextSourceEl === el && this.activeTextEditor) {
-      this.activeTextEditor.focus();
+      this.activeTextEditor.focus({ preventScroll: true });
       return;
     }
     this.commitTextEditor();
@@ -67451,9 +67451,9 @@ ${rows.join("\n")}`);
     this.activeTextEditor = editor;
     this.activeTextSourceEl = el;
     const openedAt = performance.now();
-    editor.focus();
-    editor.setSelectionRange(editor.value.length, editor.value.length);
     this.keepEditorUsableOnTouch(editor);
+    editor.focus({ preventScroll: true });
+    editor.setSelectionRange(editor.value.length, editor.value.length);
     editor.addEventListener("pointerdown", (e) => e.stopPropagation());
     editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
     editor.addEventListener("input", () => {
@@ -67495,7 +67495,7 @@ ${rows.join("\n")}`);
       if (next && this.formatBarEl?.contains(next)) return;
       if (!next && editor.isConnected && performance.now() - openedAt < 250) {
         window.requestAnimationFrame(() => {
-          if (this.activeTextEditor === editor) editor.focus();
+          if (this.activeTextEditor === editor) editor.focus({ preventScroll: true });
         });
         return;
       }
@@ -67528,10 +67528,10 @@ ${rows.join("\n")}`);
       document.execCommand("styleWithCSS", false, "true");
     } catch {
     }
-    editor.focus();
+    this.keepEditorUsableOnTouch(editor);
+    editor.focus({ preventScroll: true });
     const end = editableText(editor).length;
     selectOffsets(editor, end, end);
-    this.keepEditorUsableOnTouch(editor);
     editor.addEventListener("pointerdown", (e) => e.stopPropagation());
     editor.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
     editor.addEventListener("paste", (e) => {
@@ -67551,7 +67551,7 @@ ${rows.join("\n")}`);
       if (next && this.formatBarEl?.contains(next)) return;
       if (!next && editor.isConnected && performance.now() - openedAt < 250) {
         window.requestAnimationFrame(() => {
-          if (this.activeTextEditor === editor) editor.focus();
+          if (this.activeTextEditor === editor) editor.focus({ preventScroll: true });
         });
         return;
       }
@@ -68525,7 +68525,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.9.1" : "desconocida";
+var NOTELENS_BUILD = true ? "2.9.2" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
