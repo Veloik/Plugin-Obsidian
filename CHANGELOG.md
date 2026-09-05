@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.9.4
+
+### Fixed
+
+- Settings and shortcuts fit within the mobile board in portrait and landscape. Their contents scroll, with sticky headers and accessible close buttons above the drawing controls.
+- Increased spacing between phone navigation and the document dock, and moved the minimap to match.
+- Added checks for panel bounds, scrolling, close controls and dock separation at 390x844, 844x390 and 320x568.
+- Toolbar icons keep their full size on a phone: the rails scroll when they run out of room instead of squeezing their buttons, and the icons are drawn larger in portrait and landscape, where the icon is the only label a button has.
+- Added a check that every toolbar icon stays square, keeps a legible size and fits inside its button at 390x844, 844x390 and 320x568.
+
 ## 2.9.3
 
 ### Fixed

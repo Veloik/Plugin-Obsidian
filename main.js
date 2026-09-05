@@ -56,9 +56,9 @@ var __privateWrapper = (obj, member, setter, getter) => ({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/regenerator-runtime/runtime.js
+// node_modules/regenerator-runtime/runtime.js
 var require_runtime = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/regenerator-runtime/runtime.js"(exports, module2) {
+  "node_modules/regenerator-runtime/runtime.js"(exports, module2) {
     var runtime = (function(exports2) {
       "use strict";
       var Op = Object.prototype;
@@ -573,17 +573,17 @@ var require_runtime = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/getId.js
+// node_modules/tesseract.js/src/utils/getId.js
 var require_getId = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/getId.js"(exports, module2) {
+  "node_modules/tesseract.js/src/utils/getId.js"(exports, module2) {
     "use strict";
     module2.exports = (prefix, cnt) => `${prefix}-${cnt}-${Math.random().toString(16).slice(3, 8)}`;
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createJob.js
+// node_modules/tesseract.js/src/createJob.js
 var require_createJob = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createJob.js"(exports, module2) {
+  "node_modules/tesseract.js/src/createJob.js"(exports, module2) {
     "use strict";
     var getId = require_getId();
     var jobCounter = 0;
@@ -606,9 +606,9 @@ var require_createJob = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/log.js
+// node_modules/tesseract.js/src/utils/log.js
 var require_log = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/log.js"(exports) {
+  "node_modules/tesseract.js/src/utils/log.js"(exports) {
     "use strict";
     var logging = false;
     exports.logging = logging;
@@ -619,9 +619,9 @@ var require_log = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createScheduler.js
+// node_modules/tesseract.js/src/createScheduler.js
 var require_createScheduler = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createScheduler.js"(exports, module2) {
+  "node_modules/tesseract.js/src/createScheduler.js"(exports, module2) {
     "use strict";
     var createJob = require_createJob();
     var { log } = require_log();
@@ -694,9 +694,9 @@ var require_createScheduler = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/getEnvironment.js
+// node_modules/tesseract.js/src/utils/getEnvironment.js
 var require_getEnvironment = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/getEnvironment.js"(exports, module2) {
+  "node_modules/tesseract.js/src/utils/getEnvironment.js"(exports, module2) {
     "use strict";
     module2.exports = (key2) => {
       const env = {};
@@ -715,9 +715,9 @@ var require_getEnvironment = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/resolvePaths.js
+// node_modules/tesseract.js/src/utils/resolvePaths.js
 var require_resolvePaths = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/utils/resolvePaths.js"(exports, module2) {
+  "node_modules/tesseract.js/src/utils/resolvePaths.js"(exports, module2) {
     "use strict";
     var isBrowser = require_getEnvironment()("type") === "browser";
     var resolveURL = isBrowser ? (s3) => new URL(s3, window.location.href).href : (s3) => s3;
@@ -733,9 +733,9 @@ var require_resolvePaths = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/OEM.js
+// node_modules/tesseract.js/src/constants/OEM.js
 var require_OEM = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/OEM.js"(exports, module2) {
+  "node_modules/tesseract.js/src/constants/OEM.js"(exports, module2) {
     "use strict";
     module2.exports = {
       TESSERACT_ONLY: 0,
@@ -746,9 +746,9 @@ var require_OEM = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/package.json
+// node_modules/tesseract.js/package.json
 var require_package = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/package.json"(exports, module2) {
+  "node_modules/tesseract.js/package.json"(exports, module2) {
     module2.exports = {
       name: "tesseract.js",
       version: "7.0.0",
@@ -843,9 +843,9 @@ var require_package = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/defaultOptions.js
+// node_modules/tesseract.js/src/constants/defaultOptions.js
 var require_defaultOptions = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/defaultOptions.js"(exports, module2) {
+  "node_modules/tesseract.js/src/constants/defaultOptions.js"(exports, module2) {
     "use strict";
     module2.exports = {
       /*
@@ -860,9 +860,9 @@ var require_defaultOptions = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/defaultOptions.js
+// node_modules/tesseract.js/src/worker/browser/defaultOptions.js
 var require_defaultOptions2 = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/defaultOptions.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/defaultOptions.js"(exports, module2) {
     "use strict";
     var version2 = require_package().version;
     var defaultOptions2 = require_defaultOptions();
@@ -873,9 +873,9 @@ var require_defaultOptions2 = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/spawnWorker.js
+// node_modules/tesseract.js/src/worker/browser/spawnWorker.js
 var require_spawnWorker = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/spawnWorker.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/spawnWorker.js"(exports, module2) {
     "use strict";
     module2.exports = ({ workerPath, workerBlobURL }) => {
       let worker;
@@ -892,9 +892,9 @@ var require_spawnWorker = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/terminateWorker.js
+// node_modules/tesseract.js/src/worker/browser/terminateWorker.js
 var require_terminateWorker = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/terminateWorker.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/terminateWorker.js"(exports, module2) {
     "use strict";
     module2.exports = (worker) => {
       worker.terminate();
@@ -902,9 +902,9 @@ var require_terminateWorker = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/onMessage.js
+// node_modules/tesseract.js/src/worker/browser/onMessage.js
 var require_onMessage = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/onMessage.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/onMessage.js"(exports, module2) {
     "use strict";
     module2.exports = (worker, handler) => {
       worker.onmessage = ({ data }) => {
@@ -914,9 +914,9 @@ var require_onMessage = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/send.js
+// node_modules/tesseract.js/src/worker/browser/send.js
 var require_send = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/send.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/send.js"(exports, module2) {
     "use strict";
     module2.exports = async (worker, packet) => {
       worker.postMessage(packet);
@@ -924,9 +924,9 @@ var require_send = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/loadImage.js
+// node_modules/tesseract.js/src/worker/browser/loadImage.js
 var require_loadImage = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/loadImage.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/loadImage.js"(exports, module2) {
     "use strict";
     var readFromBlobOrFile = (blob) => new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -977,9 +977,9 @@ var require_loadImage = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/index.js
+// node_modules/tesseract.js/src/worker/browser/index.js
 var require_browser = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/worker/browser/index.js"(exports, module2) {
+  "node_modules/tesseract.js/src/worker/browser/index.js"(exports, module2) {
     "use strict";
     var defaultOptions2 = require_defaultOptions2();
     var spawnWorker = require_spawnWorker();
@@ -998,9 +998,9 @@ var require_browser = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createWorker.js
+// node_modules/tesseract.js/src/createWorker.js
 var require_createWorker = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/createWorker.js"(exports, module2) {
+  "node_modules/tesseract.js/src/createWorker.js"(exports, module2) {
     "use strict";
     var resolvePaths = require_resolvePaths();
     var createJob = require_createJob();
@@ -1187,9 +1187,9 @@ var require_createWorker = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/Tesseract.js
+// node_modules/tesseract.js/src/Tesseract.js
 var require_Tesseract = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/Tesseract.js"(exports, module2) {
+  "node_modules/tesseract.js/src/Tesseract.js"(exports, module2) {
     "use strict";
     var createWorker2 = require_createWorker();
     var recognize = async (image, langs, options) => {
@@ -1211,9 +1211,9 @@ var require_Tesseract = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/languages.js
+// node_modules/tesseract.js/src/constants/languages.js
 var require_languages = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/languages.js"(exports, module2) {
+  "node_modules/tesseract.js/src/constants/languages.js"(exports, module2) {
     "use strict";
     module2.exports = {
       AFR: "afr",
@@ -1322,9 +1322,9 @@ var require_languages = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/PSM.js
+// node_modules/tesseract.js/src/constants/PSM.js
 var require_PSM = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/constants/PSM.js"(exports, module2) {
+  "node_modules/tesseract.js/src/constants/PSM.js"(exports, module2) {
     "use strict";
     module2.exports = {
       OSD_ONLY: "0",
@@ -1345,9 +1345,9 @@ var require_PSM = __commonJS({
   }
 });
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/index.js
+// node_modules/tesseract.js/src/index.js
 var require_src = __commonJS({
-  "../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/tesseract.js/src/index.js"(exports, module2) {
+  "node_modules/tesseract.js/src/index.js"(exports, module2) {
     "use strict";
     require_runtime();
     var createScheduler = require_createScheduler();
@@ -9445,7 +9445,7 @@ function createCalculatorPanel(host, container) {
 // src/recorder.ts
 var import_obsidian4 = require("obsidian");
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@breezystack/lamejs/dist/lamejs.js
+// node_modules/@breezystack/lamejs/dist/lamejs.js
 var fa = {};
 function Xa(w3) {
   return new Int8Array(w3);
@@ -20104,7 +20104,7 @@ function insertMathSnippet(field, snippet) {
 // src/exchange.ts
 var import_obsidian5 = require("obsidian");
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fflate/esm/browser.js
+// node_modules/fflate/esm/browser.js
 var u8 = Uint8Array;
 var u16 = Uint16Array;
 var i32 = Int32Array;
@@ -21967,7 +21967,7 @@ function createTranslatorPanel(host, container) {
   return api;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/typeof.js
+// node_modules/@babel/runtime/helpers/esm/typeof.js
 function _typeof(o3) {
   "@babel/helpers - typeof";
   return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o4) {
@@ -21977,12 +21977,12 @@ function _typeof(o3) {
   }, _typeof(o3);
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/arrayWithHoles.js
+// node_modules/@babel/runtime/helpers/esm/arrayWithHoles.js
 function _arrayWithHoles(r) {
   if (Array.isArray(r)) return r;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js
+// node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js
 function _iterableToArrayLimit(r, l3) {
   var t3 = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
   if (null != t3) {
@@ -22005,14 +22005,14 @@ function _iterableToArrayLimit(r, l3) {
   }
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/arrayLikeToArray.js
+// node_modules/@babel/runtime/helpers/esm/arrayLikeToArray.js
 function _arrayLikeToArray(r, a3) {
   (null == a3 || a3 > r.length) && (a3 = r.length);
   for (var e = 0, n = Array(a3); e < a3; e++) n[e] = r[e];
   return n;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/unsupportedIterableToArray.js
+// node_modules/@babel/runtime/helpers/esm/unsupportedIterableToArray.js
 function _unsupportedIterableToArray(r, a3) {
   if (r) {
     if ("string" == typeof r) return _arrayLikeToArray(r, a3);
@@ -22021,17 +22021,17 @@ function _unsupportedIterableToArray(r, a3) {
   }
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/nonIterableRest.js
+// node_modules/@babel/runtime/helpers/esm/nonIterableRest.js
 function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/@babel/runtime/helpers/esm/slicedToArray.js
+// node_modules/@babel/runtime/helpers/esm/slicedToArray.js
 function _slicedToArray(r, e) {
   return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest();
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/iobuffer/lib-esm/text.js
+// node_modules/iobuffer/lib-esm/text.js
 function decode(bytes, encoding = "utf8") {
   const decoder = new TextDecoder(encoding);
   return decoder.decode(bytes);
@@ -22041,7 +22041,7 @@ function encode(str) {
   return encoder.encode(str);
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/iobuffer/lib-esm/IOBuffer.js
+// node_modules/iobuffer/lib-esm/IOBuffer.js
 var defaultByteLength = 1024 * 8;
 var hostBigEndian = (() => {
   const array = new Uint8Array(4);
@@ -22652,7 +22652,7 @@ var IOBuffer = class _IOBuffer {
   }
 };
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/node_modules/pako/dist/pako.esm.mjs
+// node_modules/fast-png/node_modules/pako/dist/pako.esm.mjs
 var Z_FIXED$1 = 4;
 var Z_BINARY = 0;
 var Z_TEXT = 1;
@@ -26863,7 +26863,7 @@ var { Inflate, inflate, inflateRaw, ungzip } = inflate_1$1;
 var Inflate_1 = Inflate;
 var inflate_1 = inflate;
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/crc.js
+// node_modules/fast-png/lib-esm/helpers/crc.js
 var crcTable2 = [];
 for (let n = 0; n < 256; n++) {
   let c3 = n;
@@ -26895,7 +26895,7 @@ function checkCrc(buffer, crcLength, chunkName) {
   }
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/unfilter.js
+// node_modules/fast-png/lib-esm/helpers/unfilter.js
 function unfilterNone(currentLine, newLine, bytesPerLine) {
   for (let i4 = 0; i4 < bytesPerLine; i4++) {
     newLine[i4] = currentLine[i4];
@@ -26971,7 +26971,7 @@ function paethPredictor(a3, b3, c3) {
     return c3;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/applyUnfilter.js
+// node_modules/fast-png/lib-esm/helpers/applyUnfilter.js
 function applyUnfilter(filterType, currentLine, newLine, prevLine, passLineBytes, bytesPerPixel) {
   switch (filterType) {
     case 0:
@@ -26994,7 +26994,7 @@ function applyUnfilter(filterType, currentLine, newLine, prevLine, passLineBytes
   }
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/decodeInterlaceAdam7.js
+// node_modules/fast-png/lib-esm/helpers/decodeInterlaceAdam7.js
 var uint16 = new Uint16Array([255]);
 var uint8 = new Uint8Array(uint16.buffer);
 var osIsLittleEndian = uint8[0] === 255;
@@ -27061,7 +27061,7 @@ function swap16(val) {
   return (val & 255) << 8 | val >> 8 & 255;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/decodeInterlaceNull.js
+// node_modules/fast-png/lib-esm/helpers/decodeInterlaceNull.js
 var uint162 = new Uint16Array([255]);
 var uint82 = new Uint8Array(uint162.buffer);
 var osIsLittleEndian2 = uint82[0] === 255;
@@ -27116,7 +27116,7 @@ function swap162(val) {
   return (val & 255) << 8 | val >> 8 & 255;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/signature.js
+// node_modules/fast-png/lib-esm/helpers/signature.js
 var pngSignature = Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10);
 function checkSignature(buffer) {
   if (!hasPngSignature(buffer.readBytes(pngSignature.length))) {
@@ -27135,7 +27135,7 @@ function hasPngSignature(array) {
   return true;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/helpers/text.js
+// node_modules/fast-png/lib-esm/helpers/text.js
 var textChunkName = "tEXt";
 var NULL = 0;
 var latin1Decoder = new TextDecoder("latin1");
@@ -27170,7 +27170,7 @@ function readLatin1(buffer, length) {
   return latin1Decoder.decode(buffer.readBytes(length));
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/internalTypes.js
+// node_modules/fast-png/lib-esm/internalTypes.js
 var ColorType = {
   UNKNOWN: -1,
   GREYSCALE: 0,
@@ -27202,7 +27202,7 @@ var BlendOpType = {
   OVER: 1
 };
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/PngDecoder.js
+// node_modules/fast-png/lib-esm/PngDecoder.js
 var PngDecoder = class extends IOBuffer {
   constructor(data, options = {}) {
     super(data);
@@ -27674,20 +27674,20 @@ function checkBitDepth(value) {
   return value;
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/types.js
+// node_modules/fast-png/lib-esm/types.js
 var ResolutionUnitSpecifier;
 (function(ResolutionUnitSpecifier2) {
   ResolutionUnitSpecifier2[ResolutionUnitSpecifier2["UNKNOWN"] = 0] = "UNKNOWN";
   ResolutionUnitSpecifier2[ResolutionUnitSpecifier2["METRE"] = 1] = "METRE";
 })(ResolutionUnitSpecifier || (ResolutionUnitSpecifier = {}));
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/fast-png/lib-esm/index.js
+// node_modules/fast-png/lib-esm/index.js
 function decodePng(data, options) {
   const decoder = new PngDecoder(data, options);
   return decoder.decode();
 }
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/jspdf/dist/jspdf.es.min.js
+// node_modules/jspdf/dist/jspdf.es.min.js
 var i3 = /* @__PURE__ */ (function() {
   return "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self ? self : this;
 })();
@@ -36516,7 +36516,7 @@ var VIDEO_EXTENSIONS = ["mp4", "webm", "mov", "mkv", "m4v"];
 // src/embeds.ts
 var import_obsidian8 = require("obsidian");
 
-// ../../../../../../Desktop/Nueva carpeta/NoteLens/node_modules/pdfjs-dist/build/pdf.mjs
+// node_modules/pdfjs-dist/build/pdf.mjs
 var import_meta = {};
 var __webpack_require__ = {};
 (() => {
@@ -68586,7 +68586,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.9.3" : "desconocida";
+var NOTELENS_BUILD = true ? "2.9.4" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
