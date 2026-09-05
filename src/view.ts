@@ -9,7 +9,7 @@ import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
 import { RasterImage, rasterizeMath } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer } from "./renderer";
-import { trackMobileEditor } from "./mobile-editor";
+import { trackMobileEditor, mountMobileBoard } from "./mobile-editor";
 import { CANVAS_FONTS, fontStack } from "./fonts";
 import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
 import { BaseStyle, editableText, readRuns, renderRuns, selectOffsets, selectionOffsets, surroundSelection, unwrapCode } from "./rich-editor";
@@ -286,6 +286,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
 	private focusModeEnabled = false;
 	private stopMobileEditor: (() => void) | null = null;
+	private stopMobileFullscreen: (() => void) | null = null;
 	/** How far the board is shown lifted for a software keyboard. Presentation only. */
 	private keyboardLift = 0;
 	private loadFailed = false;
@@ -344,7 +345,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderer = new CanvasRenderer(this.workspaceEl);
 		this.registerDomEvent(this.renderer.canvas, "contextlost", (event) => event.preventDefault());
 		this.registerDomEvent(this.renderer.canvas, "contextrestored", () => this.handleResize());
-		this.register(() => { this.stopMobileEditor?.(); this.stopMobileEditor = null; });
+		this.register(() => { this.stopMobileEditor?.(); this.stopMobileEditor = null; this.stopMobileFullscreen?.(); this.stopMobileFullscreen = null; });
 
 		this.history = new HistoryManager(
 			() => this.data,
@@ -409,6 +410,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	override async onClose(): Promise<void> {
 		this.plugin.openBoards.delete(this);
 		this.commitTextEditor();
+		this.stopMobileFullscreen?.();
+		this.stopMobileFullscreen = null;
 		this.resizeObserver?.disconnect();
 		this.resizeObserver = null;
 		this.syncActivePageMeta();
@@ -740,6 +743,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	getMiniMapVisible(): boolean { return this.miniMapVisible; }
 
 	toggleFullscreen(): void {
+		if (Platform.isMobile) {
+			this.commitTextEditor();
+			if (this.stopMobileFullscreen) {
+				this.stopMobileFullscreen();
+				this.stopMobileFullscreen = null;
+			} else {
+				this.stopMobileFullscreen = mountMobileBoard(this.workspaceEl, true);
+			}
+			this.workspaceEl.toggleClass("is-fullscreen", this.isFullscreen());
+			(this.workspaceEl as any).__refreshNavigation?.();
+			this.handleResize();
+			return;
+		}
 		const target = this.containerEl;
 		if (document.fullscreenElement) {
 			void document.exitFullscreen().catch(() => { /* already left */ });
@@ -750,7 +766,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 	}
 
-	isFullscreen(): boolean { return document.fullscreenElement === this.containerEl; }
+	isFullscreen(): boolean { return !!this.stopMobileFullscreen || document.fullscreenElement === this.containerEl; }
 
 	/** Region capture for the translator: drag a rectangle, then read everything inside it. */
 	captureBoardText(langCode: string, onProgress: (message: string) => void): Promise<string> {
@@ -5495,15 +5511,16 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private commitTextEditor(): void {
-		this.stopMobileEditor?.();
+		const stopMobile = this.stopMobileEditor;
 		this.stopMobileEditor = null;
 		const editor = this.activeTextEditor;
 		const source = this.activeTextSourceEl;
-		if (!editor || !source) return;
+		if (!editor || !source) { stopMobile?.(); return; }
 		const id = source.getAttribute("data-id");
 		const tb = this.data.texts.find(text => text.id === id);
 		this.activeTextEditor = null;
 		this.activeTextSourceEl = null;
+		stopMobile?.();
 		this.mathPreviewEl?.remove();
 		this.mathPreviewEl = null;
 		editor.remove();

@@ -17,6 +17,15 @@
 
 /* Bookmarks, ruler, minimap and A4 guides all rely on this class; without a
    rule they were painted permanently on top of the page. */
+.notelens-mobile-viewport {
+  position: fixed !important;
+  z-index: 10000;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  --nl-safe-bottom: 0px;
+}
+
 .onenote-workspace .hidden {
   display: none !important;
 }
@@ -4133,10 +4142,14 @@
      onto the left cluster is dropped — it all lives in the panels anyway. */
   .notelens-navigation-controls { right: 52px; gap: 2px; padding: 3px 5px; }
   .notelens-nav-reset,
-  .notelens-nav-fullscreen,
-  .notelens-nav-map,
   .notelens-nav-help { display: none; }
+  .notelens-navigation-controls {
+    bottom: calc(108px + var(--nl-safe-bottom, 0px));
+    right: 12px;
+    max-width: calc(100% - 24px);
+  }
   .notelens-zoom-label { min-width: 40px; font-size: 11px; }
+  .notelens-minimap { bottom: calc(150px + var(--nl-safe-bottom, 0px)); }
   .notelens-calculator,
   .notelens-translator,
   .notelens-recorder,

@@ -1,14 +1,18 @@
 # Changelog
 
+## 2.9.3
+
+### Fixed
+
+- Mobile editing temporarily mounts the existing board directly under the document body so a keyboard-collapsed Obsidian pane cannot clip it. The board follows the visible viewport and returns to its original parent after editing.
+- Map and fullscreen controls are visible in a separate navigation row on phones. Mobile fullscreen expands the board within the app without depending on the browser Fullscreen API.
+- Added phone checks at 320px and 390px for clickable controls, fullscreen exit, clipped keyboard ancestors, visible editing and overlay cleanup.
+
 ## 2.9.2
 
 ### Fixed
 
 - Mobile text editing now preserves the board when the native keyboard resizes the view during focus.
-
-## Unreleased
-
-### Fixed
 
 - Capture the mobile board and viewport dimensions before focusing text, code or formula editors. A native keyboard that resizes both viewports during focus previously left the recovery logic with an already collapsed baseline. Prevent automatic focus scrolling from displacing the board.
 

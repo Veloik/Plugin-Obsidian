@@ -16,10 +16,10 @@ await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 let browser;
 try {
   browser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
-  for (const variant of ["text", "code", "math"]) {
+  for (const clipped of [false, true]) for (const variant of ["text", "code", "math"]) {
     const page = await browser.newPage();
     await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
-    await page.evaluateOnNewDocument(() => {
+    await page.evaluateOnNewDocument(clipped => {
       window.__presetPlatform = { isMobile: true, isDesktop: false, isPhone: true, isIosApp: true };
       window.__presetSettings = { showAssistantPet: false };
       const viewport = new EventTarget();
@@ -30,6 +30,8 @@ try {
         Object.defineProperty(window, "innerHeight", { configurable: true, value: fullHeight });
         viewport.height = fullHeight;
         document.querySelector(".view-container").style.height = "";
+        document.querySelector(".view-container").style.maxHeight = "";
+        document.getElementById("native-keyboard-clip")?.remove();
         viewport.dispatchEvent(new Event("resize"));
       };
       document.addEventListener("focus", event => {
@@ -37,11 +39,34 @@ try {
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 422 });
         viewport.height = 422;
         document.querySelector(".view-container").style.height = "88px";
+        if (clipped) {
+          const css = document.createElement("style");
+          css.id = "native-keyboard-clip";
+          css.textContent = ".view-container { height:88px!important; min-height:0!important; max-height:88px!important; overflow:hidden!important; }";
+          document.head.appendChild(css);
+        }
         viewport.dispatchEvent(new Event("resize"));
       }, true);
-    });
+    }, clipped);
     await page.goto(`http://127.0.0.1:${server.address().port}/dev-harness/index.html`);
     await page.waitForFunction(() => window.__ready || window.__bootError);
+    // Both controls must be visible, unobscured and operable on a phone.
+    for (const width of [320, 390]) {
+      await page.setViewport({ width, height: 844, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+      await page.waitForFunction(() => {
+        return [".notelens-nav-map", ".notelens-nav-fullscreen"].every(selector => {
+          const el = document.querySelector(selector), r = el.getBoundingClientRect();
+          return r.width > 0 && r.left >= 0 && r.right <= innerWidth && el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
+        });
+      });
+      await page.click(".notelens-nav-map");
+      assert.ok(await page.evaluate(() => window.__view.getMiniMapVisible()), "map button opens minimap");
+      await page.click(".notelens-nav-map");
+      await page.click(".notelens-nav-fullscreen");
+      assert.ok(await page.evaluate(() => window.__view.isFullscreen() && window.__view.workspaceEl.parentElement.parentElement === document.body), "mobile fullscreen bypasses native Fullscreen API");
+      await page.click(".notelens-nav-fullscreen");
+      assert.ok(await page.evaluate(() => !window.__view.isFullscreen() && !document.querySelector(".notelens-mobile-viewport")), "fullscreen exit restores board");
+    }
     await page.evaluate(variant => {
       const v = window.__view;
       v.data.viewTransform = { x: 10, y: 20, scale: .65 };
@@ -62,7 +87,8 @@ try {
     await page.evaluate(() => { window.__view.commitTextEditor(); window.__restoreKeyboard(); });
     await new Promise(resolve => setTimeout(resolve, 150));
     assert.ok(await page.evaluate(() => window.__view.keyboardLift === 0 && !window.__view.workspaceEl.style.minHeight && !document.querySelector(".view-container").style.minHeight), "restores layout after editing");
-    console.log("PASS synchronous keyboard focus: " + variant);
+    assert.ok(await page.evaluate(() => !document.querySelector(".notelens-mobile-viewport")), "editing restores board without orphan overlays");
+    console.log("PASS mobile controls and keyboard focus: " + variant + ", clipped ancestor=" + clipped);
     await page.close();
   }
 } finally {

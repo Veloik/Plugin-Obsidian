@@ -2,6 +2,44 @@
  * Keep the active editor above a software keyboard without changing document
  * coordinates, and keep the board itself on screen while the keyboard is up.
  */
+export function mountMobileBoard(board: HTMLElement, fullscreen = false): () => void {
+	// A fixed child of the leaf is still clipped by Obsidian's resized ancestors.
+	// Move the existing board (not a copy) into a body-level viewport while in use.
+	if (board.parentElement?.classList.contains("notelens-mobile-viewport")) return () => {};
+	const doc = board.ownerDocument;
+	const win = doc.defaultView!;
+	const rect = board.getBoundingClientRect();
+	const marker = doc.createComment("notelens-board-position");
+	board.before(marker);
+	const host = doc.createElement("div");
+	host.className = "onenote-workspace-host notelens-mobile-viewport";
+	doc.body.appendChild(host);
+	const viewport = win.visualViewport;
+	const layout = () => {
+		const top = fullscreen ? (viewport?.offsetTop ?? 0) : Math.max(rect.top, viewport?.offsetTop ?? 0);
+		const bottom = Math.min(win.innerHeight, (viewport?.offsetTop ?? 0) + (viewport?.height ?? win.innerHeight));
+		host.style.top = `${top}px`;
+		host.style.left = fullscreen ? "0px" : `${rect.left}px`;
+		host.style.width = fullscreen ? "100%" : `${Math.min(rect.width, win.innerWidth)}px`;
+		host.style.height = `${Math.max(1, (fullscreen ? bottom : Math.min(rect.bottom, bottom)) - top)}px`;
+	};
+	layout();
+	host.appendChild(board);
+	viewport?.addEventListener("resize", layout);
+	viewport?.addEventListener("scroll", layout);
+	win.addEventListener("resize", layout);
+	let stopped = false;
+	return () => {
+		if (stopped) return;
+		stopped = true;
+		viewport?.removeEventListener("resize", layout);
+		viewport?.removeEventListener("scroll", layout);
+		win.removeEventListener("resize", layout);
+		if (marker.parentNode) marker.replaceWith(board);
+		host.remove();
+	};
+}
+
 export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => void, board?: HTMLElement): () => void {
 	const win = editor.ownerDocument.defaultView!;
 	const viewport = win.visualViewport;
@@ -9,6 +47,7 @@ export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => v
 	let lifted = 0;
 	let frame = 0;
 	const initialHeight = win.innerHeight;
+	const restoreBoard = board ? mountMobileBoard(board) : () => {};
 	// The app can take the keyboard off a viewport the system has already made
 	// smaller, which leaves the view a strip a few pixels tall — a board with no
 	// board on it. Remember what each box measured before the keyboard arrived,
@@ -82,5 +121,6 @@ export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => v
 		editor.removeEventListener("focus", schedule);
 		releaseHeights();
 		move(0);
+		restoreBoard();
 	};
 }
