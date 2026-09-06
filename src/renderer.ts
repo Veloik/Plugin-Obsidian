@@ -131,7 +131,7 @@ export class CanvasRenderer {
 	/** Temporary upward offset for a software keyboard; never part of the document. */
 	private lift = 0;
 	/** Marker bands, kept per stroke so panning never rebuilds them. */
-	private markerBands = new WeakMap<Stroke, { count: number; width: number; band: Path2D }>();
+	private markerBands = new WeakMap<Stroke, { count: number; width: number; endX: number; endY: number; band: Path2D }>();
 
 	constructor(parent: HTMLElement) {
 		this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
@@ -237,11 +237,17 @@ export class CanvasRenderer {
 	 * redraw.
 	 */
 	private markerBand(stroke: Stroke): Path2D {
+		const pts = stroke.points;
+		// The last point counts as well as how many there are: a stroke held
+		// straight with Shift keeps two points and only moves the far one, and
+		// counting alone left it cached as the stub it started as.
+		const end = pts[pts.length - 1];
 		const cached = this.markerBands.get(stroke);
-		if (cached && cached.count === stroke.points.length && cached.width === stroke.width) return cached.band;
+		if (cached && cached.count === pts.length && cached.width === stroke.width
+			&& cached.endX === end.x && cached.endY === end.y) return cached.band;
 		const width = Math.max(2, stroke.width);
-		const band = bandPath(smoothCenterline(simplifyPath(stroke.points, Math.max(1.5, width * 0.25))), width);
-		this.markerBands.set(stroke, { count: stroke.points.length, width: stroke.width, band });
+		const band = bandPath(smoothCenterline(simplifyPath(pts, Math.max(1.5, width * 0.25))), width);
+		this.markerBands.set(stroke, { count: pts.length, width: stroke.width, endX: end.x, endY: end.y, band });
 		return band;
 	}
 
@@ -534,8 +540,13 @@ export class CanvasRenderer {
 		const prev = i > 0 ? pts[i - 1] : p0;
 		const startX = (prev.x + p0.x) / 2;
 		const startY = (prev.y + p0.y) / 2;
-		const endX = (p0.x + p1.x) / 2;
-		const endY = (p0.y + p1.y) / 2;
+		// Every segment ends halfway to the next point, where the following
+		// curve picks it up — except the last one, which has to reach the point
+		// itself or the stroke stops half a segment short. A two-point straight
+		// line is all last segment, and used to be drawn at half its length.
+		const isLast = i === pts.length - 2;
+		const endX = isLast ? p1.x : (p0.x + p1.x) / 2;
+		const endY = isLast ? p1.y : (p0.y + p1.y) / 2;
 
 		this.ctx.save();
 		this.configureStyle(stroke, this.nibWidth(stroke, (p0.p + p1.p) / 2, pts, i));

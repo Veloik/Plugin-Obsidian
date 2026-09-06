@@ -12,7 +12,9 @@ export function mountMobileBoard(board: HTMLElement, fullscreen = false): () => 
 	const marker = doc.createComment("notelens-board-position");
 	board.before(marker);
 	const host = doc.createElement("div");
-	host.className = "onenote-workspace-host notelens-mobile-viewport";
+	// Fullscreen reaches the edges of the screen itself, so it is the one that has
+	// to keep the room the phone claims for its clock and its home bar.
+	host.className = `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`;
 	doc.body.appendChild(host);
 	const viewport = win.visualViewport;
 	const layout = () => {
@@ -40,7 +42,7 @@ export function mountMobileBoard(board: HTMLElement, fullscreen = false): () => 
 	};
 }
 
-export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => void, board?: HTMLElement): () => void {
+export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => void, board?: HTMLElement, reserve: () => number = () => 0): () => void {
 	const win = editor.ownerDocument.defaultView!;
 	const viewport = win.visualViewport;
 	let stopped = false;
@@ -83,7 +85,9 @@ export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => v
 		const visibleBottom = viewport.offsetTop + viewport.height;
 		if (keyboard) holdHeights(visibleBottom); else releaseHeights();
 		const box = editor.getBoundingClientRect();
-		const room = visibleBottom - 12;
+		// Whatever is docked over the bottom of the board covers the box as surely
+		// as the keyboard does, so the room the box gets is what is left above it.
+		const room = visibleBottom - 12 - Math.max(0, reserve());
 		const top = box.top + lifted;
 		const bottom = box.bottom + lifted;
 		const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;

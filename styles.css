@@ -26,6 +26,18 @@
   --nl-safe-bottom: 0px;
 }
 
+/* The plugin's own fullscreen covers the screen itself - the clock and the
+   notch at the top, the home bar underneath - and a rail pinned to an edge of
+   the board would end up under them. The board keeps that room as padding, so
+   every control still lands on the part of the screen a finger can use. */
+.notelens-mobile-viewport.is-fullscreen-board {
+  box-sizing: border-box;
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+
 .onenote-workspace .hidden {
   display: none !important;
 }
@@ -1827,6 +1839,60 @@
 .notelens-tag-summary-note { margin-top: 2px; color: #94a3b8; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
 
 /* Math palette in the floating format bar */
+/* ==========================================================================
+   WRITING ON A PHONE
+   A keyboard already takes half the view; a format bar that wraps over what is
+   left buries the very words being edited. On a phone the bar docks to the
+   bottom edge as one row that scrolls, and the drawing rails - which nothing
+   can reach while a box has the keyboard - stand down until the box is done.
+   ========================================================================== */
+.notelens-format-bar.is-docked {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: var(--nl-safe-bottom, 0px);
+  max-width: none;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  padding: 5px 8px;
+}
+.notelens-format-bar.is-docked::-webkit-scrollbar { display: none; }
+/* A row that scrolls never squeezes what it carries. */
+.notelens-format-bar.is-docked > * { flex: 0 0 auto; }
+.notelens-format-bar.is-docked .notelens-format-btn { width: 34px; height: 34px; }
+.notelens-format-bar.is-docked .notelens-format-btn svg { width: 19px; height: 19px; }
+.notelens-format-bar.is-docked .onenote-color-dot { width: 24px; height: 24px; }
+/* The way out never scrolls away: it stays pinned to the end of the row, with
+   the bar's own background so the controls pass cleanly underneath it. */
+.notelens-format-bar.is-docked .notelens-format-close {
+  position: sticky;
+  right: 0;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  padding-left: 6px;
+  background: rgba(18, 22, 34, 0.96);
+  box-shadow: -10px 0 12px rgba(18, 22, 34, 0.96);
+  font-size: 18px;
+}
+/* The maths palette is a grid of keys, not a row: it keeps its wrapping and
+   takes a share of the board instead, with the board still visible above it. */
+.notelens-format-bar.is-docked.is-math { flex-wrap: wrap; max-height: 45%; overflow-y: auto; }
+
+.onenote-workspace.is-editing-text .onenote-ribbon-dock,
+.onenote-workspace.is-editing-text .notelens-insert-dock,
+.onenote-workspace.is-editing-text .onenote-quick-tags,
+.onenote-workspace.is-editing-text .notelens-document-dock,
+.onenote-workspace.is-editing-text .notelens-navigation-controls,
+.onenote-workspace.is-editing-text .notelens-bookmarks-dock,
+.onenote-workspace.is-editing-text .notelens-pages-dock,
+.onenote-workspace.is-editing-text .notelens-focus-toggle,
+.onenote-workspace.is-editing-text .notelens-settings-btn { display: none; }
+
 .notelens-format-bar.is-math { flex-wrap: wrap; max-width: 620px; }
 .notelens-math-palette { order: 10; display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .notelens-format-bar.is-math .notelens-format-close { margin-left: auto; }

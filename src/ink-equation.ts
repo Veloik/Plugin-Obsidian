@@ -29,6 +29,7 @@ export class InkEquationModal extends Modal {
 	private recognizeTimer: number | null = null;
 	private recognizing = false;
 	private pending = false;
+	private recognitionRevision = 0;
 
 	constructor(
 		app: App,
@@ -206,6 +207,7 @@ export class InkEquationModal extends Modal {
 		};
 		canvas.addEventListener("pointerdown", (event) => {
 			if (event.button !== 0) return;
+			this.recognitionRevision++;
 			event.preventDefault();
 			canvas.setPointerCapture(event.pointerId);
 			if (this.tool === "erase") { eraseAt(pointAt(event)); return; }
@@ -248,6 +250,7 @@ export class InkEquationModal extends Modal {
 			if (next) { this.strokes.push(next); redraw(); this.scheduleRecognition(); }
 		});
 		toolButton("trash-2", tr("Eliminar"), () => {
+			this.recognitionRevision++;
 			this.strokes = [];
 			this.redoStack = [];
 			redraw();
@@ -262,12 +265,26 @@ export class InkEquationModal extends Modal {
 		if (this.readFromBoard) {
 			toolButton("scan-text", tr("Leer de la pizarra"), async () => {
 				status.setText(tr("Elige la zona de la pizarra…"));
-				const text = await this.readFromBoard?.(message => status.setText(message)).catch(() => "") ?? "";
+				this.recognitionRevision++;
+				// The modal's backdrop otherwise intercepts the region-selection gesture.
+				const previousDisplay = this.containerEl.style.display;
+				this.containerEl.style.display = "none";
+				let text = "";
+				try {
+					text = await this.readFromBoard?.(message => status.setText(message)) ?? "";
+				} catch {
+					status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
+					return;
+				} finally {
+					this.containerEl.style.display = previousDisplay;
+				}
+				if (!this.containerEl.isConnected) return;
 				if (!text.trim()) { status.setText(tr("No he leído nada. Prueba con una zona más ajustada.")); return; }
 				input.value = this.tidy(text);
 				this.source = input.value;
 				lastAutomatic = input.value;
-				editedByUser = false;
+				editedByUser = true;
+				candidates.addClass("hidden");
 				drawPreview();
 				status.setText(tr("Leído desde los objetos y trazos de la pizarra. Revisa solo los símbolos marcados."));
 			});
@@ -292,7 +309,7 @@ export class InkEquationModal extends Modal {
 		};
 		setTool("write");
 		// Handwriting first, as OneNote does; the keyboard is one click away.
-		setMode("hand");
+		setMode(this.source.trim() ? "type" : "hand");
 
 		// --- footer
 		const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
@@ -310,6 +327,7 @@ export class InkEquationModal extends Modal {
 
 		// Recognition, debounced so it runs when you pause rather than per stroke.
 		this.scheduleRecognition = () => {
+			this.recognitionRevision++;
 			if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
 			this.recognizeTimer = window.setTimeout(() => void runRecognition(), 700);
 		};
@@ -317,6 +335,7 @@ export class InkEquationModal extends Modal {
 			if (this.strokes.length === 0) return;
 			if (this.recognizing) { this.pending = true; return; }
 			this.recognizing = true;
+			const revision = this.recognitionRevision;
 			status.setText(tr("Analizando trazos y estructura…"));
 			try {
 				// The vector pass is instant and retains fractions, superscripts and
@@ -347,7 +366,13 @@ export class InkEquationModal extends Modal {
 				// Only ask the local OCR fallback when geometry is unsure. This keeps
 				// the normal pen flow immediate and still covers uncommon letters.
 				if (vector.confidence < 0.78 || /\?/.test(vector.source)) {
-					const ocr = await recognizeFormula(shot, message => status.setText(message));
+					let ocr = "";
+					try {
+						ocr = await recognizeFormula(shot, message => { if (revision === this.recognitionRevision) status.setText(message); });
+					} catch {
+						// Keep the vector result when the optional image recognizer is unavailable.
+					}
+					if (revision !== this.recognitionRevision || !this.containerEl.isConnected) return;
 					if (vector.unknown > 0) {
 						// A symbol the stroke reader refused to name is not a symbol the
 						// image reader gets to name unannounced: it read a spiral as "9".
@@ -393,6 +418,7 @@ export class InkEquationModal extends Modal {
 	private scheduleRecognition: () => void = () => {};
 
 	override onClose(): void {
+		this.recognitionRevision++;
 		if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
 		this.contentEl.empty();
 	}

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.9.5
+
+### Fixed
+
+- Shift and drag draws the whole straight line, with the pen and with the marker. The pen inked it only as far as its halfway point, because the last segment of any stroke stopped short of its final point, and the marker kept the stub the line started as: its band was cached by how many points a stroke had, and a straight line always has two.
+- Pressing Shift part way through a stroke drops the curve already inked instead of leaving it on the board until the pen is lifted.
+- Reading a formula from the board no longer happens behind the equation dialog, whose backdrop swallowed the region selection. A reading that arrives after the strokes changed, or after the dialog closed, is discarded, and the dialog opens ready to type when it already has notation.
+- On a phone, the formatting bar docks along the bottom of the board while a text box is being edited and the board's own controls stand down for it, so the words being edited are never buried. Fullscreen keeps the room the phone claims for its clock and its home bar.
+
+### Tests
+
+- Shift straight lines: pen and marker, mouse and stylus, Shift held from the start or joined mid-stroke, both while drawing and once released. The ink has to stay on the line and reach its far end.
+- Phone checks for writing with the keyboard up, for zooming, and for fullscreen on a screen with a notch join `npm run test:mobile`.
+
 ## 2.9.4
 
 ### Fixed

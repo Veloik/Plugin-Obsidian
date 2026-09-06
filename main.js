@@ -35630,11 +35630,13 @@ var CanvasRenderer = class {
    * redraw.
    */
   markerBand(stroke) {
+    const pts = stroke.points;
+    const end = pts[pts.length - 1];
     const cached = this.markerBands.get(stroke);
-    if (cached && cached.count === stroke.points.length && cached.width === stroke.width) return cached.band;
+    if (cached && cached.count === pts.length && cached.width === stroke.width && cached.endX === end.x && cached.endY === end.y) return cached.band;
     const width = Math.max(2, stroke.width);
-    const band = bandPath(smoothCenterline(simplifyPath(stroke.points, Math.max(1.5, width * 0.25))), width);
-    this.markerBands.set(stroke, { count: stroke.points.length, width: stroke.width, band });
+    const band = bandPath(smoothCenterline(simplifyPath(pts, Math.max(1.5, width * 0.25))), width);
+    this.markerBands.set(stroke, { count: pts.length, width: stroke.width, endX: end.x, endY: end.y, band });
     return band;
   }
   drawWholeStroke(stroke) {
@@ -35905,8 +35907,9 @@ var CanvasRenderer = class {
     const prev = i4 > 0 ? pts[i4 - 1] : p0;
     const startX = (prev.x + p0.x) / 2;
     const startY = (prev.y + p0.y) / 2;
-    const endX = (p0.x + p12.x) / 2;
-    const endY = (p0.y + p12.y) / 2;
+    const isLast = i4 === pts.length - 2;
+    const endX = isLast ? p12.x : (p0.x + p12.x) / 2;
+    const endY = isLast ? p12.y : (p0.y + p12.y) / 2;
     this.ctx.save();
     this.configureStyle(stroke, this.nibWidth(stroke, (p0.p + p12.p) / 2, pts, i4));
     this.ctx.beginPath();
@@ -35927,7 +35930,7 @@ function mountMobileBoard(board, fullscreen = false) {
   const marker = doc.createComment("notelens-board-position");
   board.before(marker);
   const host = doc.createElement("div");
-  host.className = "onenote-workspace-host notelens-mobile-viewport";
+  host.className = `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`;
   doc.body.appendChild(host);
   const viewport = win.visualViewport;
   const layout = () => {
@@ -35954,7 +35957,7 @@ function mountMobileBoard(board, fullscreen = false) {
     host.remove();
   };
 }
-function trackMobileEditor(editor, move, board) {
+function trackMobileEditor(editor, move, board, reserve = () => 0) {
   const win = editor.ownerDocument.defaultView;
   const viewport = win.visualViewport;
   let stopped = false;
@@ -35991,7 +35994,7 @@ function trackMobileEditor(editor, move, board) {
     if (keyboard) holdHeights(visibleBottom);
     else releaseHeights();
     const box = editor.getBoundingClientRect();
-    const room = visibleBottom - 12;
+    const room = visibleBottom - 12 - Math.max(0, reserve());
     const top = box.top + lifted;
     const bottom = box.bottom + lifted;
     const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;
@@ -60708,6 +60711,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     this.recognizeTimer = null;
     this.recognizing = false;
     this.pending = false;
+    this.recognitionRevision = 0;
     /** Replaced in onOpen; declared so the handlers above can call it. */
     this.scheduleRecognition = () => {
     };
@@ -60859,6 +60863,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     };
     canvas.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
+      this.recognitionRevision++;
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
       if (this.tool === "erase") {
@@ -60913,6 +60918,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       }
     });
     toolButton("trash-2", tr("Eliminar"), () => {
+      this.recognitionRevision++;
       this.strokes = [];
       this.redoStack = [];
       redraw();
@@ -60927,7 +60933,19 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     if (this.readFromBoard) {
       toolButton("scan-text", tr("Leer de la pizarra"), async () => {
         status.setText(tr("Elige la zona de la pizarra\u2026"));
-        const text = await this.readFromBoard?.((message) => status.setText(message)).catch(() => "") ?? "";
+        this.recognitionRevision++;
+        const previousDisplay = this.containerEl.style.display;
+        this.containerEl.style.display = "none";
+        let text = "";
+        try {
+          text = await this.readFromBoard?.((message) => status.setText(message)) ?? "";
+        } catch {
+          status.setText(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo."));
+          return;
+        } finally {
+          this.containerEl.style.display = previousDisplay;
+        }
+        if (!this.containerEl.isConnected) return;
         if (!text.trim()) {
           status.setText(tr("No he le\xEDdo nada. Prueba con una zona m\xE1s ajustada."));
           return;
@@ -60935,7 +60953,8 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         input.value = this.tidy(text);
         this.source = input.value;
         lastAutomatic = input.value;
-        editedByUser = false;
+        editedByUser = true;
+        candidates.addClass("hidden");
         drawPreview();
         status.setText(tr("Le\xEDdo desde los objetos y trazos de la pizarra. Revisa solo los s\xEDmbolos marcados."));
       });
@@ -60958,7 +60977,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       canvas.toggleClass("is-erasing", tool === "erase");
     };
     setTool("write");
-    setMode("hand");
+    setMode(this.source.trim() ? "type" : "hand");
     const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
     const insert = footer.createEl("button", { cls: "mod-cta", text: tr("Insertar") });
     const cancel = footer.createEl("button", { text: tr("Cancelar") });
@@ -60975,6 +60994,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       }
     });
     this.scheduleRecognition = () => {
+      this.recognitionRevision++;
       if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
       this.recognizeTimer = window.setTimeout(() => void runRecognition(), 700);
     };
@@ -60985,6 +61005,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         return;
       }
       this.recognizing = true;
+      const revision = this.recognitionRevision;
       status.setText(tr("Analizando trazos y estructura\u2026"));
       try {
         const vector = recognizeInkFormula(this.strokes);
@@ -61009,7 +61030,14 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           shotCtx.drawImage(canvas, 0, 0);
         }
         if (vector.confidence < 0.78 || /\?/.test(vector.source)) {
-          const ocr = await recognizeFormula(shot, (message) => status.setText(message));
+          let ocr = "";
+          try {
+            ocr = await recognizeFormula(shot, (message) => {
+              if (revision === this.recognitionRevision) status.setText(message);
+            });
+          } catch {
+          }
+          if (revision !== this.recognitionRevision || !this.containerEl.isConnected) return;
           if (vector.unknown > 0) {
             const guess = this.tidy(ocr).trim();
             if (guess && guess.length <= 2) {
@@ -61049,6 +61077,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     };
   }
   onClose() {
+    this.recognitionRevision++;
     if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
     this.contentEl.empty();
   }
@@ -62535,6 +62564,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.isDrawing = false;
     this.currentStroke = null;
     this.renderedPoints = 0;
+    /** True while Shift is holding the stroke in progress to a straight line. */
+    this.straightening = false;
     this.isShaping = false;
     this.currentShape = null;
     this.isErasing = false;
@@ -62852,6 +62883,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       host.style.removeProperty("--nl-safe-bottom");
       return;
     }
+    if (host.classList.contains("notelens-mobile-viewport")) {
+      host.style.removeProperty("--nl-safe-bottom");
+      return;
+    }
     const navbar = document.querySelector(".mobile-navbar");
     const measured = navbar?.offsetHeight ?? 0;
     const reserved = measured > 0 ? measured + 10 : import_obsidian13.Platform.isPhone ? 68 : 0;
@@ -62873,9 +62908,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   // Rendering
   // ------------------------------------------------------------------
   /** Ink-only refresh: PDFs, videos and an open text editor stay untouched. */
-  renderInk() {
+  /** Repaints the ink, optionally leaving out the stroke being drawn live. */
+  renderInk(except) {
     if (!this.renderer) return;
-    this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+    const strokes = except ? this.pageStrokes.filter((stroke) => stroke !== except) : this.pageStrokes;
+    this.renderer.renderAll(strokes, this.pageShapes, this.data.viewTransform);
     this.renderMiniMap();
   }
   /** Full rebuild of ink and objects; only for structural document changes. */
@@ -63124,9 +63161,19 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const overlay = this.workspaceEl.createDiv({ cls: "notelens-capture-overlay" });
       const box = overlay.createDiv({ cls: "notelens-capture-box" });
       overlay.createDiv({ cls: "notelens-capture-hint", text: tr("Arrastra para elegir la zona que quieres leer. Esc cancela.") });
+      const cancel = overlay.createEl("button", { text: tr("Cancelar") });
+      cancel.setCssStyles({ position: "absolute", right: "12px", top: "12px", zIndex: "1" });
+      cancel.addEventListener("pointerdown", (event) => event.stopPropagation());
+      cancel.onclick = (event) => {
+        event.stopPropagation();
+        finish(null);
+      };
       let start = null;
+      let settled = false;
       const wsRect = () => this.workspaceEl.getBoundingClientRect();
       const finish = (rect) => {
+        if (settled) return;
+        settled = true;
         overlay.remove();
         window.removeEventListener("keydown", onKey, { capture: true });
         if (!rect) {
@@ -63144,8 +63191,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       };
       window.addEventListener("keydown", onKey, { capture: true });
       overlay.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
+        overlay.setPointerCapture(e.pointerId);
         const r = wsRect();
         start = { x: e.clientX - r.left, y: e.clientY - r.top };
         box.setCssStyles({ display: "block", left: `${start.x}px`, top: `${start.y}px`, width: "0px", height: "0px" });
@@ -63173,6 +63222,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         }
         finish({ x: a3.x, y: a3.y, w: b3.x - a3.x, h: b3.y - a3.y });
       });
+      overlay.addEventListener("pointercancel", () => finish(null));
     });
   }
   /** Text typed in boxes inside the region, plus OCR over a rendering of images, PDF pages and ink. */
@@ -63192,7 +63242,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     canvas.width = Math.ceil(rect.w * scale);
     canvas.height = Math.ceil(rect.h * scale);
     const ctx = canvas.getContext("2d");
-    if (!ctx) return typed.join("\n\n");
+    if (!ctx) return readingFormula ? directFormula : typed.join("\n\n");
     ctx.fillStyle = readingFormula ? "#ffffff" : isLightColor(this.data.backgroundColor) ? "#ffffff" : this.data.backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(scale, 0, 0, scale, -rect.x * scale, -rect.y * scale);
@@ -63244,10 +63294,14 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (vector.source) candidates.push({ source: vector.source, bonus: vector.confidence * 9 });
       if (paintedMedia > 0 || !directFormula && regionStrokes.length > 0 && vector.confidence < 0.78) {
         onProgress(paintedMedia > 0 ? tr("Leyendo la f\xF3rmula de la imagen\u2026") : tr("Verificando s\xEDmbolos dudosos\u2026"));
-        const ocr = await recognizeFormula(canvas, onProgress);
-        if (ocr) candidates.push({ source: ocr, bonus: 1.5 });
+        try {
+          const ocr = await recognizeFormula(canvas, onProgress);
+          if (ocr && !vector.unknown) candidates.push({ source: ocr, bonus: 1.5 });
+        } catch (error) {
+          if (!directFormula && !vector.source) throw error;
+        }
       }
-      recognized = pickFormulaCandidate(candidates);
+      recognized = directFormula || (vector.unknown ? vector.source : pickFormulaCandidate(candidates));
       onProgress(recognized ? directFormula ? "F\xF3rmula recuperada desde la pizarra." : vector.detail : "");
     } else if (painted > 0) {
       onProgress(tr("Preparando el reconocimiento\u2026"));
@@ -63999,6 +64053,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       };
       this.data.strokes.push(this.currentStroke);
       this.renderedPoints = 1;
+      this.straightening = false;
       this.save();
     }
   }
@@ -64033,11 +64088,24 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (e.shiftKey) {
         const pts = this.currentStroke.points;
         this.currentStroke.points = [pts[0], pts[pts.length - 1]];
+        if (!this.straightening) {
+          this.straightening = true;
+          this.renderer.endLive();
+          this.renderInk(this.currentStroke);
+        }
         this.renderer.drawLiveWholeStroke(this.currentStroke, this.data.viewTransform);
       } else if (this.renderer.supportsIncrementalInk(this.currentStroke)) {
+        if (this.straightening) {
+          this.straightening = false;
+          this.renderer.endLive();
+        }
         this.renderer.prepareLive(this.data.viewTransform);
         this.renderer.drawStrokeFrom(this.currentStroke, this.renderedPoints);
       } else {
+        if (this.straightening) {
+          this.straightening = false;
+          this.renderer.endLive();
+        }
         this.renderer.drawLiveWholeStroke(this.currentStroke, this.data.viewTransform);
       }
       this.renderedPoints = this.currentStroke.points.length;
@@ -64093,6 +64161,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.isDrawing = false;
       this.currentStroke = null;
       this.renderedPoints = 0;
+      this.straightening = false;
       this.renderer.endLive();
       this.renderInk();
       this.save();
@@ -64152,6 +64221,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (started) this.data.strokes.remove(started);
       this.currentStroke = null;
       this.renderedPoints = 0;
+      this.straightening = false;
       this.renderer.endLive();
       this.renderInk();
       this.save();
@@ -65387,10 +65457,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.renderSelectionBox();
     this.save();
   }
-  insertMathBlock() {
+  insertMathBlock(initial = "") {
     new InkEquationModal(
       this.app,
-      "",
+      initial,
       (source) => this.placeFormula(source),
       (source, into) => {
         try {
@@ -66583,7 +66653,10 @@ ${rows.join("\n")}`);
     return parts.join("\n\n");
   }
   openFormulaReader() {
-    this.insertMathBlock();
+    void this.captureBoardFormula(() => {
+    }).then((source) => {
+      if (source.trim()) this.insertMathBlock(tidyFormulaText(source));
+    }).catch(() => new import_obsidian13.Notice(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo.")));
   }
   /** Fast board operations exposed by the local assistant. */
   runBoardUtility(utility) {
@@ -67466,7 +67539,12 @@ ${rows.join("\n")}`);
   keepEditorUsableOnTouch(editor) {
     this.stopMobileEditor?.();
     if (!import_obsidian13.Platform.isMobile) return;
-    this.stopMobileEditor = trackMobileEditor(editor, (lift) => this.setKeyboardLift(lift), this.workspaceEl);
+    this.stopMobileEditor = trackMobileEditor(
+      editor,
+      (lift) => this.setKeyboardLift(lift),
+      this.workspaceEl,
+      () => this.formatBarEl?.classList.contains("is-docked") ? this.formatBarEl.offsetHeight + 8 : 0
+    );
   }
   beginTextEdit(tb, el) {
     if (this.activeTextSourceEl === el && this.activeTextEditor) {
@@ -68366,13 +68444,18 @@ ${rows.join("\n")}`);
     const closeBar = bar.createEl("button", { cls: "notelens-embed-close notelens-format-close is-glyph", text: "\u2715" });
     closeBar.title = tr("Terminar de editar (Esc)");
     closeBar.onclick = () => this.commitTextEditor();
-    const r = el.getBoundingClientRect();
-    const wr = this.workspaceEl.getBoundingClientRect();
-    const barW = bar.offsetWidth || 420;
-    const barH = bar.offsetHeight || 40;
-    bar.style.left = `${clamp(r.left - wr.left, 8, Math.max(8, wr.width - barW - 8))}px`;
-    const above = r.top - wr.top - barH - 10;
-    bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
+    if (import_obsidian13.Platform.isPhone) {
+      bar.addClass("is-docked");
+      this.workspaceEl.addClass("is-editing-text");
+    } else {
+      const r = el.getBoundingClientRect();
+      const wr = this.workspaceEl.getBoundingClientRect();
+      const barW = bar.offsetWidth || 420;
+      const barH = bar.offsetHeight || 40;
+      bar.style.left = `${clamp(r.left - wr.left, 8, Math.max(8, wr.width - barW - 8))}px`;
+      const above = r.top - wr.top - barH - 10;
+      bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
+    }
     this.formatBarEl = bar;
     if (rich) {
       this.formatBarWatch = () => {
@@ -68388,6 +68471,7 @@ ${rows.join("\n")}`);
     }
     this.formatBarEl?.remove();
     this.formatBarEl = null;
+    this.workspaceEl?.removeClass("is-editing-text");
   }
   // ------------------------------------------------------------------
   // Element dragging routes through the selection system
@@ -68455,7 +68539,13 @@ ${rows.join("\n")}`);
   }
 };
 function tidyFormulaText(raw) {
-  let value = raw.replace(/\r/g, "").split("\n").map((line2) => line2.trim()).filter(Boolean).join(" ").replace(/```(?:latex|tex|math)?|```/gi, "").replace(/^\$+|\$+$/g, "").replace(/[\u2212\u2013\u2014]/g, "-").replace(/[\u00D7\u22C5\u00B7]/g, "*").replace(/[\u00F7]/g, "/").replace(/\u221A/g, "sqrt").replace(/\u03C0/g, "pi").replace(/\u2211/g, "sum").replace(/\u222B/g, "int").replace(/\u221E/g, "infty").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (digits) => `^${[...digits].map((digit) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079".indexOf(digit)).join("")}`).replace(/\bO\b/g, "0").replace(/(\d)\s*[lI]\s*(\d)/g, "$1 1 $2").replace(/\s{2,}/g, " ").trim();
+  let unwrapped = raw.trim().replace(/^```(?:latex|tex|math)?\s*\n?([\s\S]*?)\n?```$/i, "$1").trim();
+  if (unwrapped.startsWith("$$") && unwrapped.endsWith("$$")) unwrapped = unwrapped.slice(2, -2).trim();
+  else if (unwrapped.startsWith("$") && unwrapped.endsWith("$")) unwrapped = unwrapped.slice(1, -1).trim();
+  else if (unwrapped.startsWith("\\[") && unwrapped.endsWith("\\]") || unwrapped.startsWith("\\(") && unwrapped.endsWith("\\)")) unwrapped = unwrapped.slice(2, -2).trim();
+  if (/\\[a-zA-Z]+|\\\\/.test(unwrapped)) return unwrapped;
+  raw = unwrapped;
+  let value = raw.replace(/\r/g, "").split("\n").map((line2) => line2.trim()).filter(Boolean).join(" ").replace(/```(?:latex|tex|math)?|```/gi, "").replace(/^\$+|\$+$/g, "").replace(/[\u2212\u2013\u2014]/g, "-").replace(/[\u00D7\u22C5\u00B7]/g, "*").replace(/[\u00F7]/g, "/").replace(/\u221A/g, "sqrt").replace(/\u03C0/g, "pi").replace(/\u2211/g, "sum").replace(/\u222B/g, "int").replace(/\u221E/g, "infty").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (digits) => `^${[...digits].map((digit) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079".indexOf(digit)).join("")}`).replace(/\s{2,}/g, " ").trim();
   value = value.replace(/\b([A-Z])x\*?(\d+)\b/g, (_match, base, exponent) => `${base.toLowerCase()}^${exponent}`);
   for (let i4 = 0; i4 < 3; i4++) {
     value = value.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
@@ -68586,7 +68676,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.9.4" : "desconocida";
+var NOTELENS_BUILD = true ? "2.9.5" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

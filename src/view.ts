@@ -266,6 +266,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private isDrawing = false;
 	private currentStroke: Stroke | null = null;
 	private renderedPoints = 0;
+	/** True while Shift is holding the stroke in progress to a straight line. */
+	private straightening = false;
 	private isShaping = false;
 	private currentShape: Shape | null = null;
 	private isErasing = false;
@@ -480,6 +482,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			host.style.removeProperty("--nl-safe-bottom");
 			return;
 		}
+		// A board lifted into its own viewport is drawn over Obsidian's bar and ends
+		// at the top of the keyboard: there is nothing of the app left underneath it
+		// to keep room for, only whatever the screen itself claims.
+		if (host.classList.contains("notelens-mobile-viewport")) {
+			host.style.removeProperty("--nl-safe-bottom");
+			return;
+		}
 		const navbar = document.querySelector(".mobile-navbar") as HTMLElement | null;
 		const measured = navbar?.offsetHeight ?? 0;
 		// A tablet with no bar underneath keeps every pixel of its board.
@@ -507,9 +516,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	// ------------------------------------------------------------------
 
 	/** Ink-only refresh: PDFs, videos and an open text editor stay untouched. */
-	private renderInk(): void {
+	/** Repaints the ink, optionally leaving out the stroke being drawn live. */
+	private renderInk(except?: Stroke): void {
 		if (!this.renderer) return;
-		this.renderer.renderAll(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+		const strokes = except ? this.pageStrokes.filter(stroke => stroke !== except) : this.pageStrokes;
+		this.renderer.renderAll(strokes, this.pageShapes, this.data.viewTransform);
 		this.renderMiniMap();
 	}
 
@@ -775,9 +786,16 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const overlay = this.workspaceEl.createDiv({ cls: "notelens-capture-overlay" });
 			const box = overlay.createDiv({ cls: "notelens-capture-box" });
 			overlay.createDiv({ cls: "notelens-capture-hint", text: tr("Arrastra para elegir la zona que quieres leer. Esc cancela.") });
+			const cancel = overlay.createEl("button", { text: tr("Cancelar") });
+			cancel.setCssStyles({ position: "absolute", right: "12px", top: "12px", zIndex: "1" });
+			cancel.addEventListener("pointerdown", event => event.stopPropagation());
+			cancel.onclick = event => { event.stopPropagation(); finish(null); };
 			let start: { x: number; y: number } | null = null;
+			let settled = false;
 			const wsRect = () => this.workspaceEl.getBoundingClientRect();
 			const finish = (rect: { x: number; y: number; w: number; h: number } | null) => {
+				if (settled) return;
+				settled = true;
 				overlay.remove();
 				window.removeEventListener("keydown", onKey, { capture: true });
 				if (!rect) { resolve(""); return; }
@@ -786,8 +804,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(null); } };
 			window.addEventListener("keydown", onKey, { capture: true });
 			overlay.addEventListener("pointerdown", (e) => {
+				if (e.button !== 0) return;
 				e.preventDefault();
 				e.stopPropagation();
+				overlay.setPointerCapture(e.pointerId);
 				const r = wsRect();
 				start = { x: e.clientX - r.left, y: e.clientY - r.top };
 				box.setCssStyles({ display: "block", left: `${start.x}px`, top: `${start.y}px`, width: "0px", height: "0px" });
@@ -810,6 +830,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				if (b.x - a.x < 8 || b.y - a.y < 8) { finish(null); return; }
 				finish({ x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y });
 			});
+			overlay.addEventListener("pointercancel", () => finish(null));
 		});
 	}
 
@@ -840,7 +861,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		canvas.width = Math.ceil(rect.w * scale);
 		canvas.height = Math.ceil(rect.h * scale);
 		const ctx = canvas.getContext("2d");
-		if (!ctx) return typed.join("\n\n");
+		if (!ctx) return readingFormula ? directFormula : typed.join("\n\n");
 		// Formula OCR always receives black ink on white paper. The previous dark
 		// board capture inverted the useful pixels and often produced no result.
 		ctx.fillStyle = readingFormula ? "#ffffff" : isLightColor(this.data.backgroundColor) ? "#ffffff" : this.data.backgroundColor;
@@ -890,10 +911,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// geometry pass is uncertain, keeping the common route near-instant.
 			if (paintedMedia > 0 || (!directFormula && regionStrokes.length > 0 && vector.confidence < 0.78)) {
 				onProgress(paintedMedia > 0 ? tr("Leyendo la fórmula de la imagen…") : tr("Verificando símbolos dudosos…"));
-				const ocr = await recognizeFormula(canvas, onProgress);
-				if (ocr) candidates.push({ source: ocr, bonus: 1.5 });
+				try {
+					const ocr = await recognizeFormula(canvas, onProgress);
+					if (ocr && !vector.unknown) candidates.push({ source: ocr, bonus: 1.5 });
+				} catch (error) {
+					// A model download failure must not discard existing formulas or ink.
+					if (!directFormula && !vector.source) throw error;
+				}
 			}
-			recognized = pickFormulaCandidate(candidates);
+			recognized = directFormula || (vector.unknown ? vector.source : pickFormulaCandidate(candidates));
 			onProgress(recognized ? (directFormula ? "Fórmula recuperada desde la pizarra." : vector.detail) : "");
 		} else if (painted > 0) {
 			onProgress(tr("Preparando el reconocimiento…"));
@@ -1741,6 +1767,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			};
 			this.data.strokes.push(this.currentStroke);
 			this.renderedPoints = 1;
+			this.straightening = false;
 			this.save();
 		}
 	}
@@ -1782,11 +1809,28 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				// Shift keeps the stroke a straight line from where it started.
 				const pts = this.currentStroke.points;
 				this.currentStroke.points = [pts[0], pts[pts.length - 1]];
+				// Whatever wandered onto the board before Shift went down is no
+				// longer part of the stroke: repaint without it, so the snapshot
+				// the live line sits on has no leftover of the curve.
+				if (!this.straightening) {
+					this.straightening = true;
+					this.renderer.endLive();
+					this.renderInk(this.currentStroke);
+				}
 				this.renderer.drawLiveWholeStroke(this.currentStroke, this.data.viewTransform);
 			} else if (this.renderer.supportsIncrementalInk(this.currentStroke)) {
+				// Letting Shift go carries on from the straight line just drawn.
+				if (this.straightening) {
+					this.straightening = false;
+					this.renderer.endLive();
+				}
 				this.renderer.prepareLive(this.data.viewTransform);
 				this.renderer.drawStrokeFrom(this.currentStroke, this.renderedPoints);
 			} else {
+				if (this.straightening) {
+					this.straightening = false;
+					this.renderer.endLive();
+				}
 				this.renderer.drawLiveWholeStroke(this.currentStroke, this.data.viewTransform);
 			}
 			this.renderedPoints = this.currentStroke.points.length;
@@ -1850,6 +1894,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.isDrawing = false;
 			this.currentStroke = null;
 			this.renderedPoints = 0;
+			this.straightening = false;
 			this.renderer.endLive();
 			this.renderInk();
 			this.save();
@@ -1921,6 +1966,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			if (started) this.data.strokes.remove(started);
 			this.currentStroke = null;
 			this.renderedPoints = 0;
+			this.straightening = false;
 			this.renderer.endLive();
 			this.renderInk();
 			this.save();
@@ -3136,10 +3182,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.save();
 	}
 
-	insertMathBlock(): void {
+	insertMathBlock(initial = ""): void {
 		new InkEquationModal(
 			this.app,
-			"",
+			initial,
 			(source) => this.placeFormula(source),
 			(source, into) => {
 				try {
@@ -4346,7 +4392,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	openFormulaReader(): void {
-		this.insertMathBlock();
+		void this.captureBoardFormula(() => {}).then(source => {
+			if (source.trim()) this.insertMathBlock(tidyFormulaText(source));
+		}).catch(() => new Notice(tr("No he podido leer la escritura. Escribe la notación abajo.")));
 	}
 
 	/** Fast board operations exposed by the local assistant. */
@@ -5239,7 +5287,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private keepEditorUsableOnTouch(editor: HTMLElement): void {
 		this.stopMobileEditor?.();
 		if (!Platform.isMobile) return;
-		this.stopMobileEditor = trackMobileEditor(editor, lift => this.setKeyboardLift(lift), this.workspaceEl);
+		// The docked bar sits on the bottom edge of the board, so the room the box
+		// needs is what is left above it, not the whole board.
+		this.stopMobileEditor = trackMobileEditor(
+			editor,
+			lift => this.setKeyboardLift(lift),
+			this.workspaceEl,
+			() => this.formatBarEl?.classList.contains("is-docked") ? this.formatBarEl.offsetHeight + 8 : 0
+		);
 	}
 
 	private beginTextEdit(tb: TextBox, el: HTMLElement): void {
@@ -6191,15 +6246,23 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		closeBar.title = tr("Terminar de editar (Esc)");
 		closeBar.onclick = () => this.commitTextEditor();
 
-		// Above the textbox (below it when there is no room), using the bar's
-		// real size so it never overlaps the text being edited.
-		const r = el.getBoundingClientRect();
-		const wr = this.workspaceEl.getBoundingClientRect();
-		const barW = bar.offsetWidth || 420;
-		const barH = bar.offsetHeight || 40;
-		bar.style.left = `${clamp(r.left - wr.left, 8, Math.max(8, wr.width - barW - 8))}px`;
-		const above = r.top - wr.top - barH - 10;
-		bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
+		// On a phone the bar wrapped into six rows over a board a keyboard had
+		// already cut in half: it buried the very words being edited. There it
+		// docks to the bottom edge instead, and the rails step aside for it.
+		if (Platform.isPhone) {
+			bar.addClass("is-docked");
+			this.workspaceEl.addClass("is-editing-text");
+		} else {
+			// Above the textbox (below it when there is no room), using the bar's
+			// real size so it never overlaps the text being edited.
+			const r = el.getBoundingClientRect();
+			const wr = this.workspaceEl.getBoundingClientRect();
+			const barW = bar.offsetWidth || 420;
+			const barH = bar.offsetHeight || 40;
+			bar.style.left = `${clamp(r.left - wr.left, 8, Math.max(8, wr.width - barW - 8))}px`;
+			const above = r.top - wr.top - barH - 10;
+			bar.style.top = `${above >= 8 ? above : Math.min(wr.height - barH - 8, r.bottom - wr.top + 10)}px`;
+		}
 
 		this.formatBarEl = bar;
 		if (rich) {
@@ -6216,6 +6279,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		this.formatBarEl?.remove();
 		this.formatBarEl = null;
+		this.workspaceEl?.removeClass("is-editing-text");
 	}
 
 	// ------------------------------------------------------------------
@@ -6297,6 +6361,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
  * user most of the corrections.
  */
 export function tidyFormulaText(raw: string): string {
+	// Existing LaTeX is source, not OCR prose. In particular, converting pi or
+	// sqrt again would turn valid commands into double-backslash line breaks.
+	let unwrapped = raw.trim().replace(/^```(?:latex|tex|math)?\s*\n?([\s\S]*?)\n?```$/i, "$1").trim();
+	if (unwrapped.startsWith("$$") && unwrapped.endsWith("$$")) unwrapped = unwrapped.slice(2, -2).trim();
+	else if (unwrapped.startsWith("$") && unwrapped.endsWith("$")) unwrapped = unwrapped.slice(1, -1).trim();
+	else if ((unwrapped.startsWith("\\[") && unwrapped.endsWith("\\]")) || (unwrapped.startsWith("\\(") && unwrapped.endsWith("\\)"))) unwrapped = unwrapped.slice(2, -2).trim();
+	if (/\\[a-zA-Z]+|\\\\/.test(unwrapped)) return unwrapped;
+	raw = unwrapped;
 	let value = raw
 		.replace(/\r/g, "")
 		.split("\n").map(line => line.trim()).filter(Boolean).join(" ")
@@ -6312,9 +6384,6 @@ export function tidyFormulaText(raw: string): string {
 		.replace(/\u221E/g, "infty")
 		.replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=")
 		.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, digits => `^${[...digits].map(digit => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(digit)).join("")}`)
-		// A lone letter next to digits is nearly always a misread symbol.
-		.replace(/\bO\b/g, "0")
-		.replace(/(\d)\s*[lI]\s*(\d)/g, "$1 1 $2")
 		.replace(/\s{2,}/g, " ")
 		.trim();
 
