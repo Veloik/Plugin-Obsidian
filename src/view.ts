@@ -32,7 +32,7 @@ import { HOVER_NOTE_BOARD_HEIGHT, HOVER_NOTE_BOARD_WIDTH, HoverNoteContent, Hove
 import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EXPERIMENTAL } from "./features";
-import { EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
+import { panelHooks, EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
 import { Locale, getLocale, tr } from "./i18n";
 
@@ -359,8 +359,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.clearSelection(false);
 				this.renderAll();
 				this.updateBackground();
-				(this.workspaceEl as any).__refreshPages?.();
-				(this.workspaceEl as any).__refreshBookmarks?.();
+				panelHooks(this.workspaceEl).__refreshPages?.();
+				panelHooks(this.workspaceEl).__refreshBookmarks?.();
 				this.refreshTagSummary();
 				this.save();
 			},
@@ -456,8 +456,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.renderer) {
 			this.renderAll();
 			this.updateBackground();
-			(this.workspaceEl as any).__refreshPages?.();
-			(this.workspaceEl as any).__refreshBookmarks?.();
+			panelHooks(this.workspaceEl).__refreshPages?.();
+			panelHooks(this.workspaceEl).__refreshBookmarks?.();
 			this.refreshTagSummary();
 		}
 	}
@@ -772,7 +772,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.stopMobileFullscreen = mountMobileBoard(this.workspaceEl, true);
 			}
 			this.workspaceEl.toggleClass("is-fullscreen", this.isFullscreen());
-			(this.workspaceEl as any).__refreshNavigation?.();
+			panelHooks(this.workspaceEl).__refreshNavigation?.();
 			this.handleResize();
 			return;
 		}
@@ -1504,7 +1504,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				return;
 			}
 			this.clearSelection();
-			(this.workspaceEl as any).__closePenPanel?.();
+			panelHooks(this.workspaceEl).__closePenPanel?.();
 			this.hideFormatBar();
 			return;
 		}
@@ -1658,7 +1658,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		// Close transient UI when the canvas itself is clicked.
 		if (e.target === this.workspaceEl || e.target === this.renderer.canvas) {
-			(this.workspaceEl as any).__closePenPanel?.();
+			panelHooks(this.workspaceEl).__closePenPanel?.();
 			this.hideFormatBar();
 		}
 
@@ -2883,22 +2883,22 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (tool !== "text") this.hideTextPlacementHint();
 		if (tool !== "place_badge") {
 			this.workspaceEl.removeAttribute("data-badge-tag");
-			(this.workspaceEl as any).__clearActiveTag?.();
+			panelHooks(this.workspaceEl).__clearActiveTag?.();
 		}
 		// Keep selected figures available to the shape panel for post-draw edits,
 		// and keep the selection when the same tool is chosen again.
 		const sameTool = tool === previousTool;
 		if (tool !== "select" && !sameTool && !(tool === "shape" && this.selShapes.size > 0)) this.clearSelection();
 		if (tool !== "pen" && tool !== "highlighter") {
-			(this.workspaceEl as any).__closePenPanel?.();
+			panelHooks(this.workspaceEl).__closePenPanel?.();
 		}
 		this.syncToolbar();
 	}
 
 	private syncToolbar(): void {
-		(this.workspaceEl as any).__refreshToolbar?.();
-		(this.workspaceEl as any).__refreshNavigation?.();
-		(this.workspaceEl as any).__refreshPaperSettings?.();
+		panelHooks(this.workspaceEl).__refreshToolbar?.();
+		panelHooks(this.workspaceEl).__refreshNavigation?.();
+		panelHooks(this.workspaceEl).__refreshPaperSettings?.();
 	}
 
 	private syncToolCursor(): void {
@@ -3288,7 +3288,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	toggleFocusMode(): void {
 		this.focusModeEnabled = !this.focusModeEnabled;
 		this.workspaceEl.toggleClass("is-focus-mode", this.focusModeEnabled);
-		(this.workspaceEl as any).__refreshFocusMode?.();
+		panelHooks(this.workspaceEl).__refreshFocusMode?.();
 	}
 
 	zoomIn(): void { this.zoomBy(1.15); }
@@ -3321,7 +3321,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.clearSelection(false);
 		this.hideFormatBar();
 		this.renderAll();
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
 		new Notice(tr("Página limpiada"));
@@ -3593,7 +3593,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		// Each tag places with its own cursor, so you always see what you are about to drop.
 		this.workspaceEl.setAttr("data-badge-tag", tag.id);
 		this.hideTextPlacementHint();
-		(this.workspaceEl as any).__closePenPanel?.();
+		panelHooks(this.workspaceEl).__closePenPanel?.();
 		this.syncToolCursor();
 		this.syncToolbar();
 		new Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
@@ -3620,7 +3620,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.currentTool = "pen";
 			this.activeBadgeTag = null;
 			this.workspaceEl.removeAttribute("data-badge-tag");
-			(this.workspaceEl as any).__clearActiveTag?.();
+			panelHooks(this.workspaceEl).__clearActiveTag?.();
 			this.syncToolCursor();
 			this.syncToolbar();
 		};
@@ -4523,8 +4523,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
-		(this.workspaceEl as any).__refreshPages?.(page.id);
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshPages?.(page.id);
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
 	}
@@ -4542,8 +4542,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
-		(this.workspaceEl as any).__refreshPages?.();
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshPages?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
 	}
@@ -4554,8 +4554,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!page || !clean || page.title === clean) return;
 		this.history.push();
 		page.title = clean;
-		(this.workspaceEl as any).__refreshPages?.();
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshPages?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
 	}
@@ -4585,8 +4585,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
-		(this.workspaceEl as any).__refreshPages?.();
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshPages?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
 		this.save();
 		new Notice(tr("Página eliminada. Puedes recuperarla con Ctrl+Z."));
@@ -4602,7 +4602,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.history.push();
 		const bookmark: ViewportBookmark = { id: genId("bookmark"), pageId: this.data.activePageId, label, x: c.x, y: c.y, scale: this.data.viewTransform.scale };
 		this.data.bookmarks.push(bookmark);
-		(this.workspaceEl as any).__refreshBookmarks?.(bookmark.id);
+		panelHooks(this.workspaceEl).__refreshBookmarks?.(bookmark.id);
 		this.save();
 	}
 
@@ -4611,7 +4611,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!bookmark || !label.trim()) return;
 		this.history.push();
 		bookmark.label = label.trim();
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.save();
 	}
 
@@ -4620,7 +4620,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!bookmark) return;
 		this.history.push();
 		this.data.bookmarks.remove(bookmark);
-		(this.workspaceEl as any).__refreshBookmarks?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.save();
 	}
 

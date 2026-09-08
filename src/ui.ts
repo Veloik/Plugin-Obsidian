@@ -5,6 +5,31 @@ import { ERASER_SPRITE } from "./eraser-sprite";
 import { CanvasRenderer } from "./renderer";
 import { tr } from "./i18n";
 
+/**
+ * Callbacks each panel stashes on the element it was built into, so the view
+ * can drive a panel again without keeping a reference to every one it created.
+ */
+export interface PanelHooks {
+	__refresh?: () => void;
+	__refreshToolbar?: () => void;
+	__refreshNavigation?: () => void;
+	__refreshPaperSettings?: () => void;
+	__refreshFocusMode?: () => void;
+	/** `focusId` scrolls the freshly drawn list to that entry. */
+	__refreshPages?: (focusId?: string) => void;
+	__refreshBookmarks?: (focusId?: string) => void;
+	__closePenPanel?: () => void;
+	__closePages?: () => void;
+	__closeBookmarks?: () => void;
+	__clearActiveTag?: () => void;
+}
+
+/** Reaches those slots without an `any` cast. */
+export function panelHooks(el: HTMLElement): HTMLElement & PanelHooks {
+	return el as HTMLElement & PanelHooks;
+}
+
+
 export type ToolId = "select" | "hand" | "pen" | "highlighter" | "eraser" | "text" | "shape" | "place_badge";
 /** "stroke" removes whole strokes; "partial" cuts only what the eraser touches. */
 export type EraserMode = "stroke" | "partial";
@@ -329,7 +354,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	function openPanel(): void {
 		panelOpen = true;
 		panel.toggleClass("hidden", false);
-		(panel as any).__refresh?.();
+		panelHooks(panel).__refresh?.();
 	}
 	function closePanel(): void {
 		panelOpen = false;
@@ -514,7 +539,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	importBtn.title = tr("Importar paquete editable de NoteLens");
 	importBtn.onclick = () => host.importSharePackage();
 
-	(container as any).__refreshToolbar = () => {
+	panelHooks(container).__refreshToolbar = () => {
 		refreshActive();
 		syncDot();
 		rulerBtn.toggleClass("active", host.isRulerVisible());
@@ -524,7 +549,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		translateBtn.toggleClass("active", host.isTranslatorOpen());
 		a4Btn.toggleClass("active", host.getA4GuidesEnabled());
 	};
-	(container as any).__closePenPanel = () => closePanel();
+	panelHooks(container).__closePenPanel = () => closePanel();
 }
 
 /** Always-visible navigation, kept separate from drawing controls. */
@@ -580,7 +605,7 @@ export function createNavigationControls(host: ToolbarHost, container: HTMLEleme
 		setIcon(full, host.isFullscreen() ? "minimize-2" : "maximize-2");
 	};
 	refresh();
-	(container as any).__refreshNavigation = refresh;
+	panelHooks(container).__refreshNavigation = refresh;
 }
 
 /** Overlay listing every keyboard and mouse shortcut. */
@@ -696,7 +721,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 
 	refresh = (renameId?: string) => {
 		cancelActiveRename?.();
-		if (renameId) (container as any).__closePages?.();
+		if (renameId) panelHooks(container).__closePages?.();
 		list.empty();
 		renderPageFilter();
 		const allBookmarks = host.getViewportBookmarks();
@@ -748,7 +773,7 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 
 	toggle.onclick = () => {
 		const opening = panel.hasClass("hidden");
-		if (opening) (container as any).__closePages?.();
+		if (opening) panelHooks(container).__closePages?.();
 		panel.toggleClass("hidden", !opening);
 	};
 	// Capture phase: sibling docks stop pointerdown propagation, so a bubbling
@@ -758,8 +783,8 @@ export function createBookmarksControl(host: ToolbarHost, container: HTMLElement
 			panel.addClass("hidden");
 		}
 	}, { capture: true });
-	(container as any).__refreshBookmarks = refresh;
-	(container as any).__closeBookmarks = () => panel.addClass("hidden");
+	panelHooks(container).__refreshBookmarks = refresh;
+	panelHooks(container).__closeBookmarks = () => panel.addClass("hidden");
 	refresh();
 }
 
@@ -826,7 +851,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 
 	refresh = (renameId?: string) => {
 		cancelActiveRename?.();
-		if (renameId) (container as any).__closeBookmarks?.();
+		if (renameId) panelHooks(container).__closeBookmarks?.();
 		list.empty();
 		const pages = host.getDocumentPages();
 		const active = host.getActivePageId();
@@ -868,14 +893,14 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 
 	toggle.onclick = () => {
 		const opening = panel.hasClass("hidden");
-		if (opening) (container as any).__closeBookmarks?.();
+		if (opening) panelHooks(container).__closeBookmarks?.();
 		panel.toggleClass("hidden", !opening);
 	};
 	container.addEventListener("pointerdown", event => {
 		if (!panel.hasClass("hidden") && !panel.contains(event.target as Node) && !toggle.contains(event.target as Node)) panel.addClass("hidden");
 	}, { capture: true });
-	(container as any).__refreshPages = refresh;
-	(container as any).__closePages = () => panel.addClass("hidden");
+	panelHooks(container).__refreshPages = refresh;
+	panelHooks(container).__closePages = () => panel.addClass("hidden");
 	refresh();
 }
 
@@ -892,7 +917,7 @@ export function createFocusModeControl(host: ToolbarHost, container: HTMLElement
 		button.toggleClass("active", host.getFocusModeEnabled());
 	};
 	refresh();
-	(container as any).__refreshFocusMode = refresh;
+	panelHooks(container).__refreshFocusMode = refresh;
 }
 
 // ---------------------------------------------------------------------------
@@ -1290,7 +1315,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		}
 	}
 
-	(panel as any).__refresh = refresh;
+	panelHooks(panel).__refresh = refresh;
 	return panel;
 }
 
@@ -1331,7 +1356,7 @@ export function createQuickTagsBar(
 		summary.title = tr("Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes");
 		summary.onclick = onSummary;
 	}
-	(container as any).__clearActiveTag = () => setActive(null);
+	panelHooks(container).__clearActiveTag = () => setActive(null);
 }
 
 // ---------------------------------------------------------------------------
@@ -1405,7 +1430,7 @@ export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): 
 		syncMarginToggle();
 	};
 	syncMarginToggle();
-	(container as any).__refreshPaperSettings = () => {
+	panelHooks(container).__refreshPaperSettings = () => {
 		const current = host.background === "margin" ? "lines" : host.background;
 		for (const [button, pattern] of bgButtons) button.toggleClass("active", pattern === current);
 		syncMarginToggle();
