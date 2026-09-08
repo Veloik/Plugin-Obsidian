@@ -246,7 +246,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName(tr("Grosor del lápiz"))
 			.setDesc(tr("Grosor inicial en píxeles."))
-			.addSlider(sl => sl.setLimits(1, 18, 0.5).setValue(s.penWidth).setDynamicTooltip().onChange(v => { s.penWidth = v; save(); }));
+			.addSlider(sl => sl.setLimits(1, 18, 0.5).setValue(s.penWidth).onChange(v => { s.penWidth = v; save(); }));
 
 		new Setting(containerEl)
 			.setName(tr("Color del lápiz"))
@@ -265,12 +265,12 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			.setName(tr("Subrayador"))
 			.setDesc(tr("Color, grosor y opacidad iniciales."))
 			.addColorPicker(c => c.setValue(s.highlighterColor).onChange(v => { s.highlighterColor = v; save(); }))
-			.addSlider(sl => sl.setLimits(8, 48, 2).setValue(s.highlighterWidth).setDynamicTooltip().onChange(v => { s.highlighterWidth = v; save(); }))
-			.addSlider(sl => sl.setLimits(0.1, 0.9, 0.05).setValue(s.highlighterOpacity).setDynamicTooltip().onChange(v => { s.highlighterOpacity = v; save(); }));
+			.addSlider(sl => sl.setLimits(8, 48, 2).setValue(s.highlighterWidth).onChange(v => { s.highlighterWidth = v; save(); }))
+			.addSlider(sl => sl.setLimits(0.1, 0.9, 0.05).setValue(s.highlighterOpacity).onChange(v => { s.highlighterOpacity = v; save(); }));
 
 		new Setting(containerEl)
 			.setName(tr("Tamaño de texto"))
-			.addSlider(sl => sl.setLimits(10, 72, 1).setValue(s.textSize).setDynamicTooltip().onChange(v => { s.textSize = v; save(); }));
+			.addSlider(sl => sl.setLimits(10, 72, 1).setValue(s.textSize).onChange(v => { s.textSize = v; save(); }));
 
 		new Setting(containerEl)
 			.setName(tr("Punta del lápiz"))
@@ -345,7 +345,7 @@ export class NoteLensSettingTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName(tr("Tamaño de Leen"))
 				.setDesc(tr("Más pequeño estorba menos; más grande se toca mejor en una tableta."))
-				.addSlider(sl => sl.setLimits(0.6, 1.6, 0.1).setValue(s.petScale).setDynamicTooltip().onChange(v => { s.petScale = v; save(); }));
+				.addSlider(sl => sl.setLimits(0.6, 1.6, 0.1).setValue(s.petScale).onChange(v => { s.petScale = v; save(); }));
 
 			new Setting(containerEl)
 				.setName(tr("Bocadillos de Leen"))

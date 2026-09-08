@@ -221,7 +221,7 @@ function nodeRequest(url: string, method: "GET" | "POST", body?: string): Promis
 				port: parsed.port,
 				path: `${parsed.pathname}${parsed.search}`,
 				method,
-				headers: body ? { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) } : {},
+				headers: body ? { "Content-Type": "application/json", "Content-Length": new TextEncoder().encode(body).length } : {},
 				timeout: 120000
 			}, (response) => {
 				let text = "";
@@ -406,7 +406,10 @@ export class LocalServerManager {
 			try {
 				const origin = /^https?:\/\/[^/]+/i.exec(this.baseUrl())?.[0] ?? "";
 				const response = await requestUrl({ url: `${this.baseUrl()}/api/tags`, method: "GET", headers: { Origin: origin, Referer: `${origin}/` }, throw: false });
-				const names: string[] = (response.json?.models ?? []).map((m: { name?: string }) => m.name).filter(Boolean);
+				const models: unknown = (response.json as { models?: unknown } | null)?.models;
+				const names = (Array.isArray(models) ? models : [])
+					.map(entry => (entry && typeof entry === "object" ? (entry as { name?: unknown }).name : undefined))
+					.filter((name): name is string => typeof name === "string" && name.length > 0);
 				if (names.some(name => name === model || name.startsWith(`${model}:`))) {
 					onProgress?.(`${model} listo`);
 					return true;
@@ -1044,7 +1047,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 
 	const send = composer.createEl("button", { cls: "notelens-assistant-send" });
 	setIcon(send, "send-horizontal");
-	send.title = "Enviar (Enter)";
+	send.title = tr("Enviar (enter)");
 
 	const setComposerMode = (mode: "tools" | "text" | "draw") => {
 		composerMode = mode;
@@ -1147,13 +1150,13 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		// Reachable but with nothing downloaded: the one case that used to be
 		// reported as "the server does not answer".
 		if (reachable && models.length === 0) {
-			modelSelect.createEl("option", { value: "", text: "sin modelos" });
+			modelSelect.createEl("option", { value: "", text: tr("Sin modelos") });
 			offerDownload(`Ollama funciona en ${client.baseUrl} pero no tienes ningún modelo. Elige uno y lo descargo.`);
 			return;
 		}
 
 		if (models.length === 0) {
-			modelSelect.createEl("option", { value: "", text: "sin conexión" });
+			modelSelect.createEl("option", { value: "", text: tr("Sin conexión") });
 			if (server.canManage) {
 				if (missingOllama) {
 					const plan = server.installPlan();
@@ -1181,7 +1184,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		const ranked = rankModels(models);
 		const best = ranked[0];
 		if (!best) {
-			modelSelect.createEl("option", { value: "", text: "sin modelo de chat" });
+			modelSelect.createEl("option", { value: "", text: tr("Sin modelo de chat") });
 			offerDownload(`Tienes ${models.length} modelo${models.length === 1 ? "" : "s"}, pero ninguno puede conversar.`);
 			return;
 		}
@@ -1303,7 +1306,7 @@ export function createAssistantPet(host: AssistantHost, container: HTMLElement):
 		const obstacles = ([".onenote-ribbon-dock", ".notelens-insert-dock", ".notelens-document-dock", ".onenote-quick-tags",
 			".notelens-settings-btn", ".notelens-settings-panel", ".notelens-bookmarks-dock", ".notelens-pages-dock",
 			".notelens-navigation-controls", ".notelens-minimap", ".notelens-focus-toggle"]
-			.map(selector => container.querySelector(selector) as HTMLElement | null)
+			.map(selector => container.querySelector<HTMLElement>(selector))
 			.filter((el): el is HTMLElement => !!el && !el.hasClass("hidden") && el.offsetWidth > 0)
 			.map(el => {
 				const box = el.getBoundingClientRect();

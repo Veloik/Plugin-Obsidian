@@ -4,6 +4,7 @@ import { OneNoteDocument, Shape, Stroke } from "./types";
 import { pdfFontFor } from "./fonts";
 import { tr } from "./i18n";
 import { stripInlineMarks } from "./rich-text";
+import { stripLeadingEmoji } from "./tools";
 
 export interface SceneBounds { x: number; y: number; w: number; h: number; }
 
@@ -179,7 +180,7 @@ function drawShape(pdf: jsPDF, page: SceneBounds, shape: Shape): void {
 	} else if (shape.kind === "ellipse") pdf.ellipse(x + w / 2, y + h / 2, Math.abs(w / 2), Math.abs(h / 2), style);
 	else if (shape.kind === "triangle") pdf.triangle(x + w / 2, y, x + w, y + h, x, y + h, style);
 	else if (shape.kind === "diamond") {
-		(pdf as any).lines([[w / 2, h / 2], [-w / 2, h / 2], [-w / 2, -h / 2], [w / 2, -h / 2]], x + w / 2, y, [1, 1], style, true);
+		pdf.lines([[w / 2, h / 2], [-w / 2, h / 2], [-w / 2, -h / 2], [w / 2, -h / 2]], x + w / 2, y, [1, 1], style, true);
 	} else {
 		pdf.line(x, y, x + w, y + h);
 		if (shape.kind === "arrow") {
@@ -216,7 +217,7 @@ function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument, formulas:
 		pdf.setTextColor(color.r, color.g, color.b);
 		// On paper the inline marks are formatting, not characters: `**dato**` prints as dato.
 		const body = text.variant === "code" ? text.text : stripInlineMarks(text.text);
-		const lines = pdf.splitTextToSize(body, Math.max(12, box.w * SCENE_TO_MM - 3));
+		const lines = pdf.splitTextToSize(body, Math.max(12, box.w * SCENE_TO_MM - 3)) as string[];
 		pdf.text(lines, x + 1.5, y + text.fontSize * 0.28 + 1.5);
 	}
 }
@@ -246,7 +247,7 @@ function drawTables(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument): void {
 					pdf.setFont("helvetica", table.header && row === 0 ? "bold" : "normal");
 					pdf.setFontSize(8);
 					pdf.setTextColor(30, 41, 59);
-					pdf.text(pdf.splitTextToSize(content, Math.max(8, cellW - 2)), cx + 1, cy + 3.2);
+					pdf.text(pdf.splitTextToSize(content, Math.max(8, cellW - 2)) as string[], cx + 1, cy + 3.2);
 				}
 			}
 		}
@@ -264,7 +265,7 @@ function drawBadgesAndEmbeds(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument
 		pdf.setFont("helvetica", "bold");
 		pdf.setFontSize(8);
 		pdf.setTextColor(15, 23, 42);
-		pdf.text(tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "")), x + 3, y + 4.6);
+		pdf.text(tr(stripLeadingEmoji(badge.label)), x + 3, y + 4.6);
 	}
 	for (const embed of doc.embeds) {
 		const box = { x: embed.x, y: embed.y, w: embed.w, h: embed.h };
@@ -307,5 +308,5 @@ export function createA4Pdf(doc: OneNoteDocument, fallback: SceneBounds, formula
 		pdf.setTextColor(100, 116, 139);
 		pdf.text(`NoteLens - ${index + 1}/${pages.length}`, A4_W_MM - 29, A4_H_MM - 7);
 	}
-	return pdf.output("arraybuffer") as ArrayBuffer;
+	return pdf.output("arraybuffer");
 }

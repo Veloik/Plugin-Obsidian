@@ -244,7 +244,7 @@ function detectFractionRegion(canvas: HTMLCanvasElement): FractionRegion | null 
 		let rows = 0;
 		for (let y = Math.max(0, from); y < Math.min(height, to); y++) {
 			let hits = 0;
-			for (let x = best!.x0; x <= best!.x1; x++) if (dark(x, y)) hits++;
+			for (let x = best.x0; x <= best.x1; x++) if (dark(x, y)) hits++;
 			if (hits > 2 && hits < bestWidth * 0.72) rows++;
 		}
 		return rows;

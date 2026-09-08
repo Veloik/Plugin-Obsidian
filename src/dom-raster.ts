@@ -37,7 +37,7 @@ function pseudoContent(style: CSSStyleDeclaration): string {
 	const raw = style.content;
 	if (!raw || raw === "none" || raw === "normal") return "";
 	const m = /^"([\s\S]*)"$|^'([\s\S]*)'$/.exec(raw);
-	return m ? (m[1] ?? m[2]).replace(/\\([0-9a-fA-F]{1,6}) ?/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16))).replace(/\\(.)/g, "$1") : "";
+	return m ? (m[1] ?? m[2]).replace(/\\([0-9a-fA-F]{1,6}) ?/g, (_: string, hex: string) => String.fromCodePoint(parseInt(hex, 16))).replace(/\\(.)/g, "$1") : "";
 }
 
 function fontOf(style: CSSStyleDeclaration): string {

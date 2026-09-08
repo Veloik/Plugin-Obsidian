@@ -22,7 +22,7 @@ import {
 	Badge, CanvasFont, CanvasTable, DocumentPage, Embed, EmbedKind, OneNoteDocument, PenStyle, Shape, ShapeKind, Stroke, TextBox, ViewportBookmark,
 	ChartData, createDocumentPage, createEmptyDocument, genId, migrateDocument
 } from "./types";
-import { clamp, cutStrokeAround, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha } from "./tools";
+import { clamp, cutStrokeAround, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha, stripLeadingEmoji } from "./tools";
 import { EmbedHost, ImagePickModal, NoteOrBoardPickModal, PdfModeModal, PdfPickModal, VaultFilePickModal, VideoInsertModal, renderEmbedFrame } from "./embeds";
 import { createNavigatorPanel, isBoardFile } from "./navigator";
 import { recognizeFormula, recognizeImage } from "./ocr";
@@ -140,6 +140,9 @@ interface SelectionResizeSnapshot {
 	tables: Map<string, { x: number; y: number; w: number; h: number }>;
 	embeds: Map<string, { x: number; y: number; w: number; h: number }>;
 }
+
+/** The slice of Prism this board uses; `loadPrism()` is typed `any`. */
+type PrismLib = { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> };
 
 export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHost {
 	plugin: OneNotePlugin;
@@ -288,7 +291,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private eraserCursorEl: HTMLElement | null = null;
 	private textMeasurer: CanvasRenderingContext2D | null = null;
 	/** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
-	private prism: { tokenize: (code: string, grammar: unknown) => PrismToken[]; languages: Record<string, unknown> } | null = null;
+	private prism: PrismLib | null = null;
 	private focusModeEnabled = false;
 	private stopMobileEditor: (() => void) | null = null;
 	private stopMobileFullscreen: (() => void) | null = null;
@@ -374,11 +377,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		this.buildChrome();
 		void loadMathJax();
-		void loadPrism().then(prism => {
+		void loadPrism().then((prism: PrismLib) => {
 			this.prism = prism;
 			for (const tb of this.pageTexts) {
 				if (tb.variant !== "code") continue;
-				const el = this.domLayerEl.querySelector(`[data-id="${tb.id}"]`) as HTMLElement | null;
+				const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${tb.id}"]`);
 				if (el && el !== this.activeTextSourceEl) {
 					this.paintTextContent(el, tb);
 					this.syncFittedSize(el, tb);
@@ -435,7 +438,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		try {
 			const content = await this.app.vault.read(file);
 			if (content.trim()) {
-				const parsed = JSON.parse(content);
+				const parsed: unknown = JSON.parse(content);
 				if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid board document");
 				this.data = migrateDocument(parsed);
 			} else {
@@ -679,7 +682,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const isProtractor = this.rulerState.mode === "protractor";
 		this.rulerEl.style.transformOrigin = isProtractor ? "50% 100%" : "50% 50%";
 		this.rulerEl.style.transform = `translateY(${isProtractor ? "-100%" : "-50%"}) rotate(${this.rulerState.angle}deg)`;
-		const mode = this.rulerEl.querySelector(".notelens-ruler-mode") as HTMLElement | null;
+		const mode = this.rulerEl.querySelector<HTMLElement>(".notelens-ruler-mode");
 		if (mode) {
 			const angle = ((Math.round(this.rulerState.angle) % 360) + 360) % 360;
 			mode.setText(isProtractor ? tr("Ángulos {p0}°", { p0: angle }) : tr("Regla"));
@@ -1154,7 +1157,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			ctx.stroke();
 		}
 		for (const t of this.pageTexts) {
-			const el = this.domLayerEl.querySelector(`[data-id="${t.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${t.id}"]`);
 			const w = el?.offsetWidth || t.w || 200;
 			const h = el?.offsetHeight || t.h || 40;
 			const fill = t.stickyColor ? hexToRgba(t.stickyColor, 0.9) : t.variant === "code" ? "rgba(125, 211, 252, 0.45)" : t.variant === "math" ? "rgba(167, 139, 250, 0.55)" : light ? "rgba(15, 23, 42, 0.3)" : "rgba(226, 232, 240, 0.5)";
@@ -1316,7 +1319,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		menu.addItem(item => item
 			.setTitle(tr("Subir archivo desde el dispositivo"))
 			.setIcon("upload")
-			.onClick(() => this.uploadFileFromDevice()));
+			.onClick(() => void this.uploadFileFromDevice()));
 
 		menu.addSeparator();
 
@@ -1602,7 +1605,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private getInsertionPoint(w: number, h: number): { x: number; y: number } {
 		const c = this.getViewportCenterScene();
 		const measured = (item: { id: string; x: number; y: number; w?: number; h?: number }) => {
-			const el = this.domLayerEl.querySelector(`[data-id="${item.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${item.id}"]`);
 			return { x: item.x, y: item.y, w: item.w ?? el?.offsetWidth ?? 260, h: item.h ?? el?.offsetHeight ?? 60 };
 		};
 		const rects = [...this.pageTexts, ...this.pageTables, ...this.pageEmbeds].map(measured);
@@ -2202,7 +2205,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	/** Scene-space rect of a DOM-layer element, from its live element. */
 	private elementSceneRect(id: string): { x: number; y: number; w: number; h: number } | null {
-		const el = this.domLayerEl.querySelector(`[data-id="${id}"]`) as HTMLElement | null;
+		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
 		if (!el) return null;
 		const badge = this.data.badges.find(item => item.id === id);
 		const scale = badge?.scale ?? 1;
@@ -2282,7 +2285,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!b) return;
 
 		for (const id of [...this.selBadges, ...this.selTexts, ...this.selTables, ...this.selEmbeds]) {
-			(this.domLayerEl.querySelector(`[data-id="${id}"]`) as HTMLElement | null)?.addClass("notelens-selected");
+			(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`))?.addClass("notelens-selected");
 		}
 
 		const pad = 8;
@@ -2421,7 +2424,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			shape.rotation = norm((shape.rotation ?? 0) + deg);
 		}
 		const orbit = (obj: { x: number; y: number; rotation?: number }, id: string, turns: boolean) => {
-			const el = this.domLayerEl.querySelector(`[data-id="${id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
 			if (!el) return;
 			const rect = this.elementSceneRect(id);
 			const w = rect?.w ?? 0, h = rect?.h ?? 0;
@@ -2435,7 +2438,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				el.style.transform = obj.rotation ? `rotate(${obj.rotation}deg)` : "";
 			}
 		};
-		for (const b of this.pageBadges) if (this.selBadges.has(b.id)) orbit(b as unknown as { x: number; y: number }, b.id, false);
+		for (const b of this.pageBadges) if (this.selBadges.has(b.id)) orbit(b, b.id, false);
 		for (const tb of this.pageTexts) if (this.selTexts.has(tb.id)) orbit(tb, tb.id, true);
 		for (const table of this.pageTables) if (this.selTables.has(table.id)) orbit(table, table.id, true);
 		for (const em of this.pageEmbeds) if (this.selEmbeds.has(em.id)) orbit(em, em.id, true);
@@ -2474,7 +2477,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const moveDom = (obj: { x: number; y: number }, id: string) => {
 			obj.x += dx;
 			obj.y += dy;
-			const el = this.domLayerEl.querySelector(`[data-id="${id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
 			if (el) {
 				el.style.left = `${obj.x}px`;
 				el.style.top = `${obj.y}px`;
@@ -2614,7 +2617,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private syncSelectedGeometry(): void {
 		for (const badge of this.pageBadges) {
 			if (!this.selBadges.has(badge.id)) continue;
-			const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
 			if (el) {
 				el.style.left = `${badge.x}px`; el.style.top = `${badge.y}px`;
 				el.style.transform = `scale(${badge.scale ?? 1})`;
@@ -2622,17 +2625,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		for (const text of this.pageTexts) {
 			if (!this.selTexts.has(text.id)) continue;
-			const el = this.domLayerEl.querySelector(`[data-id="${text.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${text.id}"]`);
 			if (el) { el.style.left = `${text.x}px`; el.style.top = `${text.y}px`; this.applyTextStyles(el, text); }
 		}
 		for (const table of this.pageTables) {
 			if (!this.selTables.has(table.id)) continue;
-			const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
 			if (el) { el.style.left = `${table.x}px`; el.style.top = `${table.y}px`; el.style.width = `${table.w}px`; el.style.height = `${table.h}px`; }
 		}
 		for (const embed of this.pageEmbeds) {
 			if (!this.selEmbeds.has(embed.id)) continue;
-			const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${embed.id}"]`);
 			if (el) {
 				el.style.left = `${embed.x}px`; el.style.top = `${embed.y}px`; el.style.width = `${embed.w}px`;
 				if (embed.h > 0) el.style.height = `${embed.h}px`;
@@ -2646,7 +2649,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private openSearch(): void {
 		if (this.searchEl) {
-			(this.searchEl.querySelector("input") as HTMLInputElement | null)?.focus();
+			(this.searchEl.querySelector<HTMLInputElement>("input"))?.focus();
 			return;
 		}
 		const bar = this.workspaceEl.createDiv({ cls: "notelens-search" });
@@ -2719,13 +2722,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private showSearchHit(count: HTMLElement): void {
 		this.domLayerEl.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
 		const total = this.searchHits.length;
-		count.setText(total ? `${this.searchIndex + 1}/${total}` : (this.searchEl?.querySelector("input") as HTMLInputElement | null)?.value ? "0" : "");
+		count.setText(total ? `${this.searchIndex + 1}/${total}` : (this.searchEl?.querySelector<HTMLInputElement>("input"))?.value ? "0" : "");
 		for (const hit of this.searchHits) {
-			(this.domLayerEl.querySelector(`[data-id="${hit.id}"]`) as HTMLElement | null)?.addClass("notelens-search-hit");
+			(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${hit.id}"]`))?.addClass("notelens-search-hit");
 		}
 		const current = this.searchHits[this.searchIndex];
 		if (!current) return;
-		(this.domLayerEl.querySelector(`[data-id="${current.id}"]`) as HTMLElement | null)?.addClass("notelens-search-current");
+		(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${current.id}"]`))?.addClass("notelens-search-current");
 		this.panToScene(current.x, current.y, Math.max(this.data.viewTransform.scale, 0.8));
 	}
 
@@ -3098,7 +3101,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		for (const t of this.pageTexts) {
 			if (!this.selTexts.has(t.id)) continue;
 			mutate(t);
-			const el = this.domLayerEl.querySelector(`[data-id="${t.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${t.id}"]`);
 			if (el) this.applyTextStyles(el, t);
 			touched = true;
 		}
@@ -3600,7 +3603,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private createBadgeAt(x: number, y: number, tag: QuickTag): void {
-		const sourceTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+		const sourceTitle = stripLeadingEmoji(tag.label).trim() || tag.label;
 		const defaultTitle = tr(sourceTitle);
 		const place = (content: HoverNoteContent) => {
 			this.history.push();
@@ -3648,7 +3651,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.toggleClass("is-done", !!badge.done);
 		const iconEl = el.createSpan({ cls: "onenote-tag-icon" });
 		setIcon(iconEl, badge.done ? "check-circle-2" : tag.icon);
-		const fallback = tr(badge.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, ""));
+		const fallback = tr(stripLeadingEmoji(badge.label));
 		const excerpt = badge.title?.trim()
 			|| (badge.tagId === "tag_hover" && badge.tooltip ? badge.tooltip.split("\n")[0].slice(0, 48) + (badge.tooltip.length > 48 ? "…" : "") : fallback);
 		el.createSpan({ cls: "onenote-badge-label", text: excerpt });
@@ -3767,7 +3770,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Repaints one badge in place and refreshes everything that mirrors it. */
 	private refreshBadge(badge: Badge): void {
 		if (this.belongsToActivePage(badge)) {
-			const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
 			el?.remove();
 			this.renderBadge(badge);
 		}
@@ -3824,7 +3827,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private editBadgeNote(badge: Badge): void {
 		const tag = quickTagById(badge.tagId);
-		const fallbackTitle = tag.label.replace(/^[\p{Extended_Pictographic}‍️\s]+/u, "").trim() || tag.label;
+		const fallbackTitle = stripLeadingEmoji(tag.label).trim() || tag.label;
 		const title = badge.tagId === "tag_hover" ? tr("Editar nota flotante") : tr("Editar etiqueta: {p0}", { p0: fallbackTitle });
 		new HoverNoteModal(this.app, title, { title: badge.title ?? fallbackTitle, text: badge.tooltip ?? "", sketch: badge.sketch, images: badge.images, checklist: badge.checklist }, (content) => {
 			if (!content) return;
@@ -3838,7 +3841,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				badge.done = !!badge.checklist?.length && badge.checklist.every(item => item.done);
 			}
 			if (this.belongsToActivePage(badge)) {
-				const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`) as HTMLElement | null;
+				const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
 				el?.remove();
 				this.renderBadge(badge);
 			}
@@ -4119,7 +4122,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			if (near) el.createDiv({ cls: "onenote-top-tooltip-hint", text: hints[badge.tagId] ?? "" });
 		}
 		// Choose the side using the card's real size, so image notes never cover the top docks.
-		const badgeEl = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`) as HTMLElement | null;
+		const badgeEl = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
 		const badgeW = (badgeEl?.offsetWidth ?? 120) * (badge.scale ?? 1);
 		const badgeH = (badgeEl?.offsetHeight ?? 28) * (badge.scale ?? 1);
 		const vt = this.data.viewTransform;
@@ -4220,7 +4223,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.data.tables.push(table);
 		const el = this.renderTable(table);
 		this.save();
-		(el.querySelector(".notelens-table-cell") as HTMLTextAreaElement | null)?.focus();
+		(el.querySelector<HTMLTextAreaElement>(".notelens-table-cell"))?.focus();
 	}
 
 	/**
@@ -4809,7 +4812,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		tb.w = anchor?.w ?? this.measureAutoWidth(tb);
 		if (anchor) {
-			const el = this.domLayerEl.querySelector(`[data-id="${anchor.id}"]`) as HTMLElement | null;
+			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${anchor.id}"]`);
 			tb.x = anchor.x;
 			tb.y = anchor.y + (el?.offsetHeight ?? anchor.h ?? 48) + 12;
 		} else {
@@ -4980,7 +4983,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 		}));
 		menu.addItem(item => item.setTitle(tr("Renombrar tabla")).setIcon("pencil").onClick(() => {
-			const titleEl = this.domLayerEl.querySelector(`[data-id="${table.id}"] .notelens-table-title`) as HTMLElement | null;
+			const titleEl = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"] .notelens-table-title`);
 			if (titleEl) this.renameTable(table, titleEl);
 		}));
 		menu.addItem(item => item.setTitle(tr("Crear gráfico con estos datos")).setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
@@ -5056,8 +5059,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const widths = [...this.tableColumnWidths(table)];
 		const startX = event.clientX;
 		const scale = this.data.viewTransform.scale;
-		const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`) as HTMLElement | null;
-		const grid = el?.querySelector(".notelens-table-grid") as HTMLElement | null;
+		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
+		const grid = el?.querySelector<HTMLElement>(".notelens-table-grid");
 		const onMove = (move: PointerEvent) => {
 			const delta = (move.clientX - startX) / scale;
 			const next = [...widths];
@@ -5085,8 +5088,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const heights = [...this.tableRowHeights(table)];
 		const startY = event.clientY;
 		const scale = this.data.viewTransform.scale;
-		const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`) as HTMLElement | null;
-		const grid = el?.querySelector(".notelens-table-grid") as HTMLElement | null;
+		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
+		const grid = el?.querySelector<HTMLElement>(".notelens-table-grid");
 		const onMove = (move: PointerEvent) => {
 			const delta = (move.clientY - startY) / scale;
 			const next = [...heights];
@@ -5118,7 +5121,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const widths = [...this.tableColumnWidths(table)];
 		const heights = [...this.tableRowHeights(table)];
 		const scale = this.data.viewTransform.scale;
-		const grid = el.querySelector(".notelens-table-grid") as HTMLElement | null;
+		const grid = el.querySelector<HTMLElement>(".notelens-table-grid");
 		const onMove = (move: PointerEvent) => {
 			table.w = clamp(startW + (move.clientX - startX) / scale, 220, 1400);
 			table.h = clamp(startH + (move.clientY - startY) / scale, 120, 1200);
@@ -5817,7 +5820,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		try {
 			return renderMath(source, display);
 		} catch {
-			const fallback = createEl("span");
+			const fallback = createSpan();
 			fallback.className = "notelens-math-error";
 			fallback.textContent = source;
 			return fallback;
@@ -5863,7 +5866,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.hideFormatBar();
 		this.data.texts.remove(tb);
 		this.selTexts.delete(tb.id);
-		(this.domLayerEl.querySelector(`[data-id="${tb.id}"]`) as HTMLElement | null)?.remove();
+		(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${tb.id}"]`))?.remove();
 		this.renderSelectionBox();
 		this.save();
 	}
@@ -6335,7 +6338,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Direct drag of one embed (frame headers work with any tool active). */
 	private startSingleEmbedDrag(e: PointerEvent, embed: Embed): void {
 		this.history.push();
-		const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`) as HTMLElement | null;
+		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${embed.id}"]`);
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const origX = embed.x;

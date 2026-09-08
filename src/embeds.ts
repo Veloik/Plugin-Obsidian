@@ -70,8 +70,9 @@ function ensurePdfWorker(): void {
 	if (workerConfigured) return;
 	workerConfigured = true;
 	try {
-		workerUrl = URL.createObjectURL(new Blob([pdfWorkerSource], { type: "text/javascript" }));
-		(pdfjsLib.GlobalWorkerOptions as any).workerSrc = workerUrl;
+		const url = URL.createObjectURL(new Blob([pdfWorkerSource], { type: "text/javascript" }));
+		workerUrl = url;
+		pdfjsLib.GlobalWorkerOptions.workerSrc = url;
 	} catch (e) {
 		workerConfigured = false;
 		console.warn("NoteLens: pdf.js worker unavailable", e);
@@ -681,7 +682,7 @@ function setupFrameResize(host: EmbedHost, frame: HTMLElement, embed: Embed): vo
 
 /** Reads the current zoom from the stage's CSS transform. */
 function currentScale(el: HTMLElement): number {
-	const stage = el.closest(".onenote-stage") as HTMLElement | null;
+	const stage = el.closest<HTMLElement>(".onenote-stage");
 	if (!stage) return 1;
 	const s = /scale\(([^)]+)\)/.exec(stage.style.transform || "");
 	return s ? parseFloat(s[1]) : 1;

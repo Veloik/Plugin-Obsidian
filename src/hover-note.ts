@@ -639,7 +639,7 @@ export class HoverNoteModal extends Modal {
 			// Drawing gets the whole width of the screen it can have; writing does not need it.
 			this.modalEl.toggleClass("is-sketch", mode === "sketch");
 			if (mode === "text") {
-				const target = this.taskMode ? checklistList?.querySelector(".notelens-task-checklist-input") as HTMLInputElement | null : area;
+				const target = this.taskMode ? checklistList?.querySelector<HTMLInputElement>(".notelens-task-checklist-input") : area;
 				window.requestAnimationFrame(() => (target ?? area).focus());
 			}
 			else window.requestAnimationFrame(() => { redraw(); canvas.focus({ preventScroll: true }); });

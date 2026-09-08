@@ -26,7 +26,7 @@ export interface PanelHooks {
 
 /** Reaches those slots without an `any` cast. */
 export function panelHooks(el: HTMLElement): HTMLElement & PanelHooks {
-	return el as HTMLElement & PanelHooks;
+	return el;
 }
 
 
@@ -217,7 +217,7 @@ export interface ToolbarHost {
 	insertChart(): void;
 	toggleNavigator(): void;
 	isNavigatorOpen(): boolean;
-	uploadFileFromDevice(): void;
+	uploadFileFromDevice(): Promise<void>;
 	insertTable(): void;
 	insertCodeBlock(): void;
 	startDictation(): void;
@@ -239,9 +239,9 @@ export interface ToolbarHost {
 	deleteDocumentPage(id: string): void;
 	toggleA4Guides(): void;
 	getA4GuidesEnabled(): boolean;
-	exportA4Pdf(): void;
-	exportSharePackage(): void;
-	importSharePackage(): void;
+	exportA4Pdf(): Promise<void>;
+	exportSharePackage(): Promise<void>;
+	importSharePackage(): Promise<void>;
 	translateText(): void;
 	isTranslatorOpen(): boolean;
 	addStickyNote(): void;
@@ -465,7 +465,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	const uploadBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(uploadBtn, "upload");
 	uploadBtn.title = tr("Subir archivo desde el dispositivo");
-	uploadBtn.onclick = () => host.uploadFileFromDevice();
+	uploadBtn.onclick = () => void host.uploadFileFromDevice();
 
 	const tableBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(tableBtn, "table-2");
@@ -527,17 +527,17 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	const exportBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(exportBtn, "file-down");
 	exportBtn.title = tr("Exportar a PDF A4");
-	exportBtn.onclick = () => host.exportA4Pdf();
+	exportBtn.onclick = () => void host.exportA4Pdf();
 
 	const shareBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(shareBtn, "share-2");
 	shareBtn.title = tr("Exportar paquete editable de NoteLens");
-	shareBtn.onclick = () => host.exportSharePackage();
+	shareBtn.onclick = () => void host.exportSharePackage();
 
 	const importBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(importBtn, "package-open");
 	importBtn.title = tr("Importar paquete editable de NoteLens");
-	importBtn.onclick = () => host.importSharePackage();
+	importBtn.onclick = () => void host.importSharePackage();
 
 	panelHooks(container).__refreshToolbar = () => {
 		refreshActive();

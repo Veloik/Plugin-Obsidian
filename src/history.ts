@@ -32,7 +32,7 @@ export class HistoryManager {
 		if (this.undoStack.length === 0) return false;
 		this.redoStack.push(this.serialize());
 		const snap = this.undoStack.pop()!;
-		this.restore(JSON.parse(snap));
+		this.restore(JSON.parse(snap) as OneNoteDocument);
 		return true;
 	}
 
@@ -40,7 +40,7 @@ export class HistoryManager {
 		if (this.redoStack.length === 0) return false;
 		this.undoStack.push(this.serialize());
 		const snap = this.redoStack.pop()!;
-		this.restore(JSON.parse(snap));
+		this.restore(JSON.parse(snap) as OneNoteDocument);
 		return true;
 	}
 

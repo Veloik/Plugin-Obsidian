@@ -842,4 +842,8 @@ export const en: Record<string, string> = {
 	"{p0} supera el límite de 20 MB.": "{p0} is over the 20 MB limit.",
 	"{p0} no contiene una imagen compatible.": "{p0} does not hold a supported image.",
 	"{p0} sigue siendo demasiado grande después de optimizarla.": "{p0} is still too large after optimising it.",
+	"Enviar (enter)": "Send (enter)",
+	"Sin modelos": "No models",
+	"Sin conexión": "Offline",
+	"Sin modelo de chat": "No chat model",
 };

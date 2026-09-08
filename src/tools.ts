@@ -1,5 +1,14 @@
 import { RemoteVideoProvider, Stroke, StrokePoint } from "./types";
 
+/**
+ * Drops the emoji a label starts with, leaving the words. The zero-width joiner
+ * and the variation selector are spelled out rather than pasted in, so the
+ * character class reads as the three things it matches and not as one glyph.
+ */
+export function stripLeadingEmoji(label: string): string {
+	return label.replace(/^(?:\p{Extended_Pictographic}|\u200D|\uFE0F|\s)+/u, "");
+}
+
 export function clamp(v: number, min: number, max: number): number {
 	return Math.min(max, Math.max(min, v));
 }

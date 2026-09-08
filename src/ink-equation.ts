@@ -249,11 +249,11 @@ export class InkEquationModal extends Modal {
 
 		// --- the tool row, mirroring OneNote's
 		const tools = contentEl.createDiv({ cls: "notelens-ink-tools" });
-		const toolButton = (icon: string, label: string, run: () => void) => {
+		const toolButton = (icon: string, label: string, run: () => void | Promise<void>) => {
 			const button = tools.createEl("button", { cls: "notelens-ink-tool" });
 			setIcon(button.createSpan(), icon);
 			button.createSpan({ text: label });
-			button.onclick = run;
+			button.onclick = () => void run();
 			return button;
 		};
 		const writeBtn = toolButton("pen-line", tr("Escribir"), () => setTool("write"));

@@ -539,7 +539,7 @@ export function createCalculatorPanel(host: CalculatorHost, container: HTMLEleme
 	unitBtn.onclick = () => { host.setCalculatorUnit(host.calculatorUnit === "deg" ? "rad" : "deg"); refreshUnit(); preview(); };
 	refreshUnit();
 	const fractionBtn = header.createEl("button", { cls: "notelens-calculator-unit" });
-	fractionBtn.setText("a/b");
+	fractionBtn.setText("1/2");
 	fractionBtn.title = tr("Mostrar los resultados como fracción siempre (si no, solo cuando operas con fracciones)");
 	fractionBtn.onclick = () => { fractionMode = !fractionMode; fractionBtn.toggleClass("active", fractionMode); preview(); };
 	header.insertBefore(fractionBtn, closeBtn);
