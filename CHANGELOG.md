@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.7
+
+Same code as 2.9.6, released under a new version number.
+
 ## 2.9.6
 
 ### Fixed

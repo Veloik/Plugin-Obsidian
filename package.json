@@ -1,6 +1,6 @@
 {
   "name": "notelens",
-  "version": "2.9.6",
+  "version": "2.9.7",
   "description": "NoteLens Canvas: Pizarra infinita inteligente para Obsidian con l\u00e1piz \u00f3ptico, etiquetas OneNote, PDFs y v\u00eddeos.",
   "main": "main.js",
   "scripts": {
