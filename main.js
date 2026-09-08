@@ -21283,243 +21283,298 @@ var idCounter = 0;
 function genId(prefix) {
   return `${prefix}_${Date.now().toString(36)}_${(idCounter++).toString(36)}`;
 }
+var DEFAULT_BADGE_LABEL = "\u2B50\uFE0F Importante";
+function asObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : null;
+}
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+function asString(value) {
+  return typeof value === "string" ? value : void 0;
+}
+function asNumber(value) {
+  return typeof value === "number" ? value : void 0;
+}
+function asOneOf(value, allowed) {
+  return typeof value === "string" && allowed.includes(value) ? value : void 0;
+}
+function asHexColor(value) {
+  const text = asString(value);
+  return text !== void 0 && /^#[0-9a-f]{6}$/i.test(text) ? text : void 0;
+}
+function asText(value, fallback) {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return fallback;
+}
+function asSizes(value, length) {
+  if (!Array.isArray(value) || value.length !== length) return void 0;
+  return value.every((v3) => typeof v3 === "number" && v3 > 0) ? value : void 0;
+}
 function migrateDocument(raw) {
   const doc = createEmptyDocument();
-  if (!raw || typeof raw !== "object") return doc;
-  if (Array.isArray(raw.pages) && raw.pages.length > 0) {
+  const root = asObject(raw);
+  if (!root) return doc;
+  const rawPages = asArray(root.pages);
+  if (rawPages.length > 0) {
     const pages = [];
-    for (let index = 0; index < raw.pages.length; index++) {
-      const source = raw.pages[index];
-      if (!source || typeof source !== "object") continue;
+    for (let index = 0; index < rawPages.length; index++) {
+      const source = asObject(rawPages[index]);
+      if (!source) continue;
+      const title = asString(source.title);
+      const sourceId = asString(source.id);
       const page = createDocumentPage(
-        typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : tr("P\xE1gina {p0}", { p0: index + 1 }),
+        title && title.trim() ? title.trim().slice(0, 80) : tr("P\xE1gina {p0}", { p0: index + 1 }),
         {},
-        typeof source.id === "string" && source.id ? source.id : genId("page")
+        sourceId ? sourceId : genId("page")
       );
-      const view = source.viewTransform;
-      if (view && typeof view.x === "number" && typeof view.y === "number" && typeof view.scale === "number") {
-        page.viewTransform = { x: view.x, y: view.y, scale: Math.min(Math.max(view.scale, 0.15), 4) };
+      const view = asObject(source.viewTransform);
+      const vx2 = asNumber(view?.x), vy2 = asNumber(view?.y), vscale2 = asNumber(view?.scale);
+      if (vx2 !== void 0 && vy2 !== void 0 && vscale2 !== void 0) {
+        page.viewTransform = { x: vx2, y: vy2, scale: Math.min(Math.max(vscale2, 0.15), 4) };
       }
       const legacyMargin2 = source.background === "margin";
-      if (["dots", "grid", "lines", "margin", "blank"].includes(source.background)) page.background = legacyMargin2 ? "lines" : source.background;
+      const background2 = asOneOf(source.background, ["dots", "grid", "lines", "margin", "blank"]);
+      if (background2) page.background = legacyMargin2 ? "lines" : background2;
       page.marginEnabled = source.marginEnabled === true || legacyMargin2;
-      if (typeof source.backgroundColor === "string" && /^#[0-9a-f]{6}$/i.test(source.backgroundColor)) page.backgroundColor = source.backgroundColor;
-      if (typeof source.lineColor === "string" && /^#[0-9a-f]{6}$/i.test(source.lineColor)) page.lineColor = source.lineColor;
-      if (["small", "medium", "large"].includes(source.gridSize)) page.gridSize = source.gridSize;
+      page.backgroundColor = asHexColor(source.backgroundColor) ?? page.backgroundColor;
+      page.lineColor = asHexColor(source.lineColor) ?? page.lineColor;
+      page.gridSize = asOneOf(source.gridSize, ["small", "medium", "large"]) ?? page.gridSize;
       page.a4Guides = source.a4Guides === true;
       pages.push(page);
     }
     if (pages.length) doc.pages = pages;
   }
-  doc.activePageId = doc.pages.some((page) => page.id === raw.activePageId) ? raw.activePageId : doc.pages[0].id;
+  const activeId = asString(root.activePageId);
+  doc.activePageId = activeId !== void 0 && doc.pages.some((page) => page.id === activeId) ? activeId : doc.pages[0].id;
   const pageIds = new Set(doc.pages.map((page) => page.id));
   const pageIdOf = (value) => typeof value === "string" && pageIds.has(value) ? value : doc.activePageId;
-  if (Array.isArray(raw.strokes)) {
-    for (const s3 of raw.strokes) {
-      if (!s3 || !Array.isArray(s3.points)) continue;
-      const points = [];
-      for (const p3 of s3.points) {
-        if (typeof p3?.x !== "number" || typeof p3?.y !== "number") continue;
-        points.push({ x: p3.x, y: p3.y, p: typeof p3.p === "number" ? p3.p : 0.5 });
-      }
-      if (points.length < 1) continue;
-      doc.strokes.push({
-        id: typeof s3.id === "string" ? s3.id : genId("stroke"),
-        pageId: pageIdOf(s3.pageId),
-        type: s3.type === "highlighter" ? "highlighter" : "pen",
-        color: typeof s3.color === "string" ? s3.color : "#f8fafc",
-        width: typeof s3.width === "number" ? s3.width : 2.5,
-        style: ["ballpoint", "pencil", "fountain", "marker", "brush"].includes(s3.style) ? s3.style : void 0,
-        points
+  for (const entry of asArray(root.strokes)) {
+    const s3 = asObject(entry);
+    if (!s3 || !Array.isArray(s3.points)) continue;
+    const points = [];
+    for (const rawPoint of s3.points) {
+      const p3 = asObject(rawPoint);
+      const x4 = asNumber(p3?.x), y3 = asNumber(p3?.y);
+      if (x4 === void 0 || y3 === void 0) continue;
+      points.push({ x: x4, y: y3, p: asNumber(p3?.p) ?? 0.5 });
+    }
+    if (points.length < 1) continue;
+    doc.strokes.push({
+      id: asString(s3.id) ?? genId("stroke"),
+      pageId: pageIdOf(s3.pageId),
+      type: s3.type === "highlighter" ? "highlighter" : "pen",
+      color: asString(s3.color) ?? "#f8fafc",
+      width: asNumber(s3.width) ?? 2.5,
+      style: asOneOf(s3.style, ["ballpoint", "pencil", "fountain", "marker", "brush"]),
+      points
+    });
+  }
+  for (const entry of asArray(root.shapes)) {
+    const s3 = asObject(entry);
+    if (!s3) continue;
+    const x4 = asNumber(s3.x), y3 = asNumber(s3.y), w3 = asNumber(s3.w), h3 = asNumber(s3.h);
+    if (x4 === void 0 || y3 === void 0 || w3 === void 0 || h3 === void 0) continue;
+    const kind = asOneOf(s3.kind, ["line", "arrow", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "callout"]);
+    if (!kind) continue;
+    const width = asNumber(s3.width);
+    const fillOpacity = asNumber(s3.fillOpacity);
+    doc.shapes.push({
+      id: asString(s3.id) ?? genId("shape"),
+      pageId: pageIdOf(s3.pageId),
+      kind,
+      x: x4,
+      y: y3,
+      w: w3,
+      h: h3,
+      color: asString(s3.color) ?? "#e5e7eb",
+      width: width !== void 0 ? Math.min(Math.max(width, 1), 24) : 2.5,
+      rotation: asNumber(s3.rotation),
+      fill: asHexColor(s3.fill),
+      fillOpacity: fillOpacity !== void 0 ? Math.min(Math.max(fillOpacity, 0), 1) : 0
+    });
+  }
+  for (const entry of asArray(root.badges)) {
+    const b3 = asObject(entry);
+    const bx = asNumber(b3?.x), by = asNumber(b3?.y);
+    if (!b3 || bx === void 0 || by === void 0) continue;
+    const images = [];
+    const checklist = [];
+    for (const rawItem of asArray(b3.checklist).slice(0, 100)) {
+      const item = asObject(rawItem);
+      const text = asString(item?.text)?.trim().slice(0, 500) ?? "";
+      const rawSketch = asString(item?.sketch);
+      const sketch2 = rawSketch?.startsWith("data:image/") ? rawSketch : void 0;
+      if (!text && !sketch2) continue;
+      const itemId = asString(item?.id);
+      checklist.push({
+        id: itemId ? itemId : genId("task_item"),
+        text,
+        sketch: sketch2,
+        done: item?.done === true
       });
     }
-  }
-  if (Array.isArray(raw.shapes)) {
-    for (const s3 of raw.shapes) {
-      if (!s3 || typeof s3.x !== "number" || typeof s3.y !== "number") continue;
-      if (typeof s3.w !== "number" || typeof s3.h !== "number") continue;
-      if (!["line", "arrow", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "callout"].includes(s3.kind)) continue;
-      doc.shapes.push({
-        id: typeof s3.id === "string" ? s3.id : genId("shape"),
-        pageId: pageIdOf(s3.pageId),
-        kind: s3.kind,
-        x: s3.x,
-        y: s3.y,
-        w: s3.w,
-        h: s3.h,
-        color: typeof s3.color === "string" ? s3.color : "#e5e7eb",
-        width: typeof s3.width === "number" ? Math.min(Math.max(s3.width, 1), 24) : 2.5,
-        rotation: typeof s3.rotation === "number" ? s3.rotation : void 0,
-        fill: typeof s3.fill === "string" && /^#[0-9a-f]{6}$/i.test(s3.fill) ? s3.fill : void 0,
-        fillOpacity: typeof s3.fillOpacity === "number" ? Math.min(Math.max(s3.fillOpacity, 0), 1) : 0
+    for (const rawImage of asArray(b3.images)) {
+      const image = asObject(rawImage);
+      const src = asString(image?.src);
+      if (!image || src === void 0 || !src.startsWith("data:image/")) continue;
+      const rawW = asNumber(image.w), rawH = asNumber(image.h);
+      const w3 = rawW !== void 0 ? Math.min(Math.max(rawW, 40), 560) : 220;
+      const h3 = rawH !== void 0 ? Math.min(Math.max(rawH, 40), 320) : 140;
+      const ix = asNumber(image.x), iy = asNumber(image.y);
+      images.push({
+        id: asString(image.id) ?? genId("badge_image"),
+        name: asString(image.name)?.slice(0, 160) ?? "Imagen",
+        src,
+        x: ix !== void 0 ? Math.min(Math.max(ix, 0), Math.max(0, 560 - w3)) : 24,
+        y: iy !== void 0 ? Math.min(Math.max(iy, 0), Math.max(0, 320 - h3)) : 24,
+        w: w3,
+        h: h3
       });
     }
+    const scale = asNumber(b3.scale);
+    const title = asString(b3.title);
+    const sketch = asString(b3.sketch);
+    doc.badges.push({
+      id: asString(b3.id) ?? genId("badge"),
+      pageId: pageIdOf(b3.pageId),
+      x: bx,
+      y: by,
+      scale: scale !== void 0 ? Math.min(Math.max(scale, 0.5), 3) : 1,
+      tagId: asText(b3.tagId, "tag_star"),
+      label: asText(b3.label, DEFAULT_BADGE_LABEL),
+      title: title && title.trim() ? title.trim().slice(0, 120) : void 0,
+      tooltip: asString(b3.tooltip),
+      sketch: sketch?.startsWith("data:image/") ? sketch : void 0,
+      images: images.length ? images : void 0,
+      checklist: checklist.length ? checklist : void 0,
+      done: checklist.length ? checklist.every((item) => item.done) : b3.done === true
+    });
   }
-  if (Array.isArray(raw.badges)) {
-    for (const b3 of raw.badges) {
-      if (typeof b3?.x !== "number" || typeof b3?.y !== "number") continue;
-      const images = [];
-      const checklist = [];
-      if (Array.isArray(b3.checklist)) {
-        for (const item of b3.checklist.slice(0, 100)) {
-          const text = typeof item?.text === "string" ? item.text.trim().slice(0, 500) : "";
-          const sketch = typeof item?.sketch === "string" && item.sketch.startsWith("data:image/") ? item.sketch : void 0;
-          if (!text && !sketch) continue;
-          checklist.push({
-            id: typeof item.id === "string" && item.id ? item.id : genId("task_item"),
-            text,
-            sketch,
-            done: item.done === true
-          });
-        }
-      }
-      if (Array.isArray(b3.images)) {
-        for (const image of b3.images) {
-          if (!image || typeof image.src !== "string" || !image.src.startsWith("data:image/")) continue;
-          const w3 = typeof image.w === "number" ? Math.min(Math.max(image.w, 40), 560) : 220;
-          const h3 = typeof image.h === "number" ? Math.min(Math.max(image.h, 40), 320) : 140;
-          images.push({
-            id: typeof image.id === "string" ? image.id : genId("badge_image"),
-            name: typeof image.name === "string" ? image.name.slice(0, 160) : "Imagen",
-            src: image.src,
-            x: typeof image.x === "number" ? Math.min(Math.max(image.x, 0), Math.max(0, 560 - w3)) : 24,
-            y: typeof image.y === "number" ? Math.min(Math.max(image.y, 0), Math.max(0, 320 - h3)) : 24,
-            w: w3,
-            h: h3
-          });
-        }
-      }
-      doc.badges.push({
-        id: typeof b3.id === "string" ? b3.id : genId("badge"),
-        pageId: pageIdOf(b3.pageId),
-        x: b3.x,
-        y: b3.y,
-        scale: typeof b3.scale === "number" ? Math.min(Math.max(b3.scale, 0.5), 3) : 1,
-        tagId: String(b3.tagId ?? "tag_star"),
-        label: String(b3.label ?? "\u2B50\uFE0F Importante"),
-        title: typeof b3.title === "string" && b3.title.trim() ? b3.title.trim().slice(0, 120) : void 0,
-        tooltip: typeof b3.tooltip === "string" ? b3.tooltip : void 0,
-        sketch: typeof b3.sketch === "string" && b3.sketch.startsWith("data:image/") ? b3.sketch : void 0,
-        images: images.length ? images : void 0,
-        checklist: checklist.length ? checklist : void 0,
-        done: checklist.length ? checklist.every((item) => item.done) : b3.done === true
-      });
-    }
+  for (const entry of asArray(root.texts)) {
+    const t3 = asObject(entry);
+    const tx = asNumber(t3?.x), ty = asNumber(t3?.y);
+    if (!t3 || tx === void 0 || ty === void 0) continue;
+    const w3 = asNumber(t3.w), h3 = asNumber(t3.h);
+    doc.texts.push({
+      id: asString(t3.id) ?? genId("text"),
+      pageId: pageIdOf(t3.pageId),
+      x: tx,
+      y: ty,
+      text: asText(t3.text, ""),
+      fontSize: asNumber(t3.fontSize) ?? 18,
+      color: asString(t3.color) ?? "#f8fafc",
+      bold: t3.bold === true,
+      italic: t3.italic === true,
+      underline: t3.underline === true,
+      strike: t3.strike === true,
+      highlight: asString(t3.highlight),
+      runs: Array.isArray(t3.runs) ? sanitizeRuns(t3.runs) : void 0,
+      align: t3.align === "center" || t3.align === "right" ? t3.align : "left",
+      stickyColor: asString(t3.stickyColor),
+      w: w3 !== void 0 ? Math.min(Math.max(w3, 120), 900) : void 0,
+      h: h3 !== void 0 ? Math.min(Math.max(h3, 34), 900) : void 0,
+      fontFamily: isCanvasFont(t3.fontFamily) ? t3.fontFamily : "sans",
+      autoWidth: t3.autoWidth === true,
+      rotation: asNumber(t3.rotation),
+      variant: t3.variant === "code" || t3.variant === "math" ? t3.variant : "text",
+      language: asString(t3.language)?.slice(0, 32)
+    });
   }
-  if (Array.isArray(raw.texts)) {
-    for (const t3 of raw.texts) {
-      if (typeof t3?.x !== "number" || typeof t3?.y !== "number") continue;
-      doc.texts.push({
-        id: typeof t3.id === "string" ? t3.id : genId("text"),
-        pageId: pageIdOf(t3.pageId),
-        x: t3.x,
-        y: t3.y,
-        text: String(t3.text ?? ""),
-        fontSize: typeof t3.fontSize === "number" ? t3.fontSize : 18,
-        color: typeof t3.color === "string" ? t3.color : "#f8fafc",
-        bold: t3.bold === true,
-        italic: t3.italic === true,
-        underline: t3.underline === true,
-        strike: t3.strike === true,
-        highlight: typeof t3.highlight === "string" ? t3.highlight : void 0,
-        runs: Array.isArray(t3.runs) ? sanitizeRuns(t3.runs) : void 0,
-        align: t3.align === "center" || t3.align === "right" ? t3.align : "left",
-        stickyColor: typeof t3.stickyColor === "string" ? t3.stickyColor : void 0,
-        w: typeof t3.w === "number" ? Math.min(Math.max(t3.w, 120), 900) : void 0,
-        h: typeof t3.h === "number" ? Math.min(Math.max(t3.h, 34), 900) : void 0,
-        fontFamily: isCanvasFont(t3.fontFamily) ? t3.fontFamily : "sans",
-        autoWidth: t3.autoWidth === true,
-        rotation: typeof t3.rotation === "number" ? t3.rotation : void 0,
-        variant: t3.variant === "code" || t3.variant === "math" ? t3.variant : "text",
-        language: typeof t3.language === "string" ? t3.language.slice(0, 32) : void 0
-      });
-    }
+  for (const entry of asArray(root.tables)) {
+    const table = asObject(entry);
+    const tx = asNumber(table?.x), ty = asNumber(table?.y);
+    if (!table || tx === void 0 || ty === void 0) continue;
+    const rawRows = asNumber(table.rows), rawCols = asNumber(table.cols);
+    const rows = rawRows !== void 0 ? Math.min(Math.max(Math.round(rawRows), 1), 30) : 3;
+    const cols = rawCols !== void 0 ? Math.min(Math.max(Math.round(rawCols), 1), 20) : 3;
+    const sourceCells = asArray(table.cells);
+    const cells = Array.from({ length: rows }, (_3, row) => {
+      const sourceRow = asArray(sourceCells[row]);
+      return Array.from({ length: cols }, (_4, col) => asText(sourceRow[col], ""));
+    });
+    const w3 = asNumber(table.w), h3 = asNumber(table.h);
+    doc.tables.push({
+      id: asString(table.id) ?? genId("table"),
+      pageId: pageIdOf(table.pageId),
+      x: tx,
+      y: ty,
+      w: w3 !== void 0 ? Math.min(Math.max(w3, 220), 1400) : 520,
+      h: h3 !== void 0 ? Math.min(Math.max(h3, 120), 1200) : 220,
+      rows,
+      cols,
+      cells,
+      header: table.header === true,
+      headerColumn: table.headerColumn === true,
+      title: asString(table.title)?.trim().slice(0, 80),
+      rotation: asNumber(table.rotation),
+      colWidths: asSizes(table.colWidths, cols),
+      rowHeights: asSizes(table.rowHeights, rows)
+    });
   }
-  if (Array.isArray(raw.tables)) {
-    for (const table of raw.tables) {
-      if (typeof table?.x !== "number" || typeof table?.y !== "number") continue;
-      const rows = typeof table.rows === "number" ? Math.min(Math.max(Math.round(table.rows), 1), 30) : 3;
-      const cols = typeof table.cols === "number" ? Math.min(Math.max(Math.round(table.cols), 1), 20) : 3;
-      const cells = Array.from(
-        { length: rows },
-        (_3, row) => Array.from({ length: cols }, (_4, col) => String(table.cells?.[row]?.[col] ?? ""))
-      );
-      doc.tables.push({
-        id: typeof table.id === "string" ? table.id : genId("table"),
-        pageId: pageIdOf(table.pageId),
-        x: table.x,
-        y: table.y,
-        w: typeof table.w === "number" ? Math.min(Math.max(table.w, 220), 1400) : 520,
-        h: typeof table.h === "number" ? Math.min(Math.max(table.h, 120), 1200) : 220,
-        rows,
-        cols,
-        cells,
-        header: table.header === true,
-        headerColumn: table.headerColumn === true,
-        title: typeof table.title === "string" ? table.title.trim().slice(0, 80) : void 0,
-        rotation: typeof table.rotation === "number" ? table.rotation : void 0,
-        colWidths: Array.isArray(table.colWidths) && table.colWidths.length === cols && table.colWidths.every((v3) => typeof v3 === "number" && v3 > 0) ? table.colWidths : void 0,
-        rowHeights: Array.isArray(table.rowHeights) && table.rowHeights.length === rows && table.rowHeights.every((v3) => typeof v3 === "number" && v3 > 0) ? table.rowHeights : void 0
-      });
-    }
+  for (const entry of asArray(root.bookmarks)) {
+    const bookmark = asObject(entry);
+    const bx = asNumber(bookmark?.x), by = asNumber(bookmark?.y);
+    if (!bookmark || bx === void 0 || by === void 0) continue;
+    const scale = asNumber(bookmark.scale);
+    doc.bookmarks.push({
+      id: asString(bookmark.id) ?? genId("bookmark"),
+      pageId: pageIdOf(bookmark.pageId),
+      label: asString(bookmark.label)?.slice(0, 80) ?? "Secci\xF3n",
+      x: bx,
+      y: by,
+      scale: scale !== void 0 ? Math.min(Math.max(scale, 0.15), 4) : 1
+    });
   }
-  if (Array.isArray(raw.bookmarks)) {
-    for (const bookmark of raw.bookmarks) {
-      if (typeof bookmark?.x !== "number" || typeof bookmark?.y !== "number") continue;
-      doc.bookmarks.push({
-        id: typeof bookmark.id === "string" ? bookmark.id : genId("bookmark"),
-        pageId: pageIdOf(bookmark.pageId),
-        label: typeof bookmark.label === "string" ? bookmark.label.slice(0, 80) : "Secci\xF3n",
-        x: bookmark.x,
-        y: bookmark.y,
-        scale: typeof bookmark.scale === "number" ? Math.min(Math.max(bookmark.scale, 0.15), 4) : 1
-      });
-    }
+  doc.a4Guides = root.a4Guides === true;
+  for (const entry of asArray(root.embeds)) {
+    const e = asObject(entry);
+    const ex = asNumber(e?.x), ey = asNumber(e?.y), src = asString(e?.src);
+    if (!e || ex === void 0 || ey === void 0 || src === void 0) continue;
+    const kind = asOneOf(
+      e.kind,
+      ["youtube", "web-video", "video", "audio", "epub", "image", "file", "note", "board", "chart"]
+    ) ?? "pdf";
+    const provider = asOneOf(
+      e.provider,
+      ["youtube", "tiktok", "instagram", "x", "vimeo", "dailymotion", "streamable", "loom", "facebook"]
+    );
+    const chart = asObject(e.chart);
+    const chartData = asString(chart?.data);
+    doc.embeds.push({
+      id: asString(e.id) ?? genId("embed"),
+      pageId: pageIdOf(e.pageId),
+      kind,
+      src,
+      originalUrl: asString(e.originalUrl) ?? (kind === "youtube" ? src : void 0),
+      provider: provider ?? (kind === "youtube" ? "youtube" : void 0),
+      x: ex,
+      y: ey,
+      w: asNumber(e.w) ?? 640,
+      h: asNumber(e.h) ?? 480,
+      rotation: asNumber(e.rotation),
+      chart: chart && chartData !== void 0 ? { ...chart, data: chartData, type: asOneOf(chart.type, ["bar", "line", "area", "pie", "scatter", "function"]) ?? "bar" } : void 0,
+      page: asNumber(e.page),
+      pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
+      pages: asNumber(e.pages),
+      captionSrc: asString(e.captionSrc)
+    });
   }
-  doc.a4Guides = raw.a4Guides === true;
-  if (Array.isArray(raw.embeds)) {
-    for (const e of raw.embeds) {
-      if (typeof e?.x !== "number" || typeof e?.y !== "number" || typeof e?.src !== "string") continue;
-      const kind = e.kind === "youtube" || e.kind === "web-video" || e.kind === "video" || e.kind === "audio" || e.kind === "epub" || e.kind === "image" || e.kind === "file" || e.kind === "note" || e.kind === "board" || e.kind === "chart" ? e.kind : "pdf";
-      doc.embeds.push({
-        id: typeof e.id === "string" ? e.id : genId("embed"),
-        pageId: pageIdOf(e.pageId),
-        kind,
-        src: e.src,
-        originalUrl: typeof e.originalUrl === "string" ? e.originalUrl : kind === "youtube" ? e.src : void 0,
-        provider: ["youtube", "tiktok", "instagram", "x", "vimeo", "dailymotion", "streamable", "loom", "facebook"].includes(e.provider) ? e.provider : kind === "youtube" ? "youtube" : void 0,
-        x: e.x,
-        y: e.y,
-        w: typeof e.w === "number" ? e.w : 640,
-        h: typeof e.h === "number" ? e.h : 480,
-        rotation: typeof e.rotation === "number" ? e.rotation : void 0,
-        chart: kind === "chart" && e.chart && typeof e.chart === "object" && typeof e.chart.data === "string" ? { ...e.chart, type: ["bar", "line", "area", "pie", "scatter", "function"].includes(e.chart.type) ? e.chart.type : "bar" } : void 0,
-        page: typeof e.page === "number" ? e.page : void 0,
-        pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
-        pages: typeof e.pages === "number" ? e.pages : void 0,
-        captionSrc: typeof e.captionSrc === "string" ? e.captionSrc : void 0
-      });
-    }
+  const vt2 = asObject(root.viewTransform);
+  const vx = asNumber(vt2?.x), vy = asNumber(vt2?.y), vscale = asNumber(vt2?.scale);
+  if (vx !== void 0 && vy !== void 0 && vscale !== void 0) {
+    doc.viewTransform = { x: vx, y: vy, scale: Math.min(Math.max(0.15, vscale), 4) };
   }
-  const vt2 = raw.viewTransform;
-  if (vt2 && typeof vt2.x === "number" && typeof vt2.y === "number" && typeof vt2.scale === "number") {
-    doc.viewTransform = { x: vt2.x, y: vt2.y, scale: Math.min(Math.max(0.15, vt2.scale), 4) };
-  }
-  const legacyMargin = raw.background === "margin";
-  if (raw.background === "grid" || raw.background === "lines" || raw.background === "blank" || legacyMargin) {
-    doc.background = legacyMargin ? "lines" : raw.background;
-  }
-  if (typeof raw.backgroundColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.backgroundColor)) {
-    doc.backgroundColor = raw.backgroundColor;
-  }
-  if (typeof raw.lineColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.lineColor)) {
-    doc.lineColor = raw.lineColor;
-  }
-  if (raw.gridSize === "small" || raw.gridSize === "medium" || raw.gridSize === "large") {
-    doc.gridSize = raw.gridSize;
-  }
+  const legacyMargin = root.background === "margin";
+  const background = asOneOf(root.background, ["grid", "lines", "blank"]);
+  if (background) doc.background = background;
+  else if (legacyMargin) doc.background = "lines";
+  doc.backgroundColor = asHexColor(root.backgroundColor) ?? doc.backgroundColor;
+  doc.lineColor = asHexColor(root.lineColor) ?? doc.lineColor;
+  doc.gridSize = asOneOf(root.gridSize, ["small", "medium", "large"]) ?? doc.gridSize;
   const activePage = doc.pages.find((page) => page.id === doc.activePageId) ?? doc.pages[0];
-  doc.marginEnabled = legacyMargin || (typeof raw.marginEnabled === "boolean" ? raw.marginEnabled : activePage.marginEnabled);
+  doc.marginEnabled = legacyMargin || (typeof root.marginEnabled === "boolean" ? root.marginEnabled : activePage.marginEnabled);
   activePage.viewTransform = { ...doc.viewTransform };
   activePage.background = doc.background;
   activePage.marginEnabled = doc.marginEnabled;

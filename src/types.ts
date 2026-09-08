@@ -348,263 +348,335 @@ export function genId(prefix: string): string {
 	return `${prefix}_${Date.now().toString(36)}_${(idCounter++).toString(36)}`;
 }
 
+/** What a badge is called when the stored document never said. */
+const DEFAULT_BADGE_LABEL = "⭐️ Importante";
+
+/** A JSON object whose fields have not been checked yet. */
+type RawObject = Record<string, unknown>;
+
+/** The object at `value` — an array does not count — or null. */
+function asObject(value: unknown): RawObject | null {
+	return typeof value === "object" && value !== null && !Array.isArray(value) ? value as RawObject : null;
+}
+
+/** The array at `value`, or an empty one, so callers can just iterate. */
+function asArray(value: unknown): unknown[] {
+	return Array.isArray(value) ? value : [];
+}
+
+function asString(value: unknown): string | undefined {
+	return typeof value === "string" ? value : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+	return typeof value === "number" ? value : undefined;
+}
+
+/** `value` when it is one of `allowed`, undefined otherwise. */
+function asOneOf<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
+	return typeof value === "string" && (allowed as readonly string[]).includes(value) ? value as T : undefined;
+}
+
+/** A `#rrggbb` colour, or undefined. */
+function asHexColor(value: unknown): string | undefined {
+	const text = asString(value);
+	return text !== undefined && /^#[0-9a-f]{6}$/i.test(text) ? text : undefined;
+}
+
+/**
+ * Text for a field a document may have stored as anything. A number or a
+ * boolean reads back the way it was written; an object or an array falls back,
+ * because "[object Object]" is not a label anybody wants to see on a board.
+ */
+function asText(value: unknown, fallback: string): string {
+	if (typeof value === "string") return value;
+	if (typeof value === "number" || typeof value === "boolean") return String(value);
+	return fallback;
+}
+
+/** A list of positive numbers exactly `length` long, or undefined. */
+function asSizes(value: unknown, length: number): number[] | undefined {
+	if (!Array.isArray(value) || value.length !== length) return undefined;
+	return value.every(v => typeof v === "number" && v > 0) ? value as number[] : undefined;
+}
+
 /**
  * Normalizes any parsed JSON (including legacy documents) into a valid
  * OneNoteDocument v10. Never throws: unknown/extra fields are dropped.
+ *
+ * Everything arrives as `unknown` and is read through the accessors above, so
+ * a corrupt board can only ever produce defaults, never a crash mid-migration.
  */
-export function migrateDocument(raw: any): OneNoteDocument {
+export function migrateDocument(raw: unknown): OneNoteDocument {
 	const doc = createEmptyDocument();
-	if (!raw || typeof raw !== "object") return doc;
+	const root = asObject(raw);
+	if (!root) return doc;
 
-	if (Array.isArray(raw.pages) && raw.pages.length > 0) {
+	const rawPages = asArray(root.pages);
+	if (rawPages.length > 0) {
 		const pages: DocumentPage[] = [];
-		for (let index = 0; index < raw.pages.length; index++) {
-			const source = raw.pages[index];
-			if (!source || typeof source !== "object") continue;
+		for (let index = 0; index < rawPages.length; index++) {
+			const source = asObject(rawPages[index]);
+			if (!source) continue;
+			const title = asString(source.title);
+			const sourceId = asString(source.id);
 			const page = createDocumentPage(
-				typeof source.title === "string" && source.title.trim() ? source.title.trim().slice(0, 80) : tr("Página {p0}", { p0: index + 1 }),
+				title && title.trim() ? title.trim().slice(0, 80) : tr("Página {p0}", { p0: index + 1 }),
 				{},
-				typeof source.id === "string" && source.id ? source.id : genId("page")
+				sourceId ? sourceId : genId("page")
 			);
-			const view = source.viewTransform;
-			if (view && typeof view.x === "number" && typeof view.y === "number" && typeof view.scale === "number") {
-				page.viewTransform = { x: view.x, y: view.y, scale: Math.min(Math.max(view.scale, 0.15), 4) };
+			const view = asObject(source.viewTransform);
+			const vx = asNumber(view?.x), vy = asNumber(view?.y), vscale = asNumber(view?.scale);
+			if (vx !== undefined && vy !== undefined && vscale !== undefined) {
+				page.viewTransform = { x: vx, y: vy, scale: Math.min(Math.max(vscale, 0.15), 4) };
 			}
 			const legacyMargin = source.background === "margin";
-			if (["dots", "grid", "lines", "margin", "blank"].includes(source.background)) page.background = legacyMargin ? "lines" : source.background;
+			const background = asOneOf(source.background, ["dots", "grid", "lines", "margin", "blank"] as const);
+			if (background) page.background = legacyMargin ? "lines" : background;
 			page.marginEnabled = source.marginEnabled === true || legacyMargin;
-			if (typeof source.backgroundColor === "string" && /^#[0-9a-f]{6}$/i.test(source.backgroundColor)) page.backgroundColor = source.backgroundColor;
-			if (typeof source.lineColor === "string" && /^#[0-9a-f]{6}$/i.test(source.lineColor)) page.lineColor = source.lineColor;
-			if (["small", "medium", "large"].includes(source.gridSize)) page.gridSize = source.gridSize;
+			page.backgroundColor = asHexColor(source.backgroundColor) ?? page.backgroundColor;
+			page.lineColor = asHexColor(source.lineColor) ?? page.lineColor;
+			page.gridSize = asOneOf(source.gridSize, ["small", "medium", "large"] as const) ?? page.gridSize;
 			page.a4Guides = source.a4Guides === true;
 			pages.push(page);
 		}
 		if (pages.length) doc.pages = pages;
 	}
-	doc.activePageId = doc.pages.some(page => page.id === raw.activePageId) ? raw.activePageId : doc.pages[0].id;
+	const activeId = asString(root.activePageId);
+	doc.activePageId = activeId !== undefined && doc.pages.some(page => page.id === activeId) ? activeId : doc.pages[0].id;
 	const pageIds = new Set(doc.pages.map(page => page.id));
 	const pageIdOf = (value: unknown): string => typeof value === "string" && pageIds.has(value) ? value : doc.activePageId;
 
-	if (Array.isArray(raw.strokes)) {
-		for (const s of raw.strokes) {
-			if (!s || !Array.isArray(s.points)) continue;
-			const points: StrokePoint[] = [];
-			for (const p of s.points) {
-				if (typeof p?.x !== "number" || typeof p?.y !== "number") continue;
-				points.push({ x: p.x, y: p.y, p: typeof p.p === "number" ? p.p : 0.5 });
-			}
-			if (points.length < 1) continue;
-			doc.strokes.push({
-				id: typeof s.id === "string" ? s.id : genId("stroke"),
-				pageId: pageIdOf(s.pageId),
-				type: s.type === "highlighter" ? "highlighter" : "pen",
-				color: typeof s.color === "string" ? s.color : "#f8fafc",
-				width: typeof s.width === "number" ? s.width : 2.5,
-				style: (["ballpoint", "pencil", "fountain", "marker", "brush"] as string[]).includes(s.style) ? s.style : undefined,
-				points
+	for (const entry of asArray(root.strokes)) {
+		const s = asObject(entry);
+		if (!s || !Array.isArray(s.points)) continue;
+		const points: StrokePoint[] = [];
+		for (const rawPoint of s.points) {
+			const p = asObject(rawPoint);
+			const x = asNumber(p?.x), y = asNumber(p?.y);
+			if (x === undefined || y === undefined) continue;
+			points.push({ x, y, p: asNumber(p?.p) ?? 0.5 });
+		}
+		if (points.length < 1) continue;
+		doc.strokes.push({
+			id: asString(s.id) ?? genId("stroke"),
+			pageId: pageIdOf(s.pageId),
+			type: s.type === "highlighter" ? "highlighter" : "pen",
+			color: asString(s.color) ?? "#f8fafc",
+			width: asNumber(s.width) ?? 2.5,
+			style: asOneOf(s.style, ["ballpoint", "pencil", "fountain", "marker", "brush"] as const),
+			points
+		});
+	}
+
+	for (const entry of asArray(root.shapes)) {
+		const s = asObject(entry);
+		if (!s) continue;
+		const x = asNumber(s.x), y = asNumber(s.y), w = asNumber(s.w), h = asNumber(s.h);
+		if (x === undefined || y === undefined || w === undefined || h === undefined) continue;
+		const kind = asOneOf(s.kind, ["line", "arrow", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "callout"] as const);
+		if (!kind) continue;
+		const width = asNumber(s.width);
+		const fillOpacity = asNumber(s.fillOpacity);
+		doc.shapes.push({
+			id: asString(s.id) ?? genId("shape"),
+			pageId: pageIdOf(s.pageId),
+			kind,
+			x,
+			y,
+			w,
+			h,
+			color: asString(s.color) ?? "#e5e7eb",
+			width: width !== undefined ? Math.min(Math.max(width, 1), 24) : 2.5,
+			rotation: asNumber(s.rotation),
+			fill: asHexColor(s.fill),
+			fillOpacity: fillOpacity !== undefined ? Math.min(Math.max(fillOpacity, 0), 1) : 0
+		});
+	}
+
+	for (const entry of asArray(root.badges)) {
+		const b = asObject(entry);
+		const bx = asNumber(b?.x), by = asNumber(b?.y);
+		if (!b || bx === undefined || by === undefined) continue;
+		const images: BadgeImage[] = [];
+		const checklist: BadgeChecklistItem[] = [];
+		for (const rawItem of asArray(b.checklist).slice(0, 100)) {
+			const item = asObject(rawItem);
+			const text = asString(item?.text)?.trim().slice(0, 500) ?? "";
+			const rawSketch = asString(item?.sketch);
+			const sketch = rawSketch?.startsWith("data:image/") ? rawSketch : undefined;
+			if (!text && !sketch) continue;
+			const itemId = asString(item?.id);
+			checklist.push({
+				id: itemId ? itemId : genId("task_item"),
+				text,
+				sketch,
+				done: item?.done === true
 			});
 		}
-	}
-
-	if (Array.isArray(raw.shapes)) {
-		for (const s of raw.shapes) {
-			if (!s || typeof s.x !== "number" || typeof s.y !== "number") continue;
-			if (typeof s.w !== "number" || typeof s.h !== "number") continue;
-			if (!(["line", "arrow", "rectangle", "rounded-rectangle", "ellipse", "diamond", "triangle", "callout"] as string[]).includes(s.kind)) continue;
-			doc.shapes.push({
-				id: typeof s.id === "string" ? s.id : genId("shape"),
-				pageId: pageIdOf(s.pageId),
-				kind: s.kind,
-				x: s.x,
-				y: s.y,
-				w: s.w,
-				h: s.h,
-				color: typeof s.color === "string" ? s.color : "#e5e7eb",
-				width: typeof s.width === "number" ? Math.min(Math.max(s.width, 1), 24) : 2.5,
-				rotation: typeof s.rotation === "number" ? s.rotation : undefined,
-				fill: typeof s.fill === "string" && /^#[0-9a-f]{6}$/i.test(s.fill) ? s.fill : undefined,
-				fillOpacity: typeof s.fillOpacity === "number" ? Math.min(Math.max(s.fillOpacity, 0), 1) : 0
+		for (const rawImage of asArray(b.images)) {
+			const image = asObject(rawImage);
+			const src = asString(image?.src);
+			if (!image || src === undefined || !src.startsWith("data:image/")) continue;
+			const rawW = asNumber(image.w), rawH = asNumber(image.h);
+			const w = rawW !== undefined ? Math.min(Math.max(rawW, 40), 560) : 220;
+			const h = rawH !== undefined ? Math.min(Math.max(rawH, 40), 320) : 140;
+			const ix = asNumber(image.x), iy = asNumber(image.y);
+			images.push({
+				id: asString(image.id) ?? genId("badge_image"),
+				name: asString(image.name)?.slice(0, 160) ?? "Imagen",
+				src,
+				x: ix !== undefined ? Math.min(Math.max(ix, 0), Math.max(0, 560 - w)) : 24,
+				y: iy !== undefined ? Math.min(Math.max(iy, 0), Math.max(0, 320 - h)) : 24,
+				w,
+				h
 			});
 		}
+		const scale = asNumber(b.scale);
+		const title = asString(b.title);
+		const sketch = asString(b.sketch);
+		doc.badges.push({
+			id: asString(b.id) ?? genId("badge"),
+			pageId: pageIdOf(b.pageId),
+			x: bx,
+			y: by,
+			scale: scale !== undefined ? Math.min(Math.max(scale, 0.5), 3) : 1,
+			tagId: asText(b.tagId, "tag_star"),
+			label: asText(b.label, DEFAULT_BADGE_LABEL),
+			title: title && title.trim() ? title.trim().slice(0, 120) : undefined,
+			tooltip: asString(b.tooltip),
+			sketch: sketch?.startsWith("data:image/") ? sketch : undefined,
+			images: images.length ? images : undefined,
+			checklist: checklist.length ? checklist : undefined,
+			done: checklist.length ? checklist.every(item => item.done) : b.done === true
+		});
 	}
 
-	if (Array.isArray(raw.badges)) {
-		for (const b of raw.badges) {
-			if (typeof b?.x !== "number" || typeof b?.y !== "number") continue;
-			const images: BadgeImage[] = [];
-			const checklist: BadgeChecklistItem[] = [];
-			if (Array.isArray(b.checklist)) {
-				for (const item of b.checklist.slice(0, 100)) {
-					const text = typeof item?.text === "string" ? item.text.trim().slice(0, 500) : "";
-					const sketch = typeof item?.sketch === "string" && item.sketch.startsWith("data:image/") ? item.sketch : undefined;
-					if (!text && !sketch) continue;
-					checklist.push({
-						id: typeof item.id === "string" && item.id ? item.id : genId("task_item"),
-						text,
-						sketch,
-						done: item.done === true
-					});
-				}
-			}
-			if (Array.isArray(b.images)) {
-				for (const image of b.images) {
-					if (!image || typeof image.src !== "string" || !image.src.startsWith("data:image/")) continue;
-					const w = typeof image.w === "number" ? Math.min(Math.max(image.w, 40), 560) : 220;
-					const h = typeof image.h === "number" ? Math.min(Math.max(image.h, 40), 320) : 140;
-					images.push({
-						id: typeof image.id === "string" ? image.id : genId("badge_image"),
-						name: typeof image.name === "string" ? image.name.slice(0, 160) : "Imagen",
-						src: image.src,
-						x: typeof image.x === "number" ? Math.min(Math.max(image.x, 0), Math.max(0, 560 - w)) : 24,
-						y: typeof image.y === "number" ? Math.min(Math.max(image.y, 0), Math.max(0, 320 - h)) : 24,
-						w,
-						h
-					});
-				}
-			}
-			doc.badges.push({
-				id: typeof b.id === "string" ? b.id : genId("badge"),
-				pageId: pageIdOf(b.pageId),
-				x: b.x,
-				y: b.y,
-				scale: typeof b.scale === "number" ? Math.min(Math.max(b.scale, 0.5), 3) : 1,
-				tagId: String(b.tagId ?? "tag_star"),
-				label: String(b.label ?? "⭐️ Importante"),
-				title: typeof b.title === "string" && b.title.trim() ? b.title.trim().slice(0, 120) : undefined,
-				tooltip: typeof b.tooltip === "string" ? b.tooltip : undefined,
-				sketch: typeof b.sketch === "string" && b.sketch.startsWith("data:image/") ? b.sketch : undefined,
-				images: images.length ? images : undefined,
-				checklist: checklist.length ? checklist : undefined,
-				done: checklist.length ? checklist.every(item => item.done) : b.done === true
-			});
-		}
+	for (const entry of asArray(root.texts)) {
+		const t = asObject(entry);
+		const tx = asNumber(t?.x), ty = asNumber(t?.y);
+		if (!t || tx === undefined || ty === undefined) continue;
+		const w = asNumber(t.w), h = asNumber(t.h);
+		doc.texts.push({
+			id: asString(t.id) ?? genId("text"),
+			pageId: pageIdOf(t.pageId),
+			x: tx,
+			y: ty,
+			text: asText(t.text, ""),
+			fontSize: asNumber(t.fontSize) ?? 18,
+			color: asString(t.color) ?? "#f8fafc",
+			bold: t.bold === true,
+			italic: t.italic === true,
+			underline: t.underline === true,
+			strike: t.strike === true,
+			highlight: asString(t.highlight),
+			runs: Array.isArray(t.runs) ? sanitizeRuns(t.runs) : undefined,
+			align: t.align === "center" || t.align === "right" ? t.align : "left",
+			stickyColor: asString(t.stickyColor),
+			w: w !== undefined ? Math.min(Math.max(w, 120), 900) : undefined,
+			h: h !== undefined ? Math.min(Math.max(h, 34), 900) : undefined,
+			fontFamily: isCanvasFont(t.fontFamily) ? t.fontFamily : "sans",
+			autoWidth: t.autoWidth === true,
+			rotation: asNumber(t.rotation),
+			variant: t.variant === "code" || t.variant === "math" ? t.variant : "text",
+			language: asString(t.language)?.slice(0, 32)
+		});
 	}
 
-	if (Array.isArray(raw.texts)) {
-		for (const t of raw.texts) {
-			if (typeof t?.x !== "number" || typeof t?.y !== "number") continue;
-			doc.texts.push({
-				id: typeof t.id === "string" ? t.id : genId("text"),
-				pageId: pageIdOf(t.pageId),
-				x: t.x,
-				y: t.y,
-				text: String(t.text ?? ""),
-				fontSize: typeof t.fontSize === "number" ? t.fontSize : 18,
-				color: typeof t.color === "string" ? t.color : "#f8fafc",
-				bold: t.bold === true,
-				italic: t.italic === true,
-				underline: t.underline === true,
-				strike: t.strike === true,
-				highlight: typeof t.highlight === "string" ? t.highlight : undefined,
-				runs: Array.isArray(t.runs) ? sanitizeRuns(t.runs) : undefined,
-				align: t.align === "center" || t.align === "right" ? t.align : "left",
-				stickyColor: typeof t.stickyColor === "string" ? t.stickyColor : undefined,
-				w: typeof t.w === "number" ? Math.min(Math.max(t.w, 120), 900) : undefined,
-				h: typeof t.h === "number" ? Math.min(Math.max(t.h, 34), 900) : undefined,
-				fontFamily: isCanvasFont(t.fontFamily) ? t.fontFamily : "sans",
-				autoWidth: t.autoWidth === true,
-				rotation: typeof t.rotation === "number" ? t.rotation : undefined,
-				variant: t.variant === "code" || t.variant === "math" ? t.variant : "text",
-				language: typeof t.language === "string" ? t.language.slice(0, 32) : undefined
-			});
-		}
+	for (const entry of asArray(root.tables)) {
+		const table = asObject(entry);
+		const tx = asNumber(table?.x), ty = asNumber(table?.y);
+		if (!table || tx === undefined || ty === undefined) continue;
+		const rawRows = asNumber(table.rows), rawCols = asNumber(table.cols);
+		const rows = rawRows !== undefined ? Math.min(Math.max(Math.round(rawRows), 1), 30) : 3;
+		const cols = rawCols !== undefined ? Math.min(Math.max(Math.round(rawCols), 1), 20) : 3;
+		const sourceCells = asArray(table.cells);
+		const cells = Array.from({ length: rows }, (_, row) => {
+			const sourceRow = asArray(sourceCells[row]);
+			return Array.from({ length: cols }, (_, col) => asText(sourceRow[col], ""));
+		});
+		const w = asNumber(table.w), h = asNumber(table.h);
+		doc.tables.push({
+			id: asString(table.id) ?? genId("table"),
+			pageId: pageIdOf(table.pageId),
+			x: tx, y: ty,
+			w: w !== undefined ? Math.min(Math.max(w, 220), 1400) : 520,
+			h: h !== undefined ? Math.min(Math.max(h, 120), 1200) : 220,
+			rows, cols, cells, header: table.header === true, headerColumn: table.headerColumn === true,
+			title: asString(table.title)?.trim().slice(0, 80),
+			rotation: asNumber(table.rotation),
+			colWidths: asSizes(table.colWidths, cols),
+			rowHeights: asSizes(table.rowHeights, rows)
+		});
 	}
 
-	if (Array.isArray(raw.tables)) {
-		for (const table of raw.tables) {
-			if (typeof table?.x !== "number" || typeof table?.y !== "number") continue;
-			const rows = typeof table.rows === "number" ? Math.min(Math.max(Math.round(table.rows), 1), 30) : 3;
-			const cols = typeof table.cols === "number" ? Math.min(Math.max(Math.round(table.cols), 1), 20) : 3;
-			const cells = Array.from({ length: rows }, (_, row) =>
-				Array.from({ length: cols }, (_, col) => String(table.cells?.[row]?.[col] ?? ""))
-			);
-			doc.tables.push({
-				id: typeof table.id === "string" ? table.id : genId("table"),
-				pageId: pageIdOf(table.pageId),
-				x: table.x, y: table.y,
-				w: typeof table.w === "number" ? Math.min(Math.max(table.w, 220), 1400) : 520,
-				h: typeof table.h === "number" ? Math.min(Math.max(table.h, 120), 1200) : 220,
-				rows, cols, cells, header: table.header === true, headerColumn: table.headerColumn === true,
-				title: typeof table.title === "string" ? table.title.trim().slice(0, 80) : undefined,
-				rotation: typeof table.rotation === "number" ? table.rotation : undefined,
-				colWidths: Array.isArray(table.colWidths) && table.colWidths.length === cols && table.colWidths.every((v: unknown) => typeof v === "number" && v > 0) ? table.colWidths : undefined,
-				rowHeights: Array.isArray(table.rowHeights) && table.rowHeights.length === rows && table.rowHeights.every((v: unknown) => typeof v === "number" && v > 0) ? table.rowHeights : undefined
-			});
-		}
+	for (const entry of asArray(root.bookmarks)) {
+		const bookmark = asObject(entry);
+		const bx = asNumber(bookmark?.x), by = asNumber(bookmark?.y);
+		if (!bookmark || bx === undefined || by === undefined) continue;
+		const scale = asNumber(bookmark.scale);
+		doc.bookmarks.push({
+			id: asString(bookmark.id) ?? genId("bookmark"),
+			pageId: pageIdOf(bookmark.pageId),
+			label: asString(bookmark.label)?.slice(0, 80) ?? "Sección",
+			x: bx,
+			y: by,
+			scale: scale !== undefined ? Math.min(Math.max(scale, 0.15), 4) : 1
+		});
 	}
 
-	if (Array.isArray(raw.bookmarks)) {
-		for (const bookmark of raw.bookmarks) {
-			if (typeof bookmark?.x !== "number" || typeof bookmark?.y !== "number") continue;
-			doc.bookmarks.push({
-				id: typeof bookmark.id === "string" ? bookmark.id : genId("bookmark"),
-				pageId: pageIdOf(bookmark.pageId),
-				label: typeof bookmark.label === "string" ? bookmark.label.slice(0, 80) : "Sección",
-				x: bookmark.x,
-				y: bookmark.y,
-				scale: typeof bookmark.scale === "number" ? Math.min(Math.max(bookmark.scale, 0.15), 4) : 1
-			});
-		}
+	doc.a4Guides = root.a4Guides === true;
+
+	for (const entry of asArray(root.embeds)) {
+		const e = asObject(entry);
+		const ex = asNumber(e?.x), ey = asNumber(e?.y), src = asString(e?.src);
+		if (!e || ex === undefined || ey === undefined || src === undefined) continue;
+		const kind: EmbedKind = asOneOf(e.kind,
+			["youtube", "web-video", "video", "audio", "epub", "image", "file", "note", "board", "chart"] as const) ?? "pdf";
+		const provider = asOneOf(e.provider,
+			["youtube", "tiktok", "instagram", "x", "vimeo", "dailymotion", "streamable", "loom", "facebook"] as const);
+		const chart = asObject(e.chart);
+		const chartData = asString(chart?.data);
+		doc.embeds.push({
+			id: asString(e.id) ?? genId("embed"),
+			pageId: pageIdOf(e.pageId),
+			kind,
+			src,
+			originalUrl: asString(e.originalUrl) ?? (kind === "youtube" ? src : undefined),
+			provider: provider ?? (kind === "youtube" ? "youtube" : undefined),
+			x: ex,
+			y: ey,
+			w: asNumber(e.w) ?? 640,
+			h: asNumber(e.h) ?? 480,
+			rotation: asNumber(e.rotation),
+			chart: chart && chartData !== undefined
+				? { ...chart, data: chartData, type: asOneOf(chart.type, ["bar", "line", "area", "pie", "scatter", "function"] as const) ?? "bar" }
+				: undefined,
+			page: asNumber(e.page),
+			pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
+			pages: asNumber(e.pages),
+			captionSrc: asString(e.captionSrc)
+		});
 	}
 
-	doc.a4Guides = raw.a4Guides === true;
-
-	if (Array.isArray(raw.embeds)) {
-		for (const e of raw.embeds) {
-			if (typeof e?.x !== "number" || typeof e?.y !== "number" || typeof e?.src !== "string") continue;
-			const kind: EmbedKind =
-				e.kind === "youtube" || e.kind === "web-video" || e.kind === "video" || e.kind === "audio" || e.kind === "epub" || e.kind === "image" || e.kind === "file" || e.kind === "note" || e.kind === "board" || e.kind === "chart"
-					? e.kind
-					: "pdf";
-			doc.embeds.push({
-				id: typeof e.id === "string" ? e.id : genId("embed"),
-				pageId: pageIdOf(e.pageId),
-				kind,
-				src: e.src,
-				originalUrl: typeof e.originalUrl === "string" ? e.originalUrl : kind === "youtube" ? e.src : undefined,
-				provider: (["youtube", "tiktok", "instagram", "x", "vimeo", "dailymotion", "streamable", "loom", "facebook"] as string[]).includes(e.provider)
-					? e.provider as RemoteVideoProvider
-					: kind === "youtube" ? "youtube" : undefined,
-				x: e.x,
-				y: e.y,
-				w: typeof e.w === "number" ? e.w : 640,
-				h: typeof e.h === "number" ? e.h : 480,
-				rotation: typeof e.rotation === "number" ? e.rotation : undefined,
-				chart: kind === "chart" && e.chart && typeof e.chart === "object" && typeof e.chart.data === "string"
-					? { ...e.chart, type: ["bar", "line", "area", "pie", "scatter", "function"].includes(e.chart.type) ? e.chart.type : "bar" }
-					: undefined,
-				page: typeof e.page === "number" ? e.page : undefined,
-				pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
-				pages: typeof e.pages === "number" ? e.pages : undefined,
-				captionSrc: typeof e.captionSrc === "string" ? e.captionSrc : undefined
-			});
-		}
+	const vt = asObject(root.viewTransform);
+	const vx = asNumber(vt?.x), vy = asNumber(vt?.y), vscale = asNumber(vt?.scale);
+	if (vx !== undefined && vy !== undefined && vscale !== undefined) {
+		doc.viewTransform = { x: vx, y: vy, scale: Math.min(Math.max(0.15, vscale), 4) };
 	}
 
-	const vt = raw.viewTransform;
-	if (vt && typeof vt.x === "number" && typeof vt.y === "number" && typeof vt.scale === "number") {
-		doc.viewTransform = { x: vt.x, y: vt.y, scale: Math.min(Math.max(0.15, vt.scale), 4) };
-	}
+	const legacyMargin = root.background === "margin";
+	const background = asOneOf(root.background, ["grid", "lines", "blank"] as const);
+	if (background) doc.background = background;
+	else if (legacyMargin) doc.background = "lines";
 
-	const legacyMargin = raw.background === "margin";
-	if (raw.background === "grid" || raw.background === "lines" || raw.background === "blank" || legacyMargin) {
-		doc.background = legacyMargin ? "lines" : raw.background;
-	}
-
-	if (typeof raw.backgroundColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.backgroundColor)) {
-		doc.backgroundColor = raw.backgroundColor;
-	}
-
-	if (typeof raw.lineColor === "string" && /^#[0-9a-f]{6}$/i.test(raw.lineColor)) {
-		doc.lineColor = raw.lineColor;
-	}
-	if (raw.gridSize === "small" || raw.gridSize === "medium" || raw.gridSize === "large") {
-		doc.gridSize = raw.gridSize;
-	}
+	doc.backgroundColor = asHexColor(root.backgroundColor) ?? doc.backgroundColor;
+	doc.lineColor = asHexColor(root.lineColor) ?? doc.lineColor;
+	doc.gridSize = asOneOf(root.gridSize, ["small", "medium", "large"] as const) ?? doc.gridSize;
 
 	const activePage = doc.pages.find(page => page.id === doc.activePageId) ?? doc.pages[0];
-	doc.marginEnabled = legacyMargin || (typeof raw.marginEnabled === "boolean"
-		? raw.marginEnabled
+	doc.marginEnabled = legacyMargin || (typeof root.marginEnabled === "boolean"
+		? root.marginEnabled
 		: activePage.marginEnabled);
 	activePage.viewTransform = { ...doc.viewTransform };
 	activePage.background = doc.background;
