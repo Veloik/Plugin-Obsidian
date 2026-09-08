@@ -70,11 +70,17 @@
     vault: {
       read: async () => "",
       modify: async (f, content) => { window.__saved = content; },
+      // The plugin saves through process(); modify stays for anything older.
+      process: async (f, fn) => { window.__saved = fn(window.__saved ?? ""); return window.__saved; },
       create: async (p, c) => { window.__created.push(p); return new window.__TFile(p); },
       createBinary: async (p) => new window.__TFile(p),
       createFolder: async () => {},
       readBinary: async () => new ArrayBuffer(0),
       getAbstractFileByPath: () => null,
+      // The plugin asks by type now. Both go through whatever
+      // getAbstractFileByPath a scenario installed, so its override still counts.
+      getFileByPath(p) { return this.getAbstractFileByPath(p); },
+      getFolderByPath(p) { return this.getAbstractFileByPath(p); },
       getFiles: () => [],
       getResourcePath: (f) => f.path,
       adapter: { getResourcePath: (p) => p, exists: async () => false }

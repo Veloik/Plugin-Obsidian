@@ -159,6 +159,7 @@ try {
 			await v.saver.flush(v.data);
 			let writes = 0;
 			v.app.vault.modify = async () => { writes++; };
+			v.app.vault.process = async () => { writes++; return ""; };
 			v.app.vault.read = async () => "{corrupt";
 			await v.onLoadFile(new window.__TFile("corrupt.notelens"));
 			v.save();
