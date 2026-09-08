@@ -61,7 +61,7 @@ export class PersistenceManager {
 		const payload = JSON.stringify(doc);
 		const job = async () => {
 			try {
-				await this.app.vault.modify(file, payload);
+				await this.app.vault.process(file, () => payload);
 				if (revision === this.revision) {
 					this.dirty = false;
 					this.lastPayload = payload;

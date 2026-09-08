@@ -71,7 +71,7 @@ function collect(node: Node, root: HTMLElement, base: BaseStyle, out: TextRun[])
 			if (text) out.push({ ...styleOf(child.parentElement, root, base), text });
 			continue;
 		}
-		if (!(child instanceof HTMLElement)) continue;
+		if (!child.instanceOf(HTMLElement)) continue;
 		if (child.tagName === "BR") { out.push({ text: "\n" }); continue; }
 		// A block that follows something else starts a new line.
 		if (BLOCK_TAGS.test(child.tagName) && out.length && !out[out.length - 1].text.endsWith("\n")) out.push({ text: "\n" });
@@ -128,7 +128,7 @@ function atoms(root: HTMLElement): Atom[] {
 				if (length) { list.push({ node: child as Text, from: at, length }); at += length; }
 				continue;
 			}
-			if (!(child instanceof HTMLElement)) continue;
+			if (!child.instanceOf(HTMLElement)) continue;
 			if (child.tagName === "BR") { list.push({ node: null, from: at, length: 1 }); at += 1; continue; }
 			if (BLOCK_TAGS.test(child.tagName) && at > 0) { list.push({ node: null, from: at, length: 1 }); at += 1; }
 			visit(child);
@@ -202,8 +202,10 @@ export function surroundSelection(root: HTMLElement, tag: "code"): boolean {
 	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
 	const range = selection.getRangeAt(0);
 	if (!root.contains(range.commonAncestorContainer)) return false;
-	const wrapper = root.ownerDocument.createElement(tag);
-	wrapper.className = "notelens-run-code";
+	// Created on the board's own element so a pop-out window gets its own node,
+	// then detached again because surroundContents needs it to have no parent.
+	const wrapper = root.createEl(tag, { cls: "notelens-run-code" });
+	wrapper.detach();
 	try {
 		range.surroundContents(wrapper);
 	} catch {

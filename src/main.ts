@@ -31,7 +31,8 @@ export default class OneNotePlugin extends Plugin {
 
 		this.addCommand({
 			id: "create-canvas",
-			name: tr("Crear nueva pizarra NoteLens"),
+			// Obsidian already prefixes commands with the plugin name.
+			name: tr("Crear nueva pizarra"),
 			callback: () => void this.createNewOneNoteFile()
 		});
 

@@ -72,6 +72,7 @@ function normalize(src: string): string {
 	for (const [mark, accent] of Object.entries(COMBINING)) {
 		out = out.replace(new RegExp(`([A-Za-z])${mark}`, "g"), ` ${accent} $1 `);
 	}
+	// eslint-disable-next-line no-control-regex -- the control range is the point: it is what gets stripped.
 	return out.replace(/[^\x00-\x7f]/g, ch => UNICODE[ch] ?? ch);
 }
 

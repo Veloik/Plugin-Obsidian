@@ -1,6 +1,62 @@
+import { screenshotEquation } from "./ink-screenshot";
+
+test("screenshot reconstruction reads two thirds minus five across scale and stroke direction", () => {
+    for (const scale of [0.5, 1, 2]) {
+        for (const width of [1, 620 / 526]) {
+        for (const reversed of [false, true]) {
+            const strokes = screenshotEquation.map(stroke => ({ points: (reversed ? [...stroke.points].reverse() : stroke.points).map(p => ({ x: p.x * scale * width + 37, y: p.y * scale - 90 })) }));
+            const result = recognizeInkFormula(strokes);
+            assert.equal(result.source, "\\frac{2}{3} - 5");
+            assert.equal(result.unknown, 0);
+        }
+        }
+    }
+});
+
+test("digit variants do not turn a spiral into a number", () => {
+    const points = Array.from({ length: 80 }, (_, i) => ({ x: 100 + Math.cos(i * .3) * i, y: 100 + Math.sin(i * .3) * i }));
+    assert.ok(recognizeInkFormula([{ points }]).unknown > 0);
+});
+
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import { tidyFormulaText } from "../src/formula-text";
+import { clipInkToRect, inkHitsPoint } from "../src/ink-region";
+import { formulaTokenPositions } from "../src/formula-candidates";
+
+test("board notation uses the complete math parser and is idempotent", () => {
+    for (const input of ["sqrt(1+sqrt(x))", "sum_(i=1)^n i", "int_0^1 x^2 dx", "x² + y₁", "x=1\ny=2", "(a+b)/(c+d)"]) {
+        const result = tidyFormulaText(input);
+        assert.equal(result, toRenderableLatex(input));
+        assert.equal(tidyFormulaText(result), result);
+    }
+    assert.equal(tidyFormulaText("$$\\sqrt{x}+\\pi$$"), "\\sqrt{x}+\\pi");
+    assert.equal(tidyFormulaText("Xx2"), toRenderableLatex("Xx2"), "typed variable names are not OCR guesses");
+});
+
+test("region capture clips crossing segments and keeps disconnected pieces apart", () => {
+    const rect = { x: 0, y: 0, w: 10, h: 10 };
+    assert.deepEqual(clipInkToRect({ width: 3, points: [{ x: -5, y: 5 }, { x: 15, y: 5 }] }, rect), [{ width: 3, points: [{ x: 0, y: 5 }, { x: 10, y: 5 }] }]);
+    assert.equal(clipInkToRect({ points: [{ x: -5, y: -5 }, { x: 15, y: -5 }] }, rect).length, 0);
+    assert.equal(clipInkToRect({ points: [{ x: 5, y: 5 }] }, rect).length, 1);
+    assert.equal(clipInkToRect({ points: [] }, rect).length, 0);
+    const parts = clipInkToRect({ points: [{ x: 5, y: 5 }, { x: 15, y: 5 }, { x: 5, y: 8 }] }, rect);
+    assert.equal(parts.length, 2);
+});
+
+test("candidate locations skip command names and preserve repeated glyph order", () => {
+    const source = "\\frac{a}{a}+r";
+    assert.deepEqual(formulaTokenPositions(source, ["a", "a", "+", "r"]), [6, 9, 11, 12]);
+    assert.deepEqual(formulaTokenPositions("\\sqrt{x}", ["r", "x"]), [-1, 6]);
+});
+
+test("eraser hits the middle of sparse strokes without erasing nearby ink", () => {
+    const stroke = { points: [{ x: 0, y: 0 }, { x: 100, y: 0 }] };
+    assert.equal(inkHitsPoint(stroke, { x: 50, y: 5 }, 14), true);
+    assert.equal(inkHitsPoint(stroke, { x: 50, y: 20 }, 14), false);
+    assert.equal(inkHitsPoint({ points: [] }, { x: 0, y: 0 }, 14), false);
+});
 import { toRenderableLatex } from "../src/asciimath";
 import { recognizeInkFormula } from "../src/ink-math";
 import { runLocalStudyTool } from "../src/local-intelligence";
@@ -69,9 +125,11 @@ test("failed saves remain pending, retry on flush, and cached history never cros
 	(globalThis as any).window = globalThis;
 	let fail = true, errors = 0;
 	const written: string[] = [];
-	const app = { vault: { modify: async (_file: unknown, text: string) => {
+	const app = { vault: { process: async (_file: unknown, fn: (data: string) => string) => {
 		if (fail) throw new Error("disk full");
+		const text = fn("");
 		written.push(text);
+		return text;
 	} } };
 	const manager = new PersistenceManager(app as any, () => ({ path: "a.notelens" }) as any, () => errors++);
 	const doc = createEmptyDocument();

@@ -1,3 +1,6 @@
+import { tidyFormulaText } from "./formula-text";
+export { tidyFormulaText } from "./formula-text";
+import { clipInkToRect } from "./ink-region";
 import { FileView, Menu, Notice, Platform, TFile, WorkspaceLeaf, finishRenderMath, loadMathJax, loadPrism, renderMath, setIcon } from "obsidian";
 import { AngleUnit, createCalculatorPanel } from "./calculator";
 import { createRecorderPanel } from "./recorder";
@@ -489,7 +492,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			host.style.removeProperty("--nl-safe-bottom");
 			return;
 		}
-		const navbar = document.querySelector(".mobile-navbar") as HTMLElement | null;
+		// Scoped to the board's own document so a board in a pop-out window measures
+		// that window's bar and not the main one's.
+		const navbar = host.ownerDocument.querySelector<HTMLElement>(".mobile-navbar");
 		const measured = navbar?.offsetHeight ?? 0;
 		// A tablet with no bar underneath keeps every pixel of its board.
 		const reserved = measured > 0 ? measured + 10 : (Platform.isPhone ? 68 : 0);
@@ -707,9 +712,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	private startRulerRotate(event: PointerEvent): void {
@@ -727,9 +734,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	private getDrawingSceneCoords(clientX: number, clientY: number): { x: number; y: number } {
@@ -856,7 +865,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 
 		// Rasterise the region: page colour, then images and PDF pages, then ink.
-		const scale = clamp(1800 / Math.max(rect.w, rect.h), 1, 4);
+		const scale = Math.min(4, 1800 / Math.max(1, rect.w, rect.h));
 		const canvas = createEl("canvas");
 		canvas.width = Math.ceil(rect.w * scale);
 		canvas.height = Math.ceil(rect.h * scale);
@@ -882,10 +891,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			try { ctx.drawImage(el, x, y, w, h); painted++; paintedMedia++; } catch { /* cross-origin image */ }
 		}
 		const dark = !isLightColor(this.data.backgroundColor);
-		const regionStrokes = this.pageStrokes.filter(s => s.type !== "highlighter" && s.points.some(p => p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h));
-		for (const s of this.pageStrokes) {
+		const clippedStrokes = this.pageStrokes.flatMap(s => clipInkToRect(s, rect));
+		const regionStrokes = clippedStrokes.filter(s => s.type !== "highlighter");
+		for (const s of clippedStrokes) {
 			const pts = s.points;
-			if (!pts.some(p => p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h)) continue;
 			if (readingFormula && s.type === "highlighter") continue;
 			ctx.strokeStyle = readingFormula ? "#111111" : s.type === "highlighter" ? "rgba(250, 204, 21, 0.35)" : dark ? "#f8fafc" : "#111111";
 			ctx.lineWidth = Math.max(2, s.width);
@@ -1398,11 +1407,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 			let path = fileName;
 			try {
-				path = await (this.app.fileManager as any).getAvailablePathForAttachment(fileName, this.file?.path ?? "");
+				path = await this.app.fileManager.getAvailablePathForAttachment(fileName, this.file?.path ?? "");
 			} catch { /* fall back to vault root */ }
 
 			const parent = path.split("/").slice(0, -1).join("/");
-			if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+			if (parent && !this.app.vault.getFolderByPath(parent)) {
 				await this.app.vault.createFolder(parent).catch(() => { /* already exists */ });
 			}
 
@@ -2335,10 +2344,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 			this.save();
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	/** Free rotation: the pointer's angle around the selection centre drives the turn. */
@@ -2510,12 +2521,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 			this.renderAll();
 			this.renderSelectionBox();
 			this.save();
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	private captureSelectionResizeSnapshot(bounds: { x: number; y: number; w: number; h: number }): SelectionResizeSnapshot {
@@ -3150,10 +3163,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
 		let path = `Grabacion_${stamp}.mp3`;
 		try {
-			path = await (this.app.fileManager as any).getAvailablePathForAttachment(path, this.file?.path ?? "");
+			path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
 		} catch { /* vault root when no attachment folder is configured */ }
 		const parent = path.split("/").slice(0, -1).join("/");
-		if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+		if (parent && !this.app.vault.getFolderByPath(parent)) {
 			await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 		}
 		const saved = await this.app.vault.createBinary(path, mp3);
@@ -3402,7 +3415,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	openLink(path: string, newLeaf: boolean): void {
 		if (/^https?:\/\//i.test(path)) { window.open(path, "_blank", "noopener,noreferrer"); return; }
-		const file = this.app.vault.getAbstractFileByPath(path);
+		const file = this.app.vault.getFileByPath(path);
 		if (!(file instanceof TFile)) {
 			void this.app.workspace.openLinkText(path, this.file?.path ?? "", newLeaf);
 			return;
@@ -3417,7 +3430,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	linkPath(path: string): void {
-		const file = this.app.vault.getAbstractFileByPath(path);
+		const file = this.app.vault.getFileByPath(path);
 		if (file instanceof TFile) this.insertVaultFile(file);
 	}
 
@@ -3431,10 +3444,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const safeName = localFile.name.replace(/[\\/:*?"<>|]/g, "-");
 				let path = safeName || `notelens-file-${Date.now()}`;
 				try {
-					path = await (this.app.fileManager as any).getAvailablePathForAttachment(path, this.file?.path ?? "");
+					path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
 				} catch { /* fall back to the vault root */ }
 				const parent = path.split("/").slice(0, -1).join("/");
-				if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+				if (parent && !this.app.vault.getFolderByPath(parent)) {
 					await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 				}
 				const saved = await this.app.vault.createBinary(path, await localFile.arrayBuffer());
@@ -3477,7 +3490,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const base = this.vaultBasePath();
 		if (base && candidate.toLowerCase().startsWith(`${base}/`)) candidate = candidate.slice(base.length + 1);
 		else if (/^([A-Za-z]:\/|\/)/.test(candidate)) return null;
-		const direct = this.app.vault.getAbstractFileByPath(candidate);
+		const direct = this.app.vault.getFileByPath(candidate);
 		if (direct instanceof TFile) return direct;
 		// Only something written as a reference gets looked up by name: pasting a
 		// word that happens to match a note must stay the word you pasted.
@@ -4668,10 +4681,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const base = `NoteLens-${stamp}.pdf`;
 			let path = base;
 			try {
-				path = await (this.app.fileManager as any).getAvailablePathForAttachment(base, this.file?.path ?? "");
+				path = await this.app.fileManager.getAvailablePathForAttachment(base, this.file?.path ?? "");
 			} catch { /* use vault root when no attachment folder is configured */ }
 			const parent = path.split("/").slice(0, -1).join("/");
-			if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+			if (parent && !this.app.vault.getFolderByPath(parent)) {
 				await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 			}
 			const saved = await this.app.vault.createBinary(path, bytes);
@@ -4692,10 +4705,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const name = `${title.replace(/[\\/:*?"<>|]/g, "-") || "Pizarra NoteLens"}.nlshare`;
 			let path = name;
 			try {
-				path = await (this.app.fileManager as any).getAvailablePathForAttachment(name, this.file?.path ?? "");
+				path = await this.app.fileManager.getAvailablePathForAttachment(name, this.file?.path ?? "");
 			} catch { /* place it in the vault root when attachments are not configured */ }
 			const parent = path.split("/").slice(0, -1).join("/");
-			if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+			if (parent && !this.app.vault.getFolderByPath(parent)) {
 				await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 			}
 			const saved = await this.app.vault.createBinary(path, result.bytes);
@@ -4758,7 +4771,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const editor = this.activeTextEditor;
 		if (editor) {
 			this.pushEditSession();
-			if (editor instanceof HTMLTextAreaElement) {
+			if (editor.instanceOf(HTMLTextAreaElement)) {
 				editor.value = text;
 				editor.dispatchEvent(new Event("input"));
 				return;
@@ -5562,7 +5575,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	/** The words in the editor, whichever kind it is. */
 	private editorPlainText(editor: HTMLElement): string {
-		return editor instanceof HTMLTextAreaElement ? editor.value : editableText(editor);
+		return editor.instanceOf(HTMLTextAreaElement) ? editor.value : editableText(editor);
 	}
 
 	private commitTextEditor(): void {
@@ -5623,7 +5636,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// Fenced source replaced the prose: the runs of the old box mean nothing now.
 			tb.text = replacement;
 			tb.runs = undefined;
-		} else if (editor instanceof HTMLTextAreaElement) {
+		} else if (editor.instanceOf(HTMLTextAreaElement)) {
 			tb.text = editor.value;
 		}
 		this.applyTextStyles(source, tb);
@@ -5875,10 +5888,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 			this.save();
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	private updateToolPointerPreview(e: PointerEvent): void {
@@ -6339,10 +6354,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const onUp = () => {
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
+			window.removeEventListener("pointercancel", onUp);
 			this.save();
 		};
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
+		window.addEventListener("pointercancel", onUp);
 	}
 
 	// ------------------------------------------------------------------
@@ -6352,63 +6369,6 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.syncActivePageMeta();
 		this.saver?.scheduleSave(this.data);
 	}
-}
-
-/** Minimal text-input modal (window.prompt is unavailable in Obsidian). */
-/**
- * Cleans up what OCR returns for a formula. Tesseract is trained on prose, so
- * it reliably confuses a few characters in maths; fixing them here saves the
- * user most of the corrections.
- */
-export function tidyFormulaText(raw: string): string {
-	// Existing LaTeX is source, not OCR prose. In particular, converting pi or
-	// sqrt again would turn valid commands into double-backslash line breaks.
-	let unwrapped = raw.trim().replace(/^```(?:latex|tex|math)?\s*\n?([\s\S]*?)\n?```$/i, "$1").trim();
-	if (unwrapped.startsWith("$$") && unwrapped.endsWith("$$")) unwrapped = unwrapped.slice(2, -2).trim();
-	else if (unwrapped.startsWith("$") && unwrapped.endsWith("$")) unwrapped = unwrapped.slice(1, -1).trim();
-	else if ((unwrapped.startsWith("\\[") && unwrapped.endsWith("\\]")) || (unwrapped.startsWith("\\(") && unwrapped.endsWith("\\)"))) unwrapped = unwrapped.slice(2, -2).trim();
-	if (/\\[a-zA-Z]+|\\\\/.test(unwrapped)) return unwrapped;
-	raw = unwrapped;
-	let value = raw
-		.replace(/\r/g, "")
-		.split("\n").map(line => line.trim()).filter(Boolean).join(" ")
-		.replace(/```(?:latex|tex|math)?|```/gi, "")
-		.replace(/^\$+|\$+$/g, "")
-		.replace(/[\u2212\u2013\u2014]/g, "-")
-		.replace(/[\u00D7\u22C5\u00B7]/g, "*")
-		.replace(/[\u00F7]/g, "/")
-		.replace(/\u221A/g, "sqrt")
-		.replace(/\u03C0/g, "pi")
-		.replace(/\u2211/g, "sum")
-		.replace(/\u222B/g, "int")
-		.replace(/\u221E/g, "infty")
-		.replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=")
-		.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, digits => `^${[...digits].map(digit => "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(digit)).join("")}`)
-		.replace(/\s{2,}/g, " ")
-		.trim();
-
-	// Common OCR failure for a printed caret: `x^2` can arrive as `Xx2`.
-	value = value.replace(/\b([A-Z])x\*?(\d+)\b/g, (_match, base: string, exponent: string) => `${base.toLowerCase()}^${exponent}`);
-	// Promote easy notation to real LaTeX so mixed structures (for example a
-	// superscript inside a detected fraction) render consistently.
-	for (let i = 0; i < 3; i++) {
-		value = value.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
-	}
-	value = value
-		.replace(/\bsqrt\s*[({]\s*([^)}]+)\s*[)}]/gi, "\\sqrt{$1}")
-		.replace(/\bsqrt\s*([A-Za-z0-9]+)/gi, "\\sqrt{$1}")
-		.replace(/([A-Za-z0-9)\]])\s*\^\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base: string, grouped: string, simple: string) => `${base}^{${grouped || simple}}`)
-		.replace(/([A-Za-z0-9)\]])\s*_\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base: string, grouped: string, simple: string) => `${base}_{${grouped || simple}}`)
-		.replace(/\bpi\b/g, "\\pi")
-		.replace(/\binfty\b|\boo\b/g, "\\infty")
-		.replace(/\bsum\b/g, "\\sum")
-		.replace(/\bint\b/g, "\\int")
-		.replace(/\s*<=\s*/g, " \\le ")
-		.replace(/\s*>=\s*/g, " \\ge ")
-		.replace(/\s*!=\s*/g, " \\ne ")
-		.replace(/\s+/g, " ")
-		.trim();
-	return value;
 }
 
 /** Classic sticky-note paper colours, warmest first. */

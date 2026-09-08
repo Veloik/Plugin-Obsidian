@@ -5461,6 +5461,12 @@ var SHAPES = [
   ["1", [line(18, 16, 32, 6), line(32, 6, 32, 64)]],
   ["1", [line(18, 16, 32, 6), line(32, 6, 32, 64), line(16, 64, 48, 64)]],
   ["2", [path([[14, 18], [22, 6], [40, 6], [50, 18], [40, 34], [14, 62], [56, 62]])]],
+  // Open-top and retraced-foot twos, angular threes and square-bowl fives
+  // are common handwriting variants, absent from the original small digit set.
+  ["2", [path([[12, 14], [32, 5], [43, 7], [44, 25], [32, 44], [10, 58], [2, 60], [30, 57], [65, 57]])]],
+  ["3", [straight([[12, 6], [43, 6], [49, 13], [46, 23], [31, 33], [7, 38], [30, 38], [42, 44], [8, 64]])]],
+  ["3", [path([[12, 6], [40, 6], [47, 12], [43, 24], [25, 34], [8, 37], [28, 37], [40, 42], [10, 64]])]],
+  ["5", [straight([[55, 6], [14, 6], [10, 31], [29, 32], [47, 42], [52, 49], [50, 57], [40, 63], [12, 64], [12, 59]])]],
   ["3", [path([[16, 10], [38, 4], [52, 16], [38, 30], [28, 32], [42, 34], [56, 48], [40, 64], [16, 60]])]],
   ["3", [path([[16, 10], [40, 6], [50, 20], [34, 32]]), path([[34, 32], [52, 40], [50, 58], [30, 64], [16, 58]])]],
   ["4", [line(42, 6, 12, 44), line(12, 44, 58, 44), line(42, 6, 42, 64)]],
@@ -5616,8 +5622,10 @@ function buildPrototypes() {
   if (prototypes) return prototypes;
   prototypes = [];
   for (const [value, strokes] of SHAPES) {
-    const cloud = toCloud(strokes.map((stroke) => stroke.map(([x4, y3]) => ({ x: x4, y: y3 }))));
-    if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
+    for (const width of /^\d$/.test(value) ? [0.75, 1, 1.3, 1.65, 2] : [1]) {
+      const cloud = toCloud(strokes.map((stroke) => stroke.map(([x4, y3]) => ({ x: x4 * width, y: y3 }))));
+      if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
+    }
   }
   for (const [value, packed] of HANDWRITTEN_SHAPES) {
     const cloud = toCloud(parseShape(packed));
@@ -5775,6 +5783,7 @@ var en = {
   "Crea un cuadro de texto con la traducci\xF3n junto al original": "Creates a text box with the translation next to the original",
   "Crear gr\xE1fico con estos datos": "Create a chart from this data",
   "Crear nueva pizarra NoteLens": "Create a new NoteLens board",
+  "Crear nueva pizarra": "Create a new board",
   "Crear una pizarra nueva": "Create a new board",
   "Cuadro de texto (T) \u2014 opciones al pulsar de nuevo": "Text box (T) \u2014 press again for options",
   "Cuadro de texto aqu\xED": "Text box here",
@@ -8444,6 +8453,612 @@ ${recognition.detail}. Creado: ${report}.` });
 // src/main.ts
 var import_obsidian15 = require("obsidian");
 
+// src/asciimath.ts
+function looksLikeLatex(src) {
+  return /\\[a-zA-Z]+|\\\\|\\[{}()[\]]|[_^]\s*\{/.test(src);
+}
+var GREEK = [
+  "alpha",
+  "beta",
+  "gamma",
+  "delta",
+  "epsilon",
+  "varepsilon",
+  "zeta",
+  "eta",
+  "theta",
+  "vartheta",
+  "iota",
+  "kappa",
+  "lambda",
+  "mu",
+  "nu",
+  "xi",
+  "pi",
+  "rho",
+  "sigma",
+  "tau",
+  "upsilon",
+  "phi",
+  "varphi",
+  "chi",
+  "psi",
+  "omega",
+  "Gamma",
+  "Delta",
+  "Theta",
+  "Lambda",
+  "Xi",
+  "Pi",
+  "Sigma",
+  "Phi",
+  "Psi",
+  "Omega"
+];
+var SYMBOLS = {
+  oo: "\\infty",
+  inf: "\\infty",
+  infty: "\\infty",
+  infinity: "\\infty",
+  "+-": "\\pm",
+  "-+": "\\mp",
+  "->": "\\to",
+  "=>": "\\Rightarrow",
+  "<=>": "\\Leftrightarrow",
+  "<=": "\\le",
+  ">=": "\\ge",
+  "!=": "\\ne",
+  "~=": "\\approx",
+  "~~": "\\approx",
+  "==": "\\equiv",
+  ":=": ":=",
+  "...": "\\ldots",
+  "*": "\\cdot",
+  "**": "\\ast",
+  xx: "\\times",
+  "-:": "\\div",
+  sum: "\\sum",
+  prod: "\\prod",
+  int: "\\int",
+  oint: "\\oint",
+  lim: "\\lim",
+  del: "\\partial",
+  partial: "\\partial",
+  grad: "\\nabla",
+  nabla: "\\nabla",
+  in: "\\in",
+  notin: "\\notin",
+  sub: "\\subset",
+  sup: "\\supset",
+  uu: "\\cup",
+  nn: "\\cap",
+  and: "\\land",
+  or: "\\lor",
+  not: "\\neg",
+  AA: "\\forall",
+  EE: "\\exists",
+  RR: "\\mathbb{R}",
+  NN: "\\mathbb{N}",
+  ZZ: "\\mathbb{Z}",
+  QQ: "\\mathbb{Q}",
+  CC: "\\mathbb{C}",
+  deg: "^{\\circ}",
+  "%": "\\%",
+  prop: "\\propto",
+  perp: "\\perp",
+  parallel: "\\parallel",
+  angle: "\\angle",
+  therefore: "\\therefore",
+  because: "\\because",
+  hbar: "\\hbar",
+  ell: "\\ell",
+  emptyset: "\\emptyset",
+  cdots: "\\cdots",
+  vdots: "\\vdots",
+  ddots: "\\ddots",
+  ohm: "\\Omega"
+};
+var UNICODE = {
+  "\u03C0": " pi ",
+  "\u221A": " sqrt ",
+  "\u222B": " int ",
+  "\u222E": " oint ",
+  "\u2211": " sum ",
+  "\u220F": " prod ",
+  "\u221E": " oo ",
+  "\u2264": " <= ",
+  "\u2265": " >= ",
+  "\u2260": " != ",
+  "\u2248": " ~= ",
+  "\u2261": " == ",
+  "\u2192": " -> ",
+  "\u21D2": " => ",
+  "\u21D4": " <=> ",
+  "\u2194": " <=> ",
+  "\xB1": " +- ",
+  "\u2213": " -+ ",
+  "\xD7": " xx ",
+  "\xB7": " * ",
+  "\u22C5": " * ",
+  "\u2219": " * ",
+  "\xF7": " -: ",
+  "\u2212": " - ",
+  "\u2013": " - ",
+  "\u2202": " del ",
+  "\u2207": " grad ",
+  "\u2208": " in ",
+  "\u2209": " notin ",
+  "\u2282": " sub ",
+  "\u2283": " sup ",
+  "\u222A": " uu ",
+  "\u2229": " nn ",
+  "\u2200": " AA ",
+  "\u2203": " EE ",
+  "\u211D": " RR ",
+  "\u2115": " NN ",
+  "\u2124": " ZZ ",
+  "\u211A": " QQ ",
+  "\u2102": " CC ",
+  "\u2205": " emptyset ",
+  "\u2026": " ... ",
+  "\u2032": "'",
+  "\u2033": "''",
+  "\xB0": " deg ",
+  "\u2220": " angle ",
+  "\u22A5": " perp ",
+  "\u2225": " parallel ",
+  "\u221D": " prop ",
+  "\u2113": " ell ",
+  "\u0127": " hbar ",
+  "\u2234": " therefore ",
+  "\u2235": " because ",
+  "\xAC": " not ",
+  "\u2227": " and ",
+  "\u2228": " or ",
+  "\u03B1": " alpha ",
+  "\u03B2": " beta ",
+  "\u03B3": " gamma ",
+  "\u03B4": " delta ",
+  "\u03B5": " epsilon ",
+  "\u03B6": " zeta ",
+  "\u03B7": " eta ",
+  "\u03B8": " theta ",
+  "\u03B9": " iota ",
+  "\u03BA": " kappa ",
+  "\u03BB": " lambda ",
+  "\u03BC": " mu ",
+  "\u03BD": " nu ",
+  "\u03BE": " xi ",
+  "\u03C1": " rho ",
+  "\u03C3": " sigma ",
+  "\u03C4": " tau ",
+  "\u03C5": " upsilon ",
+  "\u03C6": " phi ",
+  "\u03D5": " phi ",
+  "\u03C7": " chi ",
+  "\u03C8": " psi ",
+  "\u03C9": " omega ",
+  "\u0393": " Gamma ",
+  "\u0394": " Delta ",
+  "\u0398": " Theta ",
+  "\u039B": " Lambda ",
+  "\u039E": " Xi ",
+  "\u03A0": " Pi ",
+  "\u03A3": " Sigma ",
+  "\u03A6": " Phi ",
+  "\u03A8": " Psi ",
+  "\u03A9": " Omega "
+};
+var COMBINING = { "\u0304": "bar", "\u0305": "bar", "\u0302": "hat", "\u0307": "dot", "\u0308": "ddot", "\u0303": "tilde", "\u20D7": "vec" };
+var FUNCTIONS = ["sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "ln", "log", "exp", "det", "dim", "max", "min", "gcd", "lcm", "mod", "sup", "inf", "arg"];
+var UNARY = { sqrt: "\\sqrt", abs: "abs", vec: "\\vec", hat: "\\hat", bar: "\\bar", dot: "\\dot", ddot: "\\ddot", tilde: "\\tilde", ul: "\\underline", bb: "\\mathbf", cal: "\\mathcal", floor: "floor", ceil: "ceil", norm: "norm" };
+var BINARY = { frac: "frac", root: "root", overset: "overset", underset: "underset", color: "color" };
+var MULTI_OPS = ["<=>", "+-", "-+", "->", "=>", "<=", ">=", "!=", "~=", "~~", "==", ":=", "...", "**", "-:"];
+function isKnownWord(w3) {
+  return w3 in SYMBOLS || GREEK.includes(w3) || FUNCTIONS.includes(w3) || w3 in UNARY || w3 in BINARY || w3 === "text" || w3 === "matrix";
+}
+function isDifferential(w3) {
+  return w3.length === 2 && w3[0] === "d" && /[a-zA-Z]/.test(w3[1]) && !isKnownWord(w3);
+}
+var SUPERSCRIPTS = "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079\u207A\u207B\u207F\u2071";
+var SUBSCRIPTS = "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089\u208A\u208B";
+var SUPER_TO_ASCII = "0123456789+-ni";
+var SUB_TO_ASCII = "0123456789+-";
+function normalize(src) {
+  let out = src.replace(new RegExp(`[${SUPERSCRIPTS}]+`, "g"), (run) => `^(${[...run].map((ch) => SUPER_TO_ASCII[SUPERSCRIPTS.indexOf(ch)]).join("")})`).replace(new RegExp(`[${SUBSCRIPTS}]+`, "g"), (run) => `_(${[...run].map((ch) => SUB_TO_ASCII[SUBSCRIPTS.indexOf(ch)]).join("")})`);
+  for (const [mark, accent] of Object.entries(COMBINING)) {
+    out = out.replace(new RegExp(`([A-Za-z])${mark}`, "g"), ` ${accent} $1 `);
+  }
+  return out.replace(/[^\x00-\x7f]/g, (ch) => UNICODE[ch] ?? ch);
+}
+function tokenize(src) {
+  const out = [];
+  let i4 = 0;
+  while (i4 < src.length) {
+    const ch = src[i4];
+    if (/\s/.test(ch)) {
+      i4++;
+      continue;
+    }
+    if (ch === '"') {
+      const end = src.indexOf('"', i4 + 1);
+      const text = end === -1 ? src.slice(i4 + 1) : src.slice(i4 + 1, end);
+      out.push({ kind: "text", value: text });
+      i4 = end === -1 ? src.length : end + 1;
+      continue;
+    }
+    const num = /^\d+(\.\d+)?/.exec(src.slice(i4));
+    if (num) {
+      out.push({ kind: "num", value: num[0] });
+      i4 += num[0].length;
+      continue;
+    }
+    const textCall = /^text\s*([([{])/.exec(src.slice(i4));
+    if (textCall) {
+      const close = textCall[1] === "(" ? ")" : textCall[1] === "[" ? "]" : "}";
+      const start = i4 + textCall[0].length;
+      const end = src.indexOf(close, start);
+      out.push({ kind: "text", value: end === -1 ? src.slice(start) : src.slice(start, end) });
+      i4 = end === -1 ? src.length : end + 1;
+      continue;
+    }
+    const word = /^[a-zA-Z]+/.exec(src.slice(i4));
+    if (word) {
+      let w3 = word[0];
+      while (w3.length > 1 && !isKnownWord(w3) && !isDifferential(w3)) w3 = w3.slice(0, -1);
+      out.push({ kind: "id", value: w3 });
+      i4 += w3.length;
+      continue;
+    }
+    const multi = MULTI_OPS.find((op) => src.startsWith(op, i4));
+    if (multi) {
+      out.push({ kind: "op", value: multi });
+      i4 += multi.length;
+      continue;
+    }
+    if ("([{".includes(ch)) {
+      out.push({ kind: "open", value: ch });
+      i4++;
+      continue;
+    }
+    if (")]}".includes(ch)) {
+      out.push({ kind: "close", value: ch });
+      i4++;
+      continue;
+    }
+    if (ch === ",") {
+      out.push({ kind: "comma", value: "," });
+      i4++;
+      continue;
+    }
+    out.push({ kind: "op", value: ch });
+    i4++;
+  }
+  return out;
+}
+var Converter = class {
+  constructor(toks) {
+    this.toks = toks;
+    this.pos = 0;
+  }
+  /** The whole line: expressions separated by commas, stray closers kept as text. */
+  convert() {
+    const parts = [];
+    while (this.pos < this.toks.length) {
+      const chunk = this.sequence(() => false);
+      if (chunk) parts.push(chunk);
+      const t3 = this.peek();
+      if (t3?.kind === "comma") {
+        this.take();
+        parts.push(",");
+      } else if (t3?.kind === "close") {
+        this.take();
+        parts.push(t3.value === "}" ? "\\}" : t3.value);
+      }
+    }
+    return tidy(parts.join(" "));
+  }
+  peek(offset = 0) {
+    return this.toks[this.pos + offset];
+  }
+  take() {
+    return this.toks[this.pos++];
+  }
+  peekIsOp(value, offset = 0) {
+    const t3 = this.peek(offset);
+    return t3?.kind === "op" && t3.value === value;
+  }
+  /** A run of expressions until `stop` says so (end of input, closing bracket or comma). */
+  sequence(stop) {
+    const parts = [];
+    while (!stop() && this.pos < this.toks.length) {
+      const t3 = this.peek();
+      if (t3.kind === "close" || t3.kind === "comma") break;
+      parts.push(this.fraction());
+    }
+    return parts.join(" ");
+  }
+  /** intermediate ('/' intermediate)* — a/b becomes \frac{a}{b}. */
+  fraction() {
+    let left = this.intermediate();
+    while (this.peekIsOp("/")) {
+      this.take();
+      const right = this.intermediate();
+      left = `\\frac{${strip(left)}}{${strip(right)}}`;
+    }
+    return left;
+  }
+  /** simple with optional _sub and ^sup, in either order. */
+  intermediate() {
+    let base = this.simple();
+    let sub = null;
+    let sup = null;
+    for (let i4 = 0; i4 < 2; i4++) {
+      if (this.peekIsOp("_") && sub === null) {
+        this.take();
+        sub = this.script();
+      } else if (this.peekIsOp("^") && sup === null) {
+        this.take();
+        sup = this.script();
+      } else break;
+    }
+    if (sub !== null) base += `_{${sub}}`;
+    if (sup !== null) base += `^{${sup}}`;
+    return base;
+  }
+  /** Argument of ^ or _: a sign in front travels with it, so e^-x is e^{-x}. */
+  script() {
+    let sign = "";
+    if (this.peekIsOp("-") || this.peekIsOp("+")) sign = this.take().value;
+    return sign + strip(this.simple());
+  }
+  simple() {
+    const t3 = this.take();
+    if (!t3) return "";
+    switch (t3.kind) {
+      case "num":
+        return t3.value;
+      case "text":
+        return this.spacedText(t3.value);
+      case "comma":
+        return ",";
+      case "open":
+        return this.group(t3.value);
+      case "close":
+        return "";
+      case "op":
+        if (t3.value === "|") return this.bars();
+        return SYMBOLS[t3.value] ?? (t3.value === "'" ? "'" : escapeOp(t3.value));
+      case "id":
+        return this.word(t3.value);
+    }
+  }
+  /** Words need air around them in maths mode, where the source spaces vanish. */
+  spacedText(value) {
+    const next = this.peek();
+    const followed = next && next.kind !== "close" && next.kind !== "comma";
+    return `\\text{${value}}${followed ? "\\;" : ""}`;
+  }
+  /**
+   * A `|` opens an absolute value when it follows nothing, an operator, a
+   * bracket or a comma, and closes one when it follows an operand; that is how
+   * | |x| - 1 | nests and |x| + |y| pairs up, while {x | x > 0} stays a bar.
+   */
+  bars() {
+    if (this.barCloses(this.pos - 1)) return "|";
+    const inner = this.sequence(() => this.peekIsOp("|") && this.barCloses(this.pos));
+    if (this.peekIsOp("|")) {
+      this.take();
+      return `\\left|${inner}\\right|`;
+    }
+    return `\\left|${inner}\\right.`;
+  }
+  barCloses(index) {
+    const prev = this.toks[index - 1];
+    return !!prev && prev.kind !== "op" && prev.kind !== "open" && prev.kind !== "comma";
+  }
+  word(w3) {
+    if (w3 in SYMBOLS) return SYMBOLS[w3];
+    if (GREEK.includes(w3)) return `\\${w3}`;
+    if (FUNCTIONS.includes(w3)) {
+      const next = this.peek();
+      const bindable = next && (next.kind === "open" || next.kind === "num" || next.kind === "id" && !(next.value in SYMBOLS) && !FUNCTIONS.includes(next.value));
+      return bindable ? `\\${w3} ${this.simple()}` : `\\${w3}`;
+    }
+    if (w3 === "text") {
+      const next = this.peek();
+      if (next?.kind === "open") {
+        this.take();
+        return this.spacedText(this.rawUntilClose(next.value));
+      }
+      return "\\text";
+    }
+    if (w3 in UNARY) {
+      const arg = strip(this.simple());
+      switch (UNARY[w3]) {
+        case "abs":
+          return `\\left|${arg}\\right|`;
+        case "norm":
+          return `\\left\\|${arg}\\right\\|`;
+        case "floor":
+          return `\\left\\lfloor ${arg}\\right\\rfloor`;
+        case "ceil":
+          return `\\left\\lceil ${arg}\\right\\rceil`;
+        default:
+          return `${UNARY[w3]}{${arg}}`;
+      }
+    }
+    if (w3 in BINARY) {
+      const a3 = strip(this.simple());
+      const b3 = strip(this.simple());
+      switch (w3) {
+        case "frac":
+          return `\\frac{${a3}}{${b3}}`;
+        case "root":
+          return `\\sqrt[${a3}]{${b3}}`;
+        case "overset":
+          return `\\overset{${a3}}{${b3}}`;
+        case "underset":
+          return `\\underset{${a3}}{${b3}}`;
+        default:
+          return `\\textcolor{${a3}}{${b3}}`;
+      }
+    }
+    return w3;
+  }
+  /** Cells separated by commas up to a closing bracket, which is consumed. */
+  cells() {
+    const cells = [];
+    for (; ; ) {
+      cells.push(this.sequence(() => false));
+      if (this.peek()?.kind === "comma") {
+        this.take();
+        continue;
+      }
+      break;
+    }
+    if (this.peek()?.kind === "close") this.take();
+    return cells;
+  }
+  /** Bracketed group; [[a,b],[c,d]] is a matrix, ((n),(k)) a binomial, {(a,b),(c,d):} cases. */
+  group(open2) {
+    if (open2 === "[" && this.peek()?.kind === "open" && this.peek().value === "[") {
+      const rows = [];
+      while (this.peek()?.kind === "open" && this.peek().value === "[") {
+        this.take();
+        rows.push(this.cells());
+        if (this.peek()?.kind === "comma") this.take();
+      }
+      if (this.peek()?.kind === "close") this.take();
+      return `\\begin{pmatrix} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{pmatrix}`;
+    }
+    if (open2 === "{" && this.peek()?.kind === "open" && this.peek().value === "(") {
+      const rows = [];
+      while (this.peek()?.kind === "open" && this.peek().value === "(") {
+        this.take();
+        rows.push(this.cells());
+        if (this.peek()?.kind === "comma") this.take();
+      }
+      const cases = this.peekIsOp(":") && this.peek(1)?.kind === "close";
+      if (cases) this.take();
+      if (this.peek()?.kind === "close") this.take();
+      if (cases) return `\\begin{cases} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{cases}`;
+      return `\\{${rows.map((r) => `\\left(${r.join(", ")}\\right)`).join(", ")}\\}`;
+    }
+    const parts = [];
+    for (; ; ) {
+      parts.push(this.sequence(() => false));
+      if (this.peek()?.kind === "comma") {
+        this.take();
+        parts.push(",");
+        continue;
+      }
+      break;
+    }
+    const closer = this.peek()?.kind === "close" ? this.take().value : "";
+    if (open2 === "(" && parts.length === 3 && parts[1] === "," && isParenthesised(parts[0]) && isParenthesised(parts[2])) {
+      return `\\binom{${strip(parts[0])}}{${strip(parts[2])}}`;
+    }
+    const inner = parts.join(" ").replace(/\s+,\s+/g, ", ");
+    if (open2 === "{" && (closer === "}" || closer === "")) return `\\{${inner}\\}`;
+    const left = open2 === "(" ? "(" : open2 === "[" ? "[" : "\\{";
+    const right = closer === ")" ? ")" : closer === "]" ? "]" : closer === "}" ? "\\}" : ".";
+    return `\\left${left}${inner}\\right${right}`;
+  }
+  rawUntilClose(open2) {
+    const close = open2 === "(" ? ")" : open2 === "[" ? "]" : "}";
+    const words2 = [];
+    while (this.pos < this.toks.length) {
+      const t3 = this.take();
+      if (t3.kind === "close" && t3.value === close) break;
+      words2.push(t3.value);
+    }
+    return words2.join(" ");
+  }
+};
+function isParenthesised(value) {
+  return /^\\left\(.*\\right\)$/.test(value.trim());
+}
+function strip(value) {
+  const m3 = /^\\left\((.*)\\right\)$/.exec(value.trim());
+  return m3 ? m3[1].trim() : value.trim();
+}
+function tidy(value) {
+  return value.replace(/\s+(['!])/g, "$1").replace(/\s+,/g, ",").replace(/,(?=\S)/g, ", ");
+}
+function escapeOp(op) {
+  if (op === "&") return "\\&";
+  if (op === "#") return "\\#";
+  if (op === "$") return "\\$";
+  if (op === "_" || op === "^") return "";
+  return op;
+}
+function asciiToLatex(src) {
+  const text = normalize(src).trim();
+  if (!text) return "";
+  return text.split(/\r?\n/).filter((line2) => line2.trim()).map((line2) => new Converter(tokenize(line2)).convert()).join(" \\\\ ");
+}
+function toRenderableLatex(src) {
+  return looksLikeLatex(src) ? src : asciiToLatex(src);
+}
+
+// src/formula-text.ts
+function tidyFormulaText(raw) {
+  let value = raw.trim().replace(/^```(?:latex|tex|math)?\s*\n?([\s\S]*?)\n?```$/i, "$1").trim();
+  if (value.startsWith("$$") && value.endsWith("$$")) value = value.slice(2, -2).trim();
+  else if (value.startsWith("$") && value.endsWith("$")) value = value.slice(1, -1).trim();
+  else if (value.startsWith("\\[") && value.endsWith("\\]") || value.startsWith("\\(") && value.endsWith("\\)")) value = value.slice(2, -2).trim();
+  return toRenderableLatex(value);
+}
+
+// src/ink-region.ts
+function inkHitsPoint(stroke, point, radius) {
+  const points = stroke.points;
+  if (points.some((p3) => Math.hypot(p3.x - point.x, p3.y - point.y) <= radius)) return true;
+  for (let i4 = 1; i4 < points.length; i4++) {
+    const a3 = points[i4 - 1], b3 = points[i4];
+    const dx = b3.x - a3.x, dy = b3.y - a3.y;
+    const lengthSquared = dx * dx + dy * dy;
+    if (!lengthSquared) continue;
+    const t3 = Math.max(0, Math.min(1, ((point.x - a3.x) * dx + (point.y - a3.y) * dy) / lengthSquared));
+    if (Math.hypot(a3.x + t3 * dx - point.x, a3.y + t3 * dy - point.y) <= radius) return true;
+  }
+  return false;
+}
+function clipInkToRect(stroke, rect) {
+  const inside = (p3) => p3.x >= rect.x && p3.x <= rect.x + rect.w && p3.y >= rect.y && p3.y <= rect.y + rect.h;
+  if (stroke.points.length === 1) return inside(stroke.points[0]) ? [stroke] : [];
+  const parts = [];
+  let current = null;
+  for (let i4 = 1; i4 < stroke.points.length; i4++) {
+    const a3 = stroke.points[i4 - 1], b3 = stroke.points[i4];
+    const dx = b3.x - a3.x, dy = b3.y - a3.y;
+    let lo = 0, hi = 1, accepted = true;
+    for (const [d3, q3] of [[-dx, a3.x - rect.x], [dx, rect.x + rect.w - a3.x], [-dy, a3.y - rect.y], [dy, rect.y + rect.h - a3.y]]) {
+      if (d3 === 0) {
+        if (q3 < 0) accepted = false;
+        continue;
+      }
+      const t3 = q3 / d3;
+      if (d3 < 0) lo = Math.max(lo, t3);
+      else hi = Math.min(hi, t3);
+    }
+    if (!accepted || lo > hi) {
+      current = null;
+      continue;
+    }
+    const start = { ...a3, x: a3.x + lo * dx, y: a3.y + lo * dy };
+    const end = { ...b3, x: a3.x + hi * dx, y: a3.y + hi * dy };
+    if (!current || lo > 0) {
+      current = [start];
+      parts.push({ ...stroke, points: current });
+    }
+    current.push(end);
+    if (hi < 1) current = null;
+  }
+  return parts;
+}
+
 // src/view.ts
 var import_obsidian13 = require("obsidian");
 
@@ -8557,7 +9172,7 @@ function mode(values) {
   }
   return best;
 }
-var FUNCTIONS = {
+var FUNCTIONS2 = {
   sin: ([x4], e) => Math.sin(toRad(x4, e.unit)),
   cos: ([x4], e) => Math.cos(toRad(x4, e.unit)),
   tan: ([x4], e) => Math.tan(toRad(x4, e.unit)),
@@ -8701,7 +9316,7 @@ function convertUnits(value, fromRaw, toRaw) {
   if (a3.kind !== b3.kind) throw new Error(`No se puede convertir ${fromRaw} a ${toRaw}`);
   return value * a3.factor / b3.factor;
 }
-function tokenize(src) {
+function tokenize2(src) {
   const tokens = [];
   const s3 = src.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").replace(/π/g, "pi").replace(/√/g, "sqrt").replace(/²/g, "^2").replace(/³/g, "^3").replace(/∞/g, "inf");
   let i4 = 0;
@@ -8757,7 +9372,7 @@ var Parser = class {
     if (this.tokens.length === 0) throw new Error("Escribe una expresi\xF3n");
     const first = this.tokens[0];
     const second = this.tokens[1];
-    if (first.kind === "id" && second && second.kind === "op" && second.value === "=" && !(first.name in FUNCTIONS) && !(first.name in CONSTANTS)) {
+    if (first.kind === "id" && second && second.kind === "op" && second.value === "=" && !(first.name in FUNCTIONS2) && !(first.name in CONSTANTS)) {
       this.pos = 2;
       const fn2 = this.expr();
       if (this.pos < this.tokens.length) throw new Error("Expresi\xF3n incompleta");
@@ -8881,7 +9496,7 @@ var Parser = class {
       if (name === "m" || name === "mem") return (env) => env.memory;
       if (name === "inf" || name === "infinity") return () => Infinity;
       if (LAZY.has(name) && this.isOp("(")) return this.lazyCall(name);
-      const fn = FUNCTIONS[name];
+      const fn = FUNCTIONS2[name];
       if (fn) {
         const args = this.args();
         return (env) => fn(args.map((a3) => a3(env)), env);
@@ -8921,10 +9536,10 @@ var Parser = class {
     const next = this.tokens[this.pos];
     const afterComma = this.tokens[this.pos + 1];
     const afterVar = this.tokens[this.pos + 2];
-    const indexed = next && next.kind === "op" && next.value === "," && afterComma && afterComma.kind === "id" && !(afterComma.name in FUNCTIONS) && !(afterComma.name in CONSTANTS) && afterVar && afterVar.kind === "op" && (afterVar.value === "," || afterVar.value === ")");
+    const indexed = next && next.kind === "op" && next.value === "," && afterComma && afterComma.kind === "id" && !(afterComma.name in FUNCTIONS2) && !(afterComma.name in CONSTANTS) && afterVar && afterVar.kind === "op" && (afterVar.value === "," || afterVar.value === ")");
     if (!indexed) {
       this.pos = open2;
-      const fn = FUNCTIONS[name];
+      const fn = FUNCTIONS2[name];
       if (!fn) throw new Error(`${name}(expresi\xF3n, variable, \u2026)`);
       const args = this.args();
       return (env) => fn(args.map((a3) => a3(env)), env);
@@ -9008,10 +9623,10 @@ var CONVERSION = /^(.*?)\s*([a-zA-Z°º²³/]+)\s+(?:to|in|a|en|->|→)\s+([a-zA
 function evaluateFull(src, env) {
   const conversion = CONVERSION.exec(src.trim());
   if (conversion && (normalizeUnit(conversion[2]) in UNITS || normalizeUnit(conversion[2]) in TEMPERATURE) && (normalizeUnit(conversion[3]) in UNITS || normalizeUnit(conversion[3]) in TEMPERATURE)) {
-    const amount = conversion[1].trim() ? new Parser(tokenize(conversion[1])).parse().fn(env) : 1;
+    const amount = conversion[1].trim() ? new Parser(tokenize2(conversion[1])).parse().fn(env) : 1;
     return { value: convertUnits(amount, conversion[2], conversion[3]), unit: conversion[3] };
   }
-  const parsed = new Parser(tokenize(src)).parse();
+  const parsed = new Parser(tokenize2(src)).parse();
   const value = parsed.fn(env);
   if (parsed.assign) env.vars.set(parsed.assign, value);
   return { value, assigned: parsed.assign };
@@ -19430,555 +20045,6 @@ function createRecorderPanel(host, container) {
   return { toggle, isOpen: () => open2 };
 }
 
-// src/asciimath.ts
-function looksLikeLatex(src) {
-  return /\\[a-zA-Z]+|\\\\|\\[{}()[\]]|[_^]\s*\{/.test(src);
-}
-var GREEK = [
-  "alpha",
-  "beta",
-  "gamma",
-  "delta",
-  "epsilon",
-  "varepsilon",
-  "zeta",
-  "eta",
-  "theta",
-  "vartheta",
-  "iota",
-  "kappa",
-  "lambda",
-  "mu",
-  "nu",
-  "xi",
-  "pi",
-  "rho",
-  "sigma",
-  "tau",
-  "upsilon",
-  "phi",
-  "varphi",
-  "chi",
-  "psi",
-  "omega",
-  "Gamma",
-  "Delta",
-  "Theta",
-  "Lambda",
-  "Xi",
-  "Pi",
-  "Sigma",
-  "Phi",
-  "Psi",
-  "Omega"
-];
-var SYMBOLS = {
-  oo: "\\infty",
-  inf: "\\infty",
-  infty: "\\infty",
-  infinity: "\\infty",
-  "+-": "\\pm",
-  "-+": "\\mp",
-  "->": "\\to",
-  "=>": "\\Rightarrow",
-  "<=>": "\\Leftrightarrow",
-  "<=": "\\le",
-  ">=": "\\ge",
-  "!=": "\\ne",
-  "~=": "\\approx",
-  "~~": "\\approx",
-  "==": "\\equiv",
-  ":=": ":=",
-  "...": "\\ldots",
-  "*": "\\cdot",
-  "**": "\\ast",
-  xx: "\\times",
-  "-:": "\\div",
-  sum: "\\sum",
-  prod: "\\prod",
-  int: "\\int",
-  oint: "\\oint",
-  lim: "\\lim",
-  del: "\\partial",
-  partial: "\\partial",
-  grad: "\\nabla",
-  nabla: "\\nabla",
-  in: "\\in",
-  notin: "\\notin",
-  sub: "\\subset",
-  sup: "\\supset",
-  uu: "\\cup",
-  nn: "\\cap",
-  and: "\\land",
-  or: "\\lor",
-  not: "\\neg",
-  AA: "\\forall",
-  EE: "\\exists",
-  RR: "\\mathbb{R}",
-  NN: "\\mathbb{N}",
-  ZZ: "\\mathbb{Z}",
-  QQ: "\\mathbb{Q}",
-  CC: "\\mathbb{C}",
-  deg: "^{\\circ}",
-  "%": "\\%",
-  prop: "\\propto",
-  perp: "\\perp",
-  parallel: "\\parallel",
-  angle: "\\angle",
-  therefore: "\\therefore",
-  because: "\\because",
-  hbar: "\\hbar",
-  ell: "\\ell",
-  emptyset: "\\emptyset",
-  cdots: "\\cdots",
-  vdots: "\\vdots",
-  ddots: "\\ddots",
-  ohm: "\\Omega"
-};
-var UNICODE = {
-  "\u03C0": " pi ",
-  "\u221A": " sqrt ",
-  "\u222B": " int ",
-  "\u222E": " oint ",
-  "\u2211": " sum ",
-  "\u220F": " prod ",
-  "\u221E": " oo ",
-  "\u2264": " <= ",
-  "\u2265": " >= ",
-  "\u2260": " != ",
-  "\u2248": " ~= ",
-  "\u2261": " == ",
-  "\u2192": " -> ",
-  "\u21D2": " => ",
-  "\u21D4": " <=> ",
-  "\u2194": " <=> ",
-  "\xB1": " +- ",
-  "\u2213": " -+ ",
-  "\xD7": " xx ",
-  "\xB7": " * ",
-  "\u22C5": " * ",
-  "\u2219": " * ",
-  "\xF7": " -: ",
-  "\u2212": " - ",
-  "\u2013": " - ",
-  "\u2202": " del ",
-  "\u2207": " grad ",
-  "\u2208": " in ",
-  "\u2209": " notin ",
-  "\u2282": " sub ",
-  "\u2283": " sup ",
-  "\u222A": " uu ",
-  "\u2229": " nn ",
-  "\u2200": " AA ",
-  "\u2203": " EE ",
-  "\u211D": " RR ",
-  "\u2115": " NN ",
-  "\u2124": " ZZ ",
-  "\u211A": " QQ ",
-  "\u2102": " CC ",
-  "\u2205": " emptyset ",
-  "\u2026": " ... ",
-  "\u2032": "'",
-  "\u2033": "''",
-  "\xB0": " deg ",
-  "\u2220": " angle ",
-  "\u22A5": " perp ",
-  "\u2225": " parallel ",
-  "\u221D": " prop ",
-  "\u2113": " ell ",
-  "\u0127": " hbar ",
-  "\u2234": " therefore ",
-  "\u2235": " because ",
-  "\xAC": " not ",
-  "\u2227": " and ",
-  "\u2228": " or ",
-  "\u03B1": " alpha ",
-  "\u03B2": " beta ",
-  "\u03B3": " gamma ",
-  "\u03B4": " delta ",
-  "\u03B5": " epsilon ",
-  "\u03B6": " zeta ",
-  "\u03B7": " eta ",
-  "\u03B8": " theta ",
-  "\u03B9": " iota ",
-  "\u03BA": " kappa ",
-  "\u03BB": " lambda ",
-  "\u03BC": " mu ",
-  "\u03BD": " nu ",
-  "\u03BE": " xi ",
-  "\u03C1": " rho ",
-  "\u03C3": " sigma ",
-  "\u03C4": " tau ",
-  "\u03C5": " upsilon ",
-  "\u03C6": " phi ",
-  "\u03D5": " phi ",
-  "\u03C7": " chi ",
-  "\u03C8": " psi ",
-  "\u03C9": " omega ",
-  "\u0393": " Gamma ",
-  "\u0394": " Delta ",
-  "\u0398": " Theta ",
-  "\u039B": " Lambda ",
-  "\u039E": " Xi ",
-  "\u03A0": " Pi ",
-  "\u03A3": " Sigma ",
-  "\u03A6": " Phi ",
-  "\u03A8": " Psi ",
-  "\u03A9": " Omega "
-};
-var COMBINING = { "\u0304": "bar", "\u0305": "bar", "\u0302": "hat", "\u0307": "dot", "\u0308": "ddot", "\u0303": "tilde", "\u20D7": "vec" };
-var FUNCTIONS2 = ["sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "ln", "log", "exp", "det", "dim", "max", "min", "gcd", "lcm", "mod", "sup", "inf", "arg"];
-var UNARY = { sqrt: "\\sqrt", abs: "abs", vec: "\\vec", hat: "\\hat", bar: "\\bar", dot: "\\dot", ddot: "\\ddot", tilde: "\\tilde", ul: "\\underline", bb: "\\mathbf", cal: "\\mathcal", floor: "floor", ceil: "ceil", norm: "norm" };
-var BINARY = { frac: "frac", root: "root", overset: "overset", underset: "underset", color: "color" };
-var MULTI_OPS = ["<=>", "+-", "-+", "->", "=>", "<=", ">=", "!=", "~=", "~~", "==", ":=", "...", "**", "-:"];
-function isKnownWord(w3) {
-  return w3 in SYMBOLS || GREEK.includes(w3) || FUNCTIONS2.includes(w3) || w3 in UNARY || w3 in BINARY || w3 === "text" || w3 === "matrix";
-}
-function isDifferential(w3) {
-  return w3.length === 2 && w3[0] === "d" && /[a-zA-Z]/.test(w3[1]) && !isKnownWord(w3);
-}
-var SUPERSCRIPTS = "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079\u207A\u207B\u207F\u2071";
-var SUBSCRIPTS = "\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087\u2088\u2089\u208A\u208B";
-var SUPER_TO_ASCII = "0123456789+-ni";
-var SUB_TO_ASCII = "0123456789+-";
-function normalize(src) {
-  let out = src.replace(new RegExp(`[${SUPERSCRIPTS}]+`, "g"), (run) => `^(${[...run].map((ch) => SUPER_TO_ASCII[SUPERSCRIPTS.indexOf(ch)]).join("")})`).replace(new RegExp(`[${SUBSCRIPTS}]+`, "g"), (run) => `_(${[...run].map((ch) => SUB_TO_ASCII[SUBSCRIPTS.indexOf(ch)]).join("")})`);
-  for (const [mark, accent] of Object.entries(COMBINING)) {
-    out = out.replace(new RegExp(`([A-Za-z])${mark}`, "g"), ` ${accent} $1 `);
-  }
-  return out.replace(/[^\x00-\x7f]/g, (ch) => UNICODE[ch] ?? ch);
-}
-function tokenize2(src) {
-  const out = [];
-  let i4 = 0;
-  while (i4 < src.length) {
-    const ch = src[i4];
-    if (/\s/.test(ch)) {
-      i4++;
-      continue;
-    }
-    if (ch === '"') {
-      const end = src.indexOf('"', i4 + 1);
-      const text = end === -1 ? src.slice(i4 + 1) : src.slice(i4 + 1, end);
-      out.push({ kind: "text", value: text });
-      i4 = end === -1 ? src.length : end + 1;
-      continue;
-    }
-    const num = /^\d+(\.\d+)?/.exec(src.slice(i4));
-    if (num) {
-      out.push({ kind: "num", value: num[0] });
-      i4 += num[0].length;
-      continue;
-    }
-    const textCall = /^text\s*([([{])/.exec(src.slice(i4));
-    if (textCall) {
-      const close = textCall[1] === "(" ? ")" : textCall[1] === "[" ? "]" : "}";
-      const start = i4 + textCall[0].length;
-      const end = src.indexOf(close, start);
-      out.push({ kind: "text", value: end === -1 ? src.slice(start) : src.slice(start, end) });
-      i4 = end === -1 ? src.length : end + 1;
-      continue;
-    }
-    const word = /^[a-zA-Z]+/.exec(src.slice(i4));
-    if (word) {
-      let w3 = word[0];
-      while (w3.length > 1 && !isKnownWord(w3) && !isDifferential(w3)) w3 = w3.slice(0, -1);
-      out.push({ kind: "id", value: w3 });
-      i4 += w3.length;
-      continue;
-    }
-    const multi = MULTI_OPS.find((op) => src.startsWith(op, i4));
-    if (multi) {
-      out.push({ kind: "op", value: multi });
-      i4 += multi.length;
-      continue;
-    }
-    if ("([{".includes(ch)) {
-      out.push({ kind: "open", value: ch });
-      i4++;
-      continue;
-    }
-    if (")]}".includes(ch)) {
-      out.push({ kind: "close", value: ch });
-      i4++;
-      continue;
-    }
-    if (ch === ",") {
-      out.push({ kind: "comma", value: "," });
-      i4++;
-      continue;
-    }
-    out.push({ kind: "op", value: ch });
-    i4++;
-  }
-  return out;
-}
-var Converter = class {
-  constructor(toks) {
-    this.toks = toks;
-    this.pos = 0;
-  }
-  /** The whole line: expressions separated by commas, stray closers kept as text. */
-  convert() {
-    const parts = [];
-    while (this.pos < this.toks.length) {
-      const chunk = this.sequence(() => false);
-      if (chunk) parts.push(chunk);
-      const t3 = this.peek();
-      if (t3?.kind === "comma") {
-        this.take();
-        parts.push(",");
-      } else if (t3?.kind === "close") {
-        this.take();
-        parts.push(t3.value === "}" ? "\\}" : t3.value);
-      }
-    }
-    return tidy(parts.join(" "));
-  }
-  peek(offset = 0) {
-    return this.toks[this.pos + offset];
-  }
-  take() {
-    return this.toks[this.pos++];
-  }
-  peekIsOp(value, offset = 0) {
-    const t3 = this.peek(offset);
-    return t3?.kind === "op" && t3.value === value;
-  }
-  /** A run of expressions until `stop` says so (end of input, closing bracket or comma). */
-  sequence(stop) {
-    const parts = [];
-    while (!stop() && this.pos < this.toks.length) {
-      const t3 = this.peek();
-      if (t3.kind === "close" || t3.kind === "comma") break;
-      parts.push(this.fraction());
-    }
-    return parts.join(" ");
-  }
-  /** intermediate ('/' intermediate)* — a/b becomes \frac{a}{b}. */
-  fraction() {
-    let left = this.intermediate();
-    while (this.peekIsOp("/")) {
-      this.take();
-      const right = this.intermediate();
-      left = `\\frac{${strip(left)}}{${strip(right)}}`;
-    }
-    return left;
-  }
-  /** simple with optional _sub and ^sup, in either order. */
-  intermediate() {
-    let base = this.simple();
-    let sub = null;
-    let sup = null;
-    for (let i4 = 0; i4 < 2; i4++) {
-      if (this.peekIsOp("_") && sub === null) {
-        this.take();
-        sub = this.script();
-      } else if (this.peekIsOp("^") && sup === null) {
-        this.take();
-        sup = this.script();
-      } else break;
-    }
-    if (sub !== null) base += `_{${sub}}`;
-    if (sup !== null) base += `^{${sup}}`;
-    return base;
-  }
-  /** Argument of ^ or _: a sign in front travels with it, so e^-x is e^{-x}. */
-  script() {
-    let sign = "";
-    if (this.peekIsOp("-") || this.peekIsOp("+")) sign = this.take().value;
-    return sign + strip(this.simple());
-  }
-  simple() {
-    const t3 = this.take();
-    if (!t3) return "";
-    switch (t3.kind) {
-      case "num":
-        return t3.value;
-      case "text":
-        return this.spacedText(t3.value);
-      case "comma":
-        return ",";
-      case "open":
-        return this.group(t3.value);
-      case "close":
-        return "";
-      case "op":
-        if (t3.value === "|") return this.bars();
-        return SYMBOLS[t3.value] ?? (t3.value === "'" ? "'" : escapeOp(t3.value));
-      case "id":
-        return this.word(t3.value);
-    }
-  }
-  /** Words need air around them in maths mode, where the source spaces vanish. */
-  spacedText(value) {
-    const next = this.peek();
-    const followed = next && next.kind !== "close" && next.kind !== "comma";
-    return `\\text{${value}}${followed ? "\\;" : ""}`;
-  }
-  /**
-   * A `|` opens an absolute value when it follows nothing, an operator, a
-   * bracket or a comma, and closes one when it follows an operand; that is how
-   * | |x| - 1 | nests and |x| + |y| pairs up, while {x | x > 0} stays a bar.
-   */
-  bars() {
-    if (this.barCloses(this.pos - 1)) return "|";
-    const inner = this.sequence(() => this.peekIsOp("|") && this.barCloses(this.pos));
-    if (this.peekIsOp("|")) {
-      this.take();
-      return `\\left|${inner}\\right|`;
-    }
-    return `\\left|${inner}\\right.`;
-  }
-  barCloses(index) {
-    const prev = this.toks[index - 1];
-    return !!prev && prev.kind !== "op" && prev.kind !== "open" && prev.kind !== "comma";
-  }
-  word(w3) {
-    if (w3 in SYMBOLS) return SYMBOLS[w3];
-    if (GREEK.includes(w3)) return `\\${w3}`;
-    if (FUNCTIONS2.includes(w3)) {
-      const next = this.peek();
-      const bindable = next && (next.kind === "open" || next.kind === "num" || next.kind === "id" && !(next.value in SYMBOLS) && !FUNCTIONS2.includes(next.value));
-      return bindable ? `\\${w3} ${this.simple()}` : `\\${w3}`;
-    }
-    if (w3 === "text") {
-      const next = this.peek();
-      if (next?.kind === "open") {
-        this.take();
-        return this.spacedText(this.rawUntilClose(next.value));
-      }
-      return "\\text";
-    }
-    if (w3 in UNARY) {
-      const arg = strip(this.simple());
-      switch (UNARY[w3]) {
-        case "abs":
-          return `\\left|${arg}\\right|`;
-        case "norm":
-          return `\\left\\|${arg}\\right\\|`;
-        case "floor":
-          return `\\left\\lfloor ${arg}\\right\\rfloor`;
-        case "ceil":
-          return `\\left\\lceil ${arg}\\right\\rceil`;
-        default:
-          return `${UNARY[w3]}{${arg}}`;
-      }
-    }
-    if (w3 in BINARY) {
-      const a3 = strip(this.simple());
-      const b3 = strip(this.simple());
-      switch (w3) {
-        case "frac":
-          return `\\frac{${a3}}{${b3}}`;
-        case "root":
-          return `\\sqrt[${a3}]{${b3}}`;
-        case "overset":
-          return `\\overset{${a3}}{${b3}}`;
-        case "underset":
-          return `\\underset{${a3}}{${b3}}`;
-        default:
-          return `\\textcolor{${a3}}{${b3}}`;
-      }
-    }
-    return w3;
-  }
-  /** Cells separated by commas up to a closing bracket, which is consumed. */
-  cells() {
-    const cells = [];
-    for (; ; ) {
-      cells.push(this.sequence(() => false));
-      if (this.peek()?.kind === "comma") {
-        this.take();
-        continue;
-      }
-      break;
-    }
-    if (this.peek()?.kind === "close") this.take();
-    return cells;
-  }
-  /** Bracketed group; [[a,b],[c,d]] is a matrix, ((n),(k)) a binomial, {(a,b),(c,d):} cases. */
-  group(open2) {
-    if (open2 === "[" && this.peek()?.kind === "open" && this.peek().value === "[") {
-      const rows = [];
-      while (this.peek()?.kind === "open" && this.peek().value === "[") {
-        this.take();
-        rows.push(this.cells());
-        if (this.peek()?.kind === "comma") this.take();
-      }
-      if (this.peek()?.kind === "close") this.take();
-      return `\\begin{pmatrix} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{pmatrix}`;
-    }
-    if (open2 === "{" && this.peek()?.kind === "open" && this.peek().value === "(") {
-      const rows = [];
-      while (this.peek()?.kind === "open" && this.peek().value === "(") {
-        this.take();
-        rows.push(this.cells());
-        if (this.peek()?.kind === "comma") this.take();
-      }
-      const cases = this.peekIsOp(":") && this.peek(1)?.kind === "close";
-      if (cases) this.take();
-      if (this.peek()?.kind === "close") this.take();
-      if (cases) return `\\begin{cases} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{cases}`;
-      return `\\{${rows.map((r) => `\\left(${r.join(", ")}\\right)`).join(", ")}\\}`;
-    }
-    const parts = [];
-    for (; ; ) {
-      parts.push(this.sequence(() => false));
-      if (this.peek()?.kind === "comma") {
-        this.take();
-        parts.push(",");
-        continue;
-      }
-      break;
-    }
-    const closer = this.peek()?.kind === "close" ? this.take().value : "";
-    if (open2 === "(" && parts.length === 3 && parts[1] === "," && isParenthesised(parts[0]) && isParenthesised(parts[2])) {
-      return `\\binom{${strip(parts[0])}}{${strip(parts[2])}}`;
-    }
-    const inner = parts.join(" ").replace(/\s+,\s+/g, ", ");
-    if (open2 === "{" && (closer === "}" || closer === "")) return `\\{${inner}\\}`;
-    const left = open2 === "(" ? "(" : open2 === "[" ? "[" : "\\{";
-    const right = closer === ")" ? ")" : closer === "]" ? "]" : closer === "}" ? "\\}" : ".";
-    return `\\left${left}${inner}\\right${right}`;
-  }
-  rawUntilClose(open2) {
-    const close = open2 === "(" ? ")" : open2 === "[" ? "]" : "}";
-    const words2 = [];
-    while (this.pos < this.toks.length) {
-      const t3 = this.take();
-      if (t3.kind === "close" && t3.value === close) break;
-      words2.push(t3.value);
-    }
-    return words2.join(" ");
-  }
-};
-function isParenthesised(value) {
-  return /^\\left\(.*\\right\)$/.test(value.trim());
-}
-function strip(value) {
-  const m3 = /^\\left\((.*)\\right\)$/.exec(value.trim());
-  return m3 ? m3[1].trim() : value.trim();
-}
-function tidy(value) {
-  return value.replace(/\s+(['!])/g, "$1").replace(/\s+,/g, ",").replace(/,(?=\S)/g, ", ");
-}
-function escapeOp(op) {
-  if (op === "&") return "\\&";
-  if (op === "#") return "\\#";
-  if (op === "$") return "\\$";
-  if (op === "_" || op === "^") return "";
-  return op;
-}
-function asciiToLatex(src) {
-  const text = normalize(src).trim();
-  if (!text) return "";
-  return text.split(/\r?\n/).filter((line2) => line2.trim()).map((line2) => new Converter(tokenize2(line2)).convert()).join(" \\\\ ");
-}
-function toRenderableLatex(src) {
-  return looksLikeLatex(src) ? src : asciiToLatex(src);
-}
-
 // src/math-palette.ts
 var key = (glyph, name, snippet) => ({ glyph, name, snippet });
 var MATH_GROUPS = [
@@ -21478,7 +21544,7 @@ function isRemoteSource(path2) {
 }
 async function ensureParentFolder(app, path2) {
   const parent = path2.split("/").slice(0, -1).join("/");
-  if (parent && !app.vault.getAbstractFileByPath(parent)) {
+  if (parent && !app.vault.getFolderByPath(parent)) {
     await app.vault.createFolder(parent).catch(() => {
     });
   }
@@ -21504,7 +21570,7 @@ async function buildSharePackage(app, document2, title) {
   const addAsset = async (source) => {
     if (!source || isRemoteSource(source) || added.has(source)) return;
     added.add(source);
-    const file = app.vault.getAbstractFileByPath(source);
+    const file = app.vault.getFileByPath(source);
     if (!(file instanceof import_obsidian5.TFile)) {
       skippedAssets.push(source);
       return;
@@ -21589,7 +21655,7 @@ async function importSharePackage(app, source, destinationFolder = "") {
     embed.src = remapped.get(embed.src) ?? embed.src;
     if (embed.captionSrc) embed.captionSrc = remapped.get(embed.captionSrc) ?? embed.captionSrc;
   }
-  await app.vault.modify(board, JSON.stringify(manifest.document, null, 2));
+  await app.vault.process(board, () => JSON.stringify(manifest.document, null, 2));
   return { file: board, assetCount: remapped.size, missingAssets };
 }
 
@@ -35929,9 +35995,9 @@ function mountMobileBoard(board, fullscreen = false) {
   const rect = board.getBoundingClientRect();
   const marker = doc.createComment("notelens-board-position");
   board.before(marker);
-  const host = doc.createElement("div");
-  host.className = `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`;
-  doc.body.appendChild(host);
+  const host = doc.body.createDiv({
+    cls: `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`
+  });
   const viewport = win.visualViewport;
   const layout = () => {
     const top = fullscreen ? viewport?.offsetTop ?? 0 : Math.max(rect.top, viewport?.offsetTop ?? 0);
@@ -36072,7 +36138,7 @@ function collect(node, root, base, out) {
       if (text) out.push({ ...styleOf(child.parentElement, root, base), text });
       continue;
     }
-    if (!(child instanceof HTMLElement)) continue;
+    if (!child.instanceOf(HTMLElement)) continue;
     if (child.tagName === "BR") {
       out.push({ text: "\n" });
       continue;
@@ -36119,7 +36185,7 @@ function atoms(root) {
         }
         continue;
       }
-      if (!(child instanceof HTMLElement)) continue;
+      if (!child.instanceOf(HTMLElement)) continue;
       if (child.tagName === "BR") {
         list.push({ node: null, from: at2, length: 1 });
         at2 += 1;
@@ -36187,8 +36253,8 @@ function surroundSelection(root, tag) {
   if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
   const range = selection.getRangeAt(0);
   if (!root.contains(range.commonAncestorContainer)) return false;
-  const wrapper = root.ownerDocument.createElement(tag);
-  wrapper.className = "notelens-run-code";
+  const wrapper = root.createEl(tag, { cls: "notelens-run-code" });
+  wrapper.detach();
   try {
     range.surroundContents(wrapper);
   } catch {
@@ -36317,7 +36383,7 @@ var PersistenceManager = class {
     const payload = JSON.stringify(doc);
     const job = async () => {
       try {
-        await this.app.vault.modify(file, payload);
+        await this.app.vault.process(file, () => payload);
         if (revision === this.revision) {
           this.dirty = false;
           this.lastPayload = payload;
@@ -58812,7 +58878,7 @@ function disposePdfWorker() {
   workerConfigured = false;
 }
 async function loadPdf(host, src) {
-  const file = host.app.vault.getAbstractFileByPath(src);
+  const file = host.app.vault.getFileByPath(src);
   if (!(file instanceof import_obsidian8.TFile)) return null;
   ensurePdfWorker();
   try {
@@ -58921,7 +58987,7 @@ function renderEmbedFrame(host, layer, embed) {
       link.addEventListener("click", (event) => event.stopPropagation());
     }
   } else {
-    const file = host.app.vault.getAbstractFileByPath(embed.src);
+    const file = host.app.vault.getFileByPath(embed.src);
     if (file instanceof import_obsidian8.TFile) {
       if (embed.kind === "audio") {
         const audio = body.createEl("audio", { cls: "notelens-audio-player" });
@@ -58949,7 +59015,7 @@ function renderEmbedFrame(host, layer, embed) {
 }
 function attachCaptionToVideo(host, embed, video) {
   if (!embed.captionSrc) return;
-  const caption = host.app.vault.getAbstractFileByPath(embed.captionSrc);
+  const caption = host.app.vault.getFileByPath(embed.captionSrc);
   if (!(caption instanceof import_obsidian8.TFile)) return;
   video.querySelector("track")?.remove();
   const track = video.createEl("track");
@@ -58978,7 +59044,7 @@ async function pickCaptionTrack(host, embed, body, button) {
       } catch {
       }
       const parent = path2.split("/").slice(0, -1).join("/");
-      if (parent && !host.app.vault.getAbstractFileByPath(parent)) {
+      if (parent && !host.app.vault.getFolderByPath(parent)) {
         await host.app.vault.createFolder(parent).catch(() => {
         });
       }
@@ -59025,7 +59091,7 @@ function mountLinkCard(host, layer, embed) {
   const head = card.createDiv({ cls: "notelens-link-head" });
   (0, import_obsidian8.setIcon)(head.createDiv({ cls: "notelens-attachment-icon" }), KIND_ICONS[embed.kind]);
   const details = head.createDiv({ cls: "notelens-attachment-details" });
-  const file = host.app.vault.getAbstractFileByPath(embed.src);
+  const file = host.app.vault.getFileByPath(embed.src);
   const name = file instanceof import_obsidian8.TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
   details.createDiv({ cls: "notelens-attachment-title", text: name });
   const folder = embed.src.includes("/") ? embed.src.slice(0, embed.src.lastIndexOf("/")) : "";
@@ -59102,11 +59168,12 @@ function mountAttachmentCard(host, layer, embed) {
   });
 }
 async function mountPdfViewer(host, header, body, embed) {
-  const pdf = await loadPdf(host, embed.src);
-  if (!pdf) {
+  const loaded = await loadPdf(host, embed.src);
+  if (!loaded) {
     body.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
     return;
   }
+  const pdf = loaded;
   const nav = header.createDiv({ cls: "notelens-pdf-nav" });
   const closeControl = header.querySelector(".notelens-embed-close");
   if (closeControl) header.insertBefore(nav, closeControl);
@@ -59178,11 +59245,12 @@ async function mountPdfPages(host, layer, embed) {
     }));
     menu.showAtMouseEvent(e);
   });
-  const pdf = await loadPdf(host, embed.src);
-  if (!pdf) {
+  const loaded = await loadPdf(host, embed.src);
+  if (!loaded) {
     stack.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
     return;
   }
+  const pdf = loaded;
   const rendered = /* @__PURE__ */ new Set();
   const firstPage = await pdf.getPage(1);
   const firstBase = firstPage.getViewport({ scale: 1 });
@@ -59234,7 +59302,7 @@ function mountLooseImage(host, layer, embed) {
   wrap.style.top = `${embed.y}px`;
   wrap.style.width = `${embed.w}px`;
   wrap.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
-  const file = host.app.vault.getAbstractFileByPath(embed.src);
+  const file = host.app.vault.getFileByPath(embed.src);
   if (file instanceof import_obsidian8.TFile) {
     const img = wrap.createEl("img", { cls: "notelens-embed-img" });
     img.src = host.app.vault.getResourcePath(file);
@@ -59463,7 +59531,7 @@ var VideoInsertModal = class extends import_obsidian8.Modal {
         });
         return;
       }
-      const file = this.app.vault.getAbstractFileByPath(v3);
+      const file = this.app.vault.getFileByPath(v3);
       const ext = v3.split(".").pop()?.toLowerCase() ?? "";
       if (file instanceof import_obsidian8.TFile && VIDEO_EXTENSIONS.includes(ext)) {
         this.close();
@@ -60692,6 +60760,20 @@ _StepPad.WIDTH = 460;
 _StepPad.HEIGHT = 68;
 var StepPad = _StepPad;
 
+// src/formula-candidates.ts
+function formulaTokenPositions(source, values) {
+  const commands = [...source.matchAll(/\\[A-Za-z]+/g)].map((m3) => [m3.index, m3.index + m3[0].length]);
+  let cursor = 0;
+  return values.map((value) => {
+    let position = source.indexOf(value, cursor);
+    while (position >= 0 && commands.some(([a3, b3]) => position < b3 && position + value.length > a3)) {
+      position = source.indexOf(value, position + 1);
+    }
+    if (position >= 0) cursor = position + value.length;
+    return position;
+  });
+}
+
 // src/ink-equation.ts
 var import_obsidian11 = require("obsidian");
 var BOARD_W = 620;
@@ -60704,6 +60786,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     this.tidy = tidy2;
     this.readFromBoard = readFromBoard;
     this.strokes = [];
+    this.undoStack = [];
     this.redoStack = [];
     this.current = null;
     this.tool = "write";
@@ -60757,6 +60840,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           insertMathSnippet(input, item.snippet);
           this.source = input.value;
           editedByUser = true;
+          candidates.addClass("hidden");
           drawPreview();
         };
       }
@@ -60786,6 +60870,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       this.renderFormula(src, preview);
     };
     input.addEventListener("input", () => {
+      candidates.addClass("hidden");
       this.source = input.value;
       editedByUser = input.value !== lastAutomatic;
       drawPreview();
@@ -60801,10 +60886,11 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         cls: "notelens-ink-candidates-label",
         text: uncertain.some((token) => token.unknown) ? tr("Sin reconocer") : tr("Revisar")
       });
-      let searchFrom = 0;
+      const candidateSource = input.value;
+      const positions = formulaTokenPositions(candidateSource, recognition.tokens.map((token) => token.value));
       for (const token of uncertain) {
-        const tokenStart = input.value.indexOf(token.value, searchFrom);
-        if (tokenStart >= 0) searchFrom = tokenStart + token.value.length;
+        const tokenStart = positions[recognition.tokens.indexOf(token)];
+        if (tokenStart < 0) continue;
         const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
         select.toggleClass("is-unknown", !!token.unknown);
         const options = [token.value, ...token.alternatives.filter((alternative) => alternative !== token.value)];
@@ -60812,7 +60898,8 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         select.value = token.value;
         select.title = token.unknown ? tr("No he reconocido este s\xEDmbolo. Elige uno de los parecidos, o escr\xEDbelo otra vez.") : tr("Confianza {p0}%. Elige el s\xEDmbolo correcto.", { p0: Math.round(token.confidence * 100) });
         select.onchange = () => {
-          if (tokenStart < 0) return;
+          if (tokenStart < 0 || input.value !== candidateSource) return;
+          candidates.addClass("hidden");
           input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
           this.source = input.value;
           editedByUser = true;
@@ -60849,20 +60936,28 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       hint.toggleClass("hidden-hint", this.strokes.length > 0);
     };
     redraw();
+    let activePointer = null;
+    const remember = () => {
+      this.undoStack.push(this.strokes.map((s3) => ({ ...s3, points: [...s3.points] })));
+      if (this.undoStack.length > 100) this.undoStack.shift();
+      this.redoStack = [];
+    };
     const pointAt2 = (event) => {
       const rect = canvas.getBoundingClientRect();
       return { x: (event.clientX - rect.left) * (BOARD_W / rect.width), y: (event.clientY - rect.top) * (BOARD_H / rect.height) };
     };
     const eraseAt = (point) => {
       const before = this.strokes.length;
-      this.strokes = this.strokes.filter((stroke) => !stroke.points.some((p3) => Math.hypot(p3.x - point.x, p3.y - point.y) < 14));
+      this.strokes = this.strokes.filter((stroke) => !inkHitsPoint(stroke, point, 14 + stroke.width / 2));
       if (this.strokes.length !== before) {
         redraw();
         this.scheduleRecognition();
       }
     };
     canvas.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || activePointer !== null) return;
+      activePointer = event.pointerId;
+      remember();
       this.recognitionRevision++;
       event.preventDefault();
       canvas.setPointerCapture(event.pointerId);
@@ -60876,6 +60971,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       redraw();
     });
     canvas.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== activePointer) return;
       if (this.tool === "erase") {
         if (event.buttons === 1) eraseAt(pointAt2(event));
         return;
@@ -60884,13 +60980,15 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       this.current.points.push(pointAt2(event));
       redraw();
     });
-    const endStroke = () => {
-      if (!this.current) return;
+    const endStroke = (event) => {
+      if (event.pointerId !== activePointer) return;
+      activePointer = null;
       this.current = null;
       this.scheduleRecognition();
     };
     canvas.addEventListener("pointerup", endStroke);
     canvas.addEventListener("pointercancel", endStroke);
+    canvas.addEventListener("lostpointercapture", endStroke);
     const tools = contentEl.createDiv({ cls: "notelens-ink-tools" });
     const toolButton = (icon, label, run) => {
       const button = tools.createEl("button", { cls: "notelens-ink-tool" });
@@ -60901,23 +60999,26 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     };
     const writeBtn = toolButton("pen-line", tr("Escribir"), () => setTool("write"));
     const eraseBtn = toolButton("eraser", tr("Borrar"), () => setTool("erase"));
-    toolButton("undo-2", tr("Deshacer"), () => {
-      const last = this.strokes.pop();
+    const undoButton = toolButton("undo-2", tr("Deshacer"), () => {
+      const last = this.undoStack.pop();
       if (last) {
-        this.redoStack.push(last);
+        this.redoStack.push(this.strokes);
+        this.strokes = last;
         redraw();
         this.scheduleRecognition();
       }
     });
-    toolButton("redo-2", tr("Rehacer"), () => {
+    const redoButton = toolButton("redo-2", tr("Rehacer"), () => {
       const next = this.redoStack.pop();
       if (next) {
-        this.strokes.push(next);
+        this.undoStack.push(this.strokes);
+        this.strokes = next;
         redraw();
         this.scheduleRecognition();
       }
     });
     toolButton("trash-2", tr("Eliminar"), () => {
+      remember();
       this.recognitionRevision++;
       this.strokes = [];
       this.redoStack = [];
@@ -60935,7 +61036,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
         status.setText(tr("Elige la zona de la pizarra\u2026"));
         this.recognitionRevision++;
         const previousDisplay = this.containerEl.style.display;
-        this.containerEl.style.display = "none";
+        this.containerEl.setCssStyles({ display: "none" });
         let text = "";
         try {
           text = await this.readFromBoard?.((message) => status.setText(message)) ?? "";
@@ -60943,7 +61044,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           status.setText(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo."));
           return;
         } finally {
-          this.containerEl.style.display = previousDisplay;
+          this.containerEl.setCssStyles({ display: previousDisplay });
         }
         if (!this.containerEl.isConnected) return;
         if (!text.trim()) {
@@ -60988,6 +61089,17 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     };
     cancel.onclick = () => this.close();
     contentEl.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if ((event.ctrlKey || event.metaKey) && !target.matches("input, textarea, [contenteditable=true]")) {
+        const key2 = event.key.toLowerCase();
+        if (key2 === "z" || key2 === "y") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (key2 === "y" || event.shiftKey) redoButton.click();
+          else undoButton.click();
+          return;
+        }
+      }
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
         insert.click();
@@ -60999,7 +61111,16 @@ var InkEquationModal = class extends import_obsidian11.Modal {
       this.recognizeTimer = window.setTimeout(() => void runRecognition(), 700);
     };
     const runRecognition = async () => {
-      if (this.strokes.length === 0) return;
+      if (!this.containerEl.isConnected || this.current) return;
+      if (this.strokes.length === 0) {
+        if (!editedByUser) {
+          input.value = this.source = lastAutomatic = "";
+          drawPreview();
+        }
+        candidates.addClass("hidden");
+        status.setText("");
+        return;
+      }
       if (this.recognizing) {
         this.pending = true;
         return;
@@ -61017,7 +61138,8 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           lastAutomatic = tidied2;
           editedByUser = false;
           drawPreview();
-          showCandidates(vector);
+          if (text === vector.source) showCandidates(vector);
+          else candidates.addClass("hidden");
         }
         status.setText(vector.detail);
         const shot = createEl("canvas");
@@ -61060,16 +61182,17 @@ var InkEquationModal = class extends import_obsidian11.Modal {
           lastAutomatic = tidied;
           editedByUser = false;
           drawPreview();
-          showCandidates(vector);
+          if (text === vector.source) showCandidates(vector);
+          else candidates.addClass("hidden");
           status.setText(vector.unknown > 0 ? vector.detail : vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los s\xEDmbolos dudosos aparecen debajo."));
         } else {
           status.setText(tidied ? tr("He respetado tu correcci\xF3n manual.") : tr("No he reconocido nada todav\xEDa; sigue escribiendo o usa las estructuras."));
         }
       } catch {
-        status.setText(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo."));
+        if (revision === this.recognitionRevision && this.containerEl.isConnected) status.setText(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo."));
       } finally {
         this.recognizing = false;
-        if (this.pending) {
+        if (this.pending && this.containerEl.isConnected) {
           this.pending = false;
           this.scheduleRecognition();
         }
@@ -61078,6 +61201,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
   }
   onClose() {
     this.recognitionRevision++;
+    this.pending = false;
     if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
     this.contentEl.empty();
   }
@@ -62887,7 +63011,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       host.style.removeProperty("--nl-safe-bottom");
       return;
     }
-    const navbar = document.querySelector(".mobile-navbar");
+    const navbar = host.ownerDocument.querySelector(".mobile-navbar");
     const measured = navbar?.offsetHeight ?? 0;
     const reserved = measured > 0 ? measured + 10 : import_obsidian13.Platform.isPhone ? 68 : 0;
     host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
@@ -63083,9 +63207,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   startRulerRotate(event) {
     event.stopPropagation();
@@ -63102,9 +63228,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   getDrawingSceneCoords(clientX, clientY) {
     if (!this.rulerState.visible || !["pen", "highlighter"].includes(this.currentTool)) {
@@ -63237,7 +63365,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         if (within(table.x, table.y, table.w, table.h)) typed.push(table.cells.map((r) => r.filter((c3) => c3.trim()).join(" \xB7 ")).filter(Boolean).join("\n"));
       }
     }
-    const scale = clamp(1800 / Math.max(rect.w, rect.h), 1, 4);
+    const scale = Math.min(4, 1800 / Math.max(1, rect.w, rect.h));
     const canvas = createEl("canvas");
     canvas.width = Math.ceil(rect.w * scale);
     canvas.height = Math.ceil(rect.h * scale);
@@ -63266,10 +63394,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       }
     }
     const dark = !isLightColor(this.data.backgroundColor);
-    const regionStrokes = this.pageStrokes.filter((s3) => s3.type !== "highlighter" && s3.points.some((p3) => p3.x >= rect.x && p3.x <= rect.x + rect.w && p3.y >= rect.y && p3.y <= rect.y + rect.h));
-    for (const s3 of this.pageStrokes) {
+    const clippedStrokes = this.pageStrokes.flatMap((s3) => clipInkToRect(s3, rect));
+    const regionStrokes = clippedStrokes.filter((s3) => s3.type !== "highlighter");
+    for (const s3 of clippedStrokes) {
       const pts = s3.points;
-      if (!pts.some((p3) => p3.x >= rect.x && p3.x <= rect.x + rect.w && p3.y >= rect.y && p3.y <= rect.y + rect.h)) continue;
       if (readingFormula && s3.type === "highlighter") continue;
       ctx.strokeStyle = readingFormula ? "#111111" : s3.type === "highlighter" ? "rgba(250, 204, 21, 0.35)" : dark ? "#f8fafc" : "#111111";
       ctx.lineWidth = Math.max(2, s3.width);
@@ -63707,7 +63835,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       } catch {
       }
       const parent = path2.split("/").slice(0, -1).join("/");
-      if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+      if (parent && !this.app.vault.getFolderByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
@@ -64568,10 +64696,12 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       this.save();
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   /** Free rotation: the pointer's angle around the selection centre drives the turn. */
   startSelectionRotate(event) {
@@ -64741,12 +64871,14 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       this.renderAll();
       this.renderSelectionBox();
       this.save();
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   captureSelectionResizeSnapshot(bounds) {
     const texts = /* @__PURE__ */ new Map();
@@ -65419,7 +65551,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     } catch {
     }
     const parent = path2.split("/").slice(0, -1).join("/");
-    if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+    if (parent && !this.app.vault.getFolderByPath(parent)) {
       await this.app.vault.createFolder(parent).catch(() => {
       });
     }
@@ -65687,7 +65819,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       window.open(path2, "_blank", "noopener,noreferrer");
       return;
     }
-    const file = this.app.vault.getAbstractFileByPath(path2);
+    const file = this.app.vault.getFileByPath(path2);
     if (!(file instanceof import_obsidian13.TFile)) {
       void this.app.workspace.openLinkText(path2, this.file?.path ?? "", newLeaf);
       return;
@@ -65700,7 +65832,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     void this.plugin.createNewOneNoteFile();
   }
   linkPath(path2) {
-    const file = this.app.vault.getAbstractFileByPath(path2);
+    const file = this.app.vault.getFileByPath(path2);
     if (file instanceof import_obsidian13.TFile) this.insertVaultFile(file);
   }
   async uploadFileFromDevice() {
@@ -65717,7 +65849,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         } catch {
         }
         const parent = path2.split("/").slice(0, -1).join("/");
-        if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+        if (parent && !this.app.vault.getFolderByPath(parent)) {
           await this.app.vault.createFolder(parent).catch(() => {
           });
         }
@@ -65764,7 +65896,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const base = this.vaultBasePath();
     if (base && candidate.toLowerCase().startsWith(`${base}/`)) candidate = candidate.slice(base.length + 1);
     else if (/^([A-Za-z]:\/|\/)/.test(candidate)) return null;
-    const direct = this.app.vault.getAbstractFileByPath(candidate);
+    const direct = this.app.vault.getFileByPath(candidate);
     if (direct instanceof import_obsidian13.TFile) return direct;
     const isReference = !!wiki || /^(obsidian|file):\/\//i.test(raw) || candidate.includes("/") || /\.[a-z0-9]{1,6}$/i.test(candidate);
     if (!isReference) return null;
@@ -66942,7 +67074,7 @@ ${rows.join("\n")}`);
       } catch {
       }
       const parent = path2.split("/").slice(0, -1).join("/");
-      if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+      if (parent && !this.app.vault.getFolderByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
@@ -66967,7 +67099,7 @@ ${rows.join("\n")}`);
       } catch {
       }
       const parent = path2.split("/").slice(0, -1).join("/");
-      if (parent && !this.app.vault.getAbstractFileByPath(parent)) {
+      if (parent && !this.app.vault.getFolderByPath(parent)) {
         await this.app.vault.createFolder(parent).catch(() => {
         });
       }
@@ -67025,7 +67157,7 @@ ${rows.join("\n")}`);
     const editor = this.activeTextEditor;
     if (editor) {
       this.pushEditSession();
-      if (editor instanceof HTMLTextAreaElement) {
+      if (editor.instanceOf(HTMLTextAreaElement)) {
         editor.value = text;
         editor.dispatchEvent(new Event("input"));
         return;
@@ -67796,7 +67928,7 @@ ${rows.join("\n")}`);
   }
   /** The words in the editor, whichever kind it is. */
   editorPlainText(editor) {
-    return editor instanceof HTMLTextAreaElement ? editor.value : editableText(editor);
+    return editor.instanceOf(HTMLTextAreaElement) ? editor.value : editableText(editor);
   }
   commitTextEditor() {
     const stopMobile = this.stopMobileEditor;
@@ -67852,7 +67984,7 @@ ${rows.join("\n")}`);
     if (replacement !== null) {
       tb.text = replacement;
       tb.runs = void 0;
-    } else if (editor instanceof HTMLTextAreaElement) {
+    } else if (editor.instanceOf(HTMLTextAreaElement)) {
       tb.text = editor.value;
     }
     this.applyTextStyles(source, tb);
@@ -68108,10 +68240,12 @@ ${rows.join("\n")}`);
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       this.save();
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   updateToolPointerPreview(e) {
     const target = e.target instanceof Element ? e.target : null;
@@ -68526,10 +68660,12 @@ ${rows.join("\n")}`);
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
       this.save();
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
   }
   // ------------------------------------------------------------------
   save() {
@@ -68538,21 +68674,6 @@ ${rows.join("\n")}`);
     this.saver?.scheduleSave(this.data);
   }
 };
-function tidyFormulaText(raw) {
-  let unwrapped = raw.trim().replace(/^```(?:latex|tex|math)?\s*\n?([\s\S]*?)\n?```$/i, "$1").trim();
-  if (unwrapped.startsWith("$$") && unwrapped.endsWith("$$")) unwrapped = unwrapped.slice(2, -2).trim();
-  else if (unwrapped.startsWith("$") && unwrapped.endsWith("$")) unwrapped = unwrapped.slice(1, -1).trim();
-  else if (unwrapped.startsWith("\\[") && unwrapped.endsWith("\\]") || unwrapped.startsWith("\\(") && unwrapped.endsWith("\\)")) unwrapped = unwrapped.slice(2, -2).trim();
-  if (/\\[a-zA-Z]+|\\\\/.test(unwrapped)) return unwrapped;
-  raw = unwrapped;
-  let value = raw.replace(/\r/g, "").split("\n").map((line2) => line2.trim()).filter(Boolean).join(" ").replace(/```(?:latex|tex|math)?|```/gi, "").replace(/^\$+|\$+$/g, "").replace(/[\u2212\u2013\u2014]/g, "-").replace(/[\u00D7\u22C5\u00B7]/g, "*").replace(/[\u00F7]/g, "/").replace(/\u221A/g, "sqrt").replace(/\u03C0/g, "pi").replace(/\u2211/g, "sum").replace(/\u222B/g, "int").replace(/\u221E/g, "infty").replace(/\u2264/g, "<=").replace(/\u2265/g, ">=").replace(/\u2260/g, "!=").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, (digits) => `^${[...digits].map((digit) => "\u2070\xB9\xB2\xB3\u2074\u2075\u2076\u2077\u2078\u2079".indexOf(digit)).join("")}`).replace(/\s{2,}/g, " ").trim();
-  value = value.replace(/\b([A-Z])x\*?(\d+)\b/g, (_match, base, exponent) => `${base.toLowerCase()}^${exponent}`);
-  for (let i4 = 0; i4 < 3; i4++) {
-    value = value.replace(/\(([^()]+)\)\s*\/\s*\(([^()]+)\)/g, "\\frac{$1}{$2}");
-  }
-  value = value.replace(/\bsqrt\s*[({]\s*([^)}]+)\s*[)}]/gi, "\\sqrt{$1}").replace(/\bsqrt\s*([A-Za-z0-9]+)/gi, "\\sqrt{$1}").replace(/([A-Za-z0-9)\]])\s*\^\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base, grouped, simple) => `${base}^{${grouped || simple}}`).replace(/([A-Za-z0-9)\]])\s*_\s*(?:\(([^()]+)\)|([A-Za-z0-9]+))/g, (_match, base, grouped, simple) => `${base}_{${grouped || simple}}`).replace(/\bpi\b/g, "\\pi").replace(/\binfty\b|\boo\b/g, "\\infty").replace(/\bsum\b/g, "\\sum").replace(/\bint\b/g, "\\int").replace(/\s*<=\s*/g, " \\le ").replace(/\s*>=\s*/g, " \\ge ").replace(/\s*!=\s*/g, " \\ne ").replace(/\s+/g, " ").trim();
-  return value;
-}
 function addPlainSwatch(bar, title, clear, square = false) {
   const dot = bar.createDiv({ cls: "onenote-color-dot notelens-format-color notelens-format-none" });
   if (square) dot.addClass("notelens-format-mark-color");
@@ -68661,10 +68782,20 @@ async function probeLocalServer(base) {
   }
   return null;
 }
+function pickNames(json, listKey, field) {
+  if (!json || typeof json !== "object") return void 0;
+  const list = json[listKey];
+  if (!Array.isArray(list)) return void 0;
+  return list.map((entry) => {
+    if (!entry || typeof entry !== "object") return void 0;
+    const value = entry[field];
+    return typeof value === "string" ? value : void 0;
+  });
+}
 async function probeOne(base) {
   for (const [url, pick] of [
-    [`${base}/api/tags`, (json) => json?.models?.map((m3) => m3.name)],
-    [`${base}/v1/models`, (json) => json?.data?.map((m3) => m3.id)]
+    [`${base}/api/tags`, (json) => pickNames(json, "models", "name")],
+    [`${base}/v1/models`, (json) => pickNames(json, "data", "id")]
   ]) {
     try {
       const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0] ?? "";
@@ -68676,7 +68807,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "2.9.5" : "desconocida";
+var NOTELENS_BUILD = true ? "2.9.6" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
@@ -68911,7 +69042,8 @@ var OneNotePlugin = class extends import_obsidian15.Plugin {
     });
     this.addCommand({
       id: "create-canvas",
-      name: tr("Crear nueva pizarra NoteLens"),
+      // Obsidian already prefixes commands with the plugin name.
+      name: tr("Crear nueva pizarra"),
       callback: () => void this.createNewOneNoteFile()
     });
     this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {

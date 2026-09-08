@@ -1,3 +1,5 @@
+import { formulaTokenPositions } from "./formula-candidates";
+import { inkHitsPoint } from "./ink-region";
 import { App, Modal, setIcon } from "obsidian";
 import { recognizeFormula } from "./ocr";
 import { InkMathRecognition, pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
@@ -21,7 +23,8 @@ const BOARD_H = 300;
  */
 export class InkEquationModal extends Modal {
 	private strokes: InkStroke[] = [];
-	private redoStack: InkStroke[] = [];
+	private undoStack: InkStroke[][] = [];
+	private redoStack: InkStroke[][] = [];
 	private current: InkStroke | null = null;
 	private tool: InkTool = "write";
 	private penWidth = 3;
@@ -98,6 +101,7 @@ export class InkEquationModal extends Modal {
 					insertMathSnippet(input, item.snippet);
 					this.source = input.value;
 					editedByUser = true;
+					candidates.addClass("hidden");
 					drawPreview();
 				};
 			}
@@ -125,7 +129,7 @@ export class InkEquationModal extends Modal {
 			if (!src) { preview.createSpan({ cls: "notelens-ink-placeholder", text: tr("Aquí verás la ecuación") }); return; }
 			this.renderFormula(src, preview);
 		};
-		input.addEventListener("input", () => { this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
+		input.addEventListener("input", () => { candidates.addClass("hidden"); this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
 		drawPreview();
 
 		const showCandidates = (recognition: InkMathRecognition) => {
@@ -141,10 +145,11 @@ export class InkEquationModal extends Modal {
 				cls: "notelens-ink-candidates-label",
 				text: uncertain.some(token => token.unknown) ? tr("Sin reconocer") : tr("Revisar")
 			});
-			let searchFrom = 0;
+			const candidateSource = input.value;
+			const positions = formulaTokenPositions(candidateSource, recognition.tokens.map(token => token.value));
 			for (const token of uncertain) {
-				const tokenStart = input.value.indexOf(token.value, searchFrom);
-				if (tokenStart >= 0) searchFrom = tokenStart + token.value.length;
+				const tokenStart = positions[recognition.tokens.indexOf(token)];
+				if (tokenStart < 0) continue;
 				const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
 				select.toggleClass("is-unknown", !!token.unknown);
 				// The value it holds has to be among the options or the select
@@ -156,7 +161,8 @@ export class InkEquationModal extends Modal {
 					? tr("No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.")
 					: tr("Confianza {p0}%. Elige el símbolo correcto.", { p0: Math.round(token.confidence * 100) });
 				select.onchange = () => {
-					if (tokenStart < 0) return;
+					if (tokenStart < 0 || input.value !== candidateSource) return;
+					candidates.addClass("hidden");
 					input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
 					this.source = input.value;
 					editedByUser = true;
@@ -196,17 +202,25 @@ export class InkEquationModal extends Modal {
 		};
 		redraw();
 
+		let activePointer: number | null = null;
+		const remember = () => {
+			this.undoStack.push(this.strokes.map(s => ({ ...s, points: [...s.points] })));
+			if (this.undoStack.length > 100) this.undoStack.shift();
+			this.redoStack = [];
+		};
 		const pointAt = (event: PointerEvent) => {
 			const rect = canvas.getBoundingClientRect();
 			return { x: (event.clientX - rect.left) * (BOARD_W / rect.width), y: (event.clientY - rect.top) * (BOARD_H / rect.height) };
 		};
 		const eraseAt = (point: { x: number; y: number }) => {
 			const before = this.strokes.length;
-			this.strokes = this.strokes.filter(stroke => !stroke.points.some(p => Math.hypot(p.x - point.x, p.y - point.y) < 14));
+			this.strokes = this.strokes.filter(stroke => !inkHitsPoint(stroke, point, 14 + stroke.width / 2));
 			if (this.strokes.length !== before) { redraw(); this.scheduleRecognition(); }
 		};
 		canvas.addEventListener("pointerdown", (event) => {
-			if (event.button !== 0) return;
+			if (event.button !== 0 || activePointer !== null) return;
+			activePointer = event.pointerId;
+			remember();
 			this.recognitionRevision++;
 			event.preventDefault();
 			canvas.setPointerCapture(event.pointerId);
@@ -217,18 +231,21 @@ export class InkEquationModal extends Modal {
 			redraw();
 		});
 		canvas.addEventListener("pointermove", (event) => {
+			if (event.pointerId !== activePointer) return;
 			if (this.tool === "erase") { if (event.buttons === 1) eraseAt(pointAt(event)); return; }
 			if (!this.current) return;
 			this.current.points.push(pointAt(event));
 			redraw();
 		});
-		const endStroke = () => {
-			if (!this.current) return;
+		const endStroke = (event: PointerEvent) => {
+			if (event.pointerId !== activePointer) return;
+			activePointer = null;
 			this.current = null;
 			this.scheduleRecognition();
 		};
 		canvas.addEventListener("pointerup", endStroke);
 		canvas.addEventListener("pointercancel", endStroke);
+		canvas.addEventListener("lostpointercapture", endStroke);
 
 		// --- the tool row, mirroring OneNote's
 		const tools = contentEl.createDiv({ cls: "notelens-ink-tools" });
@@ -241,15 +258,16 @@ export class InkEquationModal extends Modal {
 		};
 		const writeBtn = toolButton("pen-line", tr("Escribir"), () => setTool("write"));
 		const eraseBtn = toolButton("eraser", tr("Borrar"), () => setTool("erase"));
-		toolButton("undo-2", tr("Deshacer"), () => {
-			const last = this.strokes.pop();
-			if (last) { this.redoStack.push(last); redraw(); this.scheduleRecognition(); }
+		const undoButton = toolButton("undo-2", tr("Deshacer"), () => {
+			const last = this.undoStack.pop();
+			if (last) { this.redoStack.push(this.strokes); this.strokes = last; redraw(); this.scheduleRecognition(); }
 		});
-		toolButton("redo-2", tr("Rehacer"), () => {
+		const redoButton = toolButton("redo-2", tr("Rehacer"), () => {
 			const next = this.redoStack.pop();
-			if (next) { this.strokes.push(next); redraw(); this.scheduleRecognition(); }
+			if (next) { this.undoStack.push(this.strokes); this.strokes = next; redraw(); this.scheduleRecognition(); }
 		});
 		toolButton("trash-2", tr("Eliminar"), () => {
+			remember();
 			this.recognitionRevision++;
 			this.strokes = [];
 			this.redoStack = [];
@@ -268,7 +286,7 @@ export class InkEquationModal extends Modal {
 				this.recognitionRevision++;
 				// The modal's backdrop otherwise intercepts the region-selection gesture.
 				const previousDisplay = this.containerEl.style.display;
-				this.containerEl.style.display = "none";
+				this.containerEl.setCssStyles({ display: "none" });
 				let text = "";
 				try {
 					text = await this.readFromBoard?.(message => status.setText(message)) ?? "";
@@ -276,7 +294,7 @@ export class InkEquationModal extends Modal {
 					status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
 					return;
 				} finally {
-					this.containerEl.style.display = previousDisplay;
+					this.containerEl.setCssStyles({ display: previousDisplay });
 				}
 				if (!this.containerEl.isConnected) return;
 				if (!text.trim()) { status.setText(tr("No he leído nada. Prueba con una zona más ajustada.")); return; }
@@ -322,6 +340,15 @@ export class InkEquationModal extends Modal {
 		};
 		cancel.onclick = () => this.close();
 		contentEl.addEventListener("keydown", (event) => {
+			const target = event.target as HTMLElement;
+			if ((event.ctrlKey || event.metaKey) && !target.matches("input, textarea, [contenteditable=true]")) {
+				const key = event.key.toLowerCase();
+				if (key === "z" || key === "y") {
+					event.preventDefault(); event.stopPropagation();
+					if (key === "y" || event.shiftKey) redoButton.click(); else undoButton.click();
+					return;
+				}
+			}
 			if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); insert.click(); }
 		});
 
@@ -332,7 +359,11 @@ export class InkEquationModal extends Modal {
 			this.recognizeTimer = window.setTimeout(() => void runRecognition(), 700);
 		};
 		const runRecognition = async () => {
-			if (this.strokes.length === 0) return;
+			if (!this.containerEl.isConnected || this.current) return;
+			if (this.strokes.length === 0) {
+				if (!editedByUser) { input.value = this.source = lastAutomatic = ""; drawPreview(); }
+				candidates.addClass("hidden"); status.setText(""); return;
+			}
 			if (this.recognizing) { this.pending = true; return; }
 			this.recognizing = true;
 			const revision = this.recognitionRevision;
@@ -349,7 +380,7 @@ export class InkEquationModal extends Modal {
 					lastAutomatic = tidied;
 					editedByUser = false;
 					drawPreview();
-					showCandidates(vector);
+					if (text === vector.source) showCandidates(vector); else candidates.addClass("hidden");
 				}
 				status.setText(vector.detail);
 
@@ -398,7 +429,7 @@ export class InkEquationModal extends Modal {
 					lastAutomatic = tidied;
 					editedByUser = false;
 					drawPreview();
-					showCandidates(vector);
+					if (text === vector.source) showCandidates(vector); else candidates.addClass("hidden");
 					status.setText(vector.unknown > 0
 					? vector.detail
 					: vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los símbolos dudosos aparecen debajo."));
@@ -406,10 +437,10 @@ export class InkEquationModal extends Modal {
 					status.setText(tidied ? tr("He respetado tu corrección manual.") : tr("No he reconocido nada todavía; sigue escribiendo o usa las estructuras."));
 				}
 			} catch {
-				status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
+				if (revision === this.recognitionRevision && this.containerEl.isConnected) status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
 			} finally {
 				this.recognizing = false;
-				if (this.pending) { this.pending = false; this.scheduleRecognition(); }
+				if (this.pending && this.containerEl.isConnected) { this.pending = false; this.scheduleRecognition(); }
 			}
 		};
 	}
@@ -419,6 +450,7 @@ export class InkEquationModal extends Modal {
 
 	override onClose(): void {
 		this.recognitionRevision++;
+		this.pending = false;
 		if (this.recognizeTimer !== null) window.clearTimeout(this.recognizeTimer);
 		this.contentEl.empty();
 	}

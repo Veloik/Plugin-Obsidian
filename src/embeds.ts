@@ -1,5 +1,6 @@
 import { App, FuzzySuggestModal, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import * as pdfjsLib from "pdfjs-dist";
+import type { PDFDocumentProxy, PDFPageProxy, PageViewport } from "pdfjs-dist";
 import pdfWorkerSource from "pdfjs-dist/build/pdf.worker.min.mjs?raw";
 import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
@@ -33,7 +34,7 @@ const PAGE_GAP = 16;
 const PDF_RENDER_BOOST = 2;
 const MAX_CANVAS_EDGE = 8192;
 
-function pdfViewport(page: any, cssWidth: number): { viewport: any; cssHeight: number } {
+function pdfViewport(page: PDFPageProxy, cssWidth: number): { viewport: PageViewport; cssHeight: number } {
 	const base = page.getViewport({ scale: 1 });
 	const cssScale = cssWidth / base.width;
 	const dpr = window.devicePixelRatio || 1;
@@ -83,8 +84,8 @@ export function disposePdfWorker(): void {
 	workerConfigured = false;
 }
 
-async function loadPdf(host: EmbedHost, src: string): Promise<any | null> {
-	const file = host.app.vault.getAbstractFileByPath(src);
+async function loadPdf(host: EmbedHost, src: string): Promise<PDFDocumentProxy | null> {
+	const file = host.app.vault.getFileByPath(src);
 	if (!(file instanceof TFile)) return null;
 	ensurePdfWorker();
 	try {
@@ -205,7 +206,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 			link.addEventListener("click", (event) => event.stopPropagation());
 		}
 	} else {
-		const file = host.app.vault.getAbstractFileByPath(embed.src);
+		const file = host.app.vault.getFileByPath(embed.src);
 		if (file instanceof TFile) {
 			if (embed.kind === "audio") {
 				const audio = body.createEl("audio", { cls: "notelens-audio-player" });
@@ -237,7 +238,7 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 
 function attachCaptionToVideo(host: EmbedHost, embed: Embed, video: HTMLVideoElement): void {
 	if (!embed.captionSrc) return;
-	const caption = host.app.vault.getAbstractFileByPath(embed.captionSrc);
+	const caption = host.app.vault.getFileByPath(embed.captionSrc);
 	if (!(caption instanceof TFile)) return;
 	video.querySelector("track")?.remove();
 	const track = video.createEl("track");
@@ -263,10 +264,10 @@ async function pickCaptionTrack(host: EmbedHost, embed: Embed, body: HTMLElement
 			const safeName = file.name.replace(/[\\/:*?"<>|]/g, "-");
 			let path = safeName || `subtitulos-${Date.now()}.vtt`;
 			try {
-				path = await (host.app.fileManager as any).getAvailablePathForAttachment(path, "");
+				path = await host.app.fileManager.getAvailablePathForAttachment(path, "");
 			} catch { /* retain vault-root fallback */ }
 			const parent = path.split("/").slice(0, -1).join("/");
-			if (parent && !host.app.vault.getAbstractFileByPath(parent)) {
+			if (parent && !host.app.vault.getFolderByPath(parent)) {
 				await host.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
 			}
 			const saved = await host.app.vault.createBinary(path, await file.arrayBuffer());
@@ -311,7 +312,7 @@ function mountLinkCard(host: EmbedHost, layer: HTMLElement, embed: Embed): void 
 	const head = card.createDiv({ cls: "notelens-link-head" });
 	setIcon(head.createDiv({ cls: "notelens-attachment-icon" }), KIND_ICONS[embed.kind]);
 	const details = head.createDiv({ cls: "notelens-attachment-details" });
-	const file = host.app.vault.getAbstractFileByPath(embed.src);
+	const file = host.app.vault.getFileByPath(embed.src);
 	const name = file instanceof TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
 	details.createDiv({ cls: "notelens-attachment-title", text: name });
 	const folder = embed.src.includes("/") ? embed.src.slice(0, embed.src.lastIndexOf("/")) : "";
@@ -394,11 +395,12 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 // ---------------------------------------------------------------------------
 
 async function mountPdfViewer(host: EmbedHost, header: HTMLElement, body: HTMLElement, embed: Embed): Promise<void> {
-	const pdf = await loadPdf(host, embed.src);
-	if (!pdf) {
+	const loaded = await loadPdf(host, embed.src);
+	if (!loaded) {
 		body.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
 		return;
 	}
+	const pdf = loaded;
 
 	// Header page navigation
 	const nav = header.createDiv({ cls: "notelens-pdf-nav" });
@@ -494,11 +496,12 @@ async function mountPdfPages(host: EmbedHost, layer: HTMLElement, embed: Embed):
 		menu.showAtMouseEvent(e);
 	});
 
-	const pdf = await loadPdf(host, embed.src);
-	if (!pdf) {
+	const loaded = await loadPdf(host, embed.src);
+	if (!loaded) {
 		stack.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
 		return;
 	}
+	const pdf = loaded;
 
 	const rendered = new Set<number>();
 
@@ -566,7 +569,7 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 	wrap.style.width = `${embed.w}px`;
 	wrap.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
 
-	const file = host.app.vault.getAbstractFileByPath(embed.src);
+	const file = host.app.vault.getFileByPath(embed.src);
 	if (file instanceof TFile) {
 		const img = wrap.createEl("img", { cls: "notelens-embed-img" });
 		img.src = host.app.vault.getResourcePath(file);
@@ -836,7 +839,7 @@ export class VideoInsertModal extends Modal {
 				return;
 			}
 
-			const file = this.app.vault.getAbstractFileByPath(v);
+			const file = this.app.vault.getFileByPath(v);
 			const ext = v.split(".").pop()?.toLowerCase() ?? "";
 			if (file instanceof TFile && VIDEO_EXTENSIONS.includes(ext)) {
 				this.close();

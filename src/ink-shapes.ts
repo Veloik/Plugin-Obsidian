@@ -299,6 +299,12 @@ const SHAPES: [string, Pt[][]][] = [
 	["1", [line(18, 16, 32, 6), line(32, 6, 32, 64)]],
 	["1", [line(18, 16, 32, 6), line(32, 6, 32, 64), line(16, 64, 48, 64)]],
 	["2", [path([[14, 18], [22, 6], [40, 6], [50, 18], [40, 34], [14, 62], [56, 62]])]],
+	// Open-top and retraced-foot twos, angular threes and square-bowl fives
+	// are common handwriting variants, absent from the original small digit set.
+	["2", [path([[12, 14], [32, 5], [43, 7], [44, 25], [32, 44], [10, 58], [2, 60], [30, 57], [65, 57]])]],
+	["3", [straight([[12, 6], [43, 6], [49, 13], [46, 23], [31, 33], [7, 38], [30, 38], [42, 44], [8, 64]])]],
+	["3", [path([[12, 6], [40, 6], [47, 12], [43, 24], [25, 34], [8, 37], [28, 37], [40, 42], [10, 64]])]],
+	["5", [straight([[55, 6], [14, 6], [10, 31], [29, 32], [47, 42], [52, 49], [50, 57], [40, 63], [12, 64], [12, 59]])]],
 	["3", [path([[16, 10], [38, 4], [52, 16], [38, 30], [28, 32], [42, 34], [56, 48], [40, 64], [16, 60]])]],
 	["3", [path([[16, 10], [40, 6], [50, 20], [34, 32]]), path([[34, 32], [52, 40], [50, 58], [30, 64], [16, 58]])]],
 	["4", [line(42, 6, 12, 44), line(12, 44, 58, 44), line(42, 6, 42, 64)]],
@@ -427,8 +433,13 @@ function buildPrototypes(): Prototype[] {
 	if (prototypes) return prototypes;
 	prototypes = [];
 	for (const [value, strokes] of SHAPES) {
-		const cloud = toCloud(strokes.map(stroke => stroke.map(([x, y]) => ({ x, y }))));
-		if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
+		// Digits have few hand-authored examples, unlike the thousands of
+		// imported operators. Include width variation without rotating symbols
+		// or loosening the rejection threshold for unrelated drawings.
+		for (const width of /^\d$/.test(value) ? [0.75, 1, 1.3, 1.65, 2] : [1]) {
+			const cloud = toCloud(strokes.map(stroke => stroke.map(([x, y]) => ({ x: x * width, y }))));
+			if (cloud) prototypes.push({ value, cloud, signature: signatureOf(cloud), prior: RARE[value] ?? 0 });
+		}
 	}
 	// Real handwriting for the maths symbols, from the Detexify/Hand-TeX data.
 	// One person drawing a sigma once is a guess; 260 people drawing it is what

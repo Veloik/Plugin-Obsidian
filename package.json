@@ -1,7 +1,7 @@
 {
   "name": "notelens",
-  "version": "2.9.5",
-  "description": "NoteLens Canvas: Pizarra infinita inteligente para Obsidian con lápiz óptico, etiquetas OneNote, PDFs y vídeos.",
+  "version": "2.9.6",
+  "description": "NoteLens Canvas: Pizarra infinita inteligente para Obsidian con l\u00e1piz \u00f3ptico, etiquetas OneNote, PDFs y v\u00eddeos.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "esbuild": "0.28.2",
-    "obsidian": "latest",
+    "obsidian": "^1.8.7",
     "tslib": "^2.8.1",
     "typescript": "^5.0.0"
   }

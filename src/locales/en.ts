@@ -113,6 +113,7 @@ export const en: Record<string, string> = {
 	"Crea un cuadro de texto con la traducción junto al original": "Creates a text box with the translation next to the original",
 	"Crear gráfico con estos datos": "Create a chart from this data",
 	"Crear nueva pizarra NoteLens": "Create a new NoteLens board",
+	"Crear nueva pizarra": "Create a new board",
 	"Crear una pizarra nueva": "Create a new board",
 	"Cuadro de texto (T) — opciones al pulsar de nuevo": "Text box (T) — press again for options",
 	"Cuadro de texto aquí": "Text box here",

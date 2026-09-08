@@ -41,6 +41,7 @@ function ownBuffer(view: Uint8Array): ArrayBuffer {
 }
 
 function safeFileName(value: string, fallback: string): string {
+	// eslint-disable-next-line no-control-regex -- the control range is the point: it is what gets stripped.
 	const clean = value.replace(/[\\/:*?"<>|\x00-\x1f]/g, "-").replace(/^\.+/, "").trim();
 	return clean || fallback;
 }
@@ -55,7 +56,7 @@ function isRemoteSource(path: string): boolean {
 
 async function ensureParentFolder(app: App, path: string): Promise<void> {
 	const parent = path.split("/").slice(0, -1).join("/");
-	if (parent && !app.vault.getAbstractFileByPath(parent)) {
+	if (parent && !app.vault.getFolderByPath(parent)) {
 		await app.vault.createFolder(parent).catch(() => { /* already created by another import */ });
 	}
 }
@@ -84,7 +85,7 @@ export async function buildSharePackage(app: App, document: OneNoteDocument, tit
 	const addAsset = async (source?: string): Promise<void> => {
 		if (!source || isRemoteSource(source) || added.has(source)) return;
 		added.add(source);
-		const file = app.vault.getAbstractFileByPath(source);
+		const file = app.vault.getFileByPath(source);
 		if (!(file instanceof TFile)) {
 			skippedAssets.push(source);
 			return;
@@ -134,7 +135,7 @@ function parsePackage(raw: unknown): SharePackage {
 
 async function attachmentPathFor(app: App, name: string, boardPath: string, fallbackFolder: string): Promise<string> {
 	try {
-		const available = await (app.fileManager as any).getAvailablePathForAttachment(name, boardPath);
+		const available = await app.fileManager.getAvailablePathForAttachment(name, boardPath);
 		return normalizePath(available);
 	} catch {
 		return uniquePath(app, `${fallbackFolder}/Adjuntos NoteLens/${name}`);
@@ -179,6 +180,6 @@ export async function importSharePackage(app: App, source: File, destinationFold
 		embed.src = remapped.get(embed.src) ?? embed.src;
 		if (embed.captionSrc) embed.captionSrc = remapped.get(embed.captionSrc) ?? embed.captionSrc;
 	}
-	await app.vault.modify(board, JSON.stringify(manifest.document, null, 2));
+	await app.vault.process(board, () => JSON.stringify(manifest.document, null, 2));
 	return { file: board, assetCount: remapped.size, missingAssets };
 }

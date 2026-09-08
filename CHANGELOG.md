@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.9.6
+
+### Fixed
+
+- `LICENSE` is the plain MIT text again, so GitHub recognizes it. The Open Database License notice covering `src/ink-prototypes-odbl.ts` moved to `NOTICE.md`, linked from the README; the attribution is unchanged.
+- Loading a PDF that fails now stops cleanly instead of reaching for pages of a document that was never loaded: `loadPdf` returns a typed `PDFDocumentProxy`, and the null check survives into the render callbacks that had lost it.
+- Pop-out windows: the mobile navbar is measured on the board's own document, and text-box type checks use Obsidian's cross-window `instanceOf`.
+
+### Changed
+
+- Follows Obsidian's plugin guidelines: `getFileByPath`/`getFolderByPath` in place of `getAbstractFileByPath`, `Vault.process` in place of `Vault.modify`, `createEl` helpers in place of `createElement`, no `any` casts over `getAvailablePathForAttachment`, and the "new board" command no longer repeats the plugin name Obsidian already prefixes.
+- The pdf.js and model-probe call sites are typed instead of `any`, removing the bulk of the community review's lint warnings.
+
+## Unreleased
+
+### Fixed
+
+- Expanded handwritten digit variants and width coverage: a screenshot reconstruction of two thirds minus five now recognizes all digits instead of three unknowns. Regression coverage includes scale, aspect ratio, reversed stroke direction and the equation dialog.
+
+- Board-to-LaTeX uses the full equation parser for nested roots, sums, indices and multiple lines, preserving existing LaTeX and typed variable names.
+- Region capture clips crossing ink segments correctly and caps its longest raster dimension at 1800 pixels, including large selections.
+- Equation erasing works between sampled points. Undo and redo restore erased and cleared ink; keyboard shortcuts work outside text inputs.
+- Recognition ignores interrupted pointer streams and stale results. Candidate corrections skip LaTeX command names and are invalidated after manual edits.
+- Cancelled ruler, resize and object drag gestures release their move handlers.
+
+### Tests
+
+- Added parser, clipping, erasing and candidate-location regressions to the core suite.
+- Added `node dev-harness/run87.mjs` for crossing ink, live equation recognition, erase/undo/redo/clear and gesture cancellation.
+
 ## 2.9.5
 
 ### Fixed

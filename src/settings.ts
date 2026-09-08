@@ -149,10 +149,22 @@ async function probeLocalServer(base: string): Promise<string[] | null> {
 	return null;
 }
 
+/** Reads `json[listKey][].{field}` out of an unverified response body. */
+function pickNames(json: unknown, listKey: string, field: string): (string | undefined)[] | undefined {
+	if (!json || typeof json !== "object") return undefined;
+	const list = (json as Record<string, unknown>)[listKey];
+	if (!Array.isArray(list)) return undefined;
+	return list.map(entry => {
+		if (!entry || typeof entry !== "object") return undefined;
+		const value = (entry as Record<string, unknown>)[field];
+		return typeof value === "string" ? value : undefined;
+	});
+}
+
 async function probeOne(base: string): Promise<string[] | null> {
 	for (const [url, pick] of [
-		[`${base}/api/tags`, (json: any) => json?.models?.map((m: { name?: string }) => m.name)],
-		[`${base}/v1/models`, (json: any) => json?.data?.map((m: { id?: string }) => m.id)]
+		[`${base}/api/tags`, (json: unknown) => pickNames(json, "models", "name")],
+		[`${base}/v1/models`, (json: unknown) => pickNames(json, "data", "id")]
 	] as [string, (json: unknown) => (string | undefined)[] | undefined][]) {
 		try {
 			const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0] ?? "";

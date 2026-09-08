@@ -11,11 +11,11 @@ export function mountMobileBoard(board: HTMLElement, fullscreen = false): () => 
 	const rect = board.getBoundingClientRect();
 	const marker = doc.createComment("notelens-board-position");
 	board.before(marker);
-	const host = doc.createElement("div");
 	// Fullscreen reaches the edges of the screen itself, so it is the one that has
 	// to keep the room the phone claims for its clock and its home bar.
-	host.className = `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`;
-	doc.body.appendChild(host);
+	const host = doc.body.createDiv({
+		cls: `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`
+	});
 	const viewport = win.visualViewport;
 	const layout = () => {
 		const top = fullscreen ? (viewport?.offsetTop ?? 0) : Math.max(rect.top, viewport?.offsetTop ?? 0);

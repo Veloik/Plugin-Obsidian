@@ -182,7 +182,7 @@ src/
 
 ### License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Third-party data notices: [NOTICE.md](NOTICE.md).
 
 ---
 
@@ -337,7 +337,7 @@ estándar y los firma con una atestación de compilación.
 
 ### Licencia
 
-MIT — consulta [LICENSE](LICENSE).
+MIT — consulta [LICENSE](LICENSE). Avisos de terceros: [NOTICE.md](NOTICE.md).
 
 ### Mobile reliability (2.8.9)
 
