@@ -382,7 +382,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	copyBtn.onclick = async () => {
 		if (!result.value.trim()) return;
 		try { await navigator.clipboard.writeText(result.value); new Notice(tr("Traducción copiada")); }
-		catch { result.focus(); result.select(); document.execCommand("copy"); }
+		catch { result.focus(); result.select(); new Notice(tr("No se pudo copiar. El texto queda seleccionado: pulsa Ctrl+C.")); }
 	};
 
 	let open = false;

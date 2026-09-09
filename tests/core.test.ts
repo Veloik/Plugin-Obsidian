@@ -23,6 +23,8 @@ import fs from "node:fs";
 import test from "node:test";
 import { tidyFormulaText } from "../src/formula-text";
 import { clipInkToRect, inkHitsPoint } from "../src/ink-region";
+import { spliceRuns, styleAcross, styleRange } from "../src/rich-editor";
+import { runsToPlain } from "../src/rich-text";
 import { formulaTokenPositions } from "../src/formula-candidates";
 
 test("board notation uses the complete math parser and is idempotent", () => {
@@ -428,4 +430,39 @@ test("strokes that meet at a corner are one symbol", () => {
 		{ points: penPath([[16, 24], [48, 24]]) }
 	]);
 	assert.equal(tee.source, "t");
+});
+
+test("styling a stretch splits the runs it lands in and merges what matches", () => {
+	const runs = [{ text: "hola " }, { text: "mundo", italic: true }];
+	// bold from the middle of the first run into the middle of the second
+	const bolded = styleRange(runs, 2, 8, run => ({ ...run, bold: true }));
+	assert.equal(runsToPlain(bolded), "hola mundo");
+	assert.deepEqual(bolded.map(r => [r.text, !!r.bold, !!r.italic]), [
+		["ho", false, false],
+		["la ", true, false],
+		["mun", true, true],
+		["do", false, true]
+	]);
+});
+
+test("text put into a box wears the style it is typed after", () => {
+	const runs = [{ text: "uno ", bold: true }, { text: "dos" }];
+	const typed = spliceRuns(runs, 4, 4, "y ");
+	assert.equal(runsToPlain(typed), "uno y dos");
+	assert.equal(typed.find(r => r.text.includes("y"))?.bold, true);
+	// deleting across a boundary keeps what is left of both sides
+	const cut = spliceRuns(runs, 2, 6, "");
+	assert.equal(runsToPlain(cut), "uns");
+	assert.deepEqual(cut.map(r => [r.text, !!r.bold]), [["un", true], ["s", false]]);
+});
+
+test("a toolbar reads the style a selection agrees on, and nothing where it differs", () => {
+	const runs = [{ text: "aa", bold: true, mark: "#ff0" }, { text: "bb", bold: true }, { text: "cc" }];
+	assert.equal(styleAcross(runs, 0, 4).bold, true);
+	assert.equal(styleAcross(runs, 0, 4).mark, undefined, "only one half is highlighted");
+	assert.equal(styleAcross(runs, 0, 2).mark, "#ff0");
+	assert.equal(styleAcross(runs, 0, 6).bold, undefined, "the last run is not bold");
+	// A caret carries on with the run it sits at the end of.
+	assert.equal(styleAcross(runs, 2, 2).bold, true);
+	assert.equal(styleAcross(runs, 6, 6).bold, undefined);
 });

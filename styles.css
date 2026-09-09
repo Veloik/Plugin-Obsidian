@@ -17,8 +17,8 @@
 
 /* Bookmarks, ruler, minimap and A4 guides all rely on this class; without a
    rule they were painted permanently on top of the page. */
-.notelens-mobile-viewport {
-  position: fixed !important;
+.notelens-mobile-viewport.notelens-mobile-viewport {
+  position: fixed;
   z-index: 10000;
   margin: 0;
   padding: 0;
@@ -38,8 +38,8 @@
   padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 }
 
-.onenote-workspace .hidden {
-  display: none !important;
+.onenote-workspace .hidden.hidden {
+  display: none;
 }
 
 .onenote-workspace {
@@ -51,7 +51,7 @@
   background-blend-mode: screen;
   user-select: none;
   touch-action: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-interface);
 }
 
 .onenote-workspace[data-tool="select"] {
@@ -74,9 +74,9 @@
   cursor: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='s' x='-30%25' y='-30%25' width='160%25' height='160%25'%3E%3CfeDropShadow dx='1' dy='2' stdDeviation='1.2' flood-color='%23000000' flood-opacity='.5'/%3E%3C/filter%3E%3Cg filter='url(%23s)'%3E%3Cpath d='M17 4.5l4 8.1 9 1.3-6.5 6.3 1.5 8.9-8-4.2-8 4.2 1.5-8.9L4 13.9l9-1.3z' fill='%23facc15' stroke='%23020617' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='29' cy='29' r='6.5' fill='%2338bdf8' stroke='%23020617' stroke-width='1.8'/%3E%3Cpath d='M29 25.8v6.4M25.8 29h6.4' stroke='%23f8fafc' stroke-width='2.1' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E") 17 17, copy;
 }
 
-.onenote-workspace.is-panning,
-.onenote-workspace.is-panning * {
-  cursor: grabbing !important;
+.onenote-workspace.onenote-workspace.is-panning,
+.onenote-workspace.onenote-workspace.is-panning * {
+  cursor: grabbing;
 }
 
 /* --- Background patterns (position/size driven inline from the view transform) --- */
@@ -417,18 +417,20 @@
 
 .notelens-run.is-underline {
   text-decoration: underline;
-  text-decoration-thickness: from-font;
   text-underline-offset: 0.16em;
 }
 
 .notelens-run.is-strike { text-decoration: line-through; }
-.notelens-run.is-underline.is-strike { text-decoration: underline line-through; }
+.notelens-run.is-underline.is-strike {
+  text-decoration: line-through;
+  border-bottom: 1px solid currentColor;
+}
 
 .notelens-run.is-code {
   padding: 0.05em 0.34em;
   border-radius: 4px;
   background: rgba(148, 163, 184, 0.22);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
   font-size: 0.92em;
 }
 
@@ -441,8 +443,6 @@
   padding: 0.06em 0.3em;
   border-radius: 0.42em 1em 0.32em 0.86em;
   color: var(--notelens-mark-ink, inherit);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 
 .notelens-run.is-mark {
@@ -454,7 +454,7 @@
   padding: 0.05em 0.34em;
   border-radius: 4px;
   background: rgba(148, 163, 184, 0.22);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
   font-size: 0.92em;
 }
 
@@ -495,7 +495,7 @@
 
 .notelens-code-lang {
   color: #7dd3fc;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -530,7 +530,7 @@
   padding: 10px 8px 10px 10px;
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   color: rgba(148, 163, 184, 0.55);
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
   font-size: 12px;
   line-height: 1.55;
   text-align: right;
@@ -546,7 +546,7 @@
   padding: 10px 14px;
   background: transparent;
   color: inherit;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
   font-size: 14px;
   line-height: 1.55;
   white-space: pre;
@@ -586,15 +586,15 @@
 .notelens-code-block .token.bold { font-weight: 700; }
 .notelens-code-block .token.italic { font-style: italic; }
 
-.notelens-code-editor {
+.notelens-code-editor.notelens-code-editor {
   padding: 10px 14px;
   border-color: rgba(125, 211, 252, 0.76);
   border-radius: 6px;
   background: #0f172a;
   color: #e2e8f0;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
-  font-size: 14px !important;
-  line-height: 1.55 !important;
+  font-family: var(--font-monospace);
+  font-size: 14px;
+  line-height: 1.55;
   white-space: pre;
   overflow: auto;
   tab-size: 4;
@@ -685,7 +685,7 @@
   outline: none;
   background: rgba(15, 23, 42, 0.42);
   color: #e2e8f0;
-  font: 13px/1.35 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font: 13px/1.35 var(--font-interface);
 }
 
 .notelens-table-cell:focus {
@@ -1039,13 +1039,13 @@
 
 /* Bound popovers by the actual board, including short landscape panes. */
 @container workspace (max-width: 1100px) {
-  .onenote-workspace .notelens-settings-panel,
-  .onenote-workspace .notelens-shortcuts {
+  .onenote-workspace .notelens-settings-panel.notelens-settings-panel,
+.onenote-workspace .notelens-shortcuts.notelens-shortcuts {
     top: 12px;
-    bottom: auto !important;
+    bottom: auto;
     box-sizing: border-box;
     max-width: calc(100% - 28px);
-    max-height: calc(100% - 24px - var(--nl-safe-bottom, 0px)) !important;
+    max-height: calc(100% - 24px - var(--nl-safe-bottom, 0px));
     overflow: auto;
     overscroll-behavior: contain;
     touch-action: pan-y;
@@ -1340,7 +1340,7 @@
 
 .notelens-format-language {
   max-width: 104px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-monospace);
 }
 
 .notelens-fill-toggle {
@@ -1698,7 +1698,6 @@
 .notelens-link {
   color: #7dd3fc;
   text-decoration: underline;
-  text-decoration-color: rgba(125, 211, 252, 0.5);
   cursor: pointer;
 }
 
@@ -1936,29 +1935,31 @@
 .notelens-bookmarks-header-buttons { display: flex; align-items: center; gap: 2px; }
 
 /* Close buttons on the ruler, the format bar and the selection frame */
-.notelens-ruler-close {
+.notelens-ruler-close.notelens-ruler-close {
   position: static;
-  display: grid !important;
+  display: grid;
   place-items: center;
+  /* Sized against the mode pill beside it: a bigger, squarer button read as
+     something bolted onto the ruler. */
   width: 20px;
   height: 20px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 5px;
-  background: rgba(7, 20, 32, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  background: rgba(9, 24, 38, 0.78);
   color: #f8fafc;
   box-shadow: none;
-  opacity: 1 !important;
+  opacity: 1;
   pointer-events: auto;
   z-index: 3;
 }
 .notelens-ruler-close:hover { border-color: #fca5a5; background: #b4232f; color: #ffffff; }
-.notelens-ruler-close .svg-icon { width: 13px; height: 13px; stroke: currentColor; }
+.onenote-workspace .notelens-smart-ruler .notelens-ruler-close svg { width: 14px; height: 14px; }
 .notelens-format-close { margin-left: 2px; }
 
 /* Every object shows its close button: no hover hunting. */
-.notelens-stack-controls { display: flex !important; opacity: 0.85; }
-.notelens-embed-close { opacity: 1 !important; }
+.notelens-stack-controls.notelens-stack-controls { display: flex; opacity: 0.85; }
+.notelens-embed-close.notelens-embed-close { opacity: 1; }
 .notelens-calculator-header .notelens-embed-close,
 .notelens-translator-header .notelens-embed-close,
 .notelens-recorder-header .notelens-embed-close,
@@ -2316,11 +2317,11 @@
   box-shadow: none;
 }
 .notelens-recorder-actions button:disabled { opacity: 0.4; cursor: default; }
-.notelens-recorder-record { background: rgba(239, 68, 68, 0.28) !important; border-color: rgba(248, 113, 113, 0.6) !important; }
+.notelens-recorder-record.notelens-recorder-record { background: rgba(239, 68, 68, 0.28); border-color: rgba(248, 113, 113, 0.6); }
 .notelens-recorder-record .svg-icon { color: #fb7185; }
 .notelens-recorder[data-state="recording"] .notelens-recorder-record .svg-icon { animation: notelens-pulse 1s ease-in-out infinite; }
-.notelens-recorder-stop { background: rgba(15, 108, 189, 0.4) !important; border-color: rgba(140, 200, 255, 0.5) !important; }
-.notelens-recorder-cancel { flex: 0 0 auto !important; }
+.notelens-recorder-stop.notelens-recorder-stop { background: rgba(15, 108, 189, 0.4); border-color: rgba(140, 200, 255, 0.5); }
+.notelens-recorder-cancel.notelens-recorder-cancel { flex: 0 0 auto; }
 .notelens-recorder-dictation {
   display: flex;
   align-items: center;
@@ -3266,13 +3267,20 @@
 
 /* Working aids float over the canvas while the document remains unobstructed. */
 .notelens-smart-ruler {
+  --nl-ruler-ink: rgba(226, 245, 255, 0.9);
+  --nl-ruler-edge: rgba(147, 214, 255, 0.85);
   position: absolute;
   z-index: 850;
+  /* No border anywhere: Obsidian sets box-sizing: border-box, so a border would
+     shrink the box the scale is drawn into and squash it out of true -- the
+     protractor's circle became an ellipse. The edges are drawn in the SVG, which
+     shares the box exactly. */
+  box-sizing: border-box;
   height: 54px;
-  border: 1px solid rgba(125, 211, 252, 0.72);
-  border-radius: 4px;
-  background: repeating-linear-gradient(90deg, rgba(231, 247, 255, 0.2) 0 1px, rgba(78, 124, 159, 0.08) 1px 10px), rgba(26, 46, 66, 0.76);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(219, 238, 252, 0.16), rgba(160, 200, 232, 0.09) 45%, rgba(219, 238, 252, 0.16));
+  box-shadow: 0 8px 22px rgba(4, 12, 22, 0.34), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   cursor: grab;
   touch-action: none;
   transform-origin: center center;
@@ -3281,96 +3289,119 @@
 
 .notelens-smart-ruler:active { cursor: grabbing; }
 
-.notelens-ruler-marks {
+.notelens-ruler-scale {
   position: absolute;
-  inset: 5px 12px 6px;
-  display: flex;
-  justify-content: space-between;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 
-.notelens-ruler-tick {
-  position: relative;
-  width: 1px;
-  height: 9px;
-  background: rgba(235, 248, 255, 0.7);
+.notelens-tick {
+  stroke: var(--nl-ruler-ink);
+  stroke-width: 1;
 }
 
-.notelens-ruler-tick.major {
-  height: 17px;
-  background: rgba(255, 255, 255, 0.94);
+.notelens-tick.is-minor { stroke: rgba(226, 245, 255, 0.5); }
+.notelens-tick.is-medium { stroke: rgba(226, 245, 255, 0.72); }
+.notelens-tick.is-major { stroke-width: 1.4; }
+.notelens-tick.is-pivot { stroke: rgba(255, 255, 255, 0.66); }
+
+/* The two long edges of the ruler and the rim of the protractor: the lines ink
+   actually snaps to, and the only strong ones on the tool. */
+.notelens-ruler-rim {
+  fill: none;
+  stroke: var(--nl-ruler-edge);
+  stroke-width: 2;
 }
 
-.notelens-ruler-tick.major::after {
-  position: absolute;
-  top: 19px;
-  left: 3px;
-  color: rgba(255, 255, 255, 0.86);
-  content: attr(data-label);
+.notelens-ruler-pivot {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 1.2;
+}
+
+.notelens-tick-number {
+  fill: var(--nl-ruler-ink);
   font-family: var(--font-monospace);
-  font-size: 9px;
-  line-height: 1;
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: middle;
 }
 
 .notelens-ruler-label {
   position: absolute;
   left: 50%;
-  bottom: 5px;
+  bottom: 7px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   transform: translateX(-50%);
   z-index: 4;
 }
 
 .notelens-ruler-mode {
-  height: 18px;
-  padding: 0 6px;
-  border: 1px solid rgba(255, 255, 255, 0.19);
-  border-radius: 3px;
-  background: rgba(12, 29, 43, 0.74);
-  color: #e0f2fe;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(9, 24, 38, 0.78);
+  color: #dff1ff;
   font-size: 9px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
 }
 
-.notelens-ruler-mode:hover { background: rgba(14, 116, 144, 0.64); }
+.notelens-ruler-mode:hover { background: rgba(14, 116, 144, 0.7); }
 
 .notelens-ruler-rotate {
   position: absolute;
-  right: -13px;
+  /* Fully inside the ruler: hanging over the edge left half the asa outside,
+     and the protractor's rounding cut that half away -- it looked halved and
+     did not answer a press. */
+  right: 8px;
   top: 50%;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #d9f3ff;
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(223, 241, 255, 0.7);
   border-radius: 50%;
-  background: #0f5f8c;
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.34);
+  background: rgba(9, 24, 38, 0.78);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   cursor: grab;
   transform: translateY(-50%);
 }
 
+.notelens-ruler-rotate:hover { background: rgba(14, 116, 144, 0.78); }
+
 .notelens-ruler-rotate::after {
   position: absolute;
-  inset: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  inset: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   border-left-color: transparent;
   border-radius: 50%;
   content: "";
 }
 
+/* A true semicircle: the element is kept half as tall as it is wide, so the
+   rounding below is a circle and the drawn degrees are the real ones. */
 .notelens-smart-ruler.is-protractor {
-  height: 255px;
-  border-radius: 260px 260px 7px 7px;
-  clip-path: polygon(0 100%, 0 50%, 2% 35%, 8% 21%, 17% 10%, 29% 3%, 50% 0, 71% 3%, 83% 10%, 92% 21%, 98% 35%, 100% 50%, 100% 100%);
-  background: repeating-conic-gradient(from 270deg at 50% 100%, rgba(240, 249, 255, 0.55) 0deg 1deg, transparent 1deg 5deg), rgba(26, 46, 66, 0.8);
+  border-radius: 50% 50% 3px 3px / 100% 100% 3px 3px;
+  background: radial-gradient(120% 100% at 50% 100%, rgba(219, 238, 252, 0.17), rgba(160, 200, 232, 0.07) 62%, rgba(219, 238, 252, 0.14));
 }
 
-.notelens-smart-ruler.is-protractor .notelens-ruler-marks { inset: auto 14px 5px; }
-.notelens-smart-ruler.is-protractor .notelens-ruler-tick { height: 14px; }
-.notelens-smart-ruler.is-protractor .notelens-ruler-tick.major { height: 23px; }
-.notelens-smart-ruler.is-protractor .notelens-ruler-label { bottom: 10px; }
+.notelens-smart-ruler.is-protractor .notelens-ruler-label { bottom: 9px; left: 26%; }
+
+/* On the arc the asa covered the degree scale, and at the very end of the base
+   there is no protractor left to sit on. It rides the base band instead,
+   mirroring the label. */
+.notelens-smart-ruler.is-protractor .notelens-ruler-rotate {
+  top: auto;
+  right: 24%;
+  bottom: 8px;
+  transform: none;
+}
 
 .notelens-minimap {
   position: absolute;
@@ -3660,19 +3691,19 @@
   font-size: 20px;
 }
 
-.notelens-math-block mjx-container,
-.notelens-math-preview mjx-container { margin: 0 !important; }
+.notelens-math-block.notelens-math-block > *,
+.notelens-math-preview.notelens-math-preview > * { margin: 0; }
 
 /* A box the user shrank by hand scrolls its formula instead of cutting it. */
-.notelens-math-block mjx-container[display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.notelens-math-block > [display="true"] { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 
 .notelens-math-placeholder { color: rgba(203, 213, 225, 0.55); font-style: italic; }
 .notelens-math-error { color: #fca5a5; font-family: var(--font-monospace); }
 
-.notelens-math-editor {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
+.notelens-math-editor.notelens-math-editor {
+  font-family: var(--font-monospace);
+  font-size: 14px;
+  line-height: 1.5;
   border-color: rgba(167, 139, 250, 0.8);
   background: rgba(139, 92, 246, 0.08);
 }
@@ -3913,11 +3944,11 @@
   overflow: hidden;
 }
 .notelens-pen-preview { position: relative; }
-.notelens-pen-preview canvas.onenote-canvas { position: static; display: block; inset: auto; width: 264px !important; height: 46px !important; }
+.notelens-pen-preview canvas.onenote-canvas.onenote-canvas { position: static; display: block; inset: auto; max-width: 100%; height: 46px; }
 .notelens-nib-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(min(78px, 100%), 1fr));
+  gap: 6px;
 }
 .notelens-nib {
   display: flex;
@@ -4122,7 +4153,7 @@
 .notelens-embed > .notelens-embed-header .notelens-embed-close .svg-icon { width: 15px; height: 15px; }
 .notelens-embed-header { min-height: 34px; }
 /* PDF pages pasted on the canvas: the delete control stays visible, not hover-only. */
-.notelens-stack-controls { opacity: 1 !important; }
+.notelens-stack-controls.notelens-stack-controls { opacity: 1; }
 .notelens-stack-controls .notelens-embed-close {
   background: rgba(239, 68, 68, 0.18);
   border: 1px solid rgba(248, 113, 113, 0.55);
@@ -4180,14 +4211,14 @@
   .notelens-document-dock::-webkit-scrollbar { display: none; }
   .notelens-minimap { bottom: calc(122px + var(--nl-safe-bottom, 0px)); }
   .notelens-shortcuts { bottom: calc(122px + var(--nl-safe-bottom, 0px)); }
-  .notelens-calculator,
-  .notelens-translator,
-  .notelens-recorder,
-  .notelens-navigator,
-  .notelens-tag-summary {
-    top: auto !important;
+  .notelens-calculator.notelens-calculator,
+.notelens-translator.notelens-translator,
+.notelens-recorder.notelens-recorder,
+.notelens-navigator.notelens-navigator,
+.notelens-tag-summary.notelens-tag-summary {
+    top: auto;
     bottom: calc(122px + var(--nl-safe-bottom, 0px));
-    left: 50% !important;
+    left: 50%;
     right: auto;
     transform: translateX(-50%);
     width: min(520px, calc(100% - 24px));
@@ -4365,19 +4396,19 @@
 /* ==========================================================================
    FLOATING NOTE EDITOR (written or drawn)
    ========================================================================== */
-.modal.notelens-hover-note-modal {
+.modal.modal.notelens-hover-note-modal {
   box-sizing: border-box;
-  width: min(640px, calc(100vw - 24px)) !important;
+  width: min(640px, calc(100vw - 24px));
   transition: width 140ms ease;
-  min-width: 0 !important;
-  max-width: calc(100vw - 24px) !important;
+  min-width: 0;
+  max-width: calc(100vw - 24px);
   max-height: calc(100vh - 24px);
   overflow: hidden;
 }
 /* Drawing by hand needs room: the dialog opens out for the pad and comes back
    in for the written note. */
-.modal.notelens-hover-note-modal.is-sketch {
-  width: min(1180px, calc(100vw - 24px)) !important;
+.modal.modal.notelens-hover-note-modal.is-sketch {
+  width: min(1180px, calc(100vw - 24px));
 }
 
 .notelens-hover-note-modal .modal-content {
@@ -4480,7 +4511,7 @@
 .notelens-hover-note-help { flex: 1 1 auto; min-width: 0; color: var(--text-muted, #94a3b8); font-size: 12px; overflow-wrap: anywhere; }
 
 @media (max-width: 680px) {
-  .modal.notelens-hover-note-modal { width: calc(100vw - 16px) !important; max-width: calc(100vw - 16px) !important; }
+  .modal.modal.notelens-hover-note-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); }
   .notelens-hover-note { width: 100%; }
   .notelens-hover-note-tools .onenote-divider { display: none; }
   .notelens-hover-note-upload { margin-left: 0; }
@@ -4661,17 +4692,17 @@
 }
 
 /* Embedded objects keep a fixed, unmistakable close control. */
-.notelens-object-close {
+.notelens-object-close.notelens-object-close {
   position: relative;
   z-index: 4;
-  display: grid !important;
+  display: grid;
   place-items: center;
-  visibility: visible !important;
+  visibility: visible;
   flex: 0 0 26px;
   width: 26px;
   height: 26px;
   padding: 0;
-  opacity: 1 !important;
+  opacity: 1;
   border: 1px solid rgba(248, 113, 113, 0.48);
   border-radius: 7px;
   background: rgba(15, 23, 42, 0.9);
@@ -4691,15 +4722,15 @@
 
 /* Loose images and PDF pages place the X inside the object, where it cannot
    disappear outside the canvas or underneath selection chrome. */
-.notelens-stack-controls {
+.notelens-stack-controls.notelens-stack-controls {
   top: 8px;
   right: 8px;
-  display: flex !important;
+  display: flex;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
-  opacity: 1 !important;
+  opacity: 1;
 }
 .notelens-attachment-card > .notelens-object-close {
   position: absolute;
@@ -4948,10 +4979,11 @@ button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3f
   position: absolute;
   right: 0;
   bottom: 0;
-  width: var(--sticky-fold);
-  height: var(--sticky-fold);
-  background: linear-gradient(315deg, var(--sticky-deep) 0%, var(--sticky-shade) 62%, rgba(255, 255, 255, 0.72) 100%);
-  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  /* The fold, drawn with borders rather than clipped out of a square. */
+  width: 0;
+  height: 0;
+  border-left: var(--sticky-fold) solid transparent;
+  border-bottom: var(--sticky-fold) solid var(--sticky-deep);
   filter: drop-shadow(-2px -2px 2px rgba(15, 23, 42, 0.32));
   pointer-events: none;
 }
@@ -5277,8 +5309,8 @@ button.notelens-settings-margin-toggle:focus-visible { outline: 2px solid #7dd3f
 .onenote-top-tooltip-checklist { max-width: 340px; }
 
 /* Handwritten steps show at the size they were written; the card widens for them. */
-.onenote-top-tooltip:has(.onenote-top-tooltip-step-sketch) { max-width: 520px; }
-.onenote-top-tooltip:has(.onenote-top-tooltip-step-sketch) .onenote-top-tooltip-checklist { max-width: 470px; }
+.onenote-top-tooltip.has-sketches { max-width: 520px; }
+.onenote-top-tooltip.has-sketches .onenote-top-tooltip-checklist { max-width: 470px; }
 .onenote-top-tooltip-step-sketch { image-rendering: auto; }
 
 /* ==========================================================================
@@ -5864,3 +5896,46 @@ span.notelens-assistant-name {
 .onenote-workspace.is-short .notelens-settings-btn,
 .onenote-workspace.is-short .notelens-minimap { display: none; }
 .onenote-workspace.is-short .onenote-ribbon-dock { top: 6px; padding: 3px 8px; }
+
+/* Keep icon controls independent of Obsidian's mobile button padding. */
+.onenote-workspace button:is(.notelens-embed-close, .notelens-panel-close, .notelens-box-close, .onenote-badge-close, .notelens-settings-btn) {
+  padding: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+}
+.onenote-workspace button svg {
+  flex-shrink: 0;
+}
+.onenote-workspace button:is(.notelens-embed-close, .notelens-panel-close, .notelens-box-close, .onenote-badge-close, .notelens-settings-btn) svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+}
+.onenote-workspace .notelens-nib {
+  min-width: 0;
+  height: auto;
+  min-height: 58px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+  padding: 9px 6px;
+}
+.onenote-workspace .notelens-nib-grid { min-width: 0; }
+.onenote-workspace .notelens-pen-preview { min-width: 0; }
+.onenote-workspace button:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; }
+@media (any-pointer: coarse) {
+  .onenote-workspace button:is(.notelens-embed-close, .notelens-panel-close, .notelens-settings-btn) {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .onenote-workspace[data-tool="pen"],
+  .onenote-workspace[data-tool="highlighter"] { cursor: crosshair; }
+  .onenote-workspace[data-tool="text"] { cursor: text; }
+  .onenote-workspace .notelens-text-placement-hint { display: none; }
+}

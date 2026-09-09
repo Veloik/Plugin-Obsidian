@@ -931,6 +931,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	const panelClose = panel.createEl("button", { cls: "notelens-panel-close" });
 	setIcon(panelClose, "x");
 	panelClose.title = tr("Cerrar (Esc)");
+	panelClose.setAttr("aria-label", panelClose.title);
 	panelClose.onclick = () => close();
 
 	function createPanelHeader(section: HTMLElement, icon: string, title: string): void {
@@ -971,8 +972,9 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 	// Live sample of the current nib, colour and width.
 	const previewWrap = penSection.createDiv({ cls: "notelens-pen-preview" });
 	const previewRenderer = new CanvasRenderer(previewWrap);
-	const PREVIEW_W = 264, PREVIEW_H = 46;
+	const PREVIEW_H = 46;
 	const renderPreview = () => {
+		const PREVIEW_W = Math.max(120, previewWrap.clientWidth - 2 || 264);
 		previewRenderer.resize(PREVIEW_W, PREVIEW_H);
 		const pts: Stroke["points"] = [];
 		const n = 46;
@@ -997,6 +999,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		setIcon(b.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
 		b.createSpan({ text: tr(nib.label) });
 		b.title = tr(nib.hint);
+		b.setAttr("aria-label", tr(nib.label));
 		b.onclick = () => { host.setPenStyle(nib.id); refresh(); };
 		nibButtons.push([b, nib.id]);
 	}
@@ -1365,7 +1368,8 @@ export function createQuickTagsBar(
 
 export function createSettingsPanel(host: ToolbarHost, container: HTMLElement): void {
 	const btn = container.createEl("button", { cls: "notelens-settings-btn" });
-	setIcon(btn, "settings-2");
+	setIcon(btn, "settings");
+	btn.setAttr("aria-label", tr("Formato del fondo"));
 	btn.title = tr("Formato del fondo");
 	shield(btn);
 

@@ -15,7 +15,7 @@ import { CanvasRenderer } from "./renderer";
 import { trackMobileEditor, mountMobileBoard } from "./mobile-editor";
 import { CANVAS_FONTS, fontStack } from "./fonts";
 import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
-import { BaseStyle, editableText, readRuns, renderRuns, selectOffsets, selectionOffsets, surroundSelection, unwrapCode } from "./rich-editor";
+import { BaseStyle, closeEditable, editableText, paintEditable, readRuns, renderRuns, selectOffsets, selectionOffsets, spliceRuns, styleAcross, styleRange, surroundSelection, unwrapCode } from "./rich-editor";
 import { HistoryManager } from "./history";
 import { PersistenceManager } from "./persistence";
 import {
@@ -33,7 +33,7 @@ import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EXPERIMENTAL } from "./features";
 import { panelHooks, EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
-import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize } from "./types";
+import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, TextRun } from "./types";
 import { Locale, getLocale, tr } from "./i18n";
 
 export const VIEW_TYPE_ONENOTE = "onenote-canvas-view";
@@ -130,6 +130,55 @@ function normalizeLanguage(raw: string | undefined): string {
 }
 
 type RulerMode = "ruler" | "protractor";
+// The straight ruler's height, in the stylesheet and in the scale it draws.
+const RULER_HEIGHT = 54;
+
+/** A rich box as it stood, and where the selection was, for one undo step. */
+interface RichSnapshot { runs: TextRun[]; from: number; to: number }
+
+/** Sets or clears one of the plain marks a run can wear. */
+function withMark(run: TextRun, key: "bold" | "italic" | "underline" | "strike", on: boolean): TextRun {
+	const next: TextRun = { ...run };
+	if (on) next[key] = true; else delete next[key];
+	return next;
+}
+
+/**
+ * What a formatting command does to one run, given what the selection already
+ * wears. A command that is already on turns off, the way a toolbar toggle does.
+ */
+function richChange(command: string, value: string | undefined, current: Partial<TextRun>): ((run: TextRun) => TextRun) | null {
+	switch (command) {
+		case "bold": case "italic": case "underline": {
+			const key = command;
+			const on = !current[key];
+			return run => withMark(run, key, on);
+		}
+		case "strikeThrough": {
+			const on = !current.strike;
+			return run => withMark(run, "strike", on);
+		}
+		case "hiliteColor": {
+			const tint = !value || value === "transparent" ? "" : value;
+			return run => {
+				const next: TextRun = { ...run };
+				if (tint) next.mark = tint; else delete next.mark;
+				return next;
+			};
+		}
+		case "foreColor": {
+			return run => {
+				const next: TextRun = { ...run };
+				if (value) next.color = value; else delete next.color;
+				return next;
+			};
+		}
+		case "removeFormat":
+			return run => ({ text: run.text });
+		default:
+			return null;
+	}
+}
 
 interface SelectionResizeSnapshot {
 	bounds: { x: number; y: number; w: number; h: number };
@@ -300,13 +349,24 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private loadFailed = false;
 	private activeTextEditor: HTMLTextAreaElement | HTMLElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
+	/** The box the rich editor belongs to, for edits driven from keys and menus. */
+	private activeRichBox: TextBox | null = null;
+	// A rich box is edited as runs and repainted, which the browser's own undo
+	// cannot follow, so the box keeps its own history while it is open.
+	private richPast: RichSnapshot[] = [];
+	private richFuture: RichSnapshot[] = [];
+	private richRememberedAt = Number.NEGATIVE_INFINITY;
+	/** A style armed with nothing selected, worn by whatever is typed next. */
+	private richPending: { from: number; change: (run: TextRun) => TextRun } | null = null;
 	private a4GuidesEl: HTMLElement | null = null;
 	private miniMapEl: HTMLElement | null = null;
 	private miniMapVisible = false;
 	private miniMapCanvas: HTMLCanvasElement | null = null;
 	private miniMapBounds: { x: number; y: number; w: number; h: number } | null = null;
 	private rulerEl: HTMLElement | null = null;
+	private rulerGuide: { x: number; y: number; dx: number; dy: number; length: number } | null = null;
 	private rulerState = { visible: false, x: 180, y: 260, length: 520, angle: 0, mode: "ruler" as RulerMode };
+	private rulerMarksDrawn = "";
 
 	// --- Selection state (runtime only, not persisted) ---
 	private selStrokes = new Set<string>();
@@ -644,11 +704,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private createRuler(): void {
 		this.rulerEl = this.workspaceEl.createDiv({ cls: "notelens-smart-ruler hidden" });
-		const marks = this.rulerEl.createDiv({ cls: "notelens-ruler-marks" });
-		for (let mark = 0; mark <= 50; mark++) {
-			const tick = marks.createDiv({ cls: `notelens-ruler-tick ${mark % 5 === 0 ? "major" : ""}` });
-			if (mark % 5 === 0 && mark < 50) tick.setAttr("data-label", String(mark / 5));
-		}
+		// The scale is drawn, not laid out: flexbox put the ticks on fractional
+		// pixels and their numbers never sat under them. Geometry also lets the
+		// protractor mark true degrees instead of a stretched ellipse's.
+		this.rulerEl.createSvg("svg", { cls: "notelens-ruler-scale" });
 		const label = this.rulerEl.createDiv({ cls: "notelens-ruler-label" });
 		const modeBtn = label.createEl("button", { cls: "notelens-ruler-mode" });
 		modeBtn.title = tr("Alternar regla y transportador");
@@ -680,6 +739,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.rulerEl.style.top = `${this.rulerState.y}px`;
 		this.rulerEl.style.width = `${this.rulerState.length}px`;
 		const isProtractor = this.rulerState.mode === "protractor";
+		// Half as tall as it is wide, so the arc is a circle and 45 degrees on the
+		// scale is 45 degrees on the page.
+		this.rulerEl.style.height = isProtractor ? `${this.rulerState.length / 2}px` : "";
+		this.renderRulerMarks();
 		this.rulerEl.style.transformOrigin = isProtractor ? "50% 100%" : "50% 50%";
 		this.rulerEl.style.transform = `translateY(${isProtractor ? "-100%" : "-50%"}) rotate(${this.rulerState.angle}deg)`;
 		const mode = this.rulerEl.querySelector<HTMLElement>(".notelens-ruler-mode");
@@ -687,6 +750,70 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const angle = ((Math.round(this.rulerState.angle) % 360) + 360) % 360;
 			mode.setText(isProtractor ? tr("Ángulos {p0}°", { p0: angle }) : tr("Regla"));
 			mode.setAttr("aria-label", mode.textContent || "Regla");
+		}
+	}
+
+	private renderRulerMarks(): void {
+		const svg = this.rulerEl?.querySelector<SVGSVGElement>(".notelens-ruler-scale");
+		if (!svg) return;
+		const r = this.rulerState;
+		// Dragging and rotating call renderRuler on every pointer move, and the
+		// protractor's scale is two hundred elements: only redraw it when the
+		// shape it describes has actually changed.
+		const signature = `${r.mode}:${r.length}`;
+		if (signature === this.rulerMarksDrawn) return;
+		this.rulerMarksDrawn = signature;
+		svg.empty();
+		const tick = (x1: number, y1: number, x2: number, y2: number, cls: string) => {
+			const line = svg.createSvg("line", { cls: ["notelens-tick", cls] });
+			line.setAttr("x1", x1.toFixed(2)); line.setAttr("y1", y1.toFixed(2));
+			line.setAttr("x2", x2.toFixed(2)); line.setAttr("y2", y2.toFixed(2));
+		};
+		const number = (x: number, y: number, text: string) => {
+			const el = svg.createSvg("text", { cls: "notelens-tick-number" });
+			el.setAttr("x", x.toFixed(2)); el.setAttr("y", y.toFixed(2));
+			el.setText(text);
+		};
+		if (r.mode === "protractor") {
+			const radius = r.length / 2;
+			svg.setAttr("viewBox", `0 0 ${r.length} ${radius}`);
+			const rim = svg.createSvg("path", { cls: "notelens-ruler-rim" });
+			rim.setAttr("d", `M 1 ${radius - 1} A ${radius - 1} ${radius - 1} 0 0 1 ${r.length - 1} ${radius - 1}`
+				+ ` M 0 ${radius - 1} L ${r.length} ${radius - 1}`);
+			for (let degree = 0; degree <= 180; degree++) {
+				const major = degree % 10 === 0, medium = degree % 5 === 0;
+				const length = major ? 15 : medium ? 10 : 6;
+				const cos = Math.cos(degree * Math.PI / 180), sin = Math.sin(degree * Math.PI / 180);
+				tick(radius + radius * cos, radius - radius * sin,
+					radius + (radius - length) * cos, radius - (radius - length) * sin,
+					major ? "is-major" : medium ? "is-medium" : "is-minor");
+				if (major) {
+					// The ends sit on the base line, where a centred number would
+					// hang half outside the arc: lift those two clear of it.
+					const inset = degree === 0 || degree === 180 ? 34 : 27;
+					const lift = degree === 0 || degree === 180 ? 11 : 0;
+					number(radius + (radius - inset) * cos, radius - (radius - inset) * sin - lift, String(degree));
+				}
+			}
+			const pivot = svg.createSvg("circle", { cls: "notelens-ruler-pivot" });
+			pivot.setAttr("cx", String(radius)); pivot.setAttr("cy", String(radius)); pivot.setAttr("r", "4");
+			tick(radius - 13, radius, radius + 13, radius, "is-pivot");
+			tick(radius, radius - 13, radius, radius, "is-pivot");
+			return;
+		}
+		svg.setAttr("viewBox", `0 0 ${r.length} ${RULER_HEIGHT}`);
+		const edges = svg.createSvg("path", { cls: "notelens-ruler-rim" });
+		edges.setAttr("d", `M 0 1 L ${r.length} 1 M 0 ${RULER_HEIGHT - 1} L ${r.length} ${RULER_HEIGHT - 1}`);
+		// A millimetre every 5px, a centimetre every 50: the numbers stay the same
+		// size whatever the ruler is, instead of stretching with it.
+		for (let x = 0; x <= r.length - 1; x += 5) {
+			const centimetre = x % 50 === 0, half = x % 25 === 0;
+			const length = centimetre ? 13 : half ? 9 : 5;
+			tick(x, 0, x, length, centimetre ? "is-major" : half ? "is-medium" : "is-minor");
+			// The far edge draws too, so it is marked as well -- shorter, since its
+			// numbers belong to the near one.
+			tick(x, RULER_HEIGHT, x, RULER_HEIGHT - (centimetre ? 7 : 4), centimetre ? "is-major" : "is-minor");
+			if (centimetre && x <= r.length - 22) number(x + 4, 24, String(x / 50));
 		}
 	}
 
@@ -700,7 +827,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private startRulerDrag(event: PointerEvent): void {
 		if ((event.target as HTMLElement).closest("button, .notelens-ruler-rotate")) return;
-		if (event.pointerType !== "touch" && this.currentTool !== "select") return;
+		if (this.currentTool !== "select" && this.currentTool !== "hand") return;
 		event.stopPropagation();
 		event.preventDefault();
 		const startX = event.clientX;
@@ -745,23 +872,40 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private getDrawingSceneCoords(clientX: number, clientY: number): { x: number; y: number } {
-		if (!this.rulerState.visible || !["pen", "highlighter"].includes(this.currentTool)) {
-			return this.getSceneCoords(clientX, clientY);
-		}
-		const rect = this.workspaceEl.getBoundingClientRect();
-		const px = clientX - rect.left;
-		const py = clientY - rect.top;
-		const radians = this.rulerState.angle * Math.PI / 180;
-		const dx = Math.cos(radians);
-		const dy = Math.sin(radians);
-		const toPointerX = px - this.rulerState.x;
-		const toPointerY = py - this.rulerState.y;
-		const projected = clamp(toPointerX * dx + toPointerY * dy, 0, this.rulerState.length);
-		const snapX = this.rulerState.x + projected * dx;
-		const snapY = this.rulerState.y + projected * dy;
-		if (Math.hypot(px - snapX, py - snapY) > 18) return this.getSceneCoords(clientX, clientY);
-		return this.getSceneCoords(rect.left + snapX, rect.top + snapY);
-	}
+        const rect = this.workspaceEl.getBoundingClientRect();
+        const px = clientX - rect.left, py = clientY - rect.top;
+        // Acquire once at pen-down; never switch between freehand and snapped ink mid-stroke.
+        if (!this.currentStroke) {
+            this.rulerGuide = null;
+            if (this.rulerState.visible && ["pen", "highlighter"].includes(this.currentTool)) {
+                const r = this.rulerState;
+                const angle = r.angle * Math.PI / 180;
+                const dx = Math.cos(angle), dy = Math.sin(angle);
+                const cx = r.x + r.length / 2, cy = r.y;
+                const along = (px - cx) * dx + (py - cy) * dy;
+                const normal = -(px - cx) * dy + (py - cy) * dx;
+                const height = this.rulerEl?.offsetHeight ?? 54;
+                // The straight ruler is drawn along whichever long edge the pen
+                // is nearer. The protractor has a single edge, its flat base, so
+                // its whole body counts as somewhere you can rest the pen: it is
+                // tall, and resting on the arc is how a protractor is held.
+                const isProtractor = r.mode === "protractor";
+                const half = isProtractor ? 0 : height / 2;
+                const edge = normal < 0 ? -half : half;
+                const near = isProtractor
+                    ? normal <= 36 && normal >= -(height + 36)
+                    : Math.abs(normal - edge) <= 36;
+                if (near && Math.abs(along) <= r.length / 2 + 36) {
+                    this.rulerGuide = { x: cx - dx * r.length / 2 - dy * edge,
+                        y: cy - dy * r.length / 2 + dx * edge, dx, dy, length: r.length };
+                }
+            }
+        }
+        const guide = this.rulerGuide;
+        if (!guide) return this.getSceneCoords(clientX, clientY);
+        const projected = clamp((px - guide.x) * guide.dx + (py - guide.y) * guide.dy, 0, guide.length);
+        return this.getSceneCoords(rect.left + guide.x + projected * guide.dx, rect.top + guide.y + projected * guide.dy);
+    }
 
 	getMiniMapVisible(): boolean { return this.miniMapVisible; }
 
@@ -1817,7 +1961,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					p: ev.pressure > 0 ? ev.pressure : 0.5
 				});
 			}
-			if (e.shiftKey) {
+			if (this.currentStroke.type === "highlighter") {
+                if (e.shiftKey) {
+                    const pts = this.currentStroke.points;
+                    this.currentStroke.points = [pts[0], pts[pts.length - 1]];
+                }
+                // Use the same union and layer order during drawing and after release.
+                this.renderer.renderAllLive(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+                this.renderedPoints = this.currentStroke.points.length;
+                this.save();
+                return;
+            }
+            if (e.shiftKey) {
 				// Shift keeps the stroke a straight line from where it started.
 				const pts = this.currentStroke.points;
 				this.currentStroke.points = [pts[0], pts[pts.length - 1]];
@@ -4055,6 +4210,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
 		if (badge.title?.trim()) el.createDiv({ cls: "onenote-top-tooltip-note-title", text: badge.title.trim() });
 		if (checklist.length) {
+			el.toggleClass("has-sketches", checklist.some(item => !!item.sketch));
 			const list = el.createDiv({ cls: "onenote-top-tooltip-checklist" });
 			for (const item of checklist) {
 				// Each step is its own button: ticking one never touches the others.
@@ -4781,8 +4937,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 			// A rich box: swap every word, which also reports the edit like typing does.
 			editor.focus();
-			selectOffsets(editor, 0, editableText(editor).length);
-			document.execCommand("insertText", false, text);
+			const box = this.activeRichBox;
+			if (box) this.editRich(box, editor, text, { from: 0, to: editableText(editor).length });
 			return;
 		}
 		const targets = this.translatableSelection();
@@ -5371,7 +5527,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 		});
 		editor.addEventListener("keydown", (e) => {
-			if (e.isComposing || e.keyCode === 229) return;
+			if (e.isComposing || e.key === "Process") return;
 			if (e.key === "Escape") {
 				e.preventDefault();
 				this.commitTextEditor();
@@ -5427,9 +5583,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.setCssStyles({ visibility: "hidden" });
 		this.activeTextEditor = editor;
 		this.activeTextSourceEl = el;
+		this.activeRichBox = tb;
+		this.richPast = [];
+		this.richFuture = [];
+		this.richRememberedAt = Number.NEGATIVE_INFINITY;
+		this.richPending = null;
 		const openedAt = performance.now();
-		// Formatting as inline styles rather than <b>/<font>: one shape to read back.
-		try { document.execCommand("styleWithCSS", false, "true"); } catch { /* older builds format with tags; the reader copes */ }
 		// Native webviews may resize both viewports before focus() returns.
 		this.keepEditorUsableOnTouch(editor);
 		editor.focus({ preventScroll: true });
@@ -5442,15 +5601,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// The words only: pasted HTML would drag foreign fonts and colours onto the board.
 			e.preventDefault();
 			const text = e.clipboardData?.getData("text/plain") ?? "";
-			if (text) document.execCommand("insertText", false, text);
+			if (text) this.editRich(tb, editor, text);
 		});
-		editor.addEventListener("input", () => {
+		// Before, not after: an undo comes back to the box as it was.
+		editor.addEventListener("beforeinput", () => this.rememberRich(tb, editor));
+		editor.addEventListener("input", (e) => {
 			this.pushEditSession();
+			if (!(e as InputEvent).isComposing) this.applyPendingRichStyle(tb, editor);
 			this.syncRichText(tb, editor);
 			this.resizeRichEditor(tb, editor);
 			this.save();
 		});
-		editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor));
+		editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor, tb));
 		editor.addEventListener("blur", (event) => {
 			const next = event.relatedTarget as Node | null;
 			if (next && this.formatBarEl?.contains(next)) return;
@@ -5467,7 +5629,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private fillRichEditor(editor: HTMLElement, tb: TextBox): void {
 		editor.empty();
 		const runs = tb.runs?.length ? tb.runs : runsFromInline(tb.text, tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
-		renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => parent.appendText(text));
+		renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => paintEditable(parent, text));
+		closeEditable(editor);
 	}
 
 	/** What the box looks like before any run overrides it. */
@@ -5505,33 +5668,107 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		editor.style.height = `${tb.h}px`;
 	}
 
-	private richEditorKey(e: KeyboardEvent, editor: HTMLElement): void {
-		if (e.isComposing || e.keyCode === 229) return;
+	private richEditorKey(e: KeyboardEvent, editor: HTMLElement, tb: TextBox): void {
+		if (e.isComposing || e.key === "Process") return;
 		const mod = e.ctrlKey || e.metaKey;
+		const key = e.key.toLowerCase();
 		if (e.key === "Escape" || (mod && e.key === "Enter")) {
 			e.preventDefault();
 			this.commitTextEditor();
 			return;
 		}
-		// Ctrl+B, Ctrl+I and Ctrl+U are the browser's own: let them through, but
-		// keep them from reaching Obsidian's shortcuts behind the board.
-		if (mod && !e.altKey && ["b", "i", "u"].includes(e.key.toLowerCase())) {
+		// The box edits itself as runs, which the browser's undo cannot follow,
+		// so Ctrl+Z belongs to the box rather than to the page behind it.
+		if (mod && (key === "z" || key === "y")) {
+			e.preventDefault();
 			e.stopPropagation();
+			this.stepRich(tb, editor, key === "z" && !e.shiftKey);
+			return;
+		}
+		// Ctrl+B, Ctrl+I and Ctrl+U format through the same path as the toolbar,
+		// and never reach Obsidian's own shortcuts behind the board.
+		if (mod && !e.altKey && ["b", "i", "u"].includes(key)) {
+			e.preventDefault();
+			e.stopPropagation();
+			this.formatRich(tb, editor, key === "b" ? "bold" : key === "i" ? "italic" : "underline");
 			return;
 		}
 		if (e.key === "Tab") {
 			e.preventDefault();
-			document.execCommand("insertText", false, "\t");
+			this.editRich(tb, editor, "\t");
 			return;
 		}
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
-			if (!this.continueRichList(editor)) document.execCommand("insertLineBreak");
+			if (!this.continueRichList(tb, editor)) this.editRich(tb, editor, "\n");
 		}
 	}
 
+	/**
+	 * Replaces a stretch of a rich box with `text`, as typing would: the new
+	 * text wears the style it is typed into, and the caret lands after it.
+	 */
+	private editRich(tb: TextBox, editor: HTMLElement, text: string, range?: { from: number; to: number }, remember = true): void {
+		const { from, to } = range ?? selectionOffsets(editor);
+		if (remember) this.rememberRich(tb, editor, true);
+		const runs = spliceRuns(readRuns(editor, this.baseStyle(editor, tb)), from, to, text);
+		this.paintRich(tb, editor, runs, from + text.length, from + text.length);
+	}
+
+	/** Repaints a rich box from runs and puts the selection back where it was. */
+	private paintRich(tb: TextBox, editor: HTMLElement, runs: TextRun[], from: number, to: number): void {
+		tb.runs = runs.length ? runs : undefined;
+		tb.text = runs.length ? runsToMarked(runs) : "";
+		this.fillRichEditor(editor, tb);
+		selectOffsets(editor, from, to);
+		this.resizeRichEditor(tb, editor);
+		this.save();
+	}
+
+	/**
+	 * Keeps the box as it stands, so Ctrl+Z can come back to it. Typing is
+	 * gathered into steps rather than remembered a letter at a time.
+	 */
+	private rememberRich(tb: TextBox, editor: HTMLElement, force = false): void {
+		const now = performance.now();
+		if (!force && now - this.richRememberedAt < 500) return;
+		// A step taken for a command must not swallow the first keystroke after
+		// it: typing that follows deserves an undo step of its own.
+		this.richRememberedAt = force ? Number.NEGATIVE_INFINITY : now;
+		const { from, to } = selectionOffsets(editor);
+		this.richPast.push({ runs: readRuns(editor, this.baseStyle(editor, tb)), from, to });
+		if (this.richPast.length > 120) this.richPast.shift();
+		this.richFuture.length = 0;
+	}
+
+	/** Steps a rich box back, or forward again, through its own history. */
+	private stepRich(tb: TextBox, editor: HTMLElement, back: boolean): void {
+		const source = back ? this.richPast : this.richFuture;
+		const destination = back ? this.richFuture : this.richPast;
+		const snapshot = source.pop();
+		if (!snapshot) return;
+		const here = selectionOffsets(editor);
+		destination.push({ runs: readRuns(editor, this.baseStyle(editor, tb)), from: here.from, to: here.to });
+		this.richRememberedAt = performance.now();
+		this.richPending = null;
+		this.paintRich(tb, editor, snapshot.runs, snapshot.from, snapshot.to);
+	}
+
+	/** Dresses the text just typed in the style armed with nothing selected. */
+	private applyPendingRichStyle(tb: TextBox, editor: HTMLElement): void {
+		const pending = this.richPending;
+		if (!pending) return;
+		const caret = selectionOffsets(editor).from;
+		this.richPending = null;
+		if (caret <= pending.from) return;
+		const runs = styleRange(readRuns(editor, this.baseStyle(editor, tb)), pending.from, caret, pending.change);
+		this.paintRich(tb, editor, runs, caret, caret);
+		// Carrying on typing carries on in the same style.
+		this.richPending = { from: caret, change: pending.change };
+	}
+
 	/** Enter inside a list item starts the next one; on an empty item it leaves the list. */
-	private continueRichList(editor: HTMLElement): boolean {
+	private continueRichList(tb: TextBox, editor: HTMLElement): boolean {
 		const text = editableText(editor);
 		const { from, to } = selectionOffsets(editor);
 		if (from !== to) return false;
@@ -5540,15 +5777,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const kind = listKindOf(line);
 		if (!kind) return false;
 		if (!line.replace(LIST_PREFIX, "").trim()) {
-			selectOffsets(editor, lineStart, from);
-			document.execCommand("delete");
+			this.editRich(tb, editor, "", { from: lineStart, to: from });
 			return true;
 		}
 		const indent = /^\s*/.exec(line)?.[0] ?? "";
 		const numbered = kind === "number" ? parseInt(line.trim(), 10) : NaN;
 		const mark = Number.isFinite(numbered) ? `${numbered + 1}. ` : LIST_MARK[kind];
-		document.execCommand("insertLineBreak");
-		document.execCommand("insertText", false, indent + mark);
+		this.editRich(tb, editor, `\n${indent}${mark}`);
 		return true;
 	}
 
@@ -5560,10 +5795,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!edits.length) return;
 		this.pushEditSession();
 		// Back to front: an edit never moves the ones still to come.
+		this.rememberRich(tb, editor, true);
 		for (const edit of edits.reverse()) {
-			selectOffsets(editor, edit.from, edit.to);
-			if (edit.text) document.execCommand("insertText", false, edit.text);
-			else document.execCommand("delete");
+			this.editRich(tb, editor, edit.text, { from: edit.from, to: edit.to }, false);
 		}
 		editor.focus();
 		// Bulleting the whole box leaves the caret at the end, ready to write the next item.
@@ -5590,6 +5824,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const id = source.getAttribute("data-id");
 		const tb = this.data.texts.find(text => text.id === id);
 		this.activeTextEditor = null;
+		this.activeRichBox = null;
+		this.richPast = [];
+		this.richFuture = [];
+		this.richPending = null;
 		this.activeTextSourceEl = null;
 		stopMobile?.();
 		this.mathPreviewEl?.remove();
@@ -5907,7 +6145,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			&& (target === this.workspaceEl || target === this.renderer.canvas || target === this.stageEl || this.stageEl.contains(target))
 			&& !target.closest("button, input, textarea, select, [contenteditable='true']");
 
-		if (this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
+		if (e.pointerType === "mouse" && this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
 			this.hideEraserCursor();
 			this.updateTextPlacementHint(e);
 			return;
@@ -6024,20 +6262,27 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private formatRich(tb: TextBox, editor: HTMLElement, command: string, value?: string): void {
 		this.pushEditSession();
 		editor.focus();
-		document.execCommand(command, false, value);
-		this.syncRichText(tb, editor);
-		this.resizeRichEditor(tb, editor);
-		this.save();
+		const runs = readRuns(editor, this.baseStyle(editor, tb));
+		const { from, to } = selectionOffsets(editor);
+		const change = richChange(command, value, styleAcross(runs, from, to));
+		if (!change) return;
+		if (from === to) {
+			// Nothing selected: the command arms the style for what gets typed
+			// next, the way it works in any editor.
+			this.richPending = { from, change };
+			return;
+		}
+		this.rememberRich(tb, editor, true);
+		this.paintRich(tb, editor, styleRange(runs, from, to, change), from, to);
 	}
 
 	/** The highlight tint under the caret, or none when the text is not highlighted. */
 	private markUnderCaret(): string {
-		try {
-			const value = document.queryCommandValue("hiliteColor");
-			return !value || value === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(value) ? "" : value;
-		} catch {
-			return "";
-		}
+		const editor = this.activeTextEditor;
+		const tb = this.activeRichBox;
+		if (!editor || !tb || editor.instanceOf(HTMLTextAreaElement)) return "";
+		const { from, to } = selectionOffsets(editor);
+		return styleAcross(readRuns(editor, this.baseStyle(editor, tb)), from, to).mark ?? "";
 	}
 
 	private showFormatBar(tb: TextBox, el: HTMLElement): void {
@@ -6217,11 +6462,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		const refreshStates = () => {
 			// In a rich box the buttons show the style of the selection, not of the box.
-			const state = (cmd: string) => { try { return document.queryCommandState(cmd); } catch { return false; } };
-			toggleButtons.get("bold")?.toggleClass("active", rich ? state("bold") : !!tb.bold);
-			toggleButtons.get("italic")?.toggleClass("active", rich ? state("italic") : !!tb.italic);
-			toggleButtons.get("underline")?.toggleClass("active", rich ? state("underline") : !!tb.underline);
-			toggleButtons.get("strike")?.toggleClass("active", rich ? state("strikeThrough") : !!tb.strike);
+			const style = rich ? styleAcross(readRuns(rich, this.baseStyle(rich, tb)), ...(({ from, to }) => [from, to] as const)(selectionOffsets(rich))) : {};
+			toggleButtons.get("bold")?.toggleClass("active", rich ? !!style.bold : !!tb.bold);
+			toggleButtons.get("italic")?.toggleClass("active", rich ? !!style.italic : !!tb.italic);
+			toggleButtons.get("underline")?.toggleClass("active", rich ? !!style.underline : !!tb.underline);
+			toggleButtons.get("strike")?.toggleClass("active", rich ? !!style.strike : !!tb.strike);
 			toggleButtons.get("mark")?.toggleClass("active", !!rich && !!this.markUnderCaret());
 			toggleButtons.get("align-left")?.toggleClass("active", (tb.align ?? "left") === "left");
 			toggleButtons.get("align-center")?.toggleClass("active", tb.align === "center");

@@ -28,7 +28,7 @@
 	P.getAttr = function (k) { return this.getAttribute(k); };
 	P.detach = function () { this.remove(); };
 	P.setCssStyles = function (styles) { for (const k in styles) this.style[k] = styles[k]; };
-	P.createSvg = function (tag, o) { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); if (typeof o === "string") el.setAttribute("class", o); else if (o && o.cls) el.setAttribute("class", Array.isArray(o.cls) ? o.cls.join(" ") : o.cls); this.appendChild(el); return el; };
+	P.createSvg = function (tag, o) { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); this.appendChild(el); return el; };
 	Node.prototype.instanceOf = function (type) { return this instanceof type; };
 	P.setCssProps = function (props) { for (const k in props) this.style.setProperty(k, props[k]); };
 	P.appendText = function (t) { this.appendChild(document.createTextNode(t)); return this; };
@@ -40,7 +40,7 @@
 	window.createDiv = (o) => applyOpts(document.createElement("div"), o);
 	window.createEl = (t, o) => applyOpts(document.createElement(t), o);
 	window.createSpan = (o) => applyOpts(document.createElement("span"), o);
-	window.createSvg = (tag, o) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); if (typeof o === "string") el.setAttribute("class", o); else if (o && o.cls) el.setAttribute("class", Array.isArray(o.cls) ? o.cls.join(" ") : o.cls); return el; };
+	window.createSvg = (tag, o) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); return el; };
 	window.activeWindow = window;
 	window.activeDocument = document;
 

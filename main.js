@@ -22069,7 +22069,7 @@ function createTranslatorPanel(host, container) {
     } catch {
       result.focus();
       result.select();
-      document.execCommand("copy");
+      new import_obsidian6.Notice(tr("No se pudo copiar. El texto queda seleccionado: pulsa Ctrl+C."));
     }
   };
   let open2 = false;
@@ -35839,7 +35839,11 @@ function bandPath(pts, width) {
       [q3.x - nx - ex * tail, q3.y - ny - ey * tail],
       [p3.x - nx - ex * head, p3.y - ny - ey * head]
     ]);
-    if (i4 > 0) path2.arc(p3.x, p3.y, half, 0, Math.PI * 2, true);
+    if (i4 > 0) {
+      path2.moveTo(p3.x + half, p3.y);
+      path2.arc(p3.x, p3.y, half, 0, Math.PI * 2, true);
+      path2.closePath();
+    }
   }
   return path2;
 }
@@ -35852,6 +35856,10 @@ var CanvasRenderer = class {
     this.lift = 0;
     /** Marker bands, kept per stroke so panning never rebuilds them. */
     this.markerBands = /* @__PURE__ */ new WeakMap();
+    this.liveFrame = 0;
+    this.livePending = null;
+    this.liveAllFrame = 0;
+    this.livePendingAll = null;
     this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
     const ctx = this.canvas.getContext("2d");
     if (!ctx) throw new Error("NoteLens: Canvas 2D context unavailable");
@@ -35890,7 +35898,24 @@ var CanvasRenderer = class {
     this.clearDevice();
     this.applyViewTransform(vt2);
     for (const shape of shapes) this.drawShape(shape);
-    for (const stroke of strokes) if (stroke.type === "highlighter") this.drawStroke(stroke);
+    const highlights = /* @__PURE__ */ new Map();
+    for (const stroke of strokes) {
+      if (stroke.type !== "highlighter" || !stroke.points.length) continue;
+      let path2 = highlights.get(stroke.color);
+      if (!path2) {
+        path2 = new Path2D();
+        highlights.set(stroke.color, path2);
+      }
+      path2.addPath(this.markerBand(stroke));
+    }
+    for (const [color, path2] of highlights) {
+      this.ctx.save();
+      this.ctx.globalCompositeOperation = "multiply";
+      this.ctx.globalAlpha = colorAlpha2(color);
+      this.ctx.fillStyle = opaqueColor(color);
+      this.ctx.fill(path2);
+      this.ctx.restore();
+    }
     for (const stroke of strokes) if (stroke.type !== "highlighter") this.drawStroke(stroke);
   }
   drawStroke(stroke) {
@@ -35995,7 +36020,7 @@ var CanvasRenderer = class {
     for (const [widthFactor, alphaFactor, offset, seed] of passes) {
       this.ctx.globalAlpha = alpha * alphaFactor;
       this.ctx.lineWidth = Math.max(0.6, w3 * widthFactor);
-      this.tracePath(pts, offset * w3, w3 * 0.35, seed);
+      this.tracePath(pts, offset * w3, w3 * 0.12, seed);
       this.ctx.stroke();
     }
     this.ctx.restore();
@@ -36037,6 +36062,16 @@ var CanvasRenderer = class {
    * highlighter smooth without re-rendering the whole document per move.
    */
   drawLiveWholeStroke(stroke, vt2) {
+    this.livePending = { stroke, vt: vt2 };
+    if (this.liveFrame) return;
+    this.liveFrame = window.requestAnimationFrame(() => {
+      this.liveFrame = 0;
+      const next = this.livePending;
+      this.livePending = null;
+      if (next) this.paintLiveWholeStroke(next.stroke, next.vt);
+    });
+  }
+  paintLiveWholeStroke(stroke, vt2) {
     if (!this.liveBase || this.liveBase.width !== this.canvas.width || this.liveBase.height !== this.canvas.height) {
       const base = createEl("canvas");
       base.width = this.canvas.width;
@@ -36049,8 +36084,31 @@ var CanvasRenderer = class {
     this.applyViewTransform(vt2);
     this.drawStroke(stroke);
   }
+  /**
+   * A full re-render, at most one per frame. The marker has to be composited
+   * with the strokes it shares a colour with and under the pen ink, so it
+   * cannot use the snapshot path -- but a pen reports moves several times per
+   * frame, and rendering the whole document for each of them is what made it
+   * drag.
+   */
+  renderAllLive(strokes, shapes, vt2) {
+    this.livePendingAll = { strokes, shapes, vt: vt2 };
+    if (this.liveAllFrame) return;
+    this.liveAllFrame = window.requestAnimationFrame(() => {
+      this.liveAllFrame = 0;
+      const next = this.livePendingAll;
+      this.livePendingAll = null;
+      if (next) this.renderAll(next.strokes, next.shapes, next.vt);
+    });
+  }
   /** Drops the live snapshot once the stroke in progress is finished or cancelled. */
   endLive() {
+    if (this.liveAllFrame) window.cancelAnimationFrame(this.liveAllFrame);
+    this.liveAllFrame = 0;
+    this.livePendingAll = null;
+    if (this.liveFrame) window.cancelAnimationFrame(this.liveFrame);
+    this.liveFrame = 0;
+    this.livePending = null;
     this.liveBase = null;
   }
   drawShape(shape) {
@@ -36348,6 +36406,19 @@ function trackMobileEditor(editor, move, board, reserve = () => 0) {
 }
 
 // src/rich-editor.ts
+var isTrailingBreak = (child, parent, root) => child.nodeName === "BR" && parent === root && !child.nextSibling;
+function paintEditable(parent, text) {
+  text.split("\n").forEach((line2, index) => {
+    if (index) parent.createEl("br");
+    if (line2) parent.appendText(line2);
+  });
+}
+function closeEditable(root) {
+  let last = root.lastChild;
+  while (last?.lastChild) last = last.lastChild;
+  const broken = last?.nodeName === "BR" || last?.nodeType === Node.TEXT_NODE && (last.nodeValue ?? "").endsWith("\n");
+  if (broken) root.createEl("br");
+}
 var BLOCK_TAGS = /^(DIV|P|LI|UL|OL|BLOCKQUOTE|PRE|H[1-6]|TABLE|TR)$/;
 var transparent = (color) => !color || color === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(color);
 function renderRuns(root, runs, base, paint2) {
@@ -36387,7 +36458,7 @@ function collect(node, root, base, out) {
     }
     if (!child.instanceOf(HTMLElement)) continue;
     if (child.tagName === "BR") {
-      out.push({ text: "\n" });
+      if (!isTrailingBreak(child, node, root)) out.push({ text: "\n" });
       continue;
     }
     if (BLOCK_TAGS.test(child.tagName) && out.length && !out[out.length - 1].text.endsWith("\n")) out.push({ text: "\n" });
@@ -36434,8 +36505,10 @@ function atoms(root) {
       }
       if (!child.instanceOf(HTMLElement)) continue;
       if (child.tagName === "BR") {
-        list.push({ node: null, from: at2, length: 1 });
-        at2 += 1;
+        if (!isTrailingBreak(child, node, root)) {
+          list.push({ node: null, el: child, from: at2, length: 1 });
+          at2 += 1;
+        }
         continue;
       }
       if (BLOCK_TAGS.test(child.tagName) && at2 > 0) {
@@ -36477,9 +36550,17 @@ function selectionOffsets(root) {
 }
 function pointAt(root, offset) {
   const list = atoms(root);
+  let afterBreak;
   for (const atom of list) {
-    if (!atom.node) continue;
+    if (!atom.node) {
+      if (offset === atom.from + atom.length) afterBreak = atom.el;
+      continue;
+    }
     if (offset <= atom.from + atom.length) return { node: atom.node, offset: Math.max(0, offset - atom.from) };
+  }
+  if (afterBreak?.parentNode) {
+    const parent = afterBreak.parentNode;
+    return { node: parent, offset: Array.from(parent.childNodes).indexOf(afterBreak) + 1 };
   }
   const last = list.filter((a3) => a3.node).pop();
   return last?.node ? { node: last.node, offset: last.length } : { node: root, offset: root.childNodes.length };
@@ -36528,6 +36609,82 @@ function unwrapCode(root) {
   }
   root.normalize();
   return true;
+}
+function cutAt(runs, offsets) {
+  let out = runs.filter((run) => run.text.length);
+  for (const at2 of [...new Set(offsets)].sort((a3, b3) => a3 - b3)) {
+    const next = [];
+    let seen = 0;
+    for (const run of out) {
+      const end = seen + run.text.length;
+      if (at2 > seen && at2 < end) {
+        next.push({ ...run, text: run.text.slice(0, at2 - seen) });
+        next.push({ ...run, text: run.text.slice(at2 - seen) });
+      } else {
+        next.push(run);
+      }
+      seen = end;
+    }
+    out = next;
+  }
+  return out;
+}
+function styleRange(runs, from, to, change) {
+  if (to <= from) return runs;
+  const out = [];
+  let seen = 0;
+  for (const run of cutAt(runs, [from, to])) {
+    const end = seen + run.text.length;
+    out.push(seen >= from && end <= to ? change({ ...run }) : run);
+    seen = end;
+  }
+  return mergeRuns(out);
+}
+function spliceRuns(runs, from, to, text) {
+  const cut = cutAt(runs, [from, to]);
+  const before = [];
+  const after = [];
+  let carried;
+  let seen = 0;
+  for (const run of cut) {
+    const end = seen + run.text.length;
+    if (end <= from) {
+      before.push(run);
+      carried = run;
+    } else if (seen >= to) {
+      after.push(run);
+    } else if (!carried) {
+      carried = run;
+    }
+    seen = end;
+  }
+  const style = carried ?? after[0] ?? cut[0];
+  const middle = text ? [{ ...style, text }] : [];
+  return mergeRuns([...before, ...middle, ...after]);
+}
+function styleAcross(runs, from, to) {
+  const cut = cutAt(runs, [from, to]);
+  const touched = [];
+  let seen = 0;
+  for (const run of cut) {
+    const end = seen + run.text.length;
+    if (end > seen) {
+      if (from === to ? end === from || seen === 0 && from === 0 : seen >= from && end <= to) touched.push(run);
+    }
+    seen = end;
+  }
+  if (!touched.length) return {};
+  const every = (has) => touched.every(has);
+  const style = {};
+  if (every((run) => !!run.bold)) style.bold = true;
+  if (every((run) => !!run.italic)) style.italic = true;
+  if (every((run) => !!run.underline)) style.underline = true;
+  if (every((run) => !!run.strike)) style.strike = true;
+  if (every((run) => !!run.code)) style.code = true;
+  const { mark, color } = touched[0];
+  if (mark && every((run) => run.mark === mark)) style.mark = mark;
+  if (color && every((run) => run.color === color)) style.color = color;
+  return style;
 }
 
 // src/history.ts
@@ -62050,6 +62207,7 @@ function createOptionsPanel(host, container, close) {
   const panelClose = panel.createEl("button", { cls: "notelens-panel-close" });
   (0, import_obsidian12.setIcon)(panelClose, "x");
   panelClose.title = tr("Cerrar (Esc)");
+  panelClose.setAttr("aria-label", panelClose.title);
   panelClose.onclick = () => close();
   function createPanelHeader(section, icon, title) {
     const header = section.createDiv({ cls: "notelens-tool-panel-header" });
@@ -62086,8 +62244,9 @@ function createOptionsPanel(host, container, close) {
   const penHeadingIcon = penSection.querySelector(".notelens-tool-panel-icon");
   const previewWrap = penSection.createDiv({ cls: "notelens-pen-preview" });
   const previewRenderer = new CanvasRenderer(previewWrap);
-  const PREVIEW_W = 264, PREVIEW_H = 46;
+  const PREVIEW_H = 46;
   const renderPreview = () => {
+    const PREVIEW_W = Math.max(120, previewWrap.clientWidth - 2 || 264);
     previewRenderer.resize(PREVIEW_W, PREVIEW_H);
     const pts = [];
     const n = 46;
@@ -62110,6 +62269,7 @@ function createOptionsPanel(host, container, close) {
     (0, import_obsidian12.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
     b3.createSpan({ text: tr(nib.label) });
     b3.title = tr(nib.hint);
+    b3.setAttr("aria-label", tr(nib.label));
     b3.onclick = () => {
       host.setPenStyle(nib.id);
       refresh();
@@ -62461,7 +62621,8 @@ function createQuickTagsBar(container, onPick, onSummary) {
 }
 function createSettingsPanel(host, container) {
   const btn = container.createEl("button", { cls: "notelens-settings-btn" });
-  (0, import_obsidian12.setIcon)(btn, "settings-2");
+  (0, import_obsidian12.setIcon)(btn, "settings");
+  btn.setAttr("aria-label", tr("Formato del fondo"));
   btn.title = tr("Formato del fondo");
   shield(btn);
   const panel = container.createDiv({ cls: "notelens-settings-panel hidden" });
@@ -62695,6 +62856,49 @@ function normalizeLanguage(raw) {
   if (!key2) return "plaintext";
   return LANGUAGE_ALIASES[key2] ?? key2;
 }
+var RULER_HEIGHT = 54;
+function withMark(run, key2, on) {
+  const next = { ...run };
+  if (on) next[key2] = true;
+  else delete next[key2];
+  return next;
+}
+function richChange(command, value, current) {
+  switch (command) {
+    case "bold":
+    case "italic":
+    case "underline": {
+      const key2 = command;
+      const on = !current[key2];
+      return (run) => withMark(run, key2, on);
+    }
+    case "strikeThrough": {
+      const on = !current.strike;
+      return (run) => withMark(run, "strike", on);
+    }
+    case "hiliteColor": {
+      const tint = !value || value === "transparent" ? "" : value;
+      return (run) => {
+        const next = { ...run };
+        if (tint) next.mark = tint;
+        else delete next.mark;
+        return next;
+      };
+    }
+    case "foreColor": {
+      return (run) => {
+        const next = { ...run };
+        if (value) next.color = value;
+        else delete next.color;
+        return next;
+      };
+    }
+    case "removeFormat":
+      return (run) => ({ text: run.text });
+    default:
+      return null;
+  }
+}
 var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileView {
   constructor(leaf, plugin) {
     super(leaf);
@@ -62783,13 +62987,24 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.loadFailed = false;
     this.activeTextEditor = null;
     this.activeTextSourceEl = null;
+    /** The box the rich editor belongs to, for edits driven from keys and menus. */
+    this.activeRichBox = null;
+    // A rich box is edited as runs and repainted, which the browser's own undo
+    // cannot follow, so the box keeps its own history while it is open.
+    this.richPast = [];
+    this.richFuture = [];
+    this.richRememberedAt = Number.NEGATIVE_INFINITY;
+    /** A style armed with nothing selected, worn by whatever is typed next. */
+    this.richPending = null;
     this.a4GuidesEl = null;
     this.miniMapEl = null;
     this.miniMapVisible = false;
     this.miniMapCanvas = null;
     this.miniMapBounds = null;
     this.rulerEl = null;
+    this.rulerGuide = null;
     this.rulerState = { visible: false, x: 180, y: 260, length: 520, angle: 0, mode: "ruler" };
+    this.rulerMarksDrawn = "";
     // --- Selection state (runtime only, not persisted) ---
     this.selStrokes = /* @__PURE__ */ new Set();
     this.selShapes = /* @__PURE__ */ new Set();
@@ -63204,11 +63419,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   // ------------------------------------------------------------------
   createRuler() {
     this.rulerEl = this.workspaceEl.createDiv({ cls: "notelens-smart-ruler hidden" });
-    const marks = this.rulerEl.createDiv({ cls: "notelens-ruler-marks" });
-    for (let mark = 0; mark <= 50; mark++) {
-      const tick = marks.createDiv({ cls: `notelens-ruler-tick ${mark % 5 === 0 ? "major" : ""}` });
-      if (mark % 5 === 0 && mark < 50) tick.setAttr("data-label", String(mark / 5));
-    }
+    this.rulerEl.createSvg("svg", { cls: "notelens-ruler-scale" });
     const label = this.rulerEl.createDiv({ cls: "notelens-ruler-label" });
     const modeBtn = label.createEl("button", { cls: "notelens-ruler-mode" });
     modeBtn.title = tr("Alternar regla y transportador");
@@ -63240,6 +63451,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.rulerEl.style.top = `${this.rulerState.y}px`;
     this.rulerEl.style.width = `${this.rulerState.length}px`;
     const isProtractor = this.rulerState.mode === "protractor";
+    this.rulerEl.style.height = isProtractor ? `${this.rulerState.length / 2}px` : "";
+    this.renderRulerMarks();
     this.rulerEl.style.transformOrigin = isProtractor ? "50% 100%" : "50% 50%";
     this.rulerEl.style.transform = `translateY(${isProtractor ? "-100%" : "-50%"}) rotate(${this.rulerState.angle}deg)`;
     const mode2 = this.rulerEl.querySelector(".notelens-ruler-mode");
@@ -63247,6 +63460,68 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const angle = (Math.round(this.rulerState.angle) % 360 + 360) % 360;
       mode2.setText(isProtractor ? tr("\xC1ngulos {p0}\xB0", { p0: angle }) : tr("Regla"));
       mode2.setAttr("aria-label", mode2.textContent || "Regla");
+    }
+  }
+  renderRulerMarks() {
+    const svg = this.rulerEl?.querySelector(".notelens-ruler-scale");
+    if (!svg) return;
+    const r = this.rulerState;
+    const signature = `${r.mode}:${r.length}`;
+    if (signature === this.rulerMarksDrawn) return;
+    this.rulerMarksDrawn = signature;
+    svg.empty();
+    const tick = (x1, y12, x22, y22, cls) => {
+      const line2 = svg.createSvg("line", { cls: ["notelens-tick", cls] });
+      line2.setAttr("x1", x1.toFixed(2));
+      line2.setAttr("y1", y12.toFixed(2));
+      line2.setAttr("x2", x22.toFixed(2));
+      line2.setAttr("y2", y22.toFixed(2));
+    };
+    const number = (x4, y3, text) => {
+      const el = svg.createSvg("text", { cls: "notelens-tick-number" });
+      el.setAttr("x", x4.toFixed(2));
+      el.setAttr("y", y3.toFixed(2));
+      el.setText(text);
+    };
+    if (r.mode === "protractor") {
+      const radius = r.length / 2;
+      svg.setAttr("viewBox", `0 0 ${r.length} ${radius}`);
+      const rim = svg.createSvg("path", { cls: "notelens-ruler-rim" });
+      rim.setAttr("d", `M 1 ${radius - 1} A ${radius - 1} ${radius - 1} 0 0 1 ${r.length - 1} ${radius - 1} M 0 ${radius - 1} L ${r.length} ${radius - 1}`);
+      for (let degree = 0; degree <= 180; degree++) {
+        const major = degree % 10 === 0, medium = degree % 5 === 0;
+        const length = major ? 15 : medium ? 10 : 6;
+        const cos = Math.cos(degree * Math.PI / 180), sin = Math.sin(degree * Math.PI / 180);
+        tick(
+          radius + radius * cos,
+          radius - radius * sin,
+          radius + (radius - length) * cos,
+          radius - (radius - length) * sin,
+          major ? "is-major" : medium ? "is-medium" : "is-minor"
+        );
+        if (major) {
+          const inset = degree === 0 || degree === 180 ? 34 : 27;
+          const lift = degree === 0 || degree === 180 ? 11 : 0;
+          number(radius + (radius - inset) * cos, radius - (radius - inset) * sin - lift, String(degree));
+        }
+      }
+      const pivot = svg.createSvg("circle", { cls: "notelens-ruler-pivot" });
+      pivot.setAttr("cx", String(radius));
+      pivot.setAttr("cy", String(radius));
+      pivot.setAttr("r", "4");
+      tick(radius - 13, radius, radius + 13, radius, "is-pivot");
+      tick(radius, radius - 13, radius, radius, "is-pivot");
+      return;
+    }
+    svg.setAttr("viewBox", `0 0 ${r.length} ${RULER_HEIGHT}`);
+    const edges = svg.createSvg("path", { cls: "notelens-ruler-rim" });
+    edges.setAttr("d", `M 0 1 L ${r.length} 1 M 0 ${RULER_HEIGHT - 1} L ${r.length} ${RULER_HEIGHT - 1}`);
+    for (let x4 = 0; x4 <= r.length - 1; x4 += 5) {
+      const centimetre = x4 % 50 === 0, half = x4 % 25 === 0;
+      const length = centimetre ? 13 : half ? 9 : 5;
+      tick(x4, 0, x4, length, centimetre ? "is-major" : half ? "is-medium" : "is-minor");
+      tick(x4, RULER_HEIGHT, x4, RULER_HEIGHT - (centimetre ? 7 : 4), centimetre ? "is-major" : "is-minor");
+      if (centimetre && x4 <= r.length - 22) number(x4 + 4, 24, String(x4 / 50));
     }
   }
   toggleRuler() {
@@ -63259,7 +63534,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   startRulerDrag(event) {
     if (event.target.closest("button, .notelens-ruler-rotate")) return;
-    if (event.pointerType !== "touch" && this.currentTool !== "select") return;
+    if (this.currentTool !== "select" && this.currentTool !== "hand") return;
     event.stopPropagation();
     event.preventDefault();
     const startX = event.clientX;
@@ -63302,22 +63577,37 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     window.addEventListener("pointercancel", onUp);
   }
   getDrawingSceneCoords(clientX, clientY) {
-    if (!this.rulerState.visible || !["pen", "highlighter"].includes(this.currentTool)) {
-      return this.getSceneCoords(clientX, clientY);
-    }
     const rect = this.workspaceEl.getBoundingClientRect();
-    const px2 = clientX - rect.left;
-    const py = clientY - rect.top;
-    const radians = this.rulerState.angle * Math.PI / 180;
-    const dx = Math.cos(radians);
-    const dy = Math.sin(radians);
-    const toPointerX = px2 - this.rulerState.x;
-    const toPointerY = py - this.rulerState.y;
-    const projected = clamp(toPointerX * dx + toPointerY * dy, 0, this.rulerState.length);
-    const snapX = this.rulerState.x + projected * dx;
-    const snapY = this.rulerState.y + projected * dy;
-    if (Math.hypot(px2 - snapX, py - snapY) > 18) return this.getSceneCoords(clientX, clientY);
-    return this.getSceneCoords(rect.left + snapX, rect.top + snapY);
+    const px2 = clientX - rect.left, py = clientY - rect.top;
+    if (!this.currentStroke) {
+      this.rulerGuide = null;
+      if (this.rulerState.visible && ["pen", "highlighter"].includes(this.currentTool)) {
+        const r = this.rulerState;
+        const angle = r.angle * Math.PI / 180;
+        const dx = Math.cos(angle), dy = Math.sin(angle);
+        const cx = r.x + r.length / 2, cy = r.y;
+        const along = (px2 - cx) * dx + (py - cy) * dy;
+        const normal = -(px2 - cx) * dy + (py - cy) * dx;
+        const height = this.rulerEl?.offsetHeight ?? 54;
+        const isProtractor = r.mode === "protractor";
+        const half = isProtractor ? 0 : height / 2;
+        const edge = normal < 0 ? -half : half;
+        const near = isProtractor ? normal <= 36 && normal >= -(height + 36) : Math.abs(normal - edge) <= 36;
+        if (near && Math.abs(along) <= r.length / 2 + 36) {
+          this.rulerGuide = {
+            x: cx - dx * r.length / 2 - dy * edge,
+            y: cy - dy * r.length / 2 + dx * edge,
+            dx,
+            dy,
+            length: r.length
+          };
+        }
+      }
+    }
+    const guide = this.rulerGuide;
+    if (!guide) return this.getSceneCoords(clientX, clientY);
+    const projected = clamp((px2 - guide.x) * guide.dx + (py - guide.y) * guide.dy, 0, guide.length);
+    return this.getSceneCoords(rect.left + guide.x + projected * guide.dx, rect.top + guide.y + projected * guide.dy);
   }
   getMiniMapVisible() {
     return this.miniMapVisible;
@@ -64279,6 +64569,16 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
           y: pt2.y,
           p: ev.pressure > 0 ? ev.pressure : 0.5
         });
+      }
+      if (this.currentStroke.type === "highlighter") {
+        if (e.shiftKey) {
+          const pts = this.currentStroke.points;
+          this.currentStroke.points = [pts[0], pts[pts.length - 1]];
+        }
+        this.renderer.renderAllLive(this.pageStrokes, this.pageShapes, this.data.viewTransform);
+        this.renderedPoints = this.currentStroke.points.length;
+        this.save();
+        return;
       }
       if (e.shiftKey) {
         const pts = this.currentStroke.points;
@@ -66474,6 +66774,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (checklist.length) head.createSpan({ cls: "onenote-top-tooltip-progress", text: `${completed}/${checklist.length}` });
     if (badge.title?.trim()) el.createDiv({ cls: "onenote-top-tooltip-note-title", text: badge.title.trim() });
     if (checklist.length) {
+      el.toggleClass("has-sketches", checklist.some((item) => !!item.sketch));
       const list = el.createDiv({ cls: "onenote-top-tooltip-checklist" });
       for (const item of checklist) {
         const row = list.createEl("button", { cls: "onenote-top-tooltip-checklist-item" });
@@ -67230,8 +67531,8 @@ ${rows.join("\n")}`);
         return;
       }
       editor.focus();
-      selectOffsets(editor, 0, editableText(editor).length);
-      document.execCommand("insertText", false, text);
+      const box = this.activeRichBox;
+      if (box) this.editRich(box, editor, text, { from: 0, to: editableText(editor).length });
       return;
     }
     const targets = this.translatableSelection();
@@ -67804,7 +68105,7 @@ ${rows.join("\n")}`);
       this.save();
     });
     editor.addEventListener("keydown", (e) => {
-      if (e.isComposing || e.keyCode === 229) return;
+      if (e.isComposing || e.key === "Process") return;
       if (e.key === "Escape") {
         e.preventDefault();
         this.commitTextEditor();
@@ -67857,11 +68158,12 @@ ${rows.join("\n")}`);
     el.setCssStyles({ visibility: "hidden" });
     this.activeTextEditor = editor;
     this.activeTextSourceEl = el;
+    this.activeRichBox = tb;
+    this.richPast = [];
+    this.richFuture = [];
+    this.richRememberedAt = Number.NEGATIVE_INFINITY;
+    this.richPending = null;
     const openedAt = performance.now();
-    try {
-      document.execCommand("styleWithCSS", false, "true");
-    } catch {
-    }
     this.keepEditorUsableOnTouch(editor);
     editor.focus({ preventScroll: true });
     const end = editableText(editor).length;
@@ -67871,15 +68173,17 @@ ${rows.join("\n")}`);
     editor.addEventListener("paste", (e) => {
       e.preventDefault();
       const text = e.clipboardData?.getData("text/plain") ?? "";
-      if (text) document.execCommand("insertText", false, text);
+      if (text) this.editRich(tb, editor, text);
     });
-    editor.addEventListener("input", () => {
+    editor.addEventListener("beforeinput", () => this.rememberRich(tb, editor));
+    editor.addEventListener("input", (e) => {
       this.pushEditSession();
+      if (!e.isComposing) this.applyPendingRichStyle(tb, editor);
       this.syncRichText(tb, editor);
       this.resizeRichEditor(tb, editor);
       this.save();
     });
-    editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor));
+    editor.addEventListener("keydown", (e) => this.richEditorKey(e, editor, tb));
     editor.addEventListener("blur", (event) => {
       const next = event.relatedTarget;
       if (next && this.formatBarEl?.contains(next)) return;
@@ -67897,7 +68201,8 @@ ${rows.join("\n")}`);
   fillRichEditor(editor, tb) {
     editor.empty();
     const runs = tb.runs?.length ? tb.runs : runsFromInline(tb.text, tb.highlight || DEFAULT_TEXT_HIGHLIGHT);
-    renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => parent.appendText(text));
+    renderRuns(editor, runs, this.baseStyle(editor, tb), (parent, text) => paintEditable(parent, text));
+    closeEditable(editor);
   }
   /** What the box looks like before any run overrides it. */
   baseStyle(el, tb) {
@@ -67929,30 +68234,94 @@ ${rows.join("\n")}`);
     tb.h = Math.max(48, editor.scrollHeight + 4);
     editor.style.height = `${tb.h}px`;
   }
-  richEditorKey(e, editor) {
-    if (e.isComposing || e.keyCode === 229) return;
+  richEditorKey(e, editor, tb) {
+    if (e.isComposing || e.key === "Process") return;
     const mod = e.ctrlKey || e.metaKey;
+    const key2 = e.key.toLowerCase();
     if (e.key === "Escape" || mod && e.key === "Enter") {
       e.preventDefault();
       this.commitTextEditor();
       return;
     }
-    if (mod && !e.altKey && ["b", "i", "u"].includes(e.key.toLowerCase())) {
+    if (mod && (key2 === "z" || key2 === "y")) {
+      e.preventDefault();
       e.stopPropagation();
+      this.stepRich(tb, editor, key2 === "z" && !e.shiftKey);
+      return;
+    }
+    if (mod && !e.altKey && ["b", "i", "u"].includes(key2)) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.formatRich(tb, editor, key2 === "b" ? "bold" : key2 === "i" ? "italic" : "underline");
       return;
     }
     if (e.key === "Tab") {
       e.preventDefault();
-      document.execCommand("insertText", false, "	");
+      this.editRich(tb, editor, "	");
       return;
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (!this.continueRichList(editor)) document.execCommand("insertLineBreak");
+      if (!this.continueRichList(tb, editor)) this.editRich(tb, editor, "\n");
     }
   }
+  /**
+   * Replaces a stretch of a rich box with `text`, as typing would: the new
+   * text wears the style it is typed into, and the caret lands after it.
+   */
+  editRich(tb, editor, text, range, remember = true) {
+    const { from, to } = range ?? selectionOffsets(editor);
+    if (remember) this.rememberRich(tb, editor, true);
+    const runs = spliceRuns(readRuns(editor, this.baseStyle(editor, tb)), from, to, text);
+    this.paintRich(tb, editor, runs, from + text.length, from + text.length);
+  }
+  /** Repaints a rich box from runs and puts the selection back where it was. */
+  paintRich(tb, editor, runs, from, to) {
+    tb.runs = runs.length ? runs : void 0;
+    tb.text = runs.length ? runsToMarked(runs) : "";
+    this.fillRichEditor(editor, tb);
+    selectOffsets(editor, from, to);
+    this.resizeRichEditor(tb, editor);
+    this.save();
+  }
+  /**
+   * Keeps the box as it stands, so Ctrl+Z can come back to it. Typing is
+   * gathered into steps rather than remembered a letter at a time.
+   */
+  rememberRich(tb, editor, force = false) {
+    const now = performance.now();
+    if (!force && now - this.richRememberedAt < 500) return;
+    this.richRememberedAt = force ? Number.NEGATIVE_INFINITY : now;
+    const { from, to } = selectionOffsets(editor);
+    this.richPast.push({ runs: readRuns(editor, this.baseStyle(editor, tb)), from, to });
+    if (this.richPast.length > 120) this.richPast.shift();
+    this.richFuture.length = 0;
+  }
+  /** Steps a rich box back, or forward again, through its own history. */
+  stepRich(tb, editor, back) {
+    const source = back ? this.richPast : this.richFuture;
+    const destination = back ? this.richFuture : this.richPast;
+    const snapshot = source.pop();
+    if (!snapshot) return;
+    const here = selectionOffsets(editor);
+    destination.push({ runs: readRuns(editor, this.baseStyle(editor, tb)), from: here.from, to: here.to });
+    this.richRememberedAt = performance.now();
+    this.richPending = null;
+    this.paintRich(tb, editor, snapshot.runs, snapshot.from, snapshot.to);
+  }
+  /** Dresses the text just typed in the style armed with nothing selected. */
+  applyPendingRichStyle(tb, editor) {
+    const pending = this.richPending;
+    if (!pending) return;
+    const caret = selectionOffsets(editor).from;
+    this.richPending = null;
+    if (caret <= pending.from) return;
+    const runs = styleRange(readRuns(editor, this.baseStyle(editor, tb)), pending.from, caret, pending.change);
+    this.paintRich(tb, editor, runs, caret, caret);
+    this.richPending = { from: caret, change: pending.change };
+  }
   /** Enter inside a list item starts the next one; on an empty item it leaves the list. */
-  continueRichList(editor) {
+  continueRichList(tb, editor) {
     const text = editableText(editor);
     const { from, to } = selectionOffsets(editor);
     if (from !== to) return false;
@@ -67961,15 +68330,14 @@ ${rows.join("\n")}`);
     const kind = listKindOf(line2);
     if (!kind) return false;
     if (!line2.replace(LIST_PREFIX, "").trim()) {
-      selectOffsets(editor, lineStart, from);
-      document.execCommand("delete");
+      this.editRich(tb, editor, "", { from: lineStart, to: from });
       return true;
     }
     const indent = /^\s*/.exec(line2)?.[0] ?? "";
     const numbered = kind === "number" ? parseInt(line2.trim(), 10) : NaN;
     const mark = Number.isFinite(numbered) ? `${numbered + 1}. ` : LIST_MARK[kind];
-    document.execCommand("insertLineBreak");
-    document.execCommand("insertText", false, indent + mark);
+    this.editRich(tb, editor, `
+${indent}${mark}`);
     return true;
   }
   /** Puts the list prefix in, or takes it out, on every line the selection touches. */
@@ -67979,10 +68347,9 @@ ${rows.join("\n")}`);
     const edits = planListToggle(editableText(editor), from, to, kind);
     if (!edits.length) return;
     this.pushEditSession();
+    this.rememberRich(tb, editor, true);
     for (const edit of edits.reverse()) {
-      selectOffsets(editor, edit.from, edit.to);
-      if (edit.text) document.execCommand("insertText", false, edit.text);
-      else document.execCommand("delete");
+      this.editRich(tb, editor, edit.text, { from: edit.from, to: edit.to }, false);
     }
     editor.focus();
     if (wholeBox) {
@@ -68009,6 +68376,10 @@ ${rows.join("\n")}`);
     const id = source.getAttribute("data-id");
     const tb = this.data.texts.find((text) => text.id === id);
     this.activeTextEditor = null;
+    this.activeRichBox = null;
+    this.richPast = [];
+    this.richFuture = [];
+    this.richPending = null;
     this.activeTextSourceEl = null;
     stopMobile?.();
     this.mathPreviewEl?.remove();
@@ -68319,7 +68690,7 @@ ${rows.join("\n")}`);
     const focused = document.activeElement;
     const typing = !!focused && (focused.isContentEditable || focused.tagName === "TEXTAREA" || focused.tagName === "INPUT");
     const overPage = !!target && this.workspaceEl.contains(target) && (target === this.workspaceEl || target === this.renderer.canvas || target === this.stageEl || this.stageEl.contains(target)) && !target.closest("button, input, textarea, select, [contenteditable='true']");
-    if (this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
+    if (e.pointerType === "mouse" && this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
       this.hideEraserCursor();
       this.updateTextPlacementHint(e);
       return;
@@ -68412,19 +68783,24 @@ ${rows.join("\n")}`);
   formatRich(tb, editor, command, value) {
     this.pushEditSession();
     editor.focus();
-    document.execCommand(command, false, value);
-    this.syncRichText(tb, editor);
-    this.resizeRichEditor(tb, editor);
-    this.save();
+    const runs = readRuns(editor, this.baseStyle(editor, tb));
+    const { from, to } = selectionOffsets(editor);
+    const change = richChange(command, value, styleAcross(runs, from, to));
+    if (!change) return;
+    if (from === to) {
+      this.richPending = { from, change };
+      return;
+    }
+    this.rememberRich(tb, editor, true);
+    this.paintRich(tb, editor, styleRange(runs, from, to, change), from, to);
   }
   /** The highlight tint under the caret, or none when the text is not highlighted. */
   markUnderCaret() {
-    try {
-      const value = document.queryCommandValue("hiliteColor");
-      return !value || value === "transparent" || /rgba\(\s*0,\s*0,\s*0,\s*0\s*\)/.test(value) ? "" : value;
-    } catch {
-      return "";
-    }
+    const editor = this.activeTextEditor;
+    const tb = this.activeRichBox;
+    if (!editor || !tb || editor.instanceOf(HTMLTextAreaElement)) return "";
+    const { from, to } = selectionOffsets(editor);
+    return styleAcross(readRuns(editor, this.baseStyle(editor, tb)), from, to).mark ?? "";
   }
   showFormatBar(tb, el) {
     this.hideFormatBar();
@@ -68598,17 +68974,11 @@ ${rows.join("\n")}`);
       });
     }
     const refreshStates = () => {
-      const state = (cmd) => {
-        try {
-          return document.queryCommandState(cmd);
-        } catch {
-          return false;
-        }
-      };
-      toggleButtons.get("bold")?.toggleClass("active", rich ? state("bold") : !!tb.bold);
-      toggleButtons.get("italic")?.toggleClass("active", rich ? state("italic") : !!tb.italic);
-      toggleButtons.get("underline")?.toggleClass("active", rich ? state("underline") : !!tb.underline);
-      toggleButtons.get("strike")?.toggleClass("active", rich ? state("strikeThrough") : !!tb.strike);
+      const style = rich ? styleAcross(readRuns(rich, this.baseStyle(rich, tb)), ...(({ from, to }) => [from, to])(selectionOffsets(rich))) : {};
+      toggleButtons.get("bold")?.toggleClass("active", rich ? !!style.bold : !!tb.bold);
+      toggleButtons.get("italic")?.toggleClass("active", rich ? !!style.italic : !!tb.italic);
+      toggleButtons.get("underline")?.toggleClass("active", rich ? !!style.underline : !!tb.underline);
+      toggleButtons.get("strike")?.toggleClass("active", rich ? !!style.strike : !!tb.strike);
       toggleButtons.get("mark")?.toggleClass("active", !!rich && !!this.markUnderCaret());
       toggleButtons.get("align-left")?.toggleClass("active", (tb.align ?? "left") === "left");
       toggleButtons.get("align-center")?.toggleClass("active", tb.align === "center");
@@ -68881,174 +69251,44 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
     this.plugin = plugin;
   }
   display() {
+    this.renderTab();
+  }
+  /**
+   * Every setting, named and described apart from how it is drawn. Obsidian
+   * 1.13 reads these so NoteLens answers its settings search; renderTab()
+   * draws the same list on older builds, so each setting is described once
+   * rather than twice.
+   */
+  getSettingDefinitions() {
+    return this.items().map(({ name, desc, searchable, visible, render }) => ({ name, desc, searchable, visible, render }));
+  }
+  /**
+   * Draws the tab. Kept apart from display() so that a change which adds,
+   * removes or enables a control can redraw without calling back into
+   * Obsidian's deprecated entry point.
+   */
+  renderTab() {
     const { containerEl } = this;
     containerEl.empty();
-    const s3 = this.plugin.settings;
-    const save = () => void this.plugin.saveSettings();
     const stamp = containerEl.createDiv({ cls: "setting-item-description notelens-build-stamp" });
     stamp.setText(tr("NoteLens \xB7 versi\xF3n cargada: {p0}", { p0: NOTELENS_BUILD }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Idioma")).setDesc(tr("\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo.")).addDropdown((d3) => d3.addOptions({ auto: tr("Autom\xE1tico"), es: "Espa\xF1ol", en: "English" }).setValue(s3.language).onChange((v3) => {
-      s3.language = v3;
-      setLocale(s3.language);
-      save();
-      this.display();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Pizarras nuevas")).setHeading();
-    new import_obsidian14.Setting(containerEl).setName(tr("Estilo de p\xE1gina")).setDesc(tr("Patr\xF3n de fondo con el que se crean las pizarras nuevas.")).addDropdown((d3) => d3.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" }).setValue(s3.defaultBackground).onChange((v3) => {
-      s3.defaultBackground = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Margen izquierdo")).setDesc(tr("Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina.")).addToggle((toggle) => toggle.setValue(s3.defaultMargin).onChange((value) => {
-      s3.defaultMargin = value;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de la cuadr\xEDcula")).setDesc(tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.")).addDropdown((d3) => d3.addOptions({ small: tr("Peque\xF1a"), medium: tr("Mediana"), large: tr("Grande") }).setValue(s3.defaultGridSize).onChange((v3) => {
-      s3.defaultGridSize = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Color de p\xE1gina")).addColorPicker((c3) => c3.setValue(s3.defaultPageColor).onChange((v3) => {
-      s3.defaultPageColor = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Color de las l\xEDneas del fondo")).addColorPicker((c3) => c3.setValue(s3.defaultLineColor).onChange((v3) => {
-      s3.defaultLineColor = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Herramientas")).setHeading();
-    new import_obsidian14.Setting(containerEl).setName(tr("Grosor del l\xE1piz")).setDesc(tr("Grosor inicial en p\xEDxeles.")).addSlider((sl) => sl.setLimits(1, 18, 0.5).setValue(s3.penWidth).onChange((v3) => {
-      s3.penWidth = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Color del l\xE1piz")).setDesc(tr("Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras.")).addToggle((t3) => t3.setTooltip(tr("Autom\xE1tico")).setValue(s3.penColor === "auto").onChange((v3) => {
-      s3.penColor = v3 ? "auto" : "#1f2937";
-      save();
-      this.display();
-    })).addColorPicker((c3) => {
-      c3.setValue(s3.penColor === "auto" ? "#1f2937" : s3.penColor).onChange((v3) => {
-        s3.penColor = v3;
-        save();
-      });
-      c3.setDisabled(s3.penColor === "auto");
-    });
-    new import_obsidian14.Setting(containerEl).setName(tr("Subrayador")).setDesc(tr("Color, grosor y opacidad iniciales.")).addColorPicker((c3) => c3.setValue(s3.highlighterColor).onChange((v3) => {
-      s3.highlighterColor = v3;
-      save();
-    })).addSlider((sl) => sl.setLimits(8, 48, 2).setValue(s3.highlighterWidth).onChange((v3) => {
-      s3.highlighterWidth = v3;
-      save();
-    })).addSlider((sl) => sl.setLimits(0.1, 0.9, 0.05).setValue(s3.highlighterOpacity).onChange((v3) => {
-      s3.highlighterOpacity = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de texto")).addSlider((sl) => sl.setLimits(10, 72, 1).setValue(s3.textSize).onChange((v3) => {
-      s3.textSize = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Punta del l\xE1piz")).setDesc(tr("Trazo con el que empieza la herramienta de l\xE1piz.")).addDropdown((d3) => d3.addOptions({ ballpoint: tr("Bol\xEDgrafo"), pencil: tr("L\xE1piz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") }).setValue(s3.penStyle).onChange((v3) => {
-      s3.penStyle = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Fuente del texto")).setDesc(tr("Tipograf\xEDa con la que se crean los cuadros de texto.")).addDropdown((d3) => d3.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") }).setValue(s3.defaultTextFont).onChange((v3) => {
-      s3.defaultTextFont = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Color de las notas adhesivas")).setDesc(tr("Papel con el que nace cada posit nuevo.")).addDropdown((d3) => d3.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" }).setValue(s3.defaultStickyColor).onChange((v3) => {
-      s3.defaultStickyColor = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Calculadora en grados")).setDesc(tr("Desact\xEDvalo para trabajar en radianes por defecto.")).addToggle((t3) => t3.setValue(s3.calculatorDegrees).onChange((v3) => {
-      s3.calculatorDegrees = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Comportamiento")).setHeading();
-    new import_obsidian14.Setting(containerEl).setName(tr("La rueda del rat\xF3n hace zoom")).setDesc(tr("Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote.")).addToggle((t3) => t3.setValue(s3.wheelZooms).onChange((v3) => {
-      s3.wheelZooms = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Dibujar con el dedo")).setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un l\xE1piz \xF3ptico, y a partir de ah\xED solo desplaza para no marcar la pizarra con la mano.")).addToggle((t3) => t3.setValue(s3.fingerDraws).onChange((v3) => {
-      s3.fingerDraws = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Interfaz")).setHeading();
-    new import_obsidian14.Setting(containerEl).setName(tr("Mostrar etiquetas r\xE1pidas")).setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo.")).addToggle((t3) => t3.setValue(s3.showQuickTags).onChange((v3) => {
-      s3.showQuickTags = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Minimapa visible al abrir")).addToggle((t3) => t3.setValue(s3.showMinimap).onChange((v3) => {
-      s3.showMinimap = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Interfaz compacta")).setDesc(tr("Botones m\xE1s peque\xF1os y barras m\xE1s estrechas.")).addToggle((t3) => t3.setValue(s3.compactUi).onChange((v3) => {
-      s3.compactUi = v3;
-      save();
-    }));
-    if (EXPERIMENTAL.assistant) {
-      new import_obsidian14.Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
-      new import_obsidian14.Setting(containerEl).setName(tr("Mostrar a Leen")).setDesc(tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.")).addToggle((t3) => t3.setValue(s3.showAssistantPet).onChange((v3) => {
-        s3.showAssistantPet = v3;
-        save();
-        this.display();
-      }));
-      if (s3.showAssistantPet) {
-        new import_obsidian14.Setting(containerEl).setName(tr("Tama\xF1o de Leen")).setDesc(tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.")).addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s3.petScale).onChange((v3) => {
-          s3.petScale = v3;
-          save();
-        }));
-        new import_obsidian14.Setting(containerEl).setName(tr("Bocadillos de Leen")).setDesc(tr("El aviso que aparece al pasar el rat\xF3n por encima.")).addToggle((t3) => t3.setValue(s3.petBubbles).onChange((v3) => {
-          s3.petBubbles = v3;
-          save();
-        }));
-        new import_obsidian14.Setting(containerEl).setName(tr("Devolver a Leen a su sitio")).setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")).addButton((b3) => b3.setButtonText(tr("Restablecer posici\xF3n")).onClick(() => {
-          s3.petX = null;
-          s3.petY = null;
-          save();
-          new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
-        }));
-      }
+    for (const item of this.items()) {
+      if (item.visible && !item.visible()) continue;
+      item.before?.(containerEl);
+      item.render(new import_obsidian14.Setting(containerEl));
     }
-    new import_obsidian14.Setting(containerEl).setName(tr("Modelo local")).setHeading();
-    const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
-    aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra \u2192 LaTeX se calculan aqu\xED mismo.") });
-    aiIntro.createDiv({ text: EXPERIMENTAL.assistant ? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") : tr("Un modelo local solo hace falta para la traducci\xF3n sin cuotas, que es opcional. Nada sale de tu equipo.") });
+    containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
+  }
+  items() {
+    const s3 = this.plugin.settings;
+    const save = () => void this.plugin.saveSettings();
+    const heading = (name) => ({ name, searchable: false, render: (setting) => {
+      setting.setName(name).setHeading();
+    } });
     const memory = detectMemoryGb();
     const suggestion = recommendedVisionModel(memory);
-    const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
-    const paintStatus = (text, kind = "info") => {
-      aiStatus.setText(text);
-      aiStatus.toggleClass("is-ok", kind === "ok");
-      aiStatus.toggleClass("is-error", kind === "error");
+    let paintStatus = () => {
     };
-    paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Servidor")).setDesc(tr("Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1.")).addText((t3) => t3.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s3.aiBaseUrl).onChange((v3) => {
-      s3.aiBaseUrl = v3.trim() || DEFAULT_SETTINGS.aiBaseUrl;
-      save();
-    })).addButton((b3) => b3.setButtonText(tr("Probar")).onClick(async () => {
-      const base = s3.aiBaseUrl.replace(/\/+$/, "");
-      b3.setButtonText(tr("Probando\u2026"));
-      b3.setDisabled(true);
-      const models = await probeLocalServer(base);
-      b3.setButtonText(tr("Probar"));
-      b3.setDisabled(false);
-      if (models === null) {
-        paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo \xABollama serve\xBB) y vuelve a probar.", { p0: base }), "error");
-        return;
-      }
-      if (!models.length) {
-        paintStatus(tr("Responde, pero no tiene ning\xFAn modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
-        return;
-      }
-      const best = rankModels(models, memory)[0];
-      paintStatus(tr("Conectado \xB7 {p0} modelo(s). Usar\xEDa \xAB{p1}\xBB: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Modelo preferido")).setDesc(tr("Vac\xEDo = el mejor que quepa en tu memoria.", {})).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
-      s3.aiModel = v3.trim();
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Usar la pizarra como contexto")).setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")).addToggle((t3) => t3.setValue(s3.aiUseBoardContext).onChange((v3) => {
-      s3.aiUseBoardContext = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Traductor")).setHeading();
     const languages = {
       es: "Espa\xF1ol",
       en: "English",
@@ -69068,22 +69308,358 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
       ja: "\u65E5\u672C\u8A9E",
       ko: "\uD55C\uAD6D\uC5B4"
     };
-    new import_obsidian14.Setting(containerEl).setName(tr("Traducir solo en tu ordenador")).setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Act\xEDvalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante m\xE1s.")).addToggle((t3) => t3.setValue(s3.translationPrivateOnly).onChange((v3) => {
-      s3.translationPrivateOnly = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Idioma de la transcripci\xF3n")).setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.ocrLanguage).onChange((v3) => {
-      s3.ocrLanguage = v3;
-      save();
-    }));
-    new import_obsidian14.Setting(containerEl).setName(tr("Traducir de \u2026 a \u2026")).setDesc(tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateFrom).onChange((v3) => {
-      s3.translateFrom = v3;
-      save();
-    })).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateTo).onChange((v3) => {
-      s3.translateTo = v3;
-      save();
-    }));
-    containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
+    const petShown = () => EXPERIMENTAL.assistant && s3.showAssistantPet;
+    return [
+      {
+        name: tr("Idioma"),
+        desc: tr("\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo."),
+        render: (setting) => {
+          setting.setName(tr("Idioma")).setDesc(tr("\xABAutom\xE1tico\xBB sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo.")).addDropdown((d3) => d3.addOptions({ auto: tr("Autom\xE1tico"), es: "Espa\xF1ol", en: "English" }).setValue(s3.language).onChange((v3) => {
+            s3.language = v3;
+            setLocale(s3.language);
+            save();
+            this.renderTab();
+          }));
+        }
+      },
+      heading(tr("Pizarras nuevas")),
+      {
+        name: tr("Estilo de p\xE1gina"),
+        desc: tr("Patr\xF3n de fondo con el que se crean las pizarras nuevas."),
+        render: (setting) => {
+          setting.setName(tr("Estilo de p\xE1gina")).setDesc(tr("Patr\xF3n de fondo con el que se crean las pizarras nuevas.")).addDropdown((d3) => d3.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" }).setValue(s3.defaultBackground).onChange((v3) => {
+            s3.defaultBackground = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Margen izquierdo"),
+        desc: tr("Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina."),
+        render: (setting) => {
+          setting.setName(tr("Margen izquierdo")).setDesc(tr("Gu\xEDa independiente que puede combinarse con cualquier estilo de p\xE1gina.")).addToggle((toggle) => toggle.setValue(s3.defaultMargin).onChange((value) => {
+            s3.defaultMargin = value;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Tama\xF1o de la cuadr\xEDcula"),
+        desc: tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla."),
+        render: (setting) => {
+          setting.setName(tr("Tama\xF1o de la cuadr\xEDcula")).setDesc(tr("Separaci\xF3n entre puntos, l\xEDneas o celdas de la rejilla.")).addDropdown((d3) => d3.addOptions({ small: tr("Peque\xF1a"), medium: tr("Mediana"), large: tr("Grande") }).setValue(s3.defaultGridSize).onChange((v3) => {
+            s3.defaultGridSize = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Color de p\xE1gina"),
+        render: (setting) => {
+          setting.setName(tr("Color de p\xE1gina")).addColorPicker((c3) => c3.setValue(s3.defaultPageColor).onChange((v3) => {
+            s3.defaultPageColor = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Color de las l\xEDneas del fondo"),
+        render: (setting) => {
+          setting.setName(tr("Color de las l\xEDneas del fondo")).addColorPicker((c3) => c3.setValue(s3.defaultLineColor).onChange((v3) => {
+            s3.defaultLineColor = v3;
+            save();
+          }));
+        }
+      },
+      heading(tr("Herramientas")),
+      {
+        name: tr("Grosor del l\xE1piz"),
+        desc: tr("Grosor inicial en p\xEDxeles."),
+        render: (setting) => {
+          setting.setName(tr("Grosor del l\xE1piz")).setDesc(tr("Grosor inicial en p\xEDxeles.")).addSlider((sl) => sl.setLimits(1, 18, 0.5).setValue(s3.penWidth).onChange((v3) => {
+            s3.penWidth = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Color del l\xE1piz"),
+        desc: tr("Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras."),
+        render: (setting) => {
+          setting.setName(tr("Color del l\xE1piz")).setDesc(tr("Con \xABAutom\xE1tico\xBB la tinta es oscura en p\xE1ginas claras y clara en p\xE1ginas oscuras.")).addToggle((t3) => t3.setTooltip(tr("Autom\xE1tico")).setValue(s3.penColor === "auto").onChange((v3) => {
+            s3.penColor = v3 ? "auto" : "#1f2937";
+            save();
+            this.renderTab();
+          })).addColorPicker((c3) => {
+            c3.setValue(s3.penColor === "auto" ? "#1f2937" : s3.penColor).onChange((v3) => {
+              s3.penColor = v3;
+              save();
+            });
+            c3.setDisabled(s3.penColor === "auto");
+          });
+        }
+      },
+      {
+        name: tr("Subrayador"),
+        desc: tr("Color, grosor y opacidad iniciales."),
+        render: (setting) => {
+          setting.setName(tr("Subrayador")).setDesc(tr("Color, grosor y opacidad iniciales.")).addColorPicker((c3) => c3.setValue(s3.highlighterColor).onChange((v3) => {
+            s3.highlighterColor = v3;
+            save();
+          })).addSlider((sl) => sl.setLimits(8, 48, 2).setValue(s3.highlighterWidth).onChange((v3) => {
+            s3.highlighterWidth = v3;
+            save();
+          })).addSlider((sl) => sl.setLimits(0.1, 0.9, 0.05).setValue(s3.highlighterOpacity).onChange((v3) => {
+            s3.highlighterOpacity = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Tama\xF1o de texto"),
+        render: (setting) => {
+          setting.setName(tr("Tama\xF1o de texto")).addSlider((sl) => sl.setLimits(10, 72, 1).setValue(s3.textSize).onChange((v3) => {
+            s3.textSize = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Punta del l\xE1piz"),
+        desc: tr("Trazo con el que empieza la herramienta de l\xE1piz."),
+        render: (setting) => {
+          setting.setName(tr("Punta del l\xE1piz")).setDesc(tr("Trazo con el que empieza la herramienta de l\xE1piz.")).addDropdown((d3) => d3.addOptions({ ballpoint: tr("Bol\xEDgrafo"), pencil: tr("L\xE1piz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") }).setValue(s3.penStyle).onChange((v3) => {
+            s3.penStyle = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Fuente del texto"),
+        desc: tr("Tipograf\xEDa con la que se crean los cuadros de texto."),
+        render: (setting) => {
+          setting.setName(tr("Fuente del texto")).setDesc(tr("Tipograf\xEDa con la que se crean los cuadros de texto.")).addDropdown((d3) => d3.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") }).setValue(s3.defaultTextFont).onChange((v3) => {
+            s3.defaultTextFont = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Color de las notas adhesivas"),
+        desc: tr("Papel con el que nace cada posit nuevo."),
+        render: (setting) => {
+          setting.setName(tr("Color de las notas adhesivas")).setDesc(tr("Papel con el que nace cada posit nuevo.")).addDropdown((d3) => d3.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" }).setValue(s3.defaultStickyColor).onChange((v3) => {
+            s3.defaultStickyColor = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Calculadora en grados"),
+        desc: tr("Desact\xEDvalo para trabajar en radianes por defecto."),
+        render: (setting) => {
+          setting.setName(tr("Calculadora en grados")).setDesc(tr("Desact\xEDvalo para trabajar en radianes por defecto.")).addToggle((t3) => t3.setValue(s3.calculatorDegrees).onChange((v3) => {
+            s3.calculatorDegrees = v3;
+            save();
+          }));
+        }
+      },
+      heading(tr("Comportamiento")),
+      {
+        name: tr("La rueda del rat\xF3n hace zoom"),
+        desc: tr("Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote."),
+        render: (setting) => {
+          setting.setName(tr("La rueda del rat\xF3n hace zoom")).setDesc(tr("Desactivado: la rueda desplaza la p\xE1gina y Ctrl+rueda hace zoom, como OneNote.")).addToggle((t3) => t3.setValue(s3.wheelZooms).onChange((v3) => {
+            s3.wheelZooms = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Dibujar con el dedo"),
+        desc: tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un l\xE1piz \xF3ptico, y a partir de ah\xED solo desplaza para no marcar la pizarra con la mano."),
+        render: (setting) => {
+          setting.setName(tr("Dibujar con el dedo")).setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un l\xE1piz \xF3ptico, y a partir de ah\xED solo desplaza para no marcar la pizarra con la mano.")).addToggle((t3) => t3.setValue(s3.fingerDraws).onChange((v3) => {
+            s3.fingerDraws = v3;
+            save();
+          }));
+        }
+      },
+      heading(tr("Interfaz")),
+      {
+        name: tr("Mostrar etiquetas r\xE1pidas"),
+        desc: tr("La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo."),
+        render: (setting) => {
+          setting.setName(tr("Mostrar etiquetas r\xE1pidas")).setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave\u2026) bajo la barra de dibujo.")).addToggle((t3) => t3.setValue(s3.showQuickTags).onChange((v3) => {
+            s3.showQuickTags = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Minimapa visible al abrir"),
+        render: (setting) => {
+          setting.setName(tr("Minimapa visible al abrir")).addToggle((t3) => t3.setValue(s3.showMinimap).onChange((v3) => {
+            s3.showMinimap = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Interfaz compacta"),
+        desc: tr("Botones m\xE1s peque\xF1os y barras m\xE1s estrechas."),
+        render: (setting) => {
+          setting.setName(tr("Interfaz compacta")).setDesc(tr("Botones m\xE1s peque\xF1os y barras m\xE1s estrechas.")).addToggle((t3) => t3.setValue(s3.compactUi).onChange((v3) => {
+            s3.compactUi = v3;
+            save();
+          }));
+        }
+      },
+      { ...heading(tr("Ayudante Leen")), visible: () => EXPERIMENTAL.assistant },
+      {
+        name: tr("Mostrar a Leen"),
+        desc: tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional."),
+        visible: () => EXPERIMENTAL.assistant,
+        render: (setting) => {
+          setting.setName(tr("Mostrar a Leen")).setDesc(tr("Abre acciones r\xE1pidas para resumir, crear tareas, ordenar objetos y leer f\xF3rmulas. El chat local es opcional.")).addToggle((t3) => t3.setValue(s3.showAssistantPet).onChange((v3) => {
+            s3.showAssistantPet = v3;
+            save();
+            this.renderTab();
+          }));
+        }
+      },
+      {
+        name: tr("Tama\xF1o de Leen"),
+        desc: tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta."),
+        visible: petShown,
+        render: (setting) => {
+          setting.setName(tr("Tama\xF1o de Leen")).setDesc(tr("M\xE1s peque\xF1o estorba menos; m\xE1s grande se toca mejor en una tableta.")).addSlider((sl) => sl.setLimits(0.6, 1.6, 0.1).setValue(s3.petScale).onChange((v3) => {
+            s3.petScale = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Bocadillos de Leen"),
+        desc: tr("El aviso que aparece al pasar el rat\xF3n por encima."),
+        visible: petShown,
+        render: (setting) => {
+          setting.setName(tr("Bocadillos de Leen")).setDesc(tr("El aviso que aparece al pasar el rat\xF3n por encima.")).addToggle((t3) => t3.setValue(s3.petBubbles).onChange((v3) => {
+            s3.petBubbles = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Devolver a Leen a su sitio"),
+        desc: tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista."),
+        visible: petShown,
+        render: (setting) => {
+          setting.setName(tr("Devolver a Leen a su sitio")).setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista.")).addButton((b3) => b3.setButtonText(tr("Restablecer posici\xF3n")).onClick(() => {
+            s3.petX = null;
+            s3.petY = null;
+            save();
+            new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
+          }));
+        }
+      },
+      // The local model is not the pet's: the translator asks the same server,
+      // so these settings stay visible whether or not Leen is on the board.
+      heading(tr("Modelo local")),
+      {
+        name: tr("Servidor"),
+        desc: tr("Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1."),
+        before: (containerEl) => {
+          const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
+          aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra \u2192 LaTeX se calculan aqu\xED mismo.") });
+          aiIntro.createDiv({ text: EXPERIMENTAL.assistant ? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducci\xF3n sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.") : tr("Un modelo local solo hace falta para la traducci\xF3n sin cuotas, que es opcional. Nada sale de tu equipo.") });
+          const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
+          paintStatus = (text, kind = "info") => {
+            aiStatus.setText(text);
+            aiStatus.toggleClass("is-ok", kind === "ok");
+            aiStatus.toggleClass("is-error", kind === "error");
+          };
+          paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
+        },
+        render: (setting) => {
+          setting.setName(tr("Servidor")).setDesc(tr("Ollama o LM Studio en tu propio equipo. Si \xABlocalhost\xBB no responde, prueba con 127.0.0.1.")).addText((t3) => t3.setPlaceholder(tr("http://127.0.0.1:11434")).setValue(s3.aiBaseUrl).onChange((v3) => {
+            s3.aiBaseUrl = v3.trim() || DEFAULT_SETTINGS.aiBaseUrl;
+            save();
+          })).addButton((b3) => b3.setButtonText(tr("Probar")).onClick(async () => {
+            const base = s3.aiBaseUrl.replace(/\/+$/, "");
+            b3.setButtonText(tr("Probando\u2026"));
+            b3.setDisabled(true);
+            const models = await probeLocalServer(base);
+            b3.setButtonText(tr("Probar"));
+            b3.setDisabled(false);
+            if (models === null) {
+              paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo \xABollama serve\xBB) y vuelve a probar.", { p0: base }), "error");
+              return;
+            }
+            if (!models.length) {
+              paintStatus(tr("Responde, pero no tiene ning\xFAn modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
+              return;
+            }
+            const best = rankModels(models, memory)[0];
+            paintStatus(tr("Conectado \xB7 {p0} modelo(s). Usar\xEDa \xAB{p1}\xBB: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+          }));
+        }
+      },
+      {
+        name: tr("Modelo preferido"),
+        desc: tr("Vac\xEDo = el mejor que quepa en tu memoria.", {}),
+        render: (setting) => {
+          setting.setName(tr("Modelo preferido")).setDesc(tr("Vac\xEDo = el mejor que quepa en tu memoria.", {})).addText((t3) => t3.setPlaceholder(tr("autom\xE1tico")).setValue(s3.aiModel).onChange((v3) => {
+            s3.aiModel = v3.trim();
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Usar la pizarra como contexto"),
+        desc: tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."),
+        render: (setting) => {
+          setting.setName(tr("Usar la pizarra como contexto")).setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes.")).addToggle((t3) => t3.setValue(s3.aiUseBoardContext).onChange((v3) => {
+            s3.aiUseBoardContext = v3;
+            save();
+          }));
+        }
+      },
+      heading(tr("Traductor")),
+      {
+        name: tr("Traducir solo en tu ordenador"),
+        desc: tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Act\xEDvalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante m\xE1s."),
+        render: (setting) => {
+          setting.setName(tr("Traducir solo en tu ordenador")).setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Act\xEDvalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante m\xE1s.")).addToggle((t3) => t3.setValue(s3.translationPrivateOnly).onChange((v3) => {
+            s3.translationPrivateOnly = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Idioma de la transcripci\xF3n"),
+        desc: tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes."),
+        render: (setting) => {
+          setting.setName(tr("Idioma de la transcripci\xF3n")).setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de im\xE1genes.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.ocrLanguage).onChange((v3) => {
+            s3.ocrLanguage = v3;
+            save();
+          }));
+        }
+      },
+      {
+        name: tr("Traducir de \u2026 a \u2026"),
+        desc: tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado."),
+        render: (setting) => {
+          setting.setName(tr("Traducir de \u2026 a \u2026")).setDesc(tr("Idiomas que usa el bot\xF3n Traducir sobre el texto seleccionado.")).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateFrom).onChange((v3) => {
+            s3.translateFrom = v3;
+            save();
+          })).addDropdown((d3) => d3.addOptions(languages).setValue(s3.translateTo).onChange((v3) => {
+            s3.translateTo = v3;
+            save();
+          }));
+        }
+      }
+    ];
   }
 };
 

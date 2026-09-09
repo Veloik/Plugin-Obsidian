@@ -112,7 +112,11 @@ function bandPath(pts: StrokePoint[], width: number): Path2D {
 			[p.x - nx - ex * head, p.y - ny - ey * head]
 		]);
 		// A disc at the joint: without it every turn shows a notch on its outside.
-		if (i > 0) path.arc(p.x, p.y, half, 0, Math.PI * 2, true);
+		if (i > 0) {
+            path.moveTo(p.x + half, p.y);
+            path.arc(p.x, p.y, half, 0, Math.PI * 2, true);
+            path.closePath();
+        }
 	}
 	return path;
 }
@@ -132,6 +136,10 @@ export class CanvasRenderer {
 	private lift = 0;
 	/** Marker bands, kept per stroke so panning never rebuilds them. */
 	private markerBands = new WeakMap<Stroke, { count: number; width: number; endX: number; endY: number; band: Path2D }>();
+	private liveFrame = 0;
+	private livePending: { stroke: Stroke; vt: ViewTransform } | null = null;
+	private liveAllFrame = 0;
+	private livePendingAll: { strokes: Stroke[]; shapes: Shape[]; vt: ViewTransform } | null = null;
 
 	constructor(parent: HTMLElement) {
 		this.canvas = parent.createEl("canvas", { cls: "onenote-canvas" });
@@ -180,7 +188,22 @@ export class CanvasRenderer {
 		this.clearDevice();
 		this.applyViewTransform(vt);
 		for (const shape of shapes) this.drawShape(shape);
-		for (const stroke of strokes) if (stroke.type === "highlighter") this.drawStroke(stroke);
+		// Union matching bands before applying opacity: retracing never darkens them.
+        const highlights = new Map<string, Path2D>();
+        for (const stroke of strokes) {
+            if (stroke.type !== "highlighter" || !stroke.points.length) continue;
+            let path = highlights.get(stroke.color);
+            if (!path) { path = new Path2D(); highlights.set(stroke.color, path); }
+            path.addPath(this.markerBand(stroke));
+        }
+        for (const [color, path] of highlights) {
+            this.ctx.save();
+            this.ctx.globalCompositeOperation = "multiply";
+            this.ctx.globalAlpha = colorAlpha(color);
+            this.ctx.fillStyle = opaqueColor(color);
+            this.ctx.fill(path);
+            this.ctx.restore();
+        }
 		for (const stroke of strokes) if (stroke.type !== "highlighter") this.drawStroke(stroke);
 	}
 
@@ -296,7 +319,7 @@ export class CanvasRenderer {
 		for (const [widthFactor, alphaFactor, offset, seed] of passes) {
 			this.ctx.globalAlpha = alpha * alphaFactor;
 			this.ctx.lineWidth = Math.max(0.6, w * widthFactor);
-			this.tracePath(pts, offset * w, w * 0.35, seed);
+			this.tracePath(pts, offset * w, w * 0.12, seed);
 			this.ctx.stroke();
 		}
 		this.ctx.restore();
@@ -341,6 +364,20 @@ export class CanvasRenderer {
 	 * highlighter smooth without re-rendering the whole document per move.
 	 */
 	drawLiveWholeStroke(stroke: Stroke, vt: ViewTransform): void {
+		// A pen reports moves far faster than the screen refreshes, and this path
+		// repaints the whole canvas each time. Keep only the newest state and
+		// paint it once per frame.
+		this.livePending = { stroke, vt };
+		if (this.liveFrame) return;
+		this.liveFrame = window.requestAnimationFrame(() => {
+			this.liveFrame = 0;
+			const next = this.livePending;
+			this.livePending = null;
+			if (next) this.paintLiveWholeStroke(next.stroke, next.vt);
+		});
+	}
+
+	private paintLiveWholeStroke(stroke: Stroke, vt: ViewTransform): void {
 		if (!this.liveBase || this.liveBase.width !== this.canvas.width || this.liveBase.height !== this.canvas.height) {
 			const base = createEl("canvas");
 			base.width = this.canvas.width;
@@ -354,8 +391,34 @@ export class CanvasRenderer {
 		this.drawStroke(stroke);
 	}
 
+	/**
+	 * A full re-render, at most one per frame. The marker has to be composited
+	 * with the strokes it shares a colour with and under the pen ink, so it
+	 * cannot use the snapshot path -- but a pen reports moves several times per
+	 * frame, and rendering the whole document for each of them is what made it
+	 * drag.
+	 */
+	renderAllLive(strokes: Stroke[], shapes: Shape[], vt: ViewTransform): void {
+		this.livePendingAll = { strokes, shapes, vt };
+		if (this.liveAllFrame) return;
+		this.liveAllFrame = window.requestAnimationFrame(() => {
+			this.liveAllFrame = 0;
+			const next = this.livePendingAll;
+			this.livePendingAll = null;
+			if (next) this.renderAll(next.strokes, next.shapes, next.vt);
+		});
+	}
+
 	/** Drops the live snapshot once the stroke in progress is finished or cancelled. */
 	endLive(): void {
+		if (this.liveAllFrame) window.cancelAnimationFrame(this.liveAllFrame);
+		this.liveAllFrame = 0;
+		this.livePendingAll = null;
+		// Any frame still owed would paint a stroke that no longer exists over
+		// whatever is drawn next.
+		if (this.liveFrame) window.cancelAnimationFrame(this.liveFrame);
+		this.liveFrame = 0;
+		this.livePending = null;
 		this.liveBase = null;
 	}
 

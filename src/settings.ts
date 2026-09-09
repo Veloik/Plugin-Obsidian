@@ -1,4 +1,4 @@
-import { requestUrl, Notice, App, PluginSettingTab, Setting } from "obsidian";
+import { requestUrl, Notice, App, PluginSettingTab, Setting, SettingDefinitionItem } from "obsidian";
 import type OneNotePlugin from "./main";
 import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, PenStyle } from "./types";
 import { LocaleSetting, setLocale, tr } from "./i18n";
@@ -180,275 +180,396 @@ declare const __NOTELENS_BUILD__: string;
 /** Release version injected by esbuild; "desconocida" when running from source. */
 const NOTELENS_BUILD = typeof __NOTELENS_BUILD__ === "string" ? __NOTELENS_BUILD__ : "desconocida";
 
+/** One row of the settings tab: what it is called, when it shows, how it draws. */
+interface SettingItem {
+	name: string;
+	desc?: string;
+	searchable?: boolean;
+	visible?: () => boolean;
+	/** Loose DOM that belongs above the row, outside any setting. */
+	before?: (containerEl: HTMLElement) => void;
+	render: (setting: Setting) => void;
+}
+
 export class NoteLensSettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: OneNotePlugin) {
 		super(app, plugin);
 	}
 
 	override display(): void {
+		this.renderTab();
+	}
+
+	/**
+	 * Every setting, named and described apart from how it is drawn. Obsidian
+	 * 1.13 reads these so NoteLens answers its settings search; renderTab()
+	 * draws the same list on older builds, so each setting is described once
+	 * rather than twice.
+	 */
+	override getSettingDefinitions(): SettingDefinitionItem[] {
+		return this.items().map(({ name, desc, searchable, visible, render }) =>
+			({ name, desc, searchable, visible, render }));
+	}
+
+	/**
+	 * Draws the tab. Kept apart from display() so that a change which adds,
+	 * removes or enables a control can redraw without calling back into
+	 * Obsidian's deprecated entry point.
+	 */
+	private renderTab(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		const s = this.plugin.settings;
-		const save = () => void this.plugin.saveSettings();
 
 		// If this line is older than your last build, Obsidian is still running
 		// the previous copy: disable and re-enable the plugin to load the new one.
 		const stamp = containerEl.createDiv({ cls: "setting-item-description notelens-build-stamp" });
 		stamp.setText(tr("NoteLens · versión cargada: {p0}", { p0: NOTELENS_BUILD }));
 
-		new Setting(containerEl)
-			.setName(tr("Idioma"))
-			.setDesc(tr("«Automático» sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo."))
-			.addDropdown(d => d
-				.addOptions({ auto: tr("Automático"), es: "Español", en: "English" })
-				.setValue(s.language)
-				.onChange(v => {
-					s.language = v as LocaleSetting;
-					setLocale(s.language);
-					save();
-					// Redraw the tab itself so the change is visible at once.
-					this.display();
-				}));
-
-		new Setting(containerEl).setName(tr("Pizarras nuevas")).setHeading();
-
-		new Setting(containerEl)
-			.setName(tr("Estilo de página"))
-			.setDesc(tr("Patrón de fondo con el que se crean las pizarras nuevas."))
-			.addDropdown(d => d
-				.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" })
-				.setValue(s.defaultBackground)
-				.onChange(v => { s.defaultBackground = v as BackgroundPattern; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Margen izquierdo"))
-			.setDesc(tr("Guía independiente que puede combinarse con cualquier estilo de página."))
-			.addToggle(toggle => toggle.setValue(s.defaultMargin).onChange(value => { s.defaultMargin = value; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Tamaño de la cuadrícula"))
-			.setDesc(tr("Separación entre puntos, líneas o celdas de la rejilla."))
-			.addDropdown(d => d
-				.addOptions({ small: tr("Pequeña"), medium: tr("Mediana"), large: tr("Grande") })
-				.setValue(s.defaultGridSize)
-				.onChange(v => { s.defaultGridSize = v as GridSize; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Color de página"))
-			.addColorPicker(c => c.setValue(s.defaultPageColor).onChange(v => { s.defaultPageColor = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Color de las líneas del fondo"))
-			.addColorPicker(c => c.setValue(s.defaultLineColor).onChange(v => { s.defaultLineColor = v; save(); }));
-
-		new Setting(containerEl).setName(tr("Herramientas")).setHeading();
-
-		new Setting(containerEl)
-			.setName(tr("Grosor del lápiz"))
-			.setDesc(tr("Grosor inicial en píxeles."))
-			.addSlider(sl => sl.setLimits(1, 18, 0.5).setValue(s.penWidth).onChange(v => { s.penWidth = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Color del lápiz"))
-			.setDesc(tr("Con «Automático» la tinta es oscura en páginas claras y clara en páginas oscuras."))
-			.addToggle(t => t.setTooltip(tr("Automático")).setValue(s.penColor === "auto").onChange(v => {
-				s.penColor = v ? "auto" : "#1f2937";
-				save();
-				this.display();
-			}))
-			.addColorPicker(c => {
-				c.setValue(s.penColor === "auto" ? "#1f2937" : s.penColor).onChange(v => { s.penColor = v; save(); });
-				c.setDisabled(s.penColor === "auto");
-			});
-
-		new Setting(containerEl)
-			.setName(tr("Subrayador"))
-			.setDesc(tr("Color, grosor y opacidad iniciales."))
-			.addColorPicker(c => c.setValue(s.highlighterColor).onChange(v => { s.highlighterColor = v; save(); }))
-			.addSlider(sl => sl.setLimits(8, 48, 2).setValue(s.highlighterWidth).onChange(v => { s.highlighterWidth = v; save(); }))
-			.addSlider(sl => sl.setLimits(0.1, 0.9, 0.05).setValue(s.highlighterOpacity).onChange(v => { s.highlighterOpacity = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Tamaño de texto"))
-			.addSlider(sl => sl.setLimits(10, 72, 1).setValue(s.textSize).onChange(v => { s.textSize = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Punta del lápiz"))
-			.setDesc(tr("Trazo con el que empieza la herramienta de lápiz."))
-			.addDropdown(d => d
-				.addOptions({ ballpoint: tr("Bolígrafo"), pencil: tr("Lápiz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") })
-				.setValue(s.penStyle)
-				.onChange(v => { s.penStyle = v as PenStyle; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Fuente del texto"))
-			.setDesc(tr("Tipografía con la que se crean los cuadros de texto."))
-			.addDropdown(d => d
-				.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") })
-				.setValue(s.defaultTextFont)
-				.onChange(v => { s.defaultTextFont = v as CanvasFont; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Color de las notas adhesivas"))
-			.setDesc(tr("Papel con el que nace cada posit nuevo."))
-			.addDropdown(d => d
-				.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" })
-				.setValue(s.defaultStickyColor)
-				.onChange(v => { s.defaultStickyColor = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Calculadora en grados"))
-			.setDesc(tr("Desactívalo para trabajar en radianes por defecto."))
-			.addToggle(t => t.setValue(s.calculatorDegrees).onChange(v => { s.calculatorDegrees = v; save(); }));
-
-		new Setting(containerEl).setName(tr("Comportamiento")).setHeading();
-
-		new Setting(containerEl)
-			.setName(tr("La rueda del ratón hace zoom"))
-			.setDesc(tr("Desactivado: la rueda desplaza la página y Ctrl+rueda hace zoom, como OneNote."))
-			.addToggle(t => t.setValue(s.wheelZooms).onChange(v => { s.wheelZooms = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Dibujar con el dedo"))
-			.setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano."))
-			.addToggle(t => t.setValue(s.fingerDraws).onChange(v => { s.fingerDraws = v; save(); }));
-
-		new Setting(containerEl).setName(tr("Interfaz")).setHeading();
-
-		new Setting(containerEl)
-			.setName(tr("Mostrar etiquetas rápidas"))
-			.setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave…) bajo la barra de dibujo."))
-			.addToggle(t => t.setValue(s.showQuickTags).onChange(v => { s.showQuickTags = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Minimapa visible al abrir"))
-			.addToggle(t => t.setValue(s.showMinimap).onChange(v => { s.showMinimap = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Interfaz compacta"))
-			.setDesc(tr("Botones más pequeños y barras más estrechas."))
-			.addToggle(t => t.setValue(s.compactUi).onChange(v => { s.compactUi = v; save(); }));
-
-		if (EXPERIMENTAL.assistant) {
-		new Setting(containerEl).setName(tr("Ayudante Leen")).setHeading();
-
-		new Setting(containerEl)
-			.setName(tr("Mostrar a Leen"))
-			.setDesc(tr("Abre acciones rápidas para resumir, crear tareas, ordenar objetos y leer fórmulas. El chat local es opcional."))
-			.addToggle(t => t.setValue(s.showAssistantPet).onChange(v => {
-				s.showAssistantPet = v;
-				save();
-				this.display();
-			}));
-
-		if (s.showAssistantPet) {
-			new Setting(containerEl)
-				.setName(tr("Tamaño de Leen"))
-				.setDesc(tr("Más pequeño estorba menos; más grande se toca mejor en una tableta."))
-				.addSlider(sl => sl.setLimits(0.6, 1.6, 0.1).setValue(s.petScale).onChange(v => { s.petScale = v; save(); }));
-
-			new Setting(containerEl)
-				.setName(tr("Bocadillos de Leen"))
-				.setDesc(tr("El aviso que aparece al pasar el ratón por encima."))
-				.addToggle(t => t.setValue(s.petBubbles).onChange(v => { s.petBubbles = v; save(); }));
-
-			new Setting(containerEl)
-				.setName(tr("Devolver a Leen a su sitio"))
-				.setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista."))
-				.addButton(b => b.setButtonText(tr("Restablecer posición")).onClick(() => {
-					s.petX = null;
-					s.petY = null;
-					save();
-					new Notice(tr("Leen volverá a su esquina al reabrir la pizarra"));
-				}));
-
+		for (const item of this.items()) {
+			if (item.visible && !item.visible()) continue;
+			item.before?.(containerEl);
+			item.render(new Setting(containerEl));
 		}
 
-		}
+		containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.") });
+	}
 
-		// The local model is not the pet's: the translator asks the same server,
-		// so these settings stay visible whether or not Leen is on the board.
-		new Setting(containerEl).setName(tr("Modelo local")).setHeading();
-
-		const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
-		aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra → LaTeX se calculan aquí mismo.") });
-		aiIntro.createDiv({ text: EXPERIMENTAL.assistant
-			? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducción sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.")
-			: tr("Un modelo local solo hace falta para la traducción sin cuotas, que es opcional. Nada sale de tu equipo.") });
-
+	private items(): SettingItem[] {
+		const s = this.plugin.settings;
+		const save = () => void this.plugin.saveSettings();
+		const heading = (name: string): SettingItem =>
+			({ name, searchable: false, render: (setting) => { setting.setName(name).setHeading(); } });
 		const memory = detectMemoryGb();
 		const suggestion = recommendedVisionModel(memory);
-		const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
-		const paintStatus = (text: string, kind: "info" | "ok" | "error" = "info") => {
-			aiStatus.setText(text);
-			aiStatus.toggleClass("is-ok", kind === "ok");
-			aiStatus.toggleClass("is-error", kind === "error");
-		};
-		paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
-
-		new Setting(containerEl)
-			.setName(tr("Servidor"))
-			.setDesc(tr("Ollama o LM Studio en tu propio equipo. Si «localhost» no responde, prueba con 127.0.0.1."))
-			.addText(t => t
-				.setPlaceholder(tr("http://127.0.0.1:11434"))
-				.setValue(s.aiBaseUrl)
-				.onChange(v => { s.aiBaseUrl = v.trim() || DEFAULT_SETTINGS.aiBaseUrl; save(); }))
-			.addButton(b => b.setButtonText(tr("Probar")).onClick(async () => {
-				const base = s.aiBaseUrl.replace(/\/+$/, "");
-				b.setButtonText(tr("Probando…"));
-				b.setDisabled(true);
-				const models = await probeLocalServer(base);
-				b.setButtonText(tr("Probar"));
-				b.setDisabled(false);
-				if (models === null) {
-					paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo «ollama serve») y vuelve a probar.", { p0: base }), "error");
-					return;
-				}
-				if (!models.length) {
-					paintStatus(tr("Responde, pero no tiene ningún modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
-					return;
-				}
-				// Ranking answers the question the raw list does not: which of
-				// these actually suits this computer.
-				const best = rankModels(models, memory)[0];
-				paintStatus(tr("Conectado · {p0} modelo(s). Usaría «{p1}»: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
-			}));
-
-		new Setting(containerEl)
-			.setName(tr("Modelo preferido"))
-			.setDesc(tr("Vacío = el mejor que quepa en tu memoria.", {}))
-			.addText(t => t
-				.setPlaceholder(tr("automático"))
-				.setValue(s.aiModel)
-				.onChange(v => { s.aiModel = v.trim(); save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Usar la pizarra como contexto"))
-			.setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."))
-			.addToggle(t => t.setValue(s.aiUseBoardContext).onChange(v => { s.aiUseBoardContext = v; save(); }));
-
-		new Setting(containerEl).setName(tr("Traductor")).setHeading();
-
+		// Assigned when the local-model note is drawn, and called from Probar.
+		let paintStatus: (text: string, kind?: "info" | "ok" | "error") => void = () => { /* nothing to paint yet */ };
 		const languages: Record<string, string> = {
 			es: "Español", en: "English", fr: "Français", de: "Deutsch", it: "Italiano", pt: "Português", ca: "Català", eu: "Euskara",
 			gl: "Galego", nl: "Nederlands", pl: "Polski", ru: "Русский", uk: "Українська", ar: "العربية", "zh-CN": "中文（简体）", ja: "日本語", ko: "한국어"
 		};
-		new Setting(containerEl)
-			.setName(tr("Traducir solo en tu ordenador"))
-			.setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Actívalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante más."))
-			.addToggle(t => t.setValue(s.translationPrivateOnly).onChange(v => { s.translationPrivateOnly = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Idioma de la transcripción"))
-			.setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de imágenes."))
-			.addDropdown(d => d.addOptions(languages).setValue(s.ocrLanguage).onChange(v => { s.ocrLanguage = v; save(); }));
-
-		new Setting(containerEl)
-			.setName(tr("Traducir de … a …"))
-			.setDesc(tr("Idiomas que usa el botón Traducir sobre el texto seleccionado."))
-			.addDropdown(d => d.addOptions(languages).setValue(s.translateFrom).onChange(v => { s.translateFrom = v; save(); }))
-			.addDropdown(d => d.addOptions(languages).setValue(s.translateTo).onChange(v => { s.translateTo = v; save(); }));
-
-		containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo «Pizarras nuevas» solo afecta a las que crees a partir de ahora.") });
+		const petShown = () => EXPERIMENTAL.assistant && s.showAssistantPet;
+		return [
+			{
+				name: tr("Idioma"),
+				desc: tr("«Automático» sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo."),
+				render: (setting) => { setting
+					.setName(tr("Idioma"))
+					.setDesc(tr("«Automático» sigue el idioma de Obsidian. Las pizarras abiertas se actualizan al cambiarlo."))
+					.addDropdown(d => d
+						.addOptions({ auto: tr("Automático"), es: "Español", en: "English" })
+						.setValue(s.language)
+						.onChange(v => {
+							s.language = v as LocaleSetting;
+							setLocale(s.language);
+							save();
+							// Redraw the tab itself so the change is visible at once.
+							this.renderTab();
+						})); }
+			},
+			heading(tr("Pizarras nuevas")),
+			{
+				name: tr("Estilo de página"),
+				desc: tr("Patrón de fondo con el que se crean las pizarras nuevas."),
+				render: (setting) => { setting
+					.setName(tr("Estilo de página"))
+					.setDesc(tr("Patrón de fondo con el que se crean las pizarras nuevas."))
+					.addDropdown(d => d
+						.addOptions({ blank: "Liso", dots: "Puntos", grid: "Rejilla", lines: "Rayas" })
+						.setValue(s.defaultBackground)
+						.onChange(v => { s.defaultBackground = v as BackgroundPattern; save(); })); }
+			},
+			{
+				name: tr("Margen izquierdo"),
+				desc: tr("Guía independiente que puede combinarse con cualquier estilo de página."),
+				render: (setting) => { setting
+					.setName(tr("Margen izquierdo"))
+					.setDesc(tr("Guía independiente que puede combinarse con cualquier estilo de página."))
+					.addToggle(toggle => toggle.setValue(s.defaultMargin).onChange(value => { s.defaultMargin = value; save(); })); }
+			},
+			{
+				name: tr("Tamaño de la cuadrícula"),
+				desc: tr("Separación entre puntos, líneas o celdas de la rejilla."),
+				render: (setting) => { setting
+					.setName(tr("Tamaño de la cuadrícula"))
+					.setDesc(tr("Separación entre puntos, líneas o celdas de la rejilla."))
+					.addDropdown(d => d
+						.addOptions({ small: tr("Pequeña"), medium: tr("Mediana"), large: tr("Grande") })
+						.setValue(s.defaultGridSize)
+						.onChange(v => { s.defaultGridSize = v as GridSize; save(); })); }
+			},
+			{
+				name: tr("Color de página"),
+				render: (setting) => { setting
+					.setName(tr("Color de página"))
+					.addColorPicker(c => c.setValue(s.defaultPageColor).onChange(v => { s.defaultPageColor = v; save(); })); }
+			},
+			{
+				name: tr("Color de las líneas del fondo"),
+				render: (setting) => { setting
+					.setName(tr("Color de las líneas del fondo"))
+					.addColorPicker(c => c.setValue(s.defaultLineColor).onChange(v => { s.defaultLineColor = v; save(); })); }
+			},
+			heading(tr("Herramientas")),
+			{
+				name: tr("Grosor del lápiz"),
+				desc: tr("Grosor inicial en píxeles."),
+				render: (setting) => { setting
+					.setName(tr("Grosor del lápiz"))
+					.setDesc(tr("Grosor inicial en píxeles."))
+					.addSlider(sl => sl.setLimits(1, 18, 0.5).setValue(s.penWidth).onChange(v => { s.penWidth = v; save(); })); }
+			},
+			{
+				name: tr("Color del lápiz"),
+				desc: tr("Con «Automático» la tinta es oscura en páginas claras y clara en páginas oscuras."),
+				render: (setting) => { setting
+					.setName(tr("Color del lápiz"))
+					.setDesc(tr("Con «Automático» la tinta es oscura en páginas claras y clara en páginas oscuras."))
+					.addToggle(t => t.setTooltip(tr("Automático")).setValue(s.penColor === "auto").onChange(v => {
+						s.penColor = v ? "auto" : "#1f2937";
+						save();
+						this.renderTab();
+					}))
+					.addColorPicker(c => {
+						c.setValue(s.penColor === "auto" ? "#1f2937" : s.penColor).onChange(v => { s.penColor = v; save(); });
+						c.setDisabled(s.penColor === "auto");
+					}); }
+			},
+			{
+				name: tr("Subrayador"),
+				desc: tr("Color, grosor y opacidad iniciales."),
+				render: (setting) => { setting
+					.setName(tr("Subrayador"))
+					.setDesc(tr("Color, grosor y opacidad iniciales."))
+					.addColorPicker(c => c.setValue(s.highlighterColor).onChange(v => { s.highlighterColor = v; save(); }))
+					.addSlider(sl => sl.setLimits(8, 48, 2).setValue(s.highlighterWidth).onChange(v => { s.highlighterWidth = v; save(); }))
+					.addSlider(sl => sl.setLimits(0.1, 0.9, 0.05).setValue(s.highlighterOpacity).onChange(v => { s.highlighterOpacity = v; save(); })); }
+			},
+			{
+				name: tr("Tamaño de texto"),
+				render: (setting) => { setting
+					.setName(tr("Tamaño de texto"))
+					.addSlider(sl => sl.setLimits(10, 72, 1).setValue(s.textSize).onChange(v => { s.textSize = v; save(); })); }
+			},
+			{
+				name: tr("Punta del lápiz"),
+				desc: tr("Trazo con el que empieza la herramienta de lápiz."),
+				render: (setting) => { setting
+					.setName(tr("Punta del lápiz"))
+					.setDesc(tr("Trazo con el que empieza la herramienta de lápiz."))
+					.addDropdown(d => d
+						.addOptions({ ballpoint: tr("Bolígrafo"), pencil: tr("Lápiz"), fountain: tr("Pluma"), marker: tr("Rotulador"), brush: tr("Pincel") })
+						.setValue(s.penStyle)
+						.onChange(v => { s.penStyle = v as PenStyle; save(); })); }
+			},
+			{
+				name: tr("Fuente del texto"),
+				desc: tr("Tipografía con la que se crean los cuadros de texto."),
+				render: (setting) => { setting
+					.setName(tr("Fuente del texto"))
+					.setDesc(tr("Tipografía con la que se crean los cuadros de texto."))
+					.addDropdown(d => d
+						.addOptions({ sans: tr("Sin remates"), serif: tr("Con remates"), rounded: tr("Redondeada"), mono: tr("Monoespaciada") })
+						.setValue(s.defaultTextFont)
+						.onChange(v => { s.defaultTextFont = v as CanvasFont; save(); })); }
+			},
+			{
+				name: tr("Color de las notas adhesivas"),
+				desc: tr("Papel con el que nace cada posit nuevo."),
+				render: (setting) => { setting
+					.setName(tr("Color de las notas adhesivas"))
+					.setDesc(tr("Papel con el que nace cada posit nuevo."))
+					.addDropdown(d => d
+						.addOptions({ "#fff2a8": "Amarillo", "#ffd9a0": "Naranja", "#ffd7e5": "Rosa", "#d8f5c9": "Verde", "#cde8ff": "Azul", "#eadbff": "Lila", "#f4f1e8": "Blanco roto" })
+						.setValue(s.defaultStickyColor)
+						.onChange(v => { s.defaultStickyColor = v; save(); })); }
+			},
+			{
+				name: tr("Calculadora en grados"),
+				desc: tr("Desactívalo para trabajar en radianes por defecto."),
+				render: (setting) => { setting
+					.setName(tr("Calculadora en grados"))
+					.setDesc(tr("Desactívalo para trabajar en radianes por defecto."))
+					.addToggle(t => t.setValue(s.calculatorDegrees).onChange(v => { s.calculatorDegrees = v; save(); })); }
+			},
+			heading(tr("Comportamiento")),
+			{
+				name: tr("La rueda del ratón hace zoom"),
+				desc: tr("Desactivado: la rueda desplaza la página y Ctrl+rueda hace zoom, como OneNote."),
+				render: (setting) => { setting
+					.setName(tr("La rueda del ratón hace zoom"))
+					.setDesc(tr("Desactivado: la rueda desplaza la página y Ctrl+rueda hace zoom, como OneNote."))
+					.addToggle(t => t.setValue(s.wheelZooms).onChange(v => { s.wheelZooms = v; save(); })); }
+			},
+			{
+				name: tr("Dibujar con el dedo"),
+				desc: tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano."),
+				render: (setting) => { setting
+					.setName(tr("Dibujar con el dedo"))
+					.setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano."))
+					.addToggle(t => t.setValue(s.fingerDraws).onChange(v => { s.fingerDraws = v; save(); })); }
+			},
+			heading(tr("Interfaz")),
+			{
+				name: tr("Mostrar etiquetas rápidas"),
+				desc: tr("La fila de etiquetas (Importante, Duda, Idea clave…) bajo la barra de dibujo."),
+				render: (setting) => { setting
+					.setName(tr("Mostrar etiquetas rápidas"))
+					.setDesc(tr("La fila de etiquetas (Importante, Duda, Idea clave…) bajo la barra de dibujo."))
+					.addToggle(t => t.setValue(s.showQuickTags).onChange(v => { s.showQuickTags = v; save(); })); }
+			},
+			{
+				name: tr("Minimapa visible al abrir"),
+				render: (setting) => { setting
+					.setName(tr("Minimapa visible al abrir"))
+					.addToggle(t => t.setValue(s.showMinimap).onChange(v => { s.showMinimap = v; save(); })); }
+			},
+			{
+				name: tr("Interfaz compacta"),
+				desc: tr("Botones más pequeños y barras más estrechas."),
+				render: (setting) => { setting
+					.setName(tr("Interfaz compacta"))
+					.setDesc(tr("Botones más pequeños y barras más estrechas."))
+					.addToggle(t => t.setValue(s.compactUi).onChange(v => { s.compactUi = v; save(); })); }
+			},
+			{ ...heading(tr("Ayudante Leen")), visible: () => EXPERIMENTAL.assistant },
+			{
+				name: tr("Mostrar a Leen"),
+				desc: tr("Abre acciones rápidas para resumir, crear tareas, ordenar objetos y leer fórmulas. El chat local es opcional."),
+				visible: () => EXPERIMENTAL.assistant,
+				render: (setting) => { setting
+					.setName(tr("Mostrar a Leen"))
+					.setDesc(tr("Abre acciones rápidas para resumir, crear tareas, ordenar objetos y leer fórmulas. El chat local es opcional."))
+					.addToggle(t => t.setValue(s.showAssistantPet).onChange(v => {
+						s.showAssistantPet = v;
+						save();
+						this.renderTab();
+					})); }
+			},
+			{
+				name: tr("Tamaño de Leen"),
+				desc: tr("Más pequeño estorba menos; más grande se toca mejor en una tableta."),
+				visible: petShown,
+				render: (setting) => { setting
+					.setName(tr("Tamaño de Leen"))
+					.setDesc(tr("Más pequeño estorba menos; más grande se toca mejor en una tableta."))
+					.addSlider(sl => sl.setLimits(0.6, 1.6, 0.1).setValue(s.petScale).onChange(v => { s.petScale = v; save(); })); }
+			},
+			{
+				name: tr("Bocadillos de Leen"),
+				desc: tr("El aviso que aparece al pasar el ratón por encima."),
+				visible: petShown,
+				render: (setting) => { setting
+					.setName(tr("Bocadillos de Leen"))
+					.setDesc(tr("El aviso que aparece al pasar el ratón por encima."))
+					.addToggle(t => t.setValue(s.petBubbles).onChange(v => { s.petBubbles = v; save(); })); }
+			},
+			{
+				name: tr("Devolver a Leen a su sitio"),
+				desc: tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista."),
+				visible: petShown,
+				render: (setting) => { setting
+					.setName(tr("Devolver a Leen a su sitio"))
+					.setDesc(tr("Vuelve a la esquina inferior derecha si lo has arrastrado fuera de la vista."))
+					.addButton(b => b.setButtonText(tr("Restablecer posición")).onClick(() => {
+						s.petX = null;
+						s.petY = null;
+						save();
+						new Notice(tr("Leen volverá a su esquina al reabrir la pizarra"));
+					})); }
+			},
+			// The local model is not the pet's: the translator asks the same server,
+			// so these settings stay visible whether or not Leen is on the board.
+			heading(tr("Modelo local")),
+			{
+				name: tr("Servidor"),
+				desc: tr("Ollama o LM Studio en tu propio equipo. Si «localhost» no responde, prueba con 127.0.0.1."),
+				before: (containerEl) => {
+					const aiIntro = containerEl.createDiv({ cls: "setting-item-description notelens-settings-note" });
+					aiIntro.createDiv({ text: tr("La pizarra entera funciona sin modelo: resumen, ideas clave, plan de repaso, esquema, tarjetas, limpieza de texto, pulido de tinta y Pizarra → LaTeX se calculan aquí mismo.") });
+					aiIntro.createDiv({ text: EXPERIMENTAL.assistant
+						? tr("Un modelo local solo hace falta para dos cosas opcionales: el chat con Leen y la traducción sin cuotas. Nada sale de tu equipo en ninguno de los dos casos.")
+						: tr("Un modelo local solo hace falta para la traducción sin cuotas, que es opcional. Nada sale de tu equipo.") });
+					const aiStatus = containerEl.createDiv({ cls: "notelens-settings-status" });
+					paintStatus = (text, kind = "info") => {
+						aiStatus.setText(text);
+						aiStatus.toggleClass("is-ok", kind === "ok");
+						aiStatus.toggleClass("is-error", kind === "error");
+					};
+					paintStatus(tr("Sin comprobar. Tu equipo declara {p0} GB de RAM.", { p0: memory }));
+				},
+				render: (setting) => { setting
+					.setName(tr("Servidor"))
+					.setDesc(tr("Ollama o LM Studio en tu propio equipo. Si «localhost» no responde, prueba con 127.0.0.1."))
+					.addText(t => t
+						.setPlaceholder(tr("http://127.0.0.1:11434"))
+						.setValue(s.aiBaseUrl)
+						.onChange(v => { s.aiBaseUrl = v.trim() || DEFAULT_SETTINGS.aiBaseUrl; save(); }))
+					.addButton(b => b.setButtonText(tr("Probar")).onClick(async () => {
+						const base = s.aiBaseUrl.replace(/\/+$/, "");
+						b.setButtonText(tr("Probando…"));
+						b.setDisabled(true);
+						const models = await probeLocalServer(base);
+						b.setButtonText(tr("Probar"));
+						b.setDisabled(false);
+						if (models === null) {
+							paintStatus(tr("Sin respuesta en {p0}. Arranca el servidor (por ejemplo «ollama serve») y vuelve a probar.", { p0: base }), "error");
+							return;
+						}
+						if (!models.length) {
+							paintStatus(tr("Responde, pero no tiene ningún modelo. Descarga uno: {p0}", { p0: suggestion.pull }), "error");
+							return;
+						}
+						// Ranking answers the question the raw list does not: which of
+						// these actually suits this computer.
+						const best = rankModels(models, memory)[0];
+						paintStatus(tr("Conectado · {p0} modelo(s). Usaría «{p1}»: {p2}", { p0: models.length, p1: best?.model ?? models[0], p2: best?.reason ?? "" }), "ok");
+					})); }
+			},
+			{
+				name: tr("Modelo preferido"),
+				desc: tr("Vacío = el mejor que quepa en tu memoria.", {}),
+				render: (setting) => { setting
+					.setName(tr("Modelo preferido"))
+					.setDesc(tr("Vacío = el mejor que quepa en tu memoria.", {}))
+					.addText(t => t
+						.setPlaceholder(tr("automático"))
+						.setValue(s.aiModel)
+						.onChange(v => { s.aiModel = v.trim(); save(); })); }
+			},
+			{
+				name: tr("Usar la pizarra como contexto"),
+				desc: tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."),
+				render: (setting) => { setting
+					.setName(tr("Usar la pizarra como contexto"))
+					.setDesc(tr("Marca la casilla del chat desde el principio, para preguntar siempre sobre tus apuntes."))
+					.addToggle(t => t.setValue(s.aiUseBoardContext).onChange(v => { s.aiUseBoardContext = v; save(); })); }
+			},
+			heading(tr("Traductor")),
+			{
+				name: tr("Traducir solo en tu ordenador"),
+				desc: tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Actívalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante más."),
+				render: (setting) => { setting
+					.setName(tr("Traducir solo en tu ordenador"))
+					.setDesc(tr("Desactivado, traduce al instante con servicios gratuitos sin clave ni cuota. Actívalo para que el texto no salga de tu equipo: traduce el modelo local, que es privado pero tarda bastante más."))
+					.addToggle(t => t.setValue(s.translationPrivateOnly).onChange(v => { s.translationPrivateOnly = v; save(); })); }
+			},
+			{
+				name: tr("Idioma de la transcripción"),
+				desc: tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de imágenes."),
+				render: (setting) => { setting
+					.setName(tr("Idioma de la transcripción"))
+					.setDesc(tr("Idioma que espera el lector de la pizarra al reconocer texto escrito a mano o dentro de imágenes."))
+					.addDropdown(d => d.addOptions(languages).setValue(s.ocrLanguage).onChange(v => { s.ocrLanguage = v; save(); })); }
+			},
+			{
+				name: tr("Traducir de … a …"),
+				desc: tr("Idiomas que usa el botón Traducir sobre el texto seleccionado."),
+				render: (setting) => { setting
+					.setName(tr("Traducir de … a …"))
+					.setDesc(tr("Idiomas que usa el botón Traducir sobre el texto seleccionado."))
+					.addDropdown(d => d.addOptions(languages).setValue(s.translateFrom).onChange(v => { s.translateFrom = v; save(); }))
+					.addDropdown(d => d.addOptions(languages).setValue(s.translateTo).onChange(v => { s.translateTo = v; save(); })); }
+			}
+		];
 	}
 }
