@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.9.9
+
+### Fixed
+
+- The ruler draws its scale instead of laying it out, so the ticks land on whole pixels and each number sits under its own mark. The protractor is kept half as tall as it is wide, so it is a real semicircle and the degrees it marks are the degrees you get; it used to be an ellipse.
+- Ink snaps anywhere on the protractor's body, not only within a narrow band along its base line, and the rotate handle sits inside the tool instead of hanging over its edge, where the shape's rounding swallowed both half the control and the press.
+- A line break in a text box is an element rather than a bare newline, so the caret can sit on the new line and what you type next lands after the break instead of in front of it.
+
+### Changed
+
+- Rich text boxes edit the runs they are made of instead of calling `document.execCommand`, which is deprecated and behaves differently between builds. Bold, italic, underline, strike-through, the marker, ink colour, clearing formatting, typing, tab, line breaks, deletion and list continuation are all changes to those runs. A box keeps its own undo while it is open, since the browser's cannot follow a repaint, and a command used with nothing selected arms the style for whatever is typed next.
+- Settings are described as definitions, so NoteLens answers Obsidian's own settings search on 1.13 and later. The tab is drawn exactly as before, and `minAppVersion` is unchanged.
+- The marker re-rendered the whole document on every pointer move; it now does so at most once a frame. The ruler no longer asks for a backdrop filter over a canvas that repaints on every stroke.
+- Every warning from the community review is cleared: the deprecated `execCommand`, `queryCommandState`, `queryCommandValue`, `keyCode` and `display` calls, and in the stylesheet 36 `!important` declarations, `:has`, `clip-path`, `box-decoration-break`, the `text-decoration` longhands, the named system fonts and the `mjx-container` selector no linter can know.
+
 ## 2.9.7
 
 Same code as 2.9.6, released under a new version number.
