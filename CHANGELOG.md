@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.0.0
+
+### Added
+
+- A finger can draw. It moved the board and nothing else once a stylus had been used, which is right until you want to mark something with one: the dock now carries a switch for it, and two fingers pan and zoom either way. The choice is remembered.
+- Files dragged onto the board from a file explorer land where they were dropped, and several at once are fanned out rather than stacked. A file the vault already holds is shown where it is instead of being copied again.
+
+### Fixed
+
+- The ruler follows a finger whatever the tool is, so it can be slid along while the other hand keeps drawing against its edge. Every gesture now follows only the pointer that began it: a pen resting on the board used to drag the ruler with it.
+- Pasting a file that was not an image did nothing at all; a PDF or a document copied in a file explorer now lands on the board like an image does.
+- A sticky note's folded corner was drawn as a filled dark square. It is a border triangle, and a border triangle needs content-box sizing, which Obsidian's own reset takes away.
+- Floating panels are dragged from anywhere on them, not only by the thin strip of their title, and a press on a key becomes a drag once the pointer travels. On a narrow screen the grip drawn across their top was a pseudo-element no press could reach, and the transform that centres them dropped them half their width from the finger.
+- The marker re-rendered the whole document on every pointer move; it now does so at most once a frame. The ruler no longer asks for a backdrop filter over a canvas that repaints on every stroke.
+
+### Changed
+
+- One voice for the panels: three of them borrowed the calculator's title, which is dressed for its white face, so each announced itself differently. Dropdowns, tick boxes and focus rings are drawn to match the board rather than the platform.
+- The format bar reads in groups. Its size control was broken in three across a line wrap, with the translate button landing in the middle of them, and the dash list read as a rule across the bar rather than a list style.
+- A selected object offers one way to delete it. Its own close is put away while the selection bar carries one, and the rotate handle has moved out from under that bar.
+- The insert and document docks are grouped by where a thing comes from: what the vault or the device already holds, what you make here, and what acts on what is already there.
+- Pages and bookmarks: a header of two matching buttons, a count that reads as a count, rows that light up as a whole, and no more "open page" written under every page.
+
 ## 2.9.9
 
 ### Fixed
