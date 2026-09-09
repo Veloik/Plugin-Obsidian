@@ -265,7 +265,7 @@ export function createTranslatorPanel(host: TranslatorHost, container: HTMLEleme
 	const translateBtn = actions.createEl("button", { cls: "mod-cta", text: tr("Traducir") });
 	const replaceBtn = actions.createEl("button", { text: tr("Sustituir") });
 	replaceBtn.title = tr("Cambia el texto original por la traducción");
-	const addBtn = actions.createEl("button", { text: tr("Añadir a la pizarra") });
+	const addBtn = actions.createEl("button", { text: tr("Añadir") });
 	addBtn.title = tr("Crea un cuadro de texto con la traducción junto al original");
 	const copyBtn = actions.createEl("button", { text: tr("Copiar") });
 

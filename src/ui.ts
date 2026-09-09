@@ -225,6 +225,8 @@ export interface ToolbarHost {
 	isRecorderOpen(): boolean;
 	toggleRuler(): void;
 	isRulerVisible(): boolean;
+	fingerDrawsOn(): boolean;
+	toggleFingerDraws(): void;
 	addViewportBookmark(): void;
 	getViewportBookmarks(): ViewportBookmark[];
 	goToViewportBookmark(id: string): void;
@@ -432,6 +434,9 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const insertBar = container.createDiv({ cls: "notelens-insert-dock" });
 	shield(insertBar);
+	// Three groups, by where the thing comes from: what the vault or the device
+	// already holds, what you make here on the board, and the two that act on
+	// what is already on it.
 	const pdfBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(pdfBtn, "file-text");
 	pdfBtn.title = tr("Insertar PDF de la bóveda");
@@ -447,11 +452,6 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	imageBtn.title = tr("Insertar imagen de la bóveda");
 	imageBtn.onclick = () => host.insertImage();
 
-	const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-	setIcon(stickyBtn, "sticky-note");
-	stickyBtn.title = tr("Nueva nota adhesiva");
-	stickyBtn.onclick = () => host.addStickyNote();
-
 	const attachBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(attachBtn, "paperclip");
 	attachBtn.title = tr("Adjuntar cualquier archivo de la bóveda");
@@ -466,6 +466,12 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	setIcon(uploadBtn, "upload");
 	uploadBtn.title = tr("Subir archivo desde el dispositivo");
 	uploadBtn.onclick = () => void host.uploadFileFromDevice();
+
+	insertBar.createDiv({ cls: "onenote-divider" });
+	const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
+	setIcon(stickyBtn, "sticky-note");
+	stickyBtn.title = tr("Nueva nota adhesiva");
+	stickyBtn.onclick = () => host.addStickyNote();
 
 	const tableBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(tableBtn, "table-2");
@@ -487,6 +493,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	mathBtn.title = tr("Insertar ecuación: escríbela a mano y se convierte sola, o teclea la notación. También vale $x^2$ dentro de cualquier texto");
 	mathBtn.onclick = () => host.insertMathBlock();
 
+	insertBar.createDiv({ cls: "onenote-divider" });
 	const recorderBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(recorderBtn, "mic");
 	recorderBtn.title = tr("Grabar audio: se guarda como MP3 y se añade a la pizarra");
@@ -499,11 +506,31 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 
 	const documentBar = container.createDiv({ cls: "notelens-document-dock" });
 	shield(documentBar);
+	// Three groups again: what helps you draw on the page, what you look things
+	// up with, and what goes in and out of the vault.
 	const rulerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(rulerBtn, "ruler");
 	rulerBtn.title = tr("Mostrar regla inteligente");
 	rulerBtn.onclick = () => host.toggleRuler();
 
+	// Only where there are fingers to speak of.
+	const fingerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
+	const paintFinger = () => {
+		const on = host.fingerDrawsOn();
+		setIcon(fingerBtn, on ? "pencil" : "hand");
+		fingerBtn.title = on ? tr("El dedo dibuja. Pulsa para que mueva la pizarra.") : tr("El dedo mueve la pizarra. Pulsa para dibujar con \u00e9l.");
+		fingerBtn.toggleClass("active", on);
+	};
+	paintFinger();
+	fingerBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
+	fingerBtn.onclick = () => { host.toggleFingerDraws(); paintFinger(); };
+
+	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
+	setIcon(a4Btn, "file-stack");
+	a4Btn.title = tr("Mostrar guías de página A4");
+	a4Btn.onclick = () => host.toggleA4Guides();
+
+	documentBar.createDiv({ cls: "onenote-divider" });
 	const bookmarkBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(bookmarkBtn, "bookmark-plus");
 	bookmarkBtn.title = tr("Guardar marcador de sección");
@@ -519,11 +546,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	calcBtn.title = tr("Calculadora científica");
 	calcBtn.onclick = () => host.toggleCalculator();
 
-	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-	setIcon(a4Btn, "file-stack");
-	a4Btn.title = tr("Mostrar guías de página A4");
-	a4Btn.onclick = () => host.toggleA4Guides();
-
+	documentBar.createDiv({ cls: "onenote-divider" });
 	const exportBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(exportBtn, "file-down");
 	exportBtn.title = tr("Exportar a PDF A4");
@@ -543,6 +566,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		refreshActive();
 		syncDot();
 		rulerBtn.toggleClass("active", host.isRulerVisible());
+		paintFinger();
 		calcBtn.toggleClass("active", host.isCalculatorOpen());
 		navBtn.toggleClass("active", host.isNavigatorOpen());
 		recorderBtn.toggleClass("active", host.isRecorderOpen());
@@ -871,7 +895,7 @@ export function createPagesControl(host: ToolbarHost, container: HTMLElement): v
 			go.createSpan({ cls: "notelens-page-thumbnail", text: String(index + 1) });
 			const copy = go.createSpan({ cls: "notelens-bookmark-copy" });
 			copy.createSpan({ cls: "notelens-bookmark-label", text: page.title });
-			copy.createSpan({ cls: "notelens-bookmark-page", text: page.id === active ? tr("Página actual") : tr("Abrir página") });
+			if (page.id === active) copy.createSpan({ cls: "notelens-bookmark-page", text: tr("Página actual") });
 			go.title = tr("Ir a {p0}", { p0: page.title });
 			go.onclick = () => host.goToDocumentPage(page.id);
 			go.ondblclick = event => { event.preventDefault(); startRename(item, go, page); };

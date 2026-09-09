@@ -96,6 +96,8 @@ function continueList(editor: HTMLTextAreaElement): boolean {
 const CLIP_PREFIX = "notelens-clip:";
 /** Remembers that this vault is used with a stylus, so fingers stop drawing. */
 const PEN_SEEN_KEY = "notelens-pen-seen";
+/** Set once the reader picks what a finger does, which ends the default below. */
+const FINGER_CHOICE_KEY = "notelens-finger-choice";
 interface ClipboardPayload {
 	notelens: 1;
 	strokes: Stroke[];
@@ -316,6 +318,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private penPointerId: number | null = null;
 	/** Whether a stylus has ever been used here; decides what a finger does. */
 	private penEverSeen = false;
+	private fingerChoiceMade = false;
 	private panStart = { x: 0, y: 0 };
 	private pinchStart: { d: number; cx: number; cy: number; vt: { x: number; y: number; scale: number } } | null = null;
 	private isDrawing = false;
@@ -402,6 +405,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.workspaceEl.setAttr("data-bg", this.data.background);
 		try {
 			this.penEverSeen = this.app.loadLocalStorage(PEN_SEEN_KEY) === true;
+			this.fingerChoiceMade = this.app.loadLocalStorage(FINGER_CHOICE_KEY) === true;
 		} catch { this.penEverSeen = false; }
 		this.syncToolCursor();
 
@@ -827,19 +831,25 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private startRulerDrag(event: PointerEvent): void {
 		if ((event.target as HTMLElement).closest("button, .notelens-ruler-rotate")) return;
-		if (this.currentTool !== "select" && this.currentTool !== "hand") return;
+		// A finger slides the ruler whatever the tool is, so the other hand can
+		// keep drawing against its edge without putting the pen down.
+		if (event.pointerType !== "touch" && this.currentTool !== "select" && this.currentTool !== "hand") return;
 		event.stopPropagation();
 		event.preventDefault();
+		const pointerId = event.pointerId;
 		const startX = event.clientX;
 		const startY = event.clientY;
 		const originX = this.rulerState.x;
 		const originY = this.rulerState.y;
 		const onMove = (move: PointerEvent) => {
+			// The pen drawing at the same time is a different pointer.
+			if (move.pointerId !== pointerId) return;
 			this.rulerState.x = originX + move.clientX - startX;
 			this.rulerState.y = originY + move.clientY - startY;
 			this.renderRuler();
 		};
-		const onUp = () => {
+		const onUp = (up: PointerEvent) => {
+			if (up.pointerId !== pointerId) return;
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
 			window.removeEventListener("pointercancel", onUp);
@@ -855,13 +865,16 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const rect = this.workspaceEl.getBoundingClientRect();
 		const centerX = rect.left + this.rulerState.x + this.rulerState.length / 2;
 		const centerY = rect.top + this.rulerState.y;
+		const pointerId = event.pointerId;
 		const onMove = (move: PointerEvent) => {
+			if (move.pointerId !== pointerId) return;
 			let angle = Math.atan2(move.clientY - centerY, move.clientX - centerX) * 180 / Math.PI;
 			if (this.rulerState.mode === "protractor") angle = Math.round(angle / 15) * 15;
 			this.rulerState.angle = angle;
 			this.renderRuler();
 		};
-		const onUp = () => {
+		const onUp = (up: PointerEvent) => {
+			if (up.pointerId !== pointerId) return;
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
 			window.removeEventListener("pointercancel", onUp);
@@ -1404,6 +1417,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		this.registerDomEvent(window, "keydown", (e) => this.onKeyDown(e));
 		this.registerDomEvent(window, "paste", (e) => void this.onPaste(e));
+		// Saying we will take the files is what makes the drop happen at all: a
+		// dragover left alone means "not here" and the browser refuses it.
+		this.registerDomEvent(this.workspaceEl, "dragover", (e) => {
+			if (!e.dataTransfer || !Array.from(e.dataTransfer.types).includes("Files")) return;
+			e.preventDefault();
+			e.dataTransfer.dropEffect = "copy";
+			this.workspaceEl.addClass("is-drop-target");
+		});
+		this.registerDomEvent(this.workspaceEl, "dragleave", (e) => {
+			if (e.target === this.workspaceEl) this.workspaceEl.removeClass("is-drop-target");
+		});
+		this.registerDomEvent(this.workspaceEl, "drop", (e) => void this.onDrop(e));
 		this.registerDomEvent(this.workspaceEl, "dblclick", (e) => this.onDoubleClick(e));
 		this.registerDomEvent(this.workspaceEl, "pointerleave", () => {
 			this.hideTextPlacementHint();
@@ -1494,6 +1519,31 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		menu.showAtMouseEvent(e);
 	}
 
+	/**
+	 * Files dragged onto the board from the file explorer, or from Obsidian's
+	 * own, land where they were dropped.
+	 */
+	private async onDrop(e: DragEvent): Promise<void> {
+		this.workspaceEl.removeClass("is-drop-target");
+		const data = e.dataTransfer;
+		if (!data) return;
+		const files = Array.from(data.files);
+		const text = data.getData("text/plain");
+		// A file this vault already holds is shown where it is, never copied again.
+		const linked = text ? this.vaultFileFromText(text) : null;
+		if (!files.length && !linked) return;
+		e.preventDefault();
+		e.stopPropagation();
+		const at = this.getSceneCoords(e.clientX, e.clientY);
+		if (linked) {
+			this.clearSelection(false);
+			this.insertVaultFile(linked, { x: at.x - 160, y: at.y - 75 });
+			this.save();
+			return;
+		}
+		await this.importFilesOntoBoard(files, at);
+	}
+
 	/** Paste images from the clipboard straight onto the canvas. */
 	private async onPaste(e: ClipboardEvent): Promise<void> {
 		if (e.defaultPrevented) return;
@@ -1510,21 +1560,31 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			return;
 		}
 
-		const files = e.clipboardData?.files;
-		const img = files && files.length ? Array.from(files).find(f => f.type.startsWith("image/")) : undefined;
+		const dropped = e.clipboardData?.files;
+		const files = dropped && dropped.length ? Array.from(dropped) : [];
+		const img = files.find(f => f.type.startsWith("image/"));
 		if (!img) {
-			if (!text.trim() && this.clipboardPayload) { e.preventDefault(); this.pasteObjects(this.clipboardPayload); return; }
+			if (!text.trim() && !files.length && this.clipboardPayload) { e.preventDefault(); this.pasteObjects(this.clipboardPayload); return; }
+			// A path, a wikilink or an obsidian:// address to something in this
+			// vault comes in as the card that names it, not as its own address.
+			const linked = text.trim() ? this.vaultFileFromText(text) : null;
+			if (linked) {
+				e.preventDefault();
+				this.clearSelection(false);
+				this.insertVaultFile(linked, this.pasteTarget(320, 150));
+				this.pasteCount++;
+				return;
+			}
+			// Anything else the clipboard carries as a file -- a PDF copied in the
+			// file explorer, a document, a sound -- is brought into the vault and
+			// laid on the board. Only images used to be, and the rest fell through
+			// to nothing at all.
+			if (files.length) {
+				e.preventDefault();
+				void this.importFilesOntoBoard(files);
+				return;
+			}
 			if (text.trim()) {
-				// A path, a wikilink or an obsidian:// address to something in this
-				// vault comes in as the card that names it, not as its own address.
-				const linked = this.vaultFileFromText(text);
-				if (linked) {
-					e.preventDefault();
-					this.clearSelection(false);
-					this.insertVaultFile(linked, this.pasteTarget(320, 150));
-					this.pasteCount++;
-					return;
-				}
 				if (/^([a-zA-Z]:[\\/]|\/\/|file:\/\/)/.test(text.trim()) && /\.[a-z0-9]{2,5}$/i.test(text.trim())) {
 					new Notice(tr("Ese archivo está fuera de la bóveda, así que se pega como texto."), 4000);
 				}
@@ -2097,7 +2157,31 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * moves the board after that. The setting forces writing either way.
 	 */
 	private fingerDraws(): boolean {
-		return this.plugin.settings.fingerDraws || !this.penEverSeen;
+		// Before a stylus has ever touched this vault a finger draws, since there
+		// is nothing else to draw with. Once the reader says what they want, that
+		// answer is the whole rule.
+		return this.plugin.settings.fingerDraws || (!this.penEverSeen && !this.fingerChoiceMade);
+	}
+
+	/** Whether a finger draws right now, for the button that says so. */
+	fingerDrawsOn(): boolean { return this.fingerDraws(); }
+
+	/**
+	 * Swaps what one finger does: draw with the tool in hand, or move the board.
+	 * Two fingers pan and zoom either way, and a stylus is untouched by this.
+	 */
+	toggleFingerDraws(): void {
+		const on = !this.fingerDraws();
+		this.plugin.settings.fingerDraws = on;
+		this.fingerChoiceMade = true;
+		try {
+			this.app.saveLocalStorage(FINGER_CHOICE_KEY, true);
+		} catch {
+			// A vault that cannot store this falls back to the default next time.
+		}
+		void this.plugin.saveSettings();
+		this.syncToolbar();
+		new Notice(on ? tr("El dedo dibuja. Dos dedos mueven la pizarra.") : tr("El dedo mueve la pizarra."));
 	}
 
 	/** Remembers the stylus across boards and restarts, not just this session. */
@@ -3598,25 +3682,57 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		picker.onchange = async () => {
 			const localFile = picker.files?.[0];
 			if (!localFile) return;
-			try {
-				const safeName = localFile.name.replace(/[\\/:*?"<>|]/g, "-");
-				let path = safeName || `notelens-file-${Date.now()}`;
-				try {
-					path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
-				} catch { /* fall back to the vault root */ }
-				const parent = path.split("/").slice(0, -1).join("/");
-				if (parent && !this.app.vault.getFolderByPath(parent)) {
-					await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
-				}
-				const saved = await this.app.vault.createBinary(path, await localFile.arrayBuffer());
-				this.insertVaultFile(saved);
-				new Notice(tr("Archivo añadido: {p0}", { p0: saved.name }));
-			} catch (error) {
-				console.error("NoteLens: device upload failed", error);
-				new Notice(tr("NoteLens: no se pudo añadir el archivo."));
-			}
+			const saved = await this.importLocalFile(localFile);
+			if (!saved) { new Notice(tr("NoteLens: no se pudo añadir el archivo.")); return; }
+			this.insertVaultFile(saved);
+			new Notice(tr("Archivo añadido: {p0}", { p0: saved.name }));
 		};
 		picker.click();
+	}
+
+	/**
+	 * Copies a file from outside the vault into it, beside the board's other
+	 * attachments, and answers with what the vault now holds.
+	 */
+	private async importLocalFile(localFile: File): Promise<TFile | null> {
+		try {
+			const safeName = localFile.name.replace(/[\\/:*?"<>|]/g, "-");
+			let path = safeName || `notelens-file-${Date.now()}`;
+			try {
+				path = await this.app.fileManager.getAvailablePathForAttachment(path, this.file?.path ?? "");
+			} catch { /* fall back to the vault root */ }
+			const parent = path.split("/").slice(0, -1).join("/");
+			if (parent && !this.app.vault.getFolderByPath(parent)) {
+				await this.app.vault.createFolder(parent).catch(() => { /* folder already exists */ });
+			}
+			return await this.app.vault.createBinary(path, await localFile.arrayBuffer());
+		} catch (error) {
+			console.error("NoteLens: file import failed", error);
+			return null;
+		}
+	}
+
+	/**
+	 * Brings files from outside into the vault and onto the board: pasted, or
+	 * dragged in from a file explorer. Without a spot they land under the
+	 * pointer, the way a paste does.
+	 */
+	private async importFilesOntoBoard(files: File[], at?: { x: number; y: number }): Promise<void> {
+		this.clearSelection(false);
+		const names: string[] = [];
+		for (const local of files) {
+			const saved = await this.importLocalFile(local);
+			if (!saved) continue;
+			// Several at once are fanned out rather than stacked on one another.
+			const spot = at ? { x: at.x - 160 + names.length * 28, y: at.y - 75 + names.length * 28 } : this.pasteTarget(320, 150);
+			this.insertVaultFile(saved, spot);
+			this.pasteCount++;
+			names.push(saved.name);
+		}
+		if (!names.length) { new Notice(tr("NoteLens: no se pudo añadir el archivo.")); return; }
+		new Notice(names.length === 1
+			? tr("Archivo añadido: {p0}", { p0: names[0] })
+			: tr("{p0} archivos añadidos a la pizarra.", { p0: names.length }));
 	}
 
 	/**
@@ -4072,7 +4188,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			const chip = filters.createEl("button", { cls: "onenote-tag-chip" });
 			chip.style.setProperty("--tag-color", tag.color);
 			setIcon(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
-			chip.createSpan({ text: tr("{p0} {p1}", { p0: tr(tag.label), p1: count }) });
+			// A row of zeroes says nothing and still takes the eye: the number shows
+			// only where there is something to count.
+			chip.createSpan({ text: count ? tr("{p0} {p1}", { p0: tr(tag.label), p1: count }) : tr(tag.label) });
 			chip.toggleClass("active", this.tagSummaryFilter === tag.id);
 			chip.onclick = () => { this.tagSummaryFilter = tag.id; this.refreshTagSummary(); };
 		}
@@ -4175,7 +4293,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		applySearch();
 		const pending = pageScoped.filter(b => (b.tagId === "tag_todo" || b.tagId === "tag_question") && !b.done).length;
-		panel.createDiv({
+		if (this.data.badges.length) panel.createDiv({
 			cls: "notelens-calculator-help",
 			text: pending
 				? (pending === 1 ? tr("1 pendiente entre tareas y dudas.") : tr("{p0} pendientes entre tareas y dudas.", { p0: pending }))
@@ -6359,8 +6477,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			mkToggle("align-right", "align-right", "Alinear a la derecha", () => { tb.align = "right"; });
 			bar.createDiv({ cls: "onenote-divider" });
 			if (rich) {
+				const lists = bar.createDiv({ cls: "notelens-format-lists" });
 				const listButton = (icon: string, title: string, kind: ListKind) => {
-					const b = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
+					const b = lists.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 					setIcon(b, icon);
 					b.title = tr(title);
 					b.onclick = () => this.toggleRichList(tb, rich, kind);
@@ -6381,12 +6500,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		fontSelect.onchange = () => apply(() => { tb.fontFamily = fontSelect.value as CanvasFont; });
 		if (!plainText) fontSelect.hide();
 
-		const minusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
+		const stepper = bar.createDiv({ cls: "notelens-format-stepper" });
+		const minusBtn = stepper.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
 		setIcon(minusBtn, "minus");
 		minusBtn.title = tr("Reducir tamaño");
 		minusBtn.onclick = () => apply(() => { tb.fontSize = Math.max(10, tb.fontSize - 2); });
 
-		const sizeLabel = bar.createSpan({ cls: "notelens-format-size" });
+		const sizeLabel = stepper.createSpan({ cls: "notelens-format-size" });
+
+		const plusBtn = stepper.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
+		setIcon(plusBtn, "plus");
+		plusBtn.title = tr("Aumentar tamaño");
+		plusBtn.onclick = () => apply(() => { tb.fontSize = Math.min(96, tb.fontSize + 2); });
 
 		if (plainText) {
 			const translateBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
@@ -6394,11 +6519,6 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			translateBtn.title = tr("Traducir este cuadro");
 			translateBtn.onclick = () => this.translateText();
 		}
-
-		const plusBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-		setIcon(plusBtn, "plus");
-		plusBtn.title = tr("Aumentar tamaño");
-		plusBtn.onclick = () => apply(() => { tb.fontSize = Math.min(96, tb.fontSize + 2); });
 
 		if (tb.variant !== "code") {
 			bar.createDiv({ cls: "onenote-divider" });

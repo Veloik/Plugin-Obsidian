@@ -11,7 +11,7 @@
     "lint": "eslint src",
     "test": "node scripts/run-core-tests.mjs",
     "test:migration": "node scripts/migration-snapshot.mjs",
-    "test:browser": "node dev-harness/tablet-regression.mjs && node dev-harness/rich-editing.mjs",
+    "test:browser": "node dev-harness/tablet-regression.mjs && node dev-harness/rich-editing.mjs && node dev-harness/touch-drawing.mjs && node dev-harness/mobile-panels.mjs && node dev-harness/file-drop.mjs",
     "devices": "node dev-harness/run-devices.mjs",
     "validate": "node scripts/validate-release.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run test:migration && npm run build && npm run validate",
