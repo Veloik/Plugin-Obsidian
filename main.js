@@ -61730,6 +61730,21 @@ function createToolbar(host, container) {
     };
     toolButtons.set(t3.id, btn);
   }
+  const fingerBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-finger-tool" });
+  bar.insertBefore(fingerBtn, toolButtons.get("pen"));
+  const paintFinger = () => {
+    const on = host.fingerDrawsOn();
+    (0, import_obsidian12.setIcon)(fingerBtn, on ? "pencil" : "hand");
+    fingerBtn.title = on ? tr("El dedo dibuja. Pulsa para que mueva la pizarra.") : tr("El dedo mueve la pizarra. Pulsa para dibujar con \xE9l.");
+    fingerBtn.setAttr("aria-label", fingerBtn.title);
+    fingerBtn.toggleClass("active", on);
+  };
+  paintFinger();
+  fingerBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
+  fingerBtn.onclick = () => {
+    host.toggleFingerDraws();
+    paintFinger();
+  };
   function refreshActive() {
     bar.setAttr("data-active-tool", host.currentTool);
     for (const [id, btn] of toolButtons) {
@@ -61831,19 +61846,6 @@ function createToolbar(host, container) {
   (0, import_obsidian12.setIcon)(rulerBtn, "ruler");
   rulerBtn.title = tr("Mostrar regla inteligente");
   rulerBtn.onclick = () => host.toggleRuler();
-  const fingerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  const paintFinger = () => {
-    const on = host.fingerDrawsOn();
-    (0, import_obsidian12.setIcon)(fingerBtn, on ? "pencil" : "hand");
-    fingerBtn.title = on ? tr("El dedo dibuja. Pulsa para que mueva la pizarra.") : tr("El dedo mueve la pizarra. Pulsa para dibujar con \xE9l.");
-    fingerBtn.toggleClass("active", on);
-  };
-  paintFinger();
-  fingerBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
-  fingerBtn.onclick = () => {
-    host.toggleFingerDraws();
-    paintFinger();
-  };
   const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian12.setIcon)(a4Btn, "file-stack");
   a4Btn.title = tr("Mostrar gu\xEDas de p\xE1gina A4");
@@ -63061,6 +63063,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.rulerGuide = null;
     this.rulerState = { visible: false, x: 180, y: 260, length: 520, angle: 0, mode: "ruler" };
     this.rulerMarksDrawn = "";
+    /** One finger slides the ruler; a second finger rotates it around the same grip. */
+    this.rulerTouches = /* @__PURE__ */ new Map();
+    this.rulerGesture = null;
     // --- Selection state (runtime only, not persisted) ---
     this.selStrokes = /* @__PURE__ */ new Set();
     this.selShapes = /* @__PURE__ */ new Set();
@@ -63594,19 +63599,21 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (event.pointerType !== "touch" && this.currentTool !== "select" && this.currentTool !== "hand") return;
     event.stopPropagation();
     event.preventDefault();
-    const pointerId = event.pointerId;
-    const startX = event.clientX;
-    const startY = event.clientY;
-    const originX = this.rulerState.x;
-    const originY = this.rulerState.y;
+    this.rulerTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    this.resetRulerGesture();
+    if (this.rulerTouches.size > 1) return;
     const onMove = (move) => {
-      if (move.pointerId !== pointerId) return;
-      this.rulerState.x = originX + move.clientX - startX;
-      this.rulerState.y = originY + move.clientY - startY;
-      this.renderRuler();
+      if (!this.rulerTouches.has(move.pointerId)) return;
+      this.rulerTouches.set(move.pointerId, { x: move.clientX, y: move.clientY });
+      this.updateRulerGesture();
     };
     const onUp = (up) => {
-      if (up.pointerId !== pointerId) return;
+      if (!this.rulerTouches.delete(up.pointerId)) return;
+      if (this.rulerTouches.size) {
+        this.resetRulerGesture();
+        return;
+      }
+      this.rulerGesture = null;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -63614,6 +63621,42 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
+  }
+  /** Take the current ruler and touch positions as a fresh translation/rotation baseline. */
+  resetRulerGesture() {
+    const touches = [...this.rulerTouches.values()];
+    if (!touches.length) {
+      this.rulerGesture = null;
+      return;
+    }
+    const a3 = touches[0], b3 = touches[1] ?? a3;
+    this.rulerGesture = {
+      x: this.rulerState.x,
+      y: this.rulerState.y,
+      angle: this.rulerState.angle,
+      cx: (a3.x + b3.x) / 2,
+      cy: (a3.y + b3.y) / 2,
+      touchAngle: Math.atan2(b3.y - a3.y, b3.x - a3.x)
+    };
+  }
+  /** Apply a one-finger slide or a two-finger rotate-and-slide in one gesture. */
+  updateRulerGesture() {
+    const baseline = this.rulerGesture;
+    const touches = [...this.rulerTouches.values()];
+    if (!baseline || !touches.length) return;
+    const a3 = touches[0], b3 = touches[1] ?? a3;
+    const cx = (a3.x + b3.x) / 2, cy = (a3.y + b3.y) / 2;
+    this.rulerState.x = baseline.x + cx - baseline.cx;
+    this.rulerState.y = baseline.y + cy - baseline.cy;
+    if (touches.length > 1) {
+      let delta = (Math.atan2(b3.y - a3.y, b3.x - a3.x) - baseline.touchAngle) * 180 / Math.PI;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+      let angle = baseline.angle + delta;
+      if (this.rulerState.mode === "protractor") angle = Math.round(angle / 15) * 15;
+      this.rulerState.angle = angle;
+    }
+    this.renderRuler();
   }
   startRulerRotate(event) {
     event.stopPropagation();
@@ -69401,7 +69444,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.0.0" : "desconocida";
+var NOTELENS_BUILD = true ? "3.0.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

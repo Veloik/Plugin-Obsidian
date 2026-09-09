@@ -370,6 +370,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private rulerGuide: { x: number; y: number; dx: number; dy: number; length: number } | null = null;
 	private rulerState = { visible: false, x: 180, y: 260, length: 520, angle: 0, mode: "ruler" as RulerMode };
 	private rulerMarksDrawn = "";
+	/** One finger slides the ruler; a second finger rotates it around the same grip. */
+	private rulerTouches = new Map<number, { x: number; y: number }>();
+	private rulerGesture: { x: number; y: number; angle: number; cx: number; cy: number; touchAngle: number } | null = null;
 
 	// --- Selection state (runtime only, not persisted) ---
 	private selStrokes = new Set<string>();
@@ -836,20 +839,23 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (event.pointerType !== "touch" && this.currentTool !== "select" && this.currentTool !== "hand") return;
 		event.stopPropagation();
 		event.preventDefault();
-		const pointerId = event.pointerId;
-		const startX = event.clientX;
-		const startY = event.clientY;
-		const originX = this.rulerState.x;
-		const originY = this.rulerState.y;
+		this.rulerTouches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+		this.resetRulerGesture();
+		// The first finger owns the window listeners. A second touch merely joins
+		// its gesture, which stops the two fingers from starting competing drags.
+		if (this.rulerTouches.size > 1) return;
 		const onMove = (move: PointerEvent) => {
-			// The pen drawing at the same time is a different pointer.
-			if (move.pointerId !== pointerId) return;
-			this.rulerState.x = originX + move.clientX - startX;
-			this.rulerState.y = originY + move.clientY - startY;
-			this.renderRuler();
+			if (!this.rulerTouches.has(move.pointerId)) return;
+			this.rulerTouches.set(move.pointerId, { x: move.clientX, y: move.clientY });
+			this.updateRulerGesture();
 		};
 		const onUp = (up: PointerEvent) => {
-			if (up.pointerId !== pointerId) return;
+			if (!this.rulerTouches.delete(up.pointerId)) return;
+			if (this.rulerTouches.size) {
+				this.resetRulerGesture();
+				return;
+			}
+			this.rulerGesture = null;
 			window.removeEventListener("pointermove", onMove);
 			window.removeEventListener("pointerup", onUp);
 			window.removeEventListener("pointercancel", onUp);
@@ -857,6 +863,42 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		window.addEventListener("pointermove", onMove);
 		window.addEventListener("pointerup", onUp);
 		window.addEventListener("pointercancel", onUp);
+	}
+
+	/** Take the current ruler and touch positions as a fresh translation/rotation baseline. */
+	private resetRulerGesture(): void {
+		const touches = [...this.rulerTouches.values()];
+		if (!touches.length) { this.rulerGesture = null; return; }
+		const a = touches[0], b = touches[1] ?? a;
+		this.rulerGesture = {
+			x: this.rulerState.x,
+			y: this.rulerState.y,
+			angle: this.rulerState.angle,
+			cx: (a.x + b.x) / 2,
+			cy: (a.y + b.y) / 2,
+			touchAngle: Math.atan2(b.y - a.y, b.x - a.x)
+		};
+	}
+
+	/** Apply a one-finger slide or a two-finger rotate-and-slide in one gesture. */
+	private updateRulerGesture(): void {
+		const baseline = this.rulerGesture;
+		const touches = [...this.rulerTouches.values()];
+		if (!baseline || !touches.length) return;
+		const a = touches[0], b = touches[1] ?? a;
+		const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+		this.rulerState.x = baseline.x + cx - baseline.cx;
+		this.rulerState.y = baseline.y + cy - baseline.cy;
+		if (touches.length > 1) {
+			let delta = (Math.atan2(b.y - a.y, b.x - a.x) - baseline.touchAngle) * 180 / Math.PI;
+			// Crossing -180° / 180° should be one small turn, never a full spin.
+			if (delta > 180) delta -= 360;
+			if (delta < -180) delta += 360;
+			let angle = baseline.angle + delta;
+			if (this.rulerState.mode === "protractor") angle = Math.round(angle / 15) * 15;
+			this.rulerState.angle = angle;
+		}
+		this.renderRuler();
 	}
 
 	private startRulerRotate(event: PointerEvent): void {

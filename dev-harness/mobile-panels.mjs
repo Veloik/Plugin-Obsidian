@@ -70,6 +70,14 @@ const grip = await page.evaluate(() => {
 });
 ok("la barrita de arriba también arrastra", grip.alcanzable && grip.movido === 70, JSON.stringify(grip));
 
+// The calculator is pale, so its tablet grip must not look like the black
+// rectangle from the old dark panel skin.
+const calculatorGrip = await page.evaluate(() => {
+	const panel = document.querySelector(".notelens-calculator");
+	return getComputedStyle(panel, "::before").backgroundColor;
+});
+ok("la calculadora no abre con una barra negra", !/rgba?\(0,\s*0,\s*0/.test(calculatorGrip), calculatorGrip);
+
 // --- the fold on a sticky note is a fold, not a filled square ---------------
 const fold = await page.evaluate(async () => {
 	const v = window.__view;

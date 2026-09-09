@@ -387,6 +387,23 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		toolButtons.set(t.id, btn);
 	}
 
+	// The finger chooses between drawing and moving the board. Keep it beside
+	// the drawing tools, rather than in the distant document utilities row.
+	const fingerBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-finger-tool" });
+	bar.insertBefore(fingerBtn, toolButtons.get("pen")!);
+	const paintFinger = () => {
+		const on = host.fingerDrawsOn();
+		setIcon(fingerBtn, on ? "pencil" : "hand");
+		fingerBtn.title = on
+			? tr("El dedo dibuja. Pulsa para que mueva la pizarra.")
+			: tr("El dedo mueve la pizarra. Pulsa para dibujar con él.");
+		fingerBtn.setAttr("aria-label", fingerBtn.title);
+		fingerBtn.toggleClass("active", on);
+	};
+	paintFinger();
+	fingerBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
+	fingerBtn.onclick = () => { host.toggleFingerDraws(); paintFinger(); };
+
 	function refreshActive(): void {
 		bar.setAttr("data-active-tool", host.currentTool);
 		for (const [id, btn] of toolButtons) {
@@ -512,18 +529,6 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	setIcon(rulerBtn, "ruler");
 	rulerBtn.title = tr("Mostrar regla inteligente");
 	rulerBtn.onclick = () => host.toggleRuler();
-
-	// Only where there are fingers to speak of.
-	const fingerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-	const paintFinger = () => {
-		const on = host.fingerDrawsOn();
-		setIcon(fingerBtn, on ? "pencil" : "hand");
-		fingerBtn.title = on ? tr("El dedo dibuja. Pulsa para que mueva la pizarra.") : tr("El dedo mueve la pizarra. Pulsa para dibujar con \u00e9l.");
-		fingerBtn.toggleClass("active", on);
-	};
-	paintFinger();
-	fingerBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
-	fingerBtn.onclick = () => { host.toggleFingerDraws(); paintFinger(); };
 
 	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(a4Btn, "file-stack");

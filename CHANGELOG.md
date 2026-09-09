@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.1
+
+### Fixed
+
+- The finger drawing switch now lives between Hand and Pen, where it can be found while choosing how to work on a tablet. Its real touch target is covered by the tablet regression test.
+- The calculator's tablet sheet uses a subtle slate grip instead of the dark bar that appeared as a black block against its pale body.
+- Two fingers placed on the ruler rotate it around their shared centre; one finger still slides it. Lifting one finger continues the slide smoothly with the one that remains.
+
 ## 3.0.0
 
 ### Added

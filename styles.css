@@ -4450,7 +4450,12 @@
     background: rgba(148, 163, 184, 0.45);
     transform: translateX(-50%);
   }
-  .notelens-calculator::before { background: rgba(15, 23, 42, 0.22); }
+  /* A pale calculator needs a pale grip: a dark strip reads as a black block
+     while the bottom sheet is appearing on tablets. */
+  .notelens-calculator::before {
+    background: rgba(71, 85, 105, 0.28);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
   .notelens-panel-grip { height: 18px; }
   .notelens-search { top: 162px; }
 }
