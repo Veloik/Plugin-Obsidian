@@ -1635,6 +1635,10 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// right-click on a machine with no touch screen still opens the
 			// menu with any tool, because there a press is never a stroke.
 			if (this.longPressIsDrawing()) return;
+			// With something selected the press is almost always part of moving
+			// it or resizing it, and both take a while: a menu opening over the
+			// work is the last thing wanted. Let go of the selection first.
+			if (this.hasSelection()) return;
 			this.showCanvasMenu(e);
 		});
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.6
+
+### Fixed
+
+- The board menu no longer opens while something is selected. Dragging a selection across the board, or resizing it, means holding the press for a while, and the menu was dropping over the very work being moved. Let go of the selection and the menu comes back.
+
 ## 3.2.5
 
 ### Changed

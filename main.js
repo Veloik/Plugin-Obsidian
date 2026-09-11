@@ -64670,6 +64670,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian14.FileV
         return;
       }
       if (this.longPressIsDrawing()) return;
+      if (this.hasSelection()) return;
       this.showCanvasMenu(e);
     });
     this.registerDomEvent(window, "keydown", (e) => this.onKeyDown(e));
@@ -70102,7 +70103,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.2.5" : "desconocida";
+var NOTELENS_BUILD = true ? "3.2.6" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

@@ -151,6 +151,29 @@ const menu = await page.evaluate(() => {
 		v.setTool(tool);
 		out[tool] = hold("touch");
 	}
+	// Moving a selection takes a while, and a press held through it must not
+	// drop the board menu over the work. Two boxes far apart, so the bounds
+	// they share cover the bare board the press lands on — which is how a
+	// selection is dragged, and the one case that does not clear it.
+	v.setTool("select");
+	v.data.texts.length = 0;
+	const spot = v.getSceneCoords(box.left + 300, box.top + 500);
+	v.data.texts.push(
+		{ id: "t_a", pageId: v.data.activePageId, x: spot.x - 240, y: spot.y - 160, text: "Uno", fontSize: 18, color: "#f8fafc", w: 160, h: 48 },
+		{ id: "t_b", pageId: v.data.activePageId, x: spot.x + 120, y: spot.y + 120, text: "Dos", fontSize: 18, color: "#f8fafc", w: 160, h: 48 }
+	);
+	v.renderAll();
+	v.selTexts.add("t_a");
+	v.selTexts.add("t_b");
+	v.renderSelectionBox();
+	out.inBounds = !!v.selectionBounds()?.contains(spot.x, spot.y);
+	out.withSelection = hold("touch");
+	out.stillSelected = v.selTexts.size === 2;
+	out.withSelectionMouse = hold("mouse");
+	v.clearSelection(false);
+	out.afterClearing = hold("touch");
+	v.data.texts.length = 0;
+	v.renderAll();
 	document.querySelector(".menu")?.remove();
 	v.setTool("pen");
 	return out;
@@ -158,6 +181,8 @@ const menu = await page.evaluate(() => {
 ok("pintando, mantener pulsado no abre el menú", !menu.pen && !menu.highlighter && !menu.eraser && !menu.shape && !menu.text, JSON.stringify(menu));
 ok("en una pantalla táctil el menú tampoco llega como ratón", !menu.penWithMouse);
 ok("con la mano y con seleccionar el menú sigue ahí", menu.hand && menu.select);
+ok("con algo seleccionado el menú no aparece", menu.inBounds && menu.stillSelected && !menu.withSelection && !menu.withSelectionMouse, JSON.stringify({ dentro: menu.inBounds, sigue: menu.stillSelected, toque: menu.withSelection, raton: menu.withSelectionMouse }));
+ok("al soltar la selección vuelve a aparecer", menu.afterClearing);
 
 // --- Shift for a hand with no keyboard -------------------------------------
 const straight = await page.evaluate(() => {
