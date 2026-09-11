@@ -184,25 +184,29 @@ const straight = await page.evaluate(() => {
 	v.data.strokes.length = 0;
 	out.free = curve(31);
 
-	btn.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 41, pointerType: "touch", isPrimary: true, button: 0, buttons: 1 }));
-	out.held = v.isStraightLineHeld();
+	// One tap switches it on and it stays on: a tablet has no third hand to
+	// keep a button down with while the other two draw.
+	btn.click();
+	out.on = v.isStraightLineOn();
 	out.litUp = btn.classList.contains("active");
+	out.announced = btn.getAttribute("aria-pressed");
 	v.data.strokes.length = 0;
 	out.straight = curve(32);
-
-	// Released on the button itself, the way a thumb does it: the dock around it
-	// stops the release from bubbling, so this is what a real tablet sends.
-	btn.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 41, pointerType: "touch" }));
-	out.released = v.isStraightLineHeld();
+	// Still on for the next stroke, with nothing held down in between.
 	v.data.strokes.length = 0;
-	out.afterRelease = curve(33);
+	out.straightAgain = curve(33);
+
+	btn.click();
+	out.off = v.isStraightLineOn();
+	v.data.strokes.length = 0;
+	out.afterRelease = curve(34);
 	return out;
 });
 ok("el botón de líneas rectas está junto a la regla en una tableta", straight.shown && straight.besideRuler, JSON.stringify({ shown: straight.shown, besideRuler: straight.besideRuler }));
 ok("el botón no cede su toque al desplazamiento de la barra", straight.keepsItsTouch === true);
 ok("sin pulsarlo el trazo conserva su curva", straight.free > 2, `${straight.free} puntos`);
-ok("manteniéndolo pulsado el trazo sale recto", straight.held && straight.litUp && straight.straight === 2, `${straight.straight} puntos`);
-ok("al soltarlo se vuelve a dibujar libre", !straight.released && straight.afterRelease > 2, `${straight.afterRelease} puntos`);
+ok("activado, el trazo sale recto y sigue activado", straight.on && straight.litUp && straight.announced === "true" && straight.straight === 2 && straight.straightAgain === 2, JSON.stringify({ on: straight.on, uno: straight.straight, dos: straight.straightAgain }));
+ok("al volver a pulsarlo se dibuja libre otra vez", !straight.off && straight.afterRelease > 2, `${straight.afterRelease} puntos`);
 
 // --- the note it all belongs to is named on the board ----------------------
 const title = await page.evaluate(() => {

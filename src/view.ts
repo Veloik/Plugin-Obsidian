@@ -428,8 +428,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private renderedPoints = 0;
 	/** True while Shift is holding the stroke in progress to a straight line. */
 	private straightening = false;
-	/** The tablet button beside the ruler, held down: Shift for a hand with no keyboard. */
-	private straightLineHeld = false;
+	/** The tablet switch beside the ruler: Shift for a hand with no keyboard. */
+	private straightLine = false;
 	private isShaping = false;
 	private currentShape: Shape | null = null;
 	private isErasing = false;
@@ -987,17 +987,16 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		return this.isDrawing || this.coarsePointer();
 	}
 
-	isStraightLineHeld(): boolean { return this.straightLineHeld; }
+	isStraightLineOn(): boolean { return this.straightLine; }
 
 	/**
-	 * The straight-line button beside the ruler, pressed and released. It is
-	 * held rather than toggled so a tablet draws the way a keyboard does:
-	 * one thumb on the button, the stylus free to run the line.
+	 * The straight-line switch beside the ruler. It stays on until it is
+	 * pressed again: a tablet has no third hand to keep a button down with
+	 * while the other two hold the stylus and the board.
 	 */
-	setStraightLineHeld(held: boolean): void {
-		if (this.straightLineHeld === held) return;
-		this.straightLineHeld = held;
-		this.workspaceEl?.toggleClass("is-straight-line", held);
+	toggleStraightLine(): void {
+		this.straightLine = !this.straightLine;
+		this.workspaceEl?.toggleClass("is-straight-line", this.straightLine);
 	}
 
 	/** The note this board was opened from, for the plaque that names it. */
@@ -2257,7 +2256,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					p: ev.pressure > 0 ? ev.pressure : 0.5
 				});
 			}
-			const straight = e.shiftKey || this.straightLineHeld;
+			const straight = e.shiftKey || this.straightLine;
 			if (this.currentStroke.type === "highlighter") {
                 if (straight) {
                     const pts = this.currentStroke.points;

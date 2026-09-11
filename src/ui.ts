@@ -226,8 +226,8 @@ export interface ToolbarHost {
 	isRecorderOpen(): boolean;
 	toggleRuler(): void;
 	isRulerVisible(): boolean;
-	isStraightLineHeld(): boolean;
-	setStraightLineHeld(held: boolean): void;
+	isStraightLineOn(): boolean;
+	toggleStraightLine(): void;
 	getBoardTitle(): string;
 	fingerDrawsOn(): boolean;
 	toggleFingerDraws(): void;
@@ -534,45 +534,28 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	rulerBtn.title = tr("Mostrar regla inteligente");
 	rulerBtn.onclick = () => host.toggleRuler();
 
-	// Shift, for a hand that has no keyboard to hold it down with: one thumb
-	// stays on this button while the other draws, and the line comes out
-	// straight. It sits beside the ruler because it is the same kind of help.
+	// Shift, for a hand that has no keyboard to hold it down with. It is a
+	// switch rather than a press: holding a button with one thumb while the
+	// other hand draws is more than a tablet asks of anyone. It sits beside the
+	// ruler because it is the same kind of help.
 	const straightBtn = documentBar.createEl("button", { cls: "onenote-dock-btn notelens-straight-btn" });
 	setIcon(straightBtn, "slash");
-	straightBtn.title = tr("Líneas rectas: mantén pulsado mientras dibujas (como Mayús en el ordenador)");
-	straightBtn.setAttr("aria-label", straightBtn.title);
 	// A keyboard already has the key, so the button is only for what has none.
 	straightBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
-	let straightPointer: number | null = null;
-	const holdStraight = (held: boolean) => {
-		host.setStraightLineHeld(held);
-		straightBtn.toggleClass("active", held);
+	const paintStraight = () => {
+		const on = host.isStraightLineOn();
+		straightBtn.toggleClass("active", on);
+		straightBtn.title = on
+			? tr("Líneas rectas activadas: todo lo que dibujes saldrá recto. Pulsa para desactivarlas.")
+			: tr("Líneas rectas: púlsalo y todo lo que dibujes saldrá recto, como Mayús en el ordenador.");
+		straightBtn.setAttr("aria-label", straightBtn.title);
+		straightBtn.setAttr("aria-pressed", String(on));
 	};
-	// A thumb that slides off the button, or a hand lifted over the edge of the
-	// screen, still has to end the hold, so the release is listened for on the
-	// window rather than only here — and in the capture phase, because the dock
-	// around the button stops the release from bubbling any further than itself.
-	// Listening on the way up meant the press went on for ever.
-	const listen = { capture: true } as const;
-	const release = (e: PointerEvent) => {
-		if (straightPointer !== null && e.pointerId !== straightPointer) return;
-		straightPointer = null;
-		window.removeEventListener("pointerup", release, listen);
-		window.removeEventListener("pointercancel", release, listen);
-		holdStraight(false);
-	};
-	straightBtn.addEventListener("pointerdown", (e) => {
-		// Without this the press becomes a text selection on the dock.
-		e.preventDefault();
-		// A second finger arriving on the button does not restart the hold.
-		if (straightPointer !== null) return;
-		straightPointer = e.pointerId;
-		holdStraight(true);
-		window.addEventListener("pointerup", release, listen);
-		window.addEventListener("pointercancel", release, listen);
-		// Capture keeps the release on the button itself where the browser
-		// allows it; a pointer it no longer knows about simply refuses.
-		try { straightBtn.setPointerCapture(e.pointerId); } catch { /* the window listeners still end the hold */ }
+	paintStraight();
+	straightBtn.addEventListener("click", (e) => {
+		e.stopPropagation();
+		host.toggleStraightLine();
+		paintStraight();
 	});
 
 	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
@@ -616,7 +599,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		refreshActive();
 		syncDot();
 		rulerBtn.toggleClass("active", host.isRulerVisible());
-		straightBtn.toggleClass("active", host.isStraightLineHeld());
+		paintStraight();
 		paintFinger();
 		calcBtn.toggleClass("active", host.isCalculatorOpen());
 		navBtn.toggleClass("active", host.isNavigatorOpen());

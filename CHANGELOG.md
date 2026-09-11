@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.5
+
+### Changed
+
+- The straight-line button is a switch now, not a button to hold down. Press it and everything you draw comes out straight until you press it again — a tablet has no third hand to keep a button down with while the other two hold the stylus and the board. Shift still does the same thing on a computer.
+
 ## 3.2.4
 
 Republished under a new number at the author's request; the code is the same as 3.2.3.

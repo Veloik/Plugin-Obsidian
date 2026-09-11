@@ -5995,7 +5995,8 @@ var en = {
   "Marcar esta l\xEDnea": "Mark this line",
   "Quitar la marca de esta l\xEDnea": "Unmark this line",
   "Marcador \xAB{p0}\xBB. Clic para volver a esta vista": "Bookmark \u201C{p0}\u201D. Click to come back to this view",
-  "L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)": "Straight lines: hold this down while you draw (Shift on a computer)",
+  "L\xEDneas rectas: p\xFAlsalo y todo lo que dibujes saldr\xE1 recto, como May\xFAs en el ordenador.": "Straight lines: switch it on and everything you draw comes out straight, like Shift on a computer.",
+  "L\xEDneas rectas activadas: todo lo que dibujes saldr\xE1 recto. Pulsa para desactivarlas.": "Straight lines are on: everything you draw comes out straight. Press to switch them off.",
   "Pizarra sin guardar": "Unsaved board",
   "{p0} \u2014 {p1}": "{p0} \u2014 {p1}",
   "El dedo dibuja. Dos dedos mueven la pizarra.": "A finger draws. Two fingers move the board.",
@@ -62157,33 +62158,19 @@ function createToolbar(host, container) {
   rulerBtn.onclick = () => host.toggleRuler();
   const straightBtn = documentBar.createEl("button", { cls: "onenote-dock-btn notelens-straight-btn" });
   (0, import_obsidian13.setIcon)(straightBtn, "slash");
-  straightBtn.title = tr("L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)");
-  straightBtn.setAttr("aria-label", straightBtn.title);
   straightBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
-  let straightPointer = null;
-  const holdStraight = (held) => {
-    host.setStraightLineHeld(held);
-    straightBtn.toggleClass("active", held);
+  const paintStraight = () => {
+    const on = host.isStraightLineOn();
+    straightBtn.toggleClass("active", on);
+    straightBtn.title = on ? tr("L\xEDneas rectas activadas: todo lo que dibujes saldr\xE1 recto. Pulsa para desactivarlas.") : tr("L\xEDneas rectas: p\xFAlsalo y todo lo que dibujes saldr\xE1 recto, como May\xFAs en el ordenador.");
+    straightBtn.setAttr("aria-label", straightBtn.title);
+    straightBtn.setAttr("aria-pressed", String(on));
   };
-  const listen = { capture: true };
-  const release = (e) => {
-    if (straightPointer !== null && e.pointerId !== straightPointer) return;
-    straightPointer = null;
-    window.removeEventListener("pointerup", release, listen);
-    window.removeEventListener("pointercancel", release, listen);
-    holdStraight(false);
-  };
-  straightBtn.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (straightPointer !== null) return;
-    straightPointer = e.pointerId;
-    holdStraight(true);
-    window.addEventListener("pointerup", release, listen);
-    window.addEventListener("pointercancel", release, listen);
-    try {
-      straightBtn.setPointerCapture(e.pointerId);
-    } catch {
-    }
+  paintStraight();
+  straightBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    host.toggleStraightLine();
+    paintStraight();
   });
   const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian13.setIcon)(a4Btn, "file-stack");
@@ -62219,7 +62206,7 @@ function createToolbar(host, container) {
     refreshActive();
     syncDot();
     rulerBtn.toggleClass("active", host.isRulerVisible());
-    straightBtn.toggleClass("active", host.isStraightLineHeld());
+    paintStraight();
     paintFinger();
     calcBtn.toggleClass("active", host.isCalculatorOpen());
     navBtn.toggleClass("active", host.isNavigatorOpen());
@@ -63438,8 +63425,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian14.FileV
     this.renderedPoints = 0;
     /** True while Shift is holding the stroke in progress to a straight line. */
     this.straightening = false;
-    /** The tablet button beside the ruler, held down: Shift for a hand with no keyboard. */
-    this.straightLineHeld = false;
+    /** The tablet switch beside the ruler: Shift for a hand with no keyboard. */
+    this.straightLine = false;
     this.isShaping = false;
     this.currentShape = null;
     this.isErasing = false;
@@ -64057,18 +64044,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian14.FileV
     if (CANVAS_MENU_TOOLS.includes(this.currentTool)) return false;
     return this.isDrawing || this.coarsePointer();
   }
-  isStraightLineHeld() {
-    return this.straightLineHeld;
+  isStraightLineOn() {
+    return this.straightLine;
   }
   /**
-   * The straight-line button beside the ruler, pressed and released. It is
-   * held rather than toggled so a tablet draws the way a keyboard does:
-   * one thumb on the button, the stylus free to run the line.
+   * The straight-line switch beside the ruler. It stays on until it is
+   * pressed again: a tablet has no third hand to keep a button down with
+   * while the other two hold the stylus and the board.
    */
-  setStraightLineHeld(held) {
-    if (this.straightLineHeld === held) return;
-    this.straightLineHeld = held;
-    this.workspaceEl?.toggleClass("is-straight-line", held);
+  toggleStraightLine() {
+    this.straightLine = !this.straightLine;
+    this.workspaceEl?.toggleClass("is-straight-line", this.straightLine);
   }
   /** The note this board was opened from, for the plaque that names it. */
   getBoardTitle() {
@@ -65204,7 +65190,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian14.FileV
           p: ev.pressure > 0 ? ev.pressure : 0.5
         });
       }
-      const straight2 = e.shiftKey || this.straightLineHeld;
+      const straight2 = e.shiftKey || this.straightLine;
       if (this.currentStroke.type === "highlighter") {
         if (straight2) {
           const pts = this.currentStroke.points;
@@ -70116,7 +70102,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.2.4" : "desconocida";
+var NOTELENS_BUILD = true ? "3.2.5" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
