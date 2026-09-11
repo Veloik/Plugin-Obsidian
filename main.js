@@ -5973,6 +5973,9 @@ var en = {
   "Mostrar los resultados como fracci\xF3n siempre (si no, solo cuando operas con fracciones)": "Always show results as a fraction (otherwise only when you work with fractions)",
   "Mostrar margen izquierdo": "Show left margin",
   "Mostrar regla inteligente": "Show the smart ruler",
+  "L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)": "Straight lines: hold this down while you draw (Shift on a computer)",
+  "Pizarra sin guardar": "Unsaved board",
+  "{p0} \u2014 {p1}": "{p0} \u2014 {p1}",
   "El dedo dibuja. Dos dedos mueven la pizarra.": "A finger draws. Two fingers move the board.",
   "El dedo mueve la pizarra.": "A finger moves the board.",
   "A\xF1adir": "Add",
@@ -60233,6 +60236,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
   onOpen() {
     const { contentEl } = this;
     this.modalEl.addClass("notelens-hover-note-modal");
+    this.keepOpenOnOutsideTouch();
     contentEl.empty();
     contentEl.addClass("notelens-hover-note");
     contentEl.createEl("h3", { text: this.dialogTitle });
@@ -60879,6 +60883,23 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       w: w3,
       h: h3
     };
+  }
+  /**
+   * A note holds written work, so the dimmed background stops dismissing it:
+   * on a tablet the heel of a hand lands there far too easily. The taps are
+   * swallowed on the way down — before Obsidian's own listener on the
+   * background can see them — leaving Guardar and Cancelar as the ways out.
+   */
+  keepOpenOnOutsideTouch() {
+    const swallow = (event) => {
+      const target = event.target;
+      if (target instanceof Node && this.modalEl.contains(target)) return;
+      event.stopPropagation();
+      event.preventDefault();
+    };
+    for (const type of ["pointerdown", "mousedown", "touchstart", "click"]) {
+      this.containerEl.addEventListener(type, swallow, true);
+    }
   }
   onClose() {
     this.loadedImages.clear();
@@ -61846,6 +61867,34 @@ function createToolbar(host, container) {
   (0, import_obsidian12.setIcon)(rulerBtn, "ruler");
   rulerBtn.title = tr("Mostrar regla inteligente");
   rulerBtn.onclick = () => host.toggleRuler();
+  const straightBtn = documentBar.createEl("button", { cls: "onenote-dock-btn notelens-straight-btn" });
+  (0, import_obsidian12.setIcon)(straightBtn, "slash");
+  straightBtn.title = tr("L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)");
+  straightBtn.setAttr("aria-label", straightBtn.title);
+  straightBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
+  let straightPointer = null;
+  const holdStraight = (held) => {
+    host.setStraightLineHeld(held);
+    straightBtn.toggleClass("active", held);
+  };
+  const release = (e) => {
+    if (straightPointer !== null && e.pointerId !== straightPointer) return;
+    straightPointer = null;
+    window.removeEventListener("pointerup", release);
+    window.removeEventListener("pointercancel", release);
+    holdStraight(false);
+  };
+  straightBtn.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    straightPointer = e.pointerId;
+    holdStraight(true);
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    try {
+      straightBtn.setPointerCapture(e.pointerId);
+    } catch {
+    }
+  });
   const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
   (0, import_obsidian12.setIcon)(a4Btn, "file-stack");
   a4Btn.title = tr("Mostrar gu\xEDas de p\xE1gina A4");
@@ -61880,6 +61929,7 @@ function createToolbar(host, container) {
     refreshActive();
     syncDot();
     rulerBtn.toggleClass("active", host.isRulerVisible());
+    straightBtn.toggleClass("active", host.isStraightLineHeld());
     paintFinger();
     calcBtn.toggleClass("active", host.isCalculatorOpen());
     navBtn.toggleClass("active", host.isNavigatorOpen());
@@ -61888,6 +61938,24 @@ function createToolbar(host, container) {
     a4Btn.toggleClass("active", host.getA4GuidesEnabled());
   };
   panelHooks(container).__closePenPanel = () => closePanel();
+}
+function createBoardTitle(host, container) {
+  const plaque = container.createDiv({ cls: "notelens-board-title" });
+  shield(plaque);
+  (0, import_obsidian12.setIcon)(plaque.createSpan({ cls: "notelens-board-title-icon" }), "file-text");
+  const name = plaque.createSpan({ cls: "notelens-board-title-name" });
+  const page = plaque.createSpan({ cls: "notelens-board-title-page" });
+  const refresh = () => {
+    const board = host.getBoardTitle();
+    name.setText(board);
+    const pages = host.getDocumentPages();
+    const pageTitle = pages.length > 1 ? host.getPageTitle() : "";
+    page.setText(pageTitle);
+    page.toggleClass("hidden", !pageTitle);
+    plaque.title = pageTitle ? tr("{p0} \u2014 {p1}", { p0: board, p1: pageTitle }) : board;
+  };
+  refresh();
+  panelHooks(container).__refreshTitle = refresh;
 }
 function createNavigationControls(host, container) {
   const controls = container.createDiv({ cls: "notelens-navigation-controls" });
@@ -62913,6 +62981,7 @@ function normalizeLanguage(raw) {
   if (!key2) return "plaintext";
   return LANGUAGE_ALIASES[key2] ?? key2;
 }
+var CANVAS_MENU_TOOLS = ["hand", "select"];
 var RULER_HEIGHT = 54;
 function withMark(run, key2, on) {
   const next = { ...run };
@@ -63019,6 +63088,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.renderedPoints = 0;
     /** True while Shift is holding the stroke in progress to a straight line. */
     this.straightening = false;
+    /** The tablet button beside the ruler, held down: Shift for a hand with no keyboard. */
+    this.straightLineHeld = false;
     this.isShaping = false;
     this.currentShape = null;
     this.isErasing = false;
@@ -63034,6 +63105,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.marginEl = null;
     this.textPlacementHintEl = null;
     this.eraserCursorEl = null;
+    /** The nib a hovering stylus shows: the CSS cursor is only drawn for a mouse. */
+    this.inkCursorEl = null;
+    this.coarsePointerCache = null;
     this.textMeasurer = null;
     /** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
     this.prism = null;
@@ -63231,6 +63305,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.clearSelection(false);
         this.renderAll();
         this.updateBackground();
+        panelHooks(this.workspaceEl).__refreshTitle?.();
         panelHooks(this.workspaceEl).__refreshPages?.();
         panelHooks(this.workspaceEl).__refreshBookmarks?.();
         this.refreshTagSummary();
@@ -63324,6 +63399,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (this.renderer) {
       this.renderAll();
       this.updateBackground();
+      panelHooks(this.workspaceEl).__refreshTitle?.();
       panelHooks(this.workspaceEl).__refreshPages?.();
       panelHooks(this.workspaceEl).__refreshBookmarks?.();
       this.refreshTagSummary();
@@ -63593,6 +63669,23 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   isRulerVisible() {
     return this.rulerState.visible;
+  }
+  isStraightLineHeld() {
+    return this.straightLineHeld;
+  }
+  /**
+   * The straight-line button beside the ruler, pressed and released. It is
+   * held rather than toggled so a tablet draws the way a keyboard does:
+   * one thumb on the button, the stylus free to run the line.
+   */
+  setStraightLineHeld(held) {
+    if (this.straightLineHeld === held) return;
+    this.straightLineHeld = held;
+    this.workspaceEl?.toggleClass("is-straight-line", held);
+  }
+  /** The note this board was opened from, for the plaque that names it. */
+  getBoardTitle() {
+    return this.file?.basename ?? tr("Pizarra sin guardar");
   }
   startRulerDrag(event) {
     if (event.target.closest("button, .notelens-ruler-rotate")) return;
@@ -63924,6 +64017,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (this.assistantWanted()) this.assistant = createAssistantPet(this, this.workspaceEl);
     createBookmarksControl(this, this.workspaceEl);
     createPagesControl(this, this.workspaceEl);
+    createBoardTitle(this, this.workspaceEl);
     createFocusModeControl(this, this.workspaceEl);
     this.calculator = createCalculatorPanel(this, this.workspaceEl);
     this.recorder = createRecorderPanel(this, this.workspaceEl);
@@ -64201,6 +64295,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.swallowNextCanvasMenu = false;
         return;
       }
+      if (!CANVAS_MENU_TOOLS.includes(this.currentTool) && (this.isDrawing || this.coarsePointer())) return;
       this.showCanvasMenu(e);
     });
     this.registerDomEvent(window, "keydown", (e) => this.onKeyDown(e));
@@ -64219,6 +64314,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.registerDomEvent(this.workspaceEl, "pointerleave", () => {
       this.hideTextPlacementHint();
       this.hideEraserCursor();
+      this.hideInkCursor();
+    });
+    this.registerDomEvent(this.workspaceEl, "pointerout", (e) => {
+      const to = e.relatedTarget;
+      if (e.pointerType === "pen" && !(to instanceof Node && this.workspaceEl.contains(to))) this.hideInkCursor();
     });
   }
   showCanvasMenu(e) {
@@ -64715,8 +64815,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
           p: ev.pressure > 0 ? ev.pressure : 0.5
         });
       }
+      const straight2 = e.shiftKey || this.straightLineHeld;
       if (this.currentStroke.type === "highlighter") {
-        if (e.shiftKey) {
+        if (straight2) {
           const pts = this.currentStroke.points;
           this.currentStroke.points = [pts[0], pts[pts.length - 1]];
         }
@@ -64725,7 +64826,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.save();
         return;
       }
-      if (e.shiftKey) {
+      if (straight2) {
         const pts = this.currentStroke.points;
         this.currentStroke.points = [pts[0], pts[pts.length - 1]];
         if (!this.straightening) {
@@ -65834,6 +65935,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.workspaceEl.setAttr("data-pass-ink", ["hand", "pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
     if (this.currentTool !== "text") this.hideTextPlacementHint();
     if (this.currentTool !== "eraser") this.hideEraserCursor();
+    if (this.currentTool !== "pen" && this.currentTool !== "highlighter") this.hideInkCursor();
   }
   setPenColor(hex) {
     this.penColorChosen = true;
@@ -67488,6 +67590,7 @@ ${rows.join("\n")}`);
     this.renderAll();
     this.updateBackground();
     this.syncToolbar();
+    panelHooks(this.workspaceEl).__refreshTitle?.();
     panelHooks(this.workspaceEl).__refreshPages?.(page.id);
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
@@ -67506,6 +67609,7 @@ ${rows.join("\n")}`);
     this.renderAll();
     this.updateBackground();
     this.syncToolbar();
+    panelHooks(this.workspaceEl).__refreshTitle?.();
     panelHooks(this.workspaceEl).__refreshPages?.();
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
@@ -67517,6 +67621,7 @@ ${rows.join("\n")}`);
     if (!page || !clean || page.title === clean) return;
     this.history.push();
     page.title = clean;
+    panelHooks(this.workspaceEl).__refreshTitle?.();
     panelHooks(this.workspaceEl).__refreshPages?.();
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
@@ -67547,6 +67652,7 @@ ${rows.join("\n")}`);
     this.renderAll();
     this.updateBackground();
     this.syncToolbar();
+    panelHooks(this.workspaceEl).__refreshTitle?.();
     panelHooks(this.workspaceEl).__refreshPages?.();
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
@@ -68890,16 +68996,26 @@ ${indent}${mark}`);
     const overPage = !!target && this.workspaceEl.contains(target) && (target === this.workspaceEl || target === this.renderer.canvas || target === this.stageEl || this.stageEl.contains(target)) && !target.closest("button, input, textarea, select, [contenteditable='true']");
     if (e.pointerType === "mouse" && this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
       this.hideEraserCursor();
+      this.hideInkCursor();
       this.updateTextPlacementHint(e);
       return;
     }
     if ((this.currentTool === "eraser" || this.isErasing) && (overPage || this.isErasing) && !typing && !this.isPanning) {
       this.hideTextPlacementHint();
+      this.hideInkCursor();
       this.updateEraserCursor(e);
+      return;
+    }
+    const wantsDrawnNib = e.pointerType === "pen" || e.pointerType !== "touch" && this.coarsePointer();
+    if ((this.currentTool === "pen" || this.currentTool === "highlighter") && wantsDrawnNib && overPage && !typing && !this.isPanning) {
+      this.hideTextPlacementHint();
+      this.hideEraserCursor();
+      this.updateInkCursor(e);
       return;
     }
     this.hideTextPlacementHint();
     this.hideEraserCursor();
+    this.hideInkCursor();
   }
   updateTextPlacementHint(e) {
     if (!this.textPlacementHintEl) {
@@ -68930,6 +69046,47 @@ ${indent}${mark}`);
     const rect = this.workspaceEl.getBoundingClientRect();
     this.eraserCursorEl.style.left = `${e.clientX - rect.left}px`;
     this.eraserCursorEl.style.top = `${e.clientY - rect.top}px`;
+  }
+  /**
+   * Paints the nib under a hovering stylus: the footprint it would leave, in
+   * the colour and size it would leave it, with the tool's own badge beside
+   * it so pen and highlighter are told apart before anything is written.
+   */
+  updateInkCursor(e) {
+    const highlighter = this.currentTool === "highlighter";
+    if (!this.inkCursorEl) {
+      this.inkCursorEl = this.workspaceEl.createDiv({ cls: "notelens-ink-pointer" });
+      this.inkCursorEl.setAttr("aria-hidden", "true");
+      this.inkCursorEl.createDiv({ cls: "notelens-ink-pointer-nib" });
+      this.inkCursorEl.createDiv({ cls: "notelens-ink-pointer-tool" });
+    }
+    const badge = this.inkCursorEl.querySelector(".notelens-ink-pointer-tool");
+    if (badge && badge.getAttribute("data-tool") !== this.currentTool) {
+      badge.setAttr("data-tool", this.currentTool);
+      badge.empty();
+      (0, import_obsidian13.setIcon)(badge, highlighter ? "highlighter" : "pen");
+    }
+    this.inkCursorEl.setAttr("data-tool", this.currentTool);
+    const scale = this.data.viewTransform.scale;
+    const width = clamp((highlighter ? this.highlighterWidth : this.strokeWidth) * scale, 4, 90);
+    this.inkCursorEl.style.setProperty("--ink-width", `${width}px`);
+    this.inkCursorEl.style.setProperty("--ink-color", this.derivedColorFor(highlighter ? "highlighter" : "pen"));
+    this.inkCursorEl.style.setProperty("--ink-nib-angle", `${HIGHLIGHTER_NIB * 180 / Math.PI}deg`);
+    this.inkCursorEl.toggleClass("is-active", this.isDrawing);
+    const rect = this.workspaceEl.getBoundingClientRect();
+    this.inkCursorEl.style.left = `${e.clientX - rect.left}px`;
+    this.inkCursorEl.style.top = `${e.clientY - rect.top}px`;
+  }
+  /** True where the browser gives the board a bare crosshair instead of a drawn cursor. */
+  coarsePointer() {
+    if (this.coarsePointerCache === null) {
+      this.coarsePointerCache = typeof window.matchMedia === "function" && window.matchMedia("(any-pointer: coarse)").matches;
+    }
+    return this.coarsePointerCache;
+  }
+  hideInkCursor() {
+    this.inkCursorEl?.remove();
+    this.inkCursorEl = null;
   }
   syncEraserCursorSize() {
     if (!this.eraserCursorEl) return;
@@ -69444,7 +69601,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.0.1" : "desconocida";
+var NOTELENS_BUILD = true ? "3.1.0" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

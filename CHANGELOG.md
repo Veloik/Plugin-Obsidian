@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.1.0
+
+### Added
+
+- A straight-line button sits beside the ruler on tablets and phones. Held with one thumb while the other hand draws, it does what Shift does on a computer; let go and the stroke carries on free. It is not shown where there is a keyboard to hold Shift down with.
+- The board says which note is on it, on a plaque beside the pages and bookmarks it is filed with. A board opened full screen on a tablet has no tab to read the name from, and a vault of boards that all look alike needs to say which one you are drawing on. With more than one page, the page is named there too.
+- A stylus held near the glass shows the nib it would write with — the footprint it leaves, in its own colour and size, with the tool's badge beside it. The browser draws no cursor for a pen that has not touched down yet.
+
+### Fixed
+
+- The board menu belongs to the hand and the selection tools. Holding the stylus still while drawing used to open it over the work; Windows hands a press-and-hold over as a right-click with "mouse" written on it, so the tool now decides and not the pointer. A right-click on a machine with no touch screen still opens the menu with any tool.
+- A floating note is no longer dismissed by a stray touch on the dimmed background: on a tablet the heel of a hand lands there far too easily, and the note holds written work. Guardar and Cancelar are the ways out.
+
 ## 3.0.1
 
 ### Fixed

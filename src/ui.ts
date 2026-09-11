@@ -16,6 +16,7 @@ export interface PanelHooks {
 	__refreshPaperSettings?: () => void;
 	__refreshFocusMode?: () => void;
 	/** `focusId` scrolls the freshly drawn list to that entry. */
+	__refreshTitle?: () => void;
 	__refreshPages?: (focusId?: string) => void;
 	__refreshBookmarks?: (focusId?: string) => void;
 	__closePenPanel?: () => void;
@@ -225,6 +226,9 @@ export interface ToolbarHost {
 	isRecorderOpen(): boolean;
 	toggleRuler(): void;
 	isRulerVisible(): boolean;
+	isStraightLineHeld(): boolean;
+	setStraightLineHeld(held: boolean): void;
+	getBoardTitle(): string;
 	fingerDrawsOn(): boolean;
 	toggleFingerDraws(): void;
 	addViewportBookmark(): void;
@@ -530,6 +534,42 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	rulerBtn.title = tr("Mostrar regla inteligente");
 	rulerBtn.onclick = () => host.toggleRuler();
 
+	// Shift, for a hand that has no keyboard to hold it down with: one thumb
+	// stays on this button while the other draws, and the line comes out
+	// straight. It sits beside the ruler because it is the same kind of help.
+	const straightBtn = documentBar.createEl("button", { cls: "onenote-dock-btn notelens-straight-btn" });
+	setIcon(straightBtn, "slash");
+	straightBtn.title = tr("Líneas rectas: mantén pulsado mientras dibujas (como Mayús en el ordenador)");
+	straightBtn.setAttr("aria-label", straightBtn.title);
+	// A keyboard already has the key, so the button is only for what has none.
+	straightBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
+	let straightPointer: number | null = null;
+	const holdStraight = (held: boolean) => {
+		host.setStraightLineHeld(held);
+		straightBtn.toggleClass("active", held);
+	};
+	// A thumb that slides off the button, or a hand lifted over the edge of the
+	// screen, still has to end the hold: the release is listened for on the
+	// window and not only here, so no stroke is left straight for ever.
+	const release = (e: PointerEvent) => {
+		if (straightPointer !== null && e.pointerId !== straightPointer) return;
+		straightPointer = null;
+		window.removeEventListener("pointerup", release);
+		window.removeEventListener("pointercancel", release);
+		holdStraight(false);
+	};
+	straightBtn.addEventListener("pointerdown", (e) => {
+		// Without this the press becomes a text selection on the dock.
+		e.preventDefault();
+		straightPointer = e.pointerId;
+		holdStraight(true);
+		window.addEventListener("pointerup", release);
+		window.addEventListener("pointercancel", release);
+		// Capture keeps the release on the button itself where the browser
+		// allows it; a pointer it no longer knows about simply refuses.
+		try { straightBtn.setPointerCapture(e.pointerId); } catch { /* the window listeners still end the hold */ }
+	});
+
 	const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
 	setIcon(a4Btn, "file-stack");
 	a4Btn.title = tr("Mostrar guías de página A4");
@@ -571,6 +611,7 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		refreshActive();
 		syncDot();
 		rulerBtn.toggleClass("active", host.isRulerVisible());
+		straightBtn.toggleClass("active", host.isStraightLineHeld());
 		paintFinger();
 		calcBtn.toggleClass("active", host.isCalculatorOpen());
 		navBtn.toggleClass("active", host.isNavigatorOpen());
@@ -579,6 +620,33 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		a4Btn.toggleClass("active", host.getA4GuidesEnabled());
 	};
 	panelHooks(container).__closePenPanel = () => closePanel();
+}
+
+/**
+ * Names the note the board belongs to, beside the pages and bookmarks it is
+ * organised with. Obsidian writes the name on the tab, but a board opened
+ * full screen on a tablet has no tab to read it from, and a vault of boards
+ * that all look alike needs to say which one is on the glass.
+ */
+export function createBoardTitle(host: ToolbarHost, container: HTMLElement): void {
+	const plaque = container.createDiv({ cls: "notelens-board-title" });
+	shield(plaque);
+	setIcon(plaque.createSpan({ cls: "notelens-board-title-icon" }), "file-text");
+	const name = plaque.createSpan({ cls: "notelens-board-title-name" });
+	const page = plaque.createSpan({ cls: "notelens-board-title-page" });
+
+	const refresh = () => {
+		const board = host.getBoardTitle();
+		name.setText(board);
+		// The page only earns its half of the plaque once there is more than one.
+		const pages = host.getDocumentPages();
+		const pageTitle = pages.length > 1 ? host.getPageTitle() : "";
+		page.setText(pageTitle);
+		page.toggleClass("hidden", !pageTitle);
+		plaque.title = pageTitle ? tr("{p0} — {p1}", { p0: board, p1: pageTitle }) : board;
+	};
+	refresh();
+	panelHooks(container).__refreshTitle = refresh;
 }
 
 /** Always-visible navigation, kept separate from drawing controls. */

@@ -40,7 +40,8 @@ const DOCKS = [
 	[".notelens-settings-btn", "paper"],
 	[".notelens-focus-toggle", "focus"],
 	[".notelens-bookmarks-dock", "bookmarks"],
-	[".notelens-pages-dock", "pages"]
+	[".notelens-pages-dock", "pages"],
+	[".notelens-board-title", "title"]
 ];
 
 const browser = await puppeteer.launch({

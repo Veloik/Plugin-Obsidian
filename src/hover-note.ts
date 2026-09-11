@@ -74,6 +74,7 @@ export class HoverNoteModal extends Modal {
 	override onOpen(): void {
 		const { contentEl } = this;
 		this.modalEl.addClass("notelens-hover-note-modal");
+		this.keepOpenOnOutsideTouch();
 		contentEl.empty();
 		contentEl.addClass("notelens-hover-note");
 		contentEl.createEl("h3", { text: this.dialogTitle });
@@ -696,6 +697,24 @@ export class HoverNoteModal extends Modal {
 			w,
 			h
 		};
+	}
+
+	/**
+	 * A note holds written work, so the dimmed background stops dismissing it:
+	 * on a tablet the heel of a hand lands there far too easily. The taps are
+	 * swallowed on the way down — before Obsidian's own listener on the
+	 * background can see them — leaving Guardar and Cancelar as the ways out.
+	 */
+	private keepOpenOnOutsideTouch(): void {
+		const swallow = (event: Event) => {
+			const target = event.target;
+			if (target instanceof Node && this.modalEl.contains(target)) return;
+			event.stopPropagation();
+			event.preventDefault();
+		};
+		for (const type of ["pointerdown", "mousedown", "touchstart", "click"]) {
+			this.containerEl.addEventListener(type, swallow, true);
+		}
 	}
 
 	override onClose(): void {

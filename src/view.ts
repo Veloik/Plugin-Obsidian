@@ -11,7 +11,7 @@ import { TranslationSource, createTranslatorPanel } from "./translator";
 import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
 import { RasterImage, rasterizeMath } from "./dom-raster";
 import type OneNotePlugin from "./main";
-import { CanvasRenderer } from "./renderer";
+import { CanvasRenderer, HIGHLIGHTER_NIB } from "./renderer";
 import { trackMobileEditor, mountMobileBoard } from "./mobile-editor";
 import { CANVAS_FONTS, fontStack } from "./fonts";
 import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
@@ -32,7 +32,7 @@ import { HOVER_NOTE_BOARD_HEIGHT, HOVER_NOTE_BOARD_WIDTH, HoverNoteContent, Hove
 import { InkEquationModal } from "./ink-equation";
 import { AssistantAction, BoardUtility, createAssistantPet } from "./assistant";
 import { EXPERIMENTAL } from "./features";
-import { panelHooks, EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
+import { panelHooks, EraserMode, QUICK_TAGS, QuickTag, SelectionMode, ToolId, ToolbarHost, setEraserIcon, createBoardTitle, createBookmarksControl, createFocusModeControl, createNavigationControls, createPagesControl, createPanelSearch, createQuickTagsBar, createSettingsPanel, createToolbar, matchesPanelSearch, quickTagById } from "./ui";
 import { BackgroundPattern, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, GridSize, TextRun } from "./types";
 import { Locale, getLocale, tr } from "./i18n";
 
@@ -130,6 +130,9 @@ function normalizeLanguage(raw: string | undefined): string {
 	if (!key) return "plaintext";
 	return LANGUAGE_ALIASES[key] ?? key;
 }
+
+/** The only tools whose long press asks for the board menu instead of drawing. */
+const CANVAS_MENU_TOOLS: ToolId[] = ["hand", "select"];
 
 type RulerMode = "ruler" | "protractor";
 // The straight ruler's height, in the stylesheet and in the scale it draws.
@@ -326,6 +329,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private renderedPoints = 0;
 	/** True while Shift is holding the stroke in progress to a straight line. */
 	private straightening = false;
+	/** The tablet button beside the ruler, held down: Shift for a hand with no keyboard. */
+	private straightLineHeld = false;
 	private isShaping = false;
 	private currentShape: Shape | null = null;
 	private isErasing = false;
@@ -341,6 +346,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private marginEl: HTMLElement | null = null;
 	private textPlacementHintEl: HTMLElement | null = null;
 	private eraserCursorEl: HTMLElement | null = null;
+	/** The nib a hovering stylus shows: the CSS cursor is only drawn for a mouse. */
+	private inkCursorEl: HTMLElement | null = null;
+	private coarsePointerCache: boolean | null = null;
 	private textMeasurer: CanvasRenderingContext2D | null = null;
 	/** Obsidian's Prism instance once loaded; code blocks repaint when it arrives. */
 	private prism: PrismLib | null = null;
@@ -429,6 +437,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.clearSelection(false);
 				this.renderAll();
 				this.updateBackground();
+				panelHooks(this.workspaceEl).__refreshTitle?.();
 				panelHooks(this.workspaceEl).__refreshPages?.();
 				panelHooks(this.workspaceEl).__refreshBookmarks?.();
 				this.refreshTagSummary();
@@ -526,6 +535,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.renderer) {
 			this.renderAll();
 			this.updateBackground();
+			panelHooks(this.workspaceEl).__refreshTitle?.();
 			panelHooks(this.workspaceEl).__refreshPages?.();
 			panelHooks(this.workspaceEl).__refreshBookmarks?.();
 			this.refreshTagSummary();
@@ -831,6 +841,24 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	isRulerVisible(): boolean { return this.rulerState.visible; }
+
+	isStraightLineHeld(): boolean { return this.straightLineHeld; }
+
+	/**
+	 * The straight-line button beside the ruler, pressed and released. It is
+	 * held rather than toggled so a tablet draws the way a keyboard does:
+	 * one thumb on the button, the stylus free to run the line.
+	 */
+	setStraightLineHeld(held: boolean): void {
+		if (this.straightLineHeld === held) return;
+		this.straightLineHeld = held;
+		this.workspaceEl?.toggleClass("is-straight-line", held);
+	}
+
+	/** The note this board was opened from, for the plaque that names it. */
+	getBoardTitle(): string {
+		return this.file?.basename ?? tr("Pizarra sin guardar");
+	}
 
 	private startRulerDrag(event: PointerEvent): void {
 		if ((event.target as HTMLElement).closest("button, .notelens-ruler-rotate")) return;
@@ -1170,6 +1198,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (this.assistantWanted()) this.assistant = createAssistantPet(this, this.workspaceEl);
 		createBookmarksControl(this, this.workspaceEl);
 		createPagesControl(this, this.workspaceEl);
+		createBoardTitle(this, this.workspaceEl);
 		createFocusModeControl(this, this.workspaceEl);
 		this.calculator = createCalculatorPanel(this, this.workspaceEl);
 		this.recorder = createRecorderPanel(this, this.workspaceEl);
@@ -1454,6 +1483,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.swallowNextCanvasMenu = false;
 				return;
 			}
+			// The board menu belongs to the hand and the selection tools. With
+			// anything else in hand a long press is part of the drawing, and
+			// Windows hands that press over as this very event with "mouse"
+			// written on it — so the tool decides here, not the pointer. A
+			// right-click on a machine with no touch screen still opens the
+			// menu with any tool, because there a press is never a stroke.
+			if (!CANVAS_MENU_TOOLS.includes(this.currentTool) && (this.isDrawing || this.coarsePointer())) return;
 			this.showCanvasMenu(e);
 		});
 
@@ -1475,6 +1511,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.registerDomEvent(this.workspaceEl, "pointerleave", () => {
 			this.hideTextPlacementHint();
 			this.hideEraserCursor();
+			this.hideInkCursor();
+		});
+		// A stylus lifted out of range sends no more moves, only this: without it
+		// the drawn nib would stay behind on the page after the hand has gone.
+		this.registerDomEvent(this.workspaceEl, "pointerout", (e) => {
+			const to = e.relatedTarget;
+			if (e.pointerType === "pen" && !(to instanceof Node && this.workspaceEl.contains(to))) this.hideInkCursor();
 		});
 	}
 
@@ -2063,8 +2106,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 					p: ev.pressure > 0 ? ev.pressure : 0.5
 				});
 			}
+			const straight = e.shiftKey || this.straightLineHeld;
 			if (this.currentStroke.type === "highlighter") {
-                if (e.shiftKey) {
+                if (straight) {
                     const pts = this.currentStroke.points;
                     this.currentStroke.points = [pts[0], pts[pts.length - 1]];
                 }
@@ -2074,7 +2118,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
                 this.save();
                 return;
             }
-            if (e.shiftKey) {
+            if (straight) {
 				// Shift keeps the stroke a straight line from where it started.
 				const pts = this.currentStroke.points;
 				this.currentStroke.points = [pts[0], pts[pts.length - 1]];
@@ -3193,6 +3237,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.workspaceEl.setAttr("data-pass-ink", ["hand", "pen", "highlighter", "eraser", "shape"].includes(this.currentTool) ? "true" : "false");
 		if (this.currentTool !== "text") this.hideTextPlacementHint();
 		if (this.currentTool !== "eraser") this.hideEraserCursor();
+		if (this.currentTool !== "pen" && this.currentTool !== "highlighter") this.hideInkCursor();
 	}
 
 	setPenColor(hex: string): void {
@@ -4842,6 +4887,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
+		panelHooks(this.workspaceEl).__refreshTitle?.();
 		panelHooks(this.workspaceEl).__refreshPages?.(page.id);
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
@@ -4861,6 +4907,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
+		panelHooks(this.workspaceEl).__refreshTitle?.();
 		panelHooks(this.workspaceEl).__refreshPages?.();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
@@ -4873,6 +4920,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!page || !clean || page.title === clean) return;
 		this.history.push();
 		page.title = clean;
+		panelHooks(this.workspaceEl).__refreshTitle?.();
 		panelHooks(this.workspaceEl).__refreshPages?.();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
@@ -4904,6 +4952,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderAll();
 		this.updateBackground();
 		this.syncToolbar();
+		panelHooks(this.workspaceEl).__refreshTitle?.();
 		panelHooks(this.workspaceEl).__refreshPages?.();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.refreshTagSummary();
@@ -6307,6 +6356,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 		if (e.pointerType === "mouse" && this.currentTool === "text" && !this.activeTextEditor && !typing && overPage && !this.isPanning) {
 			this.hideEraserCursor();
+			this.hideInkCursor();
 			this.updateTextPlacementHint(e);
 			return;
 		}
@@ -6314,11 +6364,24 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		// pointer passes over a dock button on its way.
 		if ((this.currentTool === "eraser" || this.isErasing) && (overPage || this.isErasing) && !typing && !this.isPanning) {
 			this.hideTextPlacementHint();
+			this.hideInkCursor();
 			this.updateEraserCursor(e);
+			return;
+		}
+		// A stylus that is only near the glass gets no CSS cursor from the
+		// browser, so the tool it would write with is drawn here instead. On a
+		// touch screen the drawn cursors are traded for a bare crosshair too,
+		// so anything that is not a finger gets the nib there as well.
+		const wantsDrawnNib = e.pointerType === "pen" || (e.pointerType !== "touch" && this.coarsePointer());
+		if ((this.currentTool === "pen" || this.currentTool === "highlighter") && wantsDrawnNib && overPage && !typing && !this.isPanning) {
+			this.hideTextPlacementHint();
+			this.hideEraserCursor();
+			this.updateInkCursor(e);
 			return;
 		}
 		this.hideTextPlacementHint();
 		this.hideEraserCursor();
+		this.hideInkCursor();
 	}
 
 	private updateTextPlacementHint(e: PointerEvent): void {
@@ -6352,6 +6415,52 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const rect = this.workspaceEl.getBoundingClientRect();
 		this.eraserCursorEl.style.left = `${e.clientX - rect.left}px`;
 		this.eraserCursorEl.style.top = `${e.clientY - rect.top}px`;
+	}
+
+	/**
+	 * Paints the nib under a hovering stylus: the footprint it would leave, in
+	 * the colour and size it would leave it, with the tool's own badge beside
+	 * it so pen and highlighter are told apart before anything is written.
+	 */
+	private updateInkCursor(e: PointerEvent): void {
+		const highlighter = this.currentTool === "highlighter";
+		if (!this.inkCursorEl) {
+			this.inkCursorEl = this.workspaceEl.createDiv({ cls: "notelens-ink-pointer" });
+			this.inkCursorEl.setAttr("aria-hidden", "true");
+			this.inkCursorEl.createDiv({ cls: "notelens-ink-pointer-nib" });
+			this.inkCursorEl.createDiv({ cls: "notelens-ink-pointer-tool" });
+		}
+		const badge = this.inkCursorEl.querySelector<HTMLElement>(".notelens-ink-pointer-tool");
+		if (badge && badge.getAttribute("data-tool") !== this.currentTool) {
+			badge.setAttr("data-tool", this.currentTool);
+			badge.empty();
+			setIcon(badge, highlighter ? "highlighter" : "pen");
+		}
+		this.inkCursorEl.setAttr("data-tool", this.currentTool);
+		// The nib is shown at the size it prints on this page, so zooming in
+		// shows a fatter tip exactly as the ink will come out.
+		const scale = this.data.viewTransform.scale;
+		const width = clamp((highlighter ? this.highlighterWidth : this.strokeWidth) * scale, 4, 90);
+		this.inkCursorEl.style.setProperty("--ink-width", `${width}px`);
+		this.inkCursorEl.style.setProperty("--ink-color", this.derivedColorFor(highlighter ? "highlighter" : "pen"));
+		this.inkCursorEl.style.setProperty("--ink-nib-angle", `${HIGHLIGHTER_NIB * 180 / Math.PI}deg`);
+		this.inkCursorEl.toggleClass("is-active", this.isDrawing);
+		const rect = this.workspaceEl.getBoundingClientRect();
+		this.inkCursorEl.style.left = `${e.clientX - rect.left}px`;
+		this.inkCursorEl.style.top = `${e.clientY - rect.top}px`;
+	}
+
+	/** True where the browser gives the board a bare crosshair instead of a drawn cursor. */
+	private coarsePointer(): boolean {
+		if (this.coarsePointerCache === null) {
+			this.coarsePointerCache = typeof window.matchMedia === "function" && window.matchMedia("(any-pointer: coarse)").matches;
+		}
+		return this.coarsePointerCache;
+	}
+
+	private hideInkCursor(): void {
+		this.inkCursorEl?.remove();
+		this.inkCursorEl = null;
 	}
 
 	private syncEraserCursorSize(): void {

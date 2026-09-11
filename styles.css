@@ -3349,6 +3349,55 @@
 }
 .notelens-eraser-pointer-tool .svg-icon { width: 15px; height: 15px; stroke-width: 2; }
 
+/* A hovering stylus gets no CSS cursor from the browser, so the nib it would
+   write with is drawn on the page: the footprint, in the ink's own colour and
+   size, with the tool's badge beside it. */
+.notelens-ink-pointer {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 1200;
+}
+
+.notelens-ink-pointer-nib {
+  position: absolute;
+  left: calc(var(--ink-width, 8px) / -2);
+  top: calc(var(--ink-width, 8px) / -2);
+  width: var(--ink-width, 8px);
+  height: var(--ink-width, 8px);
+  border-radius: 50%;
+  background: var(--ink-color, #0f6cbd);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.88), 0 0 0 2.5px rgba(15, 23, 42, 0.55);
+}
+
+/* The marker is cut flat, so it shows the slanted band it prints, not a dot. */
+.notelens-ink-pointer[data-tool="highlighter"] .notelens-ink-pointer-nib {
+  top: calc(var(--ink-width, 8px) * -0.15);
+  height: calc(var(--ink-width, 8px) * 0.3);
+  border-radius: 1.5px;
+  transform: rotate(var(--ink-nib-angle, -65deg));
+}
+
+.notelens-ink-pointer-tool {
+  position: absolute;
+  left: calc(var(--ink-width, 8px) / 2 + 7px);
+  top: calc(var(--ink-width, 8px) / -2 - 24px);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.78);
+  border-radius: 5px;
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.38);
+  transition: opacity 90ms ease;
+}
+.notelens-ink-pointer-tool .svg-icon { width: 15px; height: 15px; stroke-width: 2; }
+/* Once the tip is down the badge would chase the ink, so it steps aside. */
+.notelens-ink-pointer.is-active .notelens-ink-pointer-tool { opacity: 0; }
+
 /* Ink tools deliberately draw above objects; their interactive surfaces yield. */
 .onenote-workspace[data-pass-ink="true"] .notelens-embed-body,
 .onenote-workspace[data-pass-ink="true"] .notelens-loose-image img,
@@ -6157,4 +6206,70 @@ span.notelens-assistant-name {
   .onenote-workspace[data-tool="highlighter"] { cursor: crosshair; }
   .onenote-workspace[data-tool="text"] { cursor: text; }
   .onenote-workspace .notelens-text-placement-hint { display: none; }
+}
+
+/* ==========================================================================
+   BOARD TITLE PLAQUE
+   Which note is on the glass, next to the pages and bookmarks it is filed
+   with. A tab says it on the desktop; a board opened full screen has no tab.
+   ========================================================================== */
+.notelens-board-title {
+  position: absolute;
+  left: 146px;
+  bottom: calc(14px + var(--nl-safe-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(340px, calc(100% - 230px));
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(28, 30, 34, 0.9);
+  color: #e4eaf3;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32);
+  z-index: 1000;
+}
+
+.notelens-board-title-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #8cc8ff;
+}
+
+.notelens-board-title-icon svg { width: 15px; height: 15px; }
+
+/* The note keeps the room; the page gives way first when the board narrows. */
+.notelens-board-title-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notelens-board-title-page {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding-left: 7px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+  color: #9fb0c5;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   STRAIGHT-LINE HOLD (tablets and phones)
+   ========================================================================== */
+/* Held down, it is not a state you can forget about: the board says so too. */
+.onenote-workspace.is-straight-line .notelens-straight-btn {
+  background: rgba(56, 189, 248, 0.28);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #8cc8ff;
 }

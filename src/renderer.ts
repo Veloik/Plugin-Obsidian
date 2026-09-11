@@ -25,7 +25,7 @@ function opaqueColor(color: string): string {
  * angle the pen is held. Everything between them is one even band: a real
  * highlighter does not get thinner because you moved sideways.
  */
-const HIGHLIGHTER_NIB = -Math.PI * 0.36;
+export const HIGHLIGHTER_NIB = -Math.PI * 0.36;
 
 /** Points too close together to change the shape of a fat nib are dropped before inking. */
 function simplifyPath(pts: StrokePoint[], tolerance: number): StrokePoint[] {
