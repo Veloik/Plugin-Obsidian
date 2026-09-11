@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.1
+
+Republished under a new number at the author's request; the code is the same as 3.2.0.
+
 ## 3.2.0
 
 ### Added
