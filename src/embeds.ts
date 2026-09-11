@@ -5,6 +5,7 @@ import pdfWorkerSource from "pdfjs-dist/build/pdf.worker.min.mjs?raw";
 import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
 import { VIDEO_EXTENSIONS, clamp, toRemoteVideoEmbed } from "./tools";
+import { openEpub, paintEpubChapter } from "./epub";
 import { tr } from "./i18n";
 import { notePreview } from "./rich-text";
 
@@ -25,6 +26,10 @@ export interface EmbedHost {
 	editChart(embed: Embed): void;
 	selectEmbed(embed: Embed): void;
 	shouldPassPointerToCanvas(): boolean;
+	/** Runs when the board is torn down, for anything that has to be released. */
+	registerCleanup?(fn: () => void): void;
+	/** Draws one embed again from scratch, after something about it changed. */
+	refreshEmbed(embed: Embed): void;
 }
 
 const MIN_W = 240;
@@ -109,6 +114,10 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	}
 	if (embed.kind === "image") {
 		mountLooseImage(host, layer, embed);
+		return;
+	}
+	if (embed.kind === "epub" && embed.epubMode === "reader") {
+		void mountEpubReader(host, layer, embed);
 		return;
 	}
 	if (embed.kind === "epub" || embed.kind === "file") {
@@ -364,6 +373,21 @@ function mountAttachmentCard(host: EmbedHost, layer: HTMLElement, embed: Embed):
 	details.createDiv({ cls: "notelens-attachment-title", text: embedTitle(embed) });
 	const extension = embed.src.split(".").pop()?.toUpperCase() || "ARCHIVO";
 	details.createDiv({ cls: "notelens-attachment-meta", text: extension });
+
+	if (embed.kind === "epub") {
+		// The same book, the other way round: read here instead of out there.
+		const read = card.createEl("button", { cls: "notelens-attachment-open notelens-attachment-read" });
+		setIcon(read, "book-open");
+		read.title = tr("Leer el libro en la pizarra");
+		read.addEventListener("pointerdown", (e) => e.stopPropagation());
+		read.onclick = (e) => {
+			e.stopPropagation();
+			embed.epubMode = "reader";
+			embed.w = Math.max(embed.w, 520);
+			embed.h = Math.max(embed.h, 620);
+			host.refreshEmbed(embed);
+		};
+	}
 
 	const open = card.createEl("button", { cls: "notelens-attachment-open" });
 	setIcon(open, "external-link");
@@ -637,6 +661,112 @@ function mountLooseImage(host: EmbedHost, layer: HTMLElement, embed: Embed): voi
 }
 
 // ---------------------------------------------------------------------------
+// EPUB reader: the book read on the board, chapter by chapter
+// ---------------------------------------------------------------------------
+
+async function mountEpubReader(host: EmbedHost, layer: HTMLElement, embed: Embed): Promise<void> {
+	const frame = layer.createDiv({ cls: "notelens-embed notelens-epub-frame" });
+	frame.setAttr("data-id", embed.id);
+	frame.style.left = `${embed.x}px`;
+	frame.style.top = `${embed.y}px`;
+	frame.style.width = `${embed.w || 520}px`;
+	frame.style.height = `${embed.h || 620}px`;
+	if (embed.rotation) frame.style.transform = `rotate(${embed.rotation}deg)`;
+
+	const header = frame.createDiv({ cls: "notelens-embed-header" });
+	setIcon(header.createSpan({ cls: "notelens-embed-icon" }), "book-open");
+	const title = header.createSpan({ cls: "notelens-embed-title", text: embedTitle(embed) });
+
+	const asCard = header.createEl("button", { cls: "notelens-embed-open" });
+	setIcon(asCard, "minimize-2");
+	asCard.title = tr("Dejarlo como ficha y abrirlo fuera");
+	asCard.addEventListener("pointerdown", (e) => e.stopPropagation());
+	asCard.onclick = (e) => {
+		e.stopPropagation();
+		release();
+		embed.epubMode = "card";
+		embed.w = 360;
+		embed.h = 112;
+		host.refreshEmbed(embed);
+	};
+
+	const remove = header.createEl("button", { cls: "notelens-embed-close" });
+	setIcon(remove, "x");
+	remove.title = tr("Quitar de la pizarra");
+	remove.addEventListener("pointerdown", (e) => e.stopPropagation());
+	remove.onclick = (e) => {
+		e.stopPropagation();
+		release();
+		frame.remove();
+		host.onEmbedDeleted(embed);
+	};
+
+	const body = frame.createDiv({ cls: "notelens-embed-body" });
+	const page = body.createDiv({ cls: "notelens-epub-page" });
+	page.createDiv({ cls: "notelens-epub-loading", text: tr("Abriendo el libro…") });
+
+	let urls: string[] = [];
+	const release = () => {
+		for (const url of urls) URL.revokeObjectURL(url);
+		urls = [];
+	};
+	// Every picture of a chapter is served as a blob; leaving the board without
+	// letting them go would keep the whole book in memory.
+	host.registerCleanup?.(release);
+
+	setupFrameDrag(host, header, frame, embed);
+	setupFrameResize(host, frame, embed);
+
+	const file = host.app.vault.getFileByPath(embed.src);
+	if (!(file instanceof TFile)) {
+		page.empty();
+		page.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
+		return;
+	}
+
+	let book;
+	try {
+		book = await openEpub(() => host.app.vault.readBinary(file), file);
+	} catch (e) {
+		page.empty();
+		page.createDiv({ cls: "notelens-embed-missing", text: e instanceof Error ? e.message : tr("No se pudo cargar: {p0}", { p0: embed.src }) });
+		return;
+	}
+	title.setText(book.title);
+
+	// Chapter navigation lives in the header, beside the title, like the PDF's.
+	const nav = header.createDiv({ cls: "notelens-pdf-nav" });
+	header.insertBefore(nav, remove);
+	const prev = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
+	setIcon(prev, "chevron-left");
+	prev.title = tr("Capítulo anterior");
+	const picker = nav.createEl("select", { cls: "notelens-epub-chapters" });
+	book.chapters.forEach((chapter, index) => picker.createEl("option", { value: String(index), text: `${index + 1}. ${chapter.title}` }));
+	const next = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
+	setIcon(next, "chevron-right");
+	next.title = tr("Capítulo siguiente");
+	for (const control of [prev, next, picker]) control.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+	let current = clamp(embed.epubChapter ?? 0, 0, book.chapters.length - 1);
+	const show = (index: number) => {
+		current = clamp(index, 0, book.chapters.length - 1);
+		release();
+		urls = paintEpubChapter(book, current, page);
+		page.scrollTop = 0;
+		picker.value = String(current);
+		prev.disabled = current === 0;
+		next.disabled = current === book.chapters.length - 1;
+		// Where the reading was left is remembered with the board.
+		embed.epubChapter = current;
+		host.onEmbedChanged();
+	};
+	prev.onclick = (e) => { e.stopPropagation(); show(current - 1); };
+	next.onclick = (e) => { e.stopPropagation(); show(current + 1); };
+	picker.onchange = () => show(Number(picker.value));
+	show(current);
+}
+
+// ---------------------------------------------------------------------------
 // Frame interactions
 // ---------------------------------------------------------------------------
 
@@ -682,7 +812,8 @@ function setupFrameResize(host: EmbedHost, frame: HTMLElement, embed: Embed): vo
 
 /** Reads the current zoom from the stage's CSS transform. */
 function currentScale(el: HTMLElement): number {
-	const stage = el.closest<HTMLElement>(".onenote-stage");
+	// Either half of the page: what rides above the ink is transformed the same.
+	const stage = el.closest<HTMLElement>(".onenote-stage, .onenote-top-stage");
 	if (!stage) return 1;
 	const s = /scale\(([^)]+)\)/.exec(stage.style.transform || "");
 	return s ? parseFloat(s[1]) : 1;
@@ -807,6 +938,43 @@ export class PdfModeModal extends Modal {
 			"Páginas en el lienzo",
 			"Cada página se pega verticalmente sobre la pizarra — ideal para rellenar ejercicios encima con el lápiz.",
 			"pages"
+		);
+	}
+}
+
+export class EpubModeModal extends Modal {
+	constructor(app: App, private onPick: (mode: "card" | "reader") => void) {
+		super(app);
+	}
+
+	override onOpen(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("h3", { text: tr("¿Cómo insertar el libro?") });
+
+		const make = (icon: string, title: string, desc: string, mode: "card" | "reader") => {
+			const btn = contentEl.createDiv({ cls: "notelens-mode-choice" });
+			const head = btn.createDiv({ cls: "notelens-mode-title" });
+			setIcon(head.createSpan({ cls: "notelens-mode-icon" }), icon);
+			head.createSpan({ text: tr(" {p0}", { p0: title }) });
+			btn.createDiv({ cls: "notelens-mode-desc", text: desc });
+			btn.onclick = () => {
+				this.close();
+				this.onPick(mode);
+			};
+		};
+
+		make(
+			"book-open",
+			"Lector en la pizarra",
+			"El libro se lee aquí mismo, capítulo a capítulo, y puedes anotar a su alrededor.",
+			"reader"
+		);
+		make(
+			"paperclip",
+			"Ficha del archivo",
+			"Una tarjeta pequeña que abre el libro en tu lector de siempre.",
+			"card"
 		);
 	}
 }

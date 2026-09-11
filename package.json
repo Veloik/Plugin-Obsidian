@@ -1,6 +1,6 @@
 {
   "name": "notelens",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "NoteLens Canvas: Pizarra infinita inteligente para Obsidian con lápiz óptico, etiquetas OneNote, PDFs y vídeos.",
   "main": "main.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "lint": "eslint src",
     "test": "node scripts/run-core-tests.mjs",
     "test:migration": "node scripts/migration-snapshot.mjs",
-    "test:browser": "node dev-harness/tablet-regression.mjs && node dev-harness/rich-editing.mjs && node dev-harness/touch-drawing.mjs && node dev-harness/mobile-panels.mjs && node dev-harness/file-drop.mjs && node dev-harness/stylus-comfort.mjs",
+    "test:browser": "node dev-harness/tablet-regression.mjs && node dev-harness/rich-editing.mjs && node dev-harness/touch-drawing.mjs && node dev-harness/mobile-panels.mjs && node dev-harness/file-drop.mjs && node dev-harness/stylus-comfort.mjs && node dev-harness/code-blocks.mjs && node dev-harness/epub-reader.mjs",
     "devices": "node dev-harness/run-devices.mjs",
     "validate": "node scripts/validate-release.mjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run test:migration && npm run build && npm run validate",

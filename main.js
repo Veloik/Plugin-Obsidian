@@ -5973,6 +5973,28 @@ var en = {
   "Mostrar los resultados como fracci\xF3n siempre (si no, solo cuando operas con fracciones)": "Always show results as a fraction (otherwise only when you work with fractions)",
   "Mostrar margen izquierdo": "Show left margin",
   "Mostrar regla inteligente": "Show the smart ruler",
+  "\xBFC\xF3mo insertar el libro?": "How should the book go on the board?",
+  "Lector en la pizarra": "Reader on the board",
+  "El libro se lee aqu\xED mismo, cap\xEDtulo a cap\xEDtulo, y puedes anotar a su alrededor.": "The book is read right here, chapter by chapter, with room to write around it.",
+  "Ficha del archivo": "File card",
+  "Una tarjeta peque\xF1a que abre el libro en tu lector de siempre.": "A small card that opens the book in your usual reader.",
+  "Leer el libro en la pizarra": "Read the book on the board",
+  "Dejarlo como ficha y abrirlo fuera": "Turn it back into a card and open it outside",
+  "Abriendo el libro\u2026": "Opening the book\u2026",
+  "Cap\xEDtulo anterior": "Previous chapter",
+  "Cap\xEDtulo siguiente": "Next chapter",
+  "Cap\xEDtulo {p0}": "Chapter {p0}",
+  "Falta este cap\xEDtulo dentro del libro.": "This chapter is missing from inside the book.",
+  "El libro es demasiado grande para abrirlo en la pizarra.": "The book is too large to open on the board.",
+  "Este EPUB no trae el \xEDndice que dice qu\xE9 leer primero.": "This EPUB carries no index saying what to read first.",
+  "Este EPUB no trae cap\xEDtulos que se puedan leer.": "This EPUB carries no readable chapters.",
+  "auto": "auto",
+  "Lenguaje deducido del propio c\xF3digo. Elige otro en la barra de formato si no acierta.": "Language read off the code itself. Pick another in the format bar if it guessed wrong.",
+  "L\xEDneas largas: plegadas. Pulsa para que se desplacen.": "Long lines: folded. Press to let them scroll.",
+  "L\xEDneas largas: se desplazan. Pulsa para plegarlas.": "Long lines: scrolling. Press to fold them.",
+  "Marcar esta l\xEDnea": "Mark this line",
+  "Quitar la marca de esta l\xEDnea": "Unmark this line",
+  "Marcador \xAB{p0}\xBB. Clic para volver a esta vista": "Bookmark \u201C{p0}\u201D. Click to come back to this view",
   "L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)": "Straight lines: hold this down while you draw (Shift on a computer)",
   "Pizarra sin guardar": "Unsaved board",
   "{p0} \u2014 {p1}": "{p0} \u2014 {p1}",
@@ -8466,7 +8488,7 @@ ${recognition.detail}. Creado: ${report}.` });
 }
 
 // src/main.ts
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 
 // src/asciimath.ts
 function looksLikeLatex(src) {
@@ -9075,7 +9097,7 @@ function clipInkToRect(stroke, rect) {
 }
 
 // src/view.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 
 // src/calculator.ts
 var import_obsidian3 = require("obsidian");
@@ -21246,6 +21268,17 @@ function unpackShareArchive(bytes, maxExpanded = MAX_SHARE_EXPANDED) {
 }
 
 // src/types.ts
+function sanitizeCodeMarks(raw) {
+  if (!Array.isArray(raw)) return void 0;
+  const lines = /* @__PURE__ */ new Set();
+  for (const item of raw) {
+    const line2 = asNumber(item);
+    if (line2 === void 0 || !Number.isFinite(line2) || line2 < 1) continue;
+    lines.add(Math.round(line2));
+    if (lines.size >= 500) break;
+  }
+  return lines.size ? Array.from(lines).sort((a3, b3) => a3 - b3) : void 0;
+}
 function sanitizeRuns(raw) {
   const runs = [];
   for (const item of raw) {
@@ -21518,7 +21551,10 @@ function migrateDocument(raw) {
       autoWidth: t3.autoWidth === true,
       rotation: asNumber(t3.rotation),
       variant: t3.variant === "code" || t3.variant === "math" ? t3.variant : "text",
-      language: asString(t3.language)?.slice(0, 32)
+      language: asString(t3.language)?.slice(0, 32),
+      languagePinned: t3.languagePinned === true || void 0,
+      codeWrap: t3.codeWrap === true || void 0,
+      codeMarks: sanitizeCodeMarks(t3.codeMarks)
     });
   }
   for (const entry of asArray(root.tables)) {
@@ -21597,6 +21633,8 @@ function migrateDocument(raw) {
       page: asNumber(e.page),
       pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
       pages: asNumber(e.pages),
+      epubMode: e.epubMode === "reader" ? "reader" : void 0,
+      epubChapter: asNumber(e.epubChapter),
       captionSrc: asString(e.captionSrc)
     });
   }
@@ -22198,8 +22236,8 @@ function _slicedToArray(r, e) {
 
 // node_modules/iobuffer/lib-esm/text.js
 function decode(bytes, encoding = "utf8") {
-  const decoder = new TextDecoder(encoding);
-  return decoder.decode(bytes);
+  const decoder2 = new TextDecoder(encoding);
+  return decoder2.decode(bytes);
 }
 var encoder = new TextEncoder();
 function encode(str) {
@@ -27848,8 +27886,8 @@ var ResolutionUnitSpecifier;
 
 // node_modules/fast-png/lib-esm/index.js
 function decodePng(data, options) {
-  const decoder = new PngDecoder(data, options);
-  return decoder.decode();
+  const decoder2 = new PngDecoder(data, options);
+  return decoder2.decode();
 }
 
 // node_modules/jspdf/dist/jspdf.es.min.js
@@ -36842,7 +36880,7 @@ var PersistenceManager = class {
 };
 
 // src/embeds.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 
 // node_modules/pdfjs-dist/build/pdf.mjs
 var import_meta = {};
@@ -46715,11 +46753,11 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
         return value;
       }
       try {
-        const decoder = new TextDecoder(encoding, {
+        const decoder2 = new TextDecoder(encoding, {
           fatal: true
         });
         const buffer = stringToBytes(value);
-        value = decoder.decode(buffer);
+        value = decoder2.decode(buffer);
         needsEncodingFixup = false;
       } catch {
       }
@@ -59088,6 +59126,112 @@ function mountChartFrame(host, layer, embed) {
   return frame2;
 }
 
+// src/epub.ts
+var import_obsidian8 = require("obsidian");
+var MAX_EPUB_BYTES = 96 * 1024 * 1024;
+var MAX_EPUB_ENTRIES = 8e3;
+var decoder = new TextDecoder();
+function resolveHref(base, href) {
+  const clean = href.split("#")[0].trim();
+  if (!clean) return "";
+  const parts = base.split("/").slice(0, -1).concat(clean.split("/"));
+  const out = [];
+  for (const part of parts) {
+    if (!part || part === ".") continue;
+    if (part === "..") out.pop();
+    else out.push(part);
+  }
+  return out.join("/");
+}
+function parseXml(files, path2) {
+  const raw = files[path2];
+  if (!raw) return null;
+  const doc = new DOMParser().parseFromString(decoder.decode(raw), "application/xml");
+  return doc.querySelector("parsererror") ? null : doc;
+}
+async function openEpub(read, file) {
+  const buffer = await read();
+  if (buffer.byteLength > MAX_EPUB_BYTES) throw new Error(tr("El libro es demasiado grande para abrirlo en la pizarra."));
+  let entries = 0;
+  const files = unzipSync(new Uint8Array(buffer), {
+    filter: () => ++entries <= MAX_EPUB_ENTRIES
+  });
+  const container = parseXml(files, "META-INF/container.xml");
+  const opfPath = container?.querySelector("rootfile")?.getAttribute("full-path")?.trim() ?? Object.keys(files).find((name) => name.toLowerCase().endsWith(".opf"));
+  const opf = opfPath ? parseXml(files, opfPath) : null;
+  if (!opf || !opfPath) throw new Error(tr("Este EPUB no trae el \xEDndice que dice qu\xE9 leer primero."));
+  const hrefById = /* @__PURE__ */ new Map();
+  for (const item of Array.from(opf.querySelectorAll("manifest > item"))) {
+    const id = item.getAttribute("id");
+    const href = item.getAttribute("href");
+    if (id && href) hrefById.set(id, resolveHref(opfPath, href));
+  }
+  const titles = /* @__PURE__ */ new Map();
+  const navPath = Array.from(opf.querySelectorAll("manifest > item")).find((item) => item.getAttribute("properties")?.split(/\s+/).includes("nav"))?.getAttribute("href");
+  const nav = navPath ? parseXml(files, resolveHref(opfPath, navPath)) : null;
+  for (const link of Array.from(nav?.querySelectorAll("nav a") ?? [])) {
+    const href = link.getAttribute("href");
+    const text = link.textContent?.trim();
+    if (href && text) titles.set(resolveHref(resolveHref(opfPath, navPath ?? ""), href), text);
+  }
+  const ncxPath = hrefById.get(opf.querySelector("spine")?.getAttribute("toc") ?? "");
+  const ncx = ncxPath ? parseXml(files, ncxPath) : null;
+  for (const point of Array.from(ncx?.querySelectorAll("navPoint") ?? [])) {
+    const href = point.querySelector("content")?.getAttribute("src");
+    const text = point.querySelector("navLabel > text")?.textContent?.trim();
+    if (href && text) titles.set(resolveHref(ncxPath ?? "", href), text);
+  }
+  const chapters = [];
+  for (const ref of Array.from(opf.querySelectorAll("spine > itemref"))) {
+    if (ref.getAttribute("linear") === "no") continue;
+    const href = hrefById.get(ref.getAttribute("idref") ?? "");
+    if (!href || !files[href]) continue;
+    chapters.push({ href, title: titles.get(href) ?? tr("Cap\xEDtulo {p0}", { p0: chapters.length + 1 }) });
+  }
+  if (!chapters.length) throw new Error(tr("Este EPUB no trae cap\xEDtulos que se puedan leer."));
+  const title = opf.querySelector("metadata title")?.textContent?.trim() || file.basename;
+  return { title, chapters, files };
+}
+function mimeOf(path2) {
+  const ext = path2.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "png") return "image/png";
+  if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+  if (ext === "gif") return "image/gif";
+  if (ext === "webp") return "image/webp";
+  if (ext === "svg") return "image/svg+xml";
+  return "application/octet-stream";
+}
+function paintEpubChapter(book, index, into) {
+  const chapter = book.chapters[index];
+  into.empty();
+  if (!chapter) return [];
+  const raw = book.files[chapter.href];
+  if (!raw) {
+    into.createDiv({ cls: "notelens-embed-missing", text: tr("Falta este cap\xEDtulo dentro del libro.") });
+    return [];
+  }
+  const source = new DOMParser().parseFromString(decoder.decode(raw), "application/xhtml+xml");
+  const body = source.querySelector("body") ?? source.documentElement;
+  const serializer = new XMLSerializer();
+  const markup = Array.from(body.childNodes).map((node) => serializer.serializeToString(node)).join("");
+  into.appendChild((0, import_obsidian8.sanitizeHTMLToDom)(markup));
+  const urls = [];
+  for (const img of Array.from(into.querySelectorAll("img"))) {
+    const src = img.getAttribute("src");
+    const data = src ? book.files[resolveHref(chapter.href, src)] : void 0;
+    if (!data) {
+      img.remove();
+      continue;
+    }
+    const url = URL.createObjectURL(new Blob([new Uint8Array(data)], { type: mimeOf(src ?? "") }));
+    urls.push(url);
+    img.src = url;
+    img.removeAttribute("srcset");
+  }
+  for (const link of Array.from(into.querySelectorAll("a"))) link.removeAttribute("href");
+  return urls;
+}
+
 // src/embeds.ts
 var MIN_W = 240;
 var MIN_H = 160;
@@ -59139,7 +59283,7 @@ function disposePdfWorker() {
 }
 async function loadPdf(host, src) {
   const file = host.app.vault.getFileByPath(src);
-  if (!(file instanceof import_obsidian8.TFile)) return null;
+  if (!(file instanceof import_obsidian9.TFile)) return null;
   ensurePdfWorker();
   try {
     const buf = await host.app.vault.readBinary(file);
@@ -59156,6 +59300,10 @@ function renderEmbedFrame(host, layer, embed) {
   }
   if (embed.kind === "image") {
     mountLooseImage(host, layer, embed);
+    return;
+  }
+  if (embed.kind === "epub" && embed.epubMode === "reader") {
+    void mountEpubReader(host, layer, embed);
     return;
   }
   if (embed.kind === "epub" || embed.kind === "file") {
@@ -59179,12 +59327,12 @@ function renderEmbedFrame(host, layer, embed) {
   frame2.style.height = `${embed.h}px`;
   const header = frame2.createDiv({ cls: "notelens-embed-header" });
   const iconEl = header.createSpan({ cls: "notelens-embed-icon" });
-  (0, import_obsidian8.setIcon)(iconEl, KIND_ICONS[embed.kind] ?? "file");
+  (0, import_obsidian9.setIcon)(iconEl, KIND_ICONS[embed.kind] ?? "file");
   const title = header.createSpan({ cls: "notelens-embed-title" });
   title.setText(embedTitle(embed));
   if (embed.kind !== "youtube" && embed.kind !== "web-video") {
     const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
-    (0, import_obsidian8.setIcon)(openBtn, "external-link");
+    (0, import_obsidian9.setIcon)(openBtn, "external-link");
     openBtn.title = tr("Abrir archivo original");
     openBtn.onclick = (e) => {
       e.stopPropagation();
@@ -59193,7 +59341,7 @@ function renderEmbedFrame(host, layer, embed) {
   }
   if (embed.kind === "youtube" || embed.kind === "web-video") {
     const openBtn = header.createEl("button", { cls: "notelens-embed-open" });
-    (0, import_obsidian8.setIcon)(openBtn, "external-link");
+    (0, import_obsidian9.setIcon)(openBtn, "external-link");
     openBtn.title = tr("Abrir publicaci\xF3n original");
     openBtn.setAttr("aria-label", openBtn.title);
     openBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -59204,7 +59352,7 @@ function renderEmbedFrame(host, layer, embed) {
   }
   if (embed.kind === "video") {
     const captionsBtn = header.createEl("button", { cls: "notelens-embed-open" });
-    (0, import_obsidian8.setIcon)(captionsBtn, "captions");
+    (0, import_obsidian9.setIcon)(captionsBtn, "captions");
     captionsBtn.title = embed.captionSrc ? tr("Cambiar subt\xEDtulos WebVTT") : tr("A\xF1adir subt\xEDtulos WebVTT");
     captionsBtn.onclick = (event) => {
       event.stopPropagation();
@@ -59212,7 +59360,7 @@ function renderEmbedFrame(host, layer, embed) {
     };
   }
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
-  (0, import_obsidian8.setIcon)(closeBtn, "x");
+  (0, import_obsidian9.setIcon)(closeBtn, "x");
   closeBtn.title = tr("Cerrar y quitar de la pizarra");
   closeBtn.setAttr("aria-label", tr("Cerrar y quitar de la pizarra"));
   closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -59248,7 +59396,7 @@ function renderEmbedFrame(host, layer, embed) {
     }
   } else {
     const file = host.app.vault.getFileByPath(embed.src);
-    if (file instanceof import_obsidian8.TFile) {
+    if (file instanceof import_obsidian9.TFile) {
       if (embed.kind === "audio") {
         const audio = body.createEl("audio", { cls: "notelens-audio-player" });
         audio.src = host.app.vault.getResourcePath(file);
@@ -59276,7 +59424,7 @@ function renderEmbedFrame(host, layer, embed) {
 function attachCaptionToVideo(host, embed, video) {
   if (!embed.captionSrc) return;
   const caption = host.app.vault.getFileByPath(embed.captionSrc);
-  if (!(caption instanceof import_obsidian8.TFile)) return;
+  if (!(caption instanceof import_obsidian9.TFile)) return;
   video.querySelector("track")?.remove();
   const track = video.createEl("track");
   track.kind = "subtitles";
@@ -59293,7 +59441,7 @@ async function pickCaptionTrack(host, embed, body, button) {
     const file = picker.files?.[0];
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".vtt")) {
-      new import_obsidian8.Notice(tr("Selecciona un archivo WebVTT (.vtt)."));
+      new import_obsidian9.Notice(tr("Selecciona un archivo WebVTT (.vtt)."));
       return;
     }
     try {
@@ -59314,10 +59462,10 @@ async function pickCaptionTrack(host, embed, body, button) {
       if (video) attachCaptionToVideo(host, embed, video);
       button.title = tr("Cambiar subt\xEDtulos WebVTT");
       host.onEmbedChanged();
-      new import_obsidian8.Notice(tr("Subt\xEDtulos a\xF1adidos: {p0}", { p0: saved.name }));
+      new import_obsidian9.Notice(tr("Subt\xEDtulos a\xF1adidos: {p0}", { p0: saved.name }));
     } catch (error) {
       console.error("NoteLens: caption upload failed", error);
-      new import_obsidian8.Notice(tr("No se pudieron a\xF1adir los subt\xEDtulos."));
+      new import_obsidian9.Notice(tr("No se pudieron a\xF1adir los subt\xEDtulos."));
     }
   };
   picker.click();
@@ -59349,22 +59497,22 @@ function mountLinkCard(host, layer, embed) {
   if (embed.rotation) card.style.transform = `rotate(${embed.rotation}deg)`;
   card.style.width = `${embed.w || 320}px`;
   const head = card.createDiv({ cls: "notelens-link-head" });
-  (0, import_obsidian8.setIcon)(head.createDiv({ cls: "notelens-attachment-icon" }), KIND_ICONS[embed.kind]);
+  (0, import_obsidian9.setIcon)(head.createDiv({ cls: "notelens-attachment-icon" }), KIND_ICONS[embed.kind]);
   const details = head.createDiv({ cls: "notelens-attachment-details" });
   const file = host.app.vault.getFileByPath(embed.src);
-  const name = file instanceof import_obsidian8.TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
+  const name = file instanceof import_obsidian9.TFile ? file.basename : embed.src.split("/").pop()?.replace(/\.[^.]+$/, "") ?? embed.src;
   details.createDiv({ cls: "notelens-attachment-title", text: name });
   const folder = embed.src.includes("/") ? embed.src.slice(0, embed.src.lastIndexOf("/")) : "";
   details.createDiv({ cls: "notelens-attachment-meta", text: (embed.kind === "board" ? "Pizarra" : "Nota") + (folder ? tr(" \xB7 {p0}", { p0: folder }) : "") });
   const open2 = head.createEl("button", { cls: "notelens-attachment-open" });
-  (0, import_obsidian8.setIcon)(open2, "external-link");
+  (0, import_obsidian9.setIcon)(open2, "external-link");
   open2.title = embed.kind === "board" ? tr("Abrir la pizarra (Ctrl: en pesta\xF1a nueva)") : tr("Abrir la nota (Ctrl: en pesta\xF1a nueva)");
   open2.onclick = (e) => {
     e.stopPropagation();
     host.openLink(embed.src, e.ctrlKey || e.metaKey);
   };
   const remove = head.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
-  (0, import_obsidian8.setIcon)(remove, "x");
+  (0, import_obsidian9.setIcon)(remove, "x");
   remove.title = tr("Quitar el enlace de la pizarra");
   remove.setAttr("aria-label", tr("Quitar el enlace de la pizarra"));
   remove.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -59374,7 +59522,7 @@ function mountLinkCard(host, layer, embed) {
     host.onEmbedDeleted(embed);
   };
   const preview = card.createDiv({ cls: "notelens-link-preview" });
-  if (!(file instanceof import_obsidian8.TFile)) {
+  if (!(file instanceof import_obsidian9.TFile)) {
     preview.setText(tr("No se encuentra el archivo. \xBFSe ha movido o borrado?"));
     card.addClass("is-missing");
   } else if (embed.kind === "note") {
@@ -59399,20 +59547,33 @@ function mountAttachmentCard(host, layer, embed) {
   if (embed.rotation) card.style.transform = `rotate(${embed.rotation}deg)`;
   card.style.width = `${embed.w || 360}px`;
   const icon = card.createDiv({ cls: "notelens-attachment-icon" });
-  (0, import_obsidian8.setIcon)(icon, KIND_ICONS[embed.kind] ?? "paperclip");
+  (0, import_obsidian9.setIcon)(icon, KIND_ICONS[embed.kind] ?? "paperclip");
   const details = card.createDiv({ cls: "notelens-attachment-details" });
   details.createDiv({ cls: "notelens-attachment-title", text: embedTitle(embed) });
   const extension = embed.src.split(".").pop()?.toUpperCase() || "ARCHIVO";
   details.createDiv({ cls: "notelens-attachment-meta", text: extension });
+  if (embed.kind === "epub") {
+    const read = card.createEl("button", { cls: "notelens-attachment-open notelens-attachment-read" });
+    (0, import_obsidian9.setIcon)(read, "book-open");
+    read.title = tr("Leer el libro en la pizarra");
+    read.addEventListener("pointerdown", (e) => e.stopPropagation());
+    read.onclick = (e) => {
+      e.stopPropagation();
+      embed.epubMode = "reader";
+      embed.w = Math.max(embed.w, 520);
+      embed.h = Math.max(embed.h, 620);
+      host.refreshEmbed(embed);
+    };
+  }
   const open2 = card.createEl("button", { cls: "notelens-attachment-open" });
-  (0, import_obsidian8.setIcon)(open2, "external-link");
+  (0, import_obsidian9.setIcon)(open2, "external-link");
   open2.title = embed.kind === "epub" ? tr("Abrir EPUB") : tr("Abrir archivo");
   open2.onclick = (e) => {
     e.stopPropagation();
     host.openVaultFile(embed.src);
   };
   const remove = card.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
-  (0, import_obsidian8.setIcon)(remove, "x");
+  (0, import_obsidian9.setIcon)(remove, "x");
   remove.title = tr("Quitar archivo de la pizarra");
   remove.setAttr("aria-label", tr("Quitar archivo de la pizarra"));
   remove.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -59438,10 +59599,10 @@ async function mountPdfViewer(host, header, body, embed) {
   const closeControl = header.querySelector(".notelens-embed-close");
   if (closeControl) header.insertBefore(nav, closeControl);
   const prevBtn = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
-  (0, import_obsidian8.setIcon)(prevBtn, "chevron-left");
+  (0, import_obsidian9.setIcon)(prevBtn, "chevron-left");
   const pageLabel = nav.createSpan({ cls: "notelens-pdf-page" });
   const nextBtn = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
-  (0, import_obsidian8.setIcon)(nextBtn, "chevron-right");
+  (0, import_obsidian9.setIcon)(nextBtn, "chevron-right");
   for (const btn of [prevBtn, nextBtn]) {
     btn.addEventListener("pointerdown", (e) => e.stopPropagation());
   }
@@ -59483,7 +59644,7 @@ async function mountPdfPages(host, layer, embed) {
   stack.style.width = `${embed.w}px`;
   const controls = stack.createDiv({ cls: "notelens-stack-controls" });
   const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
-  (0, import_obsidian8.setIcon)(delBtn, "x");
+  (0, import_obsidian9.setIcon)(delBtn, "x");
   delBtn.title = tr("Quitar documento de la pizarra");
   delBtn.setAttr("aria-label", tr("Quitar documento de la pizarra"));
   delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -59498,7 +59659,7 @@ async function mountPdfPages(host, layer, embed) {
   stack.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian8.Menu();
+    const menu = new import_obsidian9.Menu();
     menu.addItem((item) => item.setTitle(tr("Eliminar documento")).setIcon("trash-2").onClick(() => {
       stack.remove();
       host.onEmbedDeleted(embed);
@@ -59563,7 +59724,7 @@ function mountLooseImage(host, layer, embed) {
   wrap.style.width = `${embed.w}px`;
   wrap.style.transform = embed.rotation ? `rotate(${embed.rotation}deg)` : "";
   const file = host.app.vault.getFileByPath(embed.src);
-  if (file instanceof import_obsidian8.TFile) {
+  if (file instanceof import_obsidian9.TFile) {
     const img = wrap.createEl("img", { cls: "notelens-embed-img" });
     img.src = host.app.vault.getResourcePath(file);
     img.draggable = false;
@@ -59572,7 +59733,7 @@ function mountLooseImage(host, layer, embed) {
   }
   const controls = wrap.createDiv({ cls: "notelens-stack-controls" });
   const delBtn = controls.createEl("button", { cls: "notelens-embed-close notelens-object-close" });
-  (0, import_obsidian8.setIcon)(delBtn, "x");
+  (0, import_obsidian9.setIcon)(delBtn, "x");
   delBtn.title = tr("Quitar imagen de la pizarra");
   delBtn.setAttr("aria-label", tr("Quitar imagen de la pizarra"));
   delBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -59587,7 +59748,7 @@ function mountLooseImage(host, layer, embed) {
   wrap.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const menu = new import_obsidian8.Menu();
+    const menu = new import_obsidian9.Menu();
     menu.addItem((item) => item.setTitle(tr("Eliminar imagen")).setIcon("trash-2").onClick(() => {
       wrap.remove();
       host.onEmbedDeleted(embed);
@@ -59616,6 +59777,99 @@ function mountLooseImage(host, layer, embed) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
   });
+}
+async function mountEpubReader(host, layer, embed) {
+  const frame2 = layer.createDiv({ cls: "notelens-embed notelens-epub-frame" });
+  frame2.setAttr("data-id", embed.id);
+  frame2.style.left = `${embed.x}px`;
+  frame2.style.top = `${embed.y}px`;
+  frame2.style.width = `${embed.w || 520}px`;
+  frame2.style.height = `${embed.h || 620}px`;
+  if (embed.rotation) frame2.style.transform = `rotate(${embed.rotation}deg)`;
+  const header = frame2.createDiv({ cls: "notelens-embed-header" });
+  (0, import_obsidian9.setIcon)(header.createSpan({ cls: "notelens-embed-icon" }), "book-open");
+  const title = header.createSpan({ cls: "notelens-embed-title", text: embedTitle(embed) });
+  const asCard = header.createEl("button", { cls: "notelens-embed-open" });
+  (0, import_obsidian9.setIcon)(asCard, "minimize-2");
+  asCard.title = tr("Dejarlo como ficha y abrirlo fuera");
+  asCard.addEventListener("pointerdown", (e) => e.stopPropagation());
+  asCard.onclick = (e) => {
+    e.stopPropagation();
+    release();
+    embed.epubMode = "card";
+    embed.w = 360;
+    embed.h = 112;
+    host.refreshEmbed(embed);
+  };
+  const remove = header.createEl("button", { cls: "notelens-embed-close" });
+  (0, import_obsidian9.setIcon)(remove, "x");
+  remove.title = tr("Quitar de la pizarra");
+  remove.addEventListener("pointerdown", (e) => e.stopPropagation());
+  remove.onclick = (e) => {
+    e.stopPropagation();
+    release();
+    frame2.remove();
+    host.onEmbedDeleted(embed);
+  };
+  const body = frame2.createDiv({ cls: "notelens-embed-body" });
+  const page = body.createDiv({ cls: "notelens-epub-page" });
+  page.createDiv({ cls: "notelens-epub-loading", text: tr("Abriendo el libro\u2026") });
+  let urls = [];
+  const release = () => {
+    for (const url of urls) URL.revokeObjectURL(url);
+    urls = [];
+  };
+  host.registerCleanup?.(release);
+  setupFrameDrag(host, header, frame2, embed);
+  setupFrameResize(host, frame2, embed);
+  const file = host.app.vault.getFileByPath(embed.src);
+  if (!(file instanceof import_obsidian9.TFile)) {
+    page.empty();
+    page.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
+    return;
+  }
+  let book;
+  try {
+    book = await openEpub(() => host.app.vault.readBinary(file), file);
+  } catch (e) {
+    page.empty();
+    page.createDiv({ cls: "notelens-embed-missing", text: e instanceof Error ? e.message : tr("No se pudo cargar: {p0}", { p0: embed.src }) });
+    return;
+  }
+  title.setText(book.title);
+  const nav = header.createDiv({ cls: "notelens-pdf-nav" });
+  header.insertBefore(nav, remove);
+  const prev = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
+  (0, import_obsidian9.setIcon)(prev, "chevron-left");
+  prev.title = tr("Cap\xEDtulo anterior");
+  const picker = nav.createEl("select", { cls: "notelens-epub-chapters" });
+  book.chapters.forEach((chapter, index) => picker.createEl("option", { value: String(index), text: `${index + 1}. ${chapter.title}` }));
+  const next = nav.createEl("button", { cls: "notelens-pdf-nav-btn" });
+  (0, import_obsidian9.setIcon)(next, "chevron-right");
+  next.title = tr("Cap\xEDtulo siguiente");
+  for (const control of [prev, next, picker]) control.addEventListener("pointerdown", (e) => e.stopPropagation());
+  let current = clamp(embed.epubChapter ?? 0, 0, book.chapters.length - 1);
+  const show = (index) => {
+    current = clamp(index, 0, book.chapters.length - 1);
+    release();
+    urls = paintEpubChapter(book, current, page);
+    page.scrollTop = 0;
+    picker.value = String(current);
+    prev.disabled = current === 0;
+    next.disabled = current === book.chapters.length - 1;
+    embed.epubChapter = current;
+    host.onEmbedChanged();
+  };
+  prev.onclick = (e) => {
+    e.stopPropagation();
+    show(current - 1);
+  };
+  next.onclick = (e) => {
+    e.stopPropagation();
+    show(current + 1);
+  };
+  picker.onchange = () => show(Number(picker.value));
+  show(current);
 }
 function setupFrameDrag(host, header, frame2, embed) {
   header.addEventListener("pointerdown", (e) => {
@@ -59654,12 +59908,12 @@ function setupFrameResize(host, frame2, embed) {
   });
 }
 function currentScale(el) {
-  const stage = el.closest(".onenote-stage");
+  const stage = el.closest(".onenote-stage, .onenote-top-stage");
   if (!stage) return 1;
   const s3 = /scale\(([^)]+)\)/.exec(stage.style.transform || "");
   return s3 ? parseFloat(s3[1]) : 1;
 }
-var PdfPickModal = class extends import_obsidian8.FuzzySuggestModal {
+var PdfPickModal = class extends import_obsidian9.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
@@ -59675,7 +59929,7 @@ var PdfPickModal = class extends import_obsidian8.FuzzySuggestModal {
     this.onPick(item);
   }
 };
-var ImagePickModal = class extends import_obsidian8.FuzzySuggestModal {
+var ImagePickModal = class extends import_obsidian9.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
@@ -59691,7 +59945,7 @@ var ImagePickModal = class extends import_obsidian8.FuzzySuggestModal {
     this.onPick(item);
   }
 };
-var NoteOrBoardPickModal = class extends import_obsidian8.FuzzySuggestModal {
+var NoteOrBoardPickModal = class extends import_obsidian9.FuzzySuggestModal {
   constructor(app, currentPath, onPick) {
     super(app);
     this.currentPath = currentPath;
@@ -59708,7 +59962,7 @@ var NoteOrBoardPickModal = class extends import_obsidian8.FuzzySuggestModal {
     this.onPick(item);
   }
 };
-var VaultFilePickModal = class extends import_obsidian8.FuzzySuggestModal {
+var VaultFilePickModal = class extends import_obsidian9.FuzzySuggestModal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
@@ -59724,7 +59978,7 @@ var VaultFilePickModal = class extends import_obsidian8.FuzzySuggestModal {
     this.onPick(item);
   }
 };
-var PdfModeModal = class extends import_obsidian8.Modal {
+var PdfModeModal = class extends import_obsidian9.Modal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
@@ -59736,7 +59990,7 @@ var PdfModeModal = class extends import_obsidian8.Modal {
     const make = (icon, title, desc, mode2) => {
       const btn = contentEl.createDiv({ cls: "notelens-mode-choice" });
       const head = btn.createDiv({ cls: "notelens-mode-title" });
-      (0, import_obsidian8.setIcon)(head.createSpan({ cls: "notelens-mode-icon" }), icon);
+      (0, import_obsidian9.setIcon)(head.createSpan({ cls: "notelens-mode-icon" }), icon);
       head.createSpan({ text: tr(" {p0}", { p0: title }) });
       btn.createDiv({ cls: "notelens-mode-desc", text: desc });
       btn.onclick = () => {
@@ -59758,7 +60012,41 @@ var PdfModeModal = class extends import_obsidian8.Modal {
     );
   }
 };
-var VideoInsertModal = class extends import_obsidian8.Modal {
+var EpubModeModal = class extends import_obsidian9.Modal {
+  constructor(app, onPick) {
+    super(app);
+    this.onPick = onPick;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { text: tr("\xBFC\xF3mo insertar el libro?") });
+    const make = (icon, title, desc, mode2) => {
+      const btn = contentEl.createDiv({ cls: "notelens-mode-choice" });
+      const head = btn.createDiv({ cls: "notelens-mode-title" });
+      (0, import_obsidian9.setIcon)(head.createSpan({ cls: "notelens-mode-icon" }), icon);
+      head.createSpan({ text: tr(" {p0}", { p0: title }) });
+      btn.createDiv({ cls: "notelens-mode-desc", text: desc });
+      btn.onclick = () => {
+        this.close();
+        this.onPick(mode2);
+      };
+    };
+    make(
+      "book-open",
+      "Lector en la pizarra",
+      "El libro se lee aqu\xED mismo, cap\xEDtulo a cap\xEDtulo, y puedes anotar a su alrededor.",
+      "reader"
+    );
+    make(
+      "paperclip",
+      "Ficha del archivo",
+      "Una tarjeta peque\xF1a que abre el libro en tu lector de siempre.",
+      "card"
+    );
+  }
+};
+var VideoInsertModal = class extends import_obsidian9.Modal {
   constructor(app, onPick) {
     super(app);
     this.onPick = onPick;
@@ -59793,14 +60081,14 @@ var VideoInsertModal = class extends import_obsidian8.Modal {
       }
       const file = this.app.vault.getFileByPath(v3);
       const ext = v3.split(".").pop()?.toLowerCase() ?? "";
-      if (file instanceof import_obsidian8.TFile && VIDEO_EXTENSIONS.includes(ext)) {
+      if (file instanceof import_obsidian9.TFile && VIDEO_EXTENSIONS.includes(ext)) {
         this.close();
         this.onPick({ id: genId("embed"), kind: "video", src: v3, x: 0, y: 0, w: 560, h: 315 });
         return;
       }
-      new import_obsidian8.Notice(tr("Usa un enlace de v\xEDdeo compatible o la ruta de un v\xEDdeo de la b\xF3veda."));
+      new import_obsidian9.Notice(tr("Usa un enlace de v\xEDdeo compatible o la ruta de un v\xEDdeo de la b\xF3veda."));
     };
-    new import_obsidian8.Setting(contentEl).setName(tr("URL o ruta")).addText((text) => {
+    new import_obsidian9.Setting(contentEl).setName(tr("URL o ruta")).addText((text) => {
       text.setPlaceholder(tr("https://instagram.com/reel/... o carpeta/video.mp4"));
       text.onChange((v3) => {
         value = v3;
@@ -59813,12 +60101,12 @@ var VideoInsertModal = class extends import_obsidian8.Modal {
       });
       window.setTimeout(() => text.inputEl.focus(), 50);
     });
-    new import_obsidian8.Setting(contentEl).addButton((btn) => btn.setButtonText(tr("Insertar")).setCta().onClick(submit)).addButton((btn) => btn.setButtonText(tr("Cancelar")).onClick(() => this.close()));
+    new import_obsidian9.Setting(contentEl).addButton((btn) => btn.setButtonText(tr("Insertar")).setCta().onClick(submit)).addButton((btn) => btn.setButtonText(tr("Cancelar")).onClick(() => this.close()));
   }
 };
 
 // src/navigator.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 var BOARD_EXTENSIONS = ["notelens", "onenote"];
 function isBoardFile(file) {
   return BOARD_EXTENSIONS.includes(file.extension.toLowerCase());
@@ -59827,15 +60115,15 @@ function createNavigatorPanel(host, container) {
   const panel = container.createDiv({ cls: "notelens-navigator hidden" });
   shieldPanel(panel);
   const header = panel.createDiv({ cls: "notelens-navigator-header" });
-  (0, import_obsidian9.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "folder-tree");
+  (0, import_obsidian10.setIcon)(header.createSpan({ cls: "notelens-calculator-icon" }), "folder-tree");
   header.createSpan({ cls: "notelens-calculator-title", text: tr("Pizarras y notas") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
-  (0, import_obsidian9.setIcon)(closeBtn, "x");
+  (0, import_obsidian10.setIcon)(closeBtn, "x");
   makeDraggable(host.app, panel, header, container, "notelens-navigator-pos");
   const boardsHead = panel.createDiv({ cls: "notelens-navigator-section" });
   boardsHead.createSpan({ cls: "notelens-panel-label", text: tr("Pizarras") });
   const newBoard = boardsHead.createEl("button", { cls: "notelens-navigator-new" });
-  (0, import_obsidian9.setIcon)(newBoard.createSpan(), "plus");
+  (0, import_obsidian10.setIcon)(newBoard.createSpan(), "plus");
   newBoard.createSpan({ text: tr("Nueva") });
   newBoard.title = tr("Crear una pizarra nueva");
   newBoard.onclick = () => host.createBoard();
@@ -59850,13 +60138,13 @@ function createNavigatorPanel(host, container) {
   const row = (list, file, kind) => {
     const item = list.createDiv({ cls: `notelens-navigator-item notelens-navigator-${kind}` });
     if (host.currentPath === file.path) item.addClass("is-current");
-    (0, import_obsidian9.setIcon)(item.createSpan({ cls: "notelens-navigator-icon" }), kind === "board" ? "presentation" : "file-text");
+    (0, import_obsidian10.setIcon)(item.createSpan({ cls: "notelens-navigator-icon" }), kind === "board" ? "presentation" : "file-text");
     const body = item.createDiv({ cls: "notelens-navigator-body" });
     body.createDiv({ cls: "notelens-navigator-title", text: file.basename });
     const folder = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "";
     if (folder) body.createDiv({ cls: "notelens-navigator-folder", text: folder });
     const openBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-open" });
-    (0, import_obsidian9.setIcon)(openBtn, "external-link");
+    (0, import_obsidian10.setIcon)(openBtn, "external-link");
     openBtn.title = host.currentPath === file.path ? tr("Es la pizarra abierta") : "Abrir";
     openBtn.disabled = host.currentPath === file.path;
     openBtn.onclick = (e) => {
@@ -59864,7 +60152,7 @@ function createNavigatorPanel(host, container) {
       host.openPath(file.path, e.ctrlKey || e.metaKey);
     };
     const linkBtn = item.createEl("button", { cls: "notelens-table-control notelens-navigator-link" });
-    (0, import_obsidian9.setIcon)(linkBtn, "link");
+    (0, import_obsidian10.setIcon)(linkBtn, "link");
     linkBtn.title = tr("Poner un enlace en la pizarra");
     linkBtn.onclick = (e) => {
       e.stopPropagation();
@@ -60203,7 +60491,7 @@ async function recognizeFormula(canvas, onProgress) {
 }
 
 // src/hover-note.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 var HOVER_NOTE_BOARD_WIDTH = 560;
 var HOVER_NOTE_BOARD_HEIGHT = 320;
 var BOARD_PIXEL_SCALE = 2;
@@ -60212,7 +60500,7 @@ var MAX_IMAGE_SOURCE_EDGE = 1600;
 var MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024;
 var MAX_IMAGES = 12;
 var bounded = (value, min, max2) => Math.min(Math.max(value, min), max2);
-var HoverNoteModal = class extends import_obsidian10.Modal {
+var HoverNoteModal = class extends import_obsidian11.Modal {
   constructor(app, dialogTitle, initial, onSubmit, placeholder = "Escribe la nota que aparecer\xE1 al pasar el cursor por la etiqueta. Enter a\xF1ade l\xEDneas; Ctrl+Enter acepta.", taskMode = false) {
     super(app);
     this.dialogTitle = dialogTitle;
@@ -60251,10 +60539,10 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     });
     const tabs = contentEl.createDiv({ cls: "notelens-hover-note-tabs" });
     const tabText = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
-    (0, import_obsidian10.setIcon)(tabText.createSpan(), this.taskMode ? "list-checks" : "type");
+    (0, import_obsidian11.setIcon)(tabText.createSpan(), this.taskMode ? "list-checks" : "type");
     tabText.createSpan({ text: this.taskMode ? tr("Lista") : tr("Nota") });
     const tabSketch = tabs.createEl("button", { cls: "notelens-hover-note-tab", type: "button" });
-    (0, import_obsidian10.setIcon)(tabSketch.createSpan(), "pen-tool");
+    (0, import_obsidian11.setIcon)(tabSketch.createSpan(), "pen-tool");
     tabSketch.createSpan({ text: tr("Pizarra") });
     const textPane = contentEl.createDiv({ cls: `notelens-hover-note-pane ${this.taskMode ? "is-task" : ""}` });
     let checklistList = null;
@@ -60289,7 +60577,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
         const padCanvas = pad.createEl("canvas");
         const padHint = pad.createDiv({ cls: "notelens-task-checklist-pad-hint", text: tr("Escribe el paso {p0} a mano", { p0: index + 1 }) });
         const padClear = pad.createEl("button", { cls: "notelens-task-checklist-pad-clear", type: "button" });
-        (0, import_obsidian10.setIcon)(padClear, "eraser");
+        (0, import_obsidian11.setIcon)(padClear, "eraser");
         padClear.title = tr("Borrar lo escrito a mano");
         const handwriting = new StepPad(padCanvas, item.sketch, (data) => {
           item.sketch = data;
@@ -60303,7 +60591,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
           input.style.display = drawn ? "none" : "";
           pad.style.display = drawn ? "" : "none";
           modeBtn.empty();
-          (0, import_obsidian10.setIcon)(modeBtn, drawn ? "type" : "pen-line");
+          (0, import_obsidian11.setIcon)(modeBtn, drawn ? "type" : "pen-line");
           modeBtn.title = drawn ? tr("Escribir este paso con el teclado") : tr("Escribir este paso a mano");
           if (drawn) handwriting.redraw();
         };
@@ -60319,7 +60607,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
         };
         applyStepMode(!!item.sketch);
         const remove = row.createEl("button", { cls: "notelens-task-checklist-remove", type: "button" });
-        (0, import_obsidian10.setIcon)(remove, "x");
+        (0, import_obsidian11.setIcon)(remove, "x");
         remove.title = tr("Eliminar paso");
         checkbox.onchange = () => {
           item.done = checkbox.checked;
@@ -60362,7 +60650,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
       checklistHeading.createSpan({ text: tr("Pasos de la tarea") });
       checklistProgress = checklistHeading.createSpan({ cls: "notelens-task-checklist-progress" });
       const addItem = checklistHeader.createEl("button", { cls: "notelens-task-checklist-add", type: "button" });
-      (0, import_obsidian10.setIcon)(addItem, "plus");
+      (0, import_obsidian11.setIcon)(addItem, "plus");
       addItem.createSpan({ text: tr("A\xF1adir paso") });
       addItem.onclick = () => addChecklistItem();
       checklistList = textPane.createDiv({ cls: "notelens-task-checklist" });
@@ -60386,10 +60674,10 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     const sketchPane = contentEl.createDiv({ cls: "notelens-hover-note-pane" });
     const toolbar = sketchPane.createDiv({ cls: "notelens-hover-note-tools" });
     const drawBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(drawBtn, "pen-line");
+    (0, import_obsidian11.setIcon)(drawBtn, "pen-line");
     drawBtn.title = tr("Dibujar sobre la pizarra");
     const selectBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(selectBtn, "mouse-pointer-2");
+    (0, import_obsidian11.setIcon)(selectBtn, "mouse-pointer-2");
     selectBtn.title = tr("Mover o redimensionar im\xE1genes");
     toolbar.createDiv({ cls: "onenote-divider" });
     const swatches = [];
@@ -60419,22 +60707,22 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     }
     toolbar.createDiv({ cls: "onenote-divider" });
     const uploadBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool notelens-hover-note-upload", type: "button" });
-    (0, import_obsidian10.setIcon)(uploadBtn, "image-plus");
+    (0, import_obsidian11.setIcon)(uploadBtn, "image-plus");
     uploadBtn.title = tr("Subir im\xE1genes desde el dispositivo");
     const pasteBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(pasteBtn, "clipboard-paste");
+    (0, import_obsidian11.setIcon)(pasteBtn, "clipboard-paste");
     pasteBtn.title = tr("Pegar imagen del portapapeles");
     const imageInput = sketchPane.createEl("input", { cls: "notelens-hover-note-file", type: "file" });
     imageInput.accept = "image/*";
     imageInput.multiple = true;
     const deleteImageBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(deleteImageBtn, "trash-2");
+    (0, import_obsidian11.setIcon)(deleteImageBtn, "trash-2");
     deleteImageBtn.title = tr("Quitar la imagen seleccionada");
     const undoBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(undoBtn, "undo-2");
+    (0, import_obsidian11.setIcon)(undoBtn, "undo-2");
     undoBtn.title = tr("Deshacer el \xFAltimo trazo");
     const clearBtn = toolbar.createEl("button", { cls: "notelens-hover-note-tool", type: "button" });
-    (0, import_obsidian10.setIcon)(clearBtn, "eraser");
+    (0, import_obsidian11.setIcon)(clearBtn, "eraser");
     clearBtn.title = tr("Borrar todos los trazos");
     const board = sketchPane.createDiv({ cls: "notelens-hover-note-board" });
     const canvas = board.createEl("canvas");
@@ -60544,7 +60832,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
           redraw();
         };
         const remove = item.createEl("button", { cls: "notelens-hover-note-image-remove", type: "button" });
-        (0, import_obsidian10.setIcon)(remove, "x");
+        (0, import_obsidian11.setIcon)(remove, "x");
         remove.title = tr("Quitar {p0}", { p0: image.name });
         remove.onclick = (event) => {
           event.stopPropagation();
@@ -60652,12 +60940,12 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
     const addFiles = async (files, anchor = lastBoardPoint) => {
       const available = MAX_IMAGES - this.images.length;
       if (available <= 0) {
-        new import_obsidian10.Notice(tr("Cada etiqueta admite hasta {p0} im\xE1genes.", { p0: MAX_IMAGES }));
+        new import_obsidian11.Notice(tr("Cada etiqueta admite hasta {p0} im\xE1genes.", { p0: MAX_IMAGES }));
         return;
       }
       const accepted = files.filter((file) => file.type.startsWith("image/")).slice(0, available);
       if (!accepted.length) {
-        new import_obsidian10.Notice(tr("Selecciona un archivo de imagen v\xE1lido."));
+        new import_obsidian11.Notice(tr("Selecciona un archivo de imagen v\xE1lido."));
         return;
       }
       const placement = { ...anchor };
@@ -60667,7 +60955,7 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
           this.images.push(image);
           this.selectedImageId = image.id;
         } catch (error) {
-          new import_obsidian10.Notice(error instanceof Error ? error.message : tr("No se pudo a\xF1adir {p0}.", { p0: file.name }));
+          new import_obsidian11.Notice(error instanceof Error ? error.message : tr("No se pudo a\xF1adir {p0}.", { p0: file.name }));
         }
       }
       this.boardTool = "select";
@@ -60723,12 +61011,12 @@ var HoverNoteModal = class extends import_obsidian10.Modal {
           }
         }
         if (!files.length) {
-          new import_obsidian10.Notice(tr("El portapapeles no contiene ninguna imagen."));
+          new import_obsidian11.Notice(tr("El portapapeles no contiene ninguna imagen."));
           return;
         }
         await addFiles(files, lastBoardPoint);
       } catch {
-        new import_obsidian10.Notice(tr("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen."));
+        new import_obsidian11.Notice(tr("No pude leer la imagen del portapapeles. Prueba Ctrl+V sobre la pizarra o usa Subir imagen."));
       }
     };
     uploadBtn.onclick = () => imageInput.click();
@@ -61053,10 +61341,10 @@ function formulaTokenPositions(source, values) {
 }
 
 // src/ink-equation.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 var BOARD_W = 620;
 var BOARD_H = 300;
-var InkEquationModal = class extends import_obsidian11.Modal {
+var InkEquationModal = class extends import_obsidian12.Modal {
   constructor(app, initial, onSubmit, renderFormula, tidy2, readFromBoard) {
     super(app);
     this.onSubmit = onSubmit;
@@ -61086,10 +61374,10 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     contentEl.createEl("h3", { text: tr("Insertar ecuaci\xF3n") });
     const modeRow = contentEl.createDiv({ cls: "notelens-ink-modes" });
     const handBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
-    (0, import_obsidian11.setIcon)(handBtn.createSpan(), "pen-line");
+    (0, import_obsidian12.setIcon)(handBtn.createSpan(), "pen-line");
     handBtn.createSpan({ text: tr("A mano") });
     const typeBtn = modeRow.createEl("button", { cls: "notelens-ink-mode" });
-    (0, import_obsidian11.setIcon)(typeBtn.createSpan(), "keyboard");
+    (0, import_obsidian12.setIcon)(typeBtn.createSpan(), "keyboard");
     typeBtn.createSpan({ text: tr("Teclado") });
     const preview = contentEl.createDiv({ cls: "notelens-ink-preview" });
     const board = contentEl.createDiv({ cls: "notelens-ink-board" });
@@ -61270,7 +61558,7 @@ var InkEquationModal = class extends import_obsidian11.Modal {
     const tools = contentEl.createDiv({ cls: "notelens-ink-tools" });
     const toolButton = (icon, label, run) => {
       const button = tools.createEl("button", { cls: "notelens-ink-tool" });
-      (0, import_obsidian11.setIcon)(button.createSpan(), icon);
+      (0, import_obsidian12.setIcon)(button.createSpan(), icon);
       button.createSpan({ text: label });
       button.onclick = () => void run();
       return button;
@@ -61497,7 +61785,7 @@ var EXPERIMENTAL = {
 };
 
 // src/ui.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/eraser-sprite.ts
 var ERASER_SPRITE = "data:image/png;base64,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";
@@ -61553,7 +61841,7 @@ function setEraserIcon(el, size = 20) {
     if (!el.isConnected) return;
     el.empty();
     el.removeClass("notelens-eraser-icon");
-    (0, import_obsidian12.setIcon)(el, "eraser");
+    (0, import_obsidian13.setIcon)(el, "eraser");
   };
   image.addEventListener("error", fallback);
   image.addEventListener("load", () => {
@@ -61660,7 +61948,7 @@ function matchesPanelSearch(query, ...values) {
 function createPanelSearch(parent, placeholder, initialValue, onChange) {
   const row = parent.createDiv({ cls: "notelens-panel-search" });
   row.setAttr("role", "search");
-  (0, import_obsidian12.setIcon)(row.createSpan({ cls: "notelens-panel-search-icon" }), "search");
+  (0, import_obsidian13.setIcon)(row.createSpan({ cls: "notelens-panel-search-icon" }), "search");
   const input = row.createEl("input", { cls: "notelens-panel-search-input", type: "search" });
   input.placeholder = placeholder;
   input.value = initialValue;
@@ -61670,7 +61958,7 @@ function createPanelSearch(parent, placeholder, initialValue, onChange) {
   const count = row.createSpan({ cls: "notelens-panel-search-count" });
   count.setAttr("aria-live", "polite");
   const clearButton = row.createEl("button", { cls: "notelens-panel-search-clear" });
-  (0, import_obsidian12.setIcon)(clearButton, "x");
+  (0, import_obsidian13.setIcon)(clearButton, "x");
   clearButton.title = tr("Limpiar b\xFAsqueda");
   clearButton.setAttr("aria-label", tr("Limpiar b\xFAsqueda"));
   const notify = () => {
@@ -61733,7 +62021,7 @@ function createToolbar(host, container) {
     });
     btn.setAttr("data-tool", t3.id);
     if (t3.id === "eraser") setEraserIcon(btn, 21);
-    else (0, import_obsidian12.setIcon)(btn, t3.icon);
+    else (0, import_obsidian13.setIcon)(btn, t3.icon);
     btn.title = t3.title;
     btn.onclick = () => {
       const reopening = host.currentTool === t3.id;
@@ -61755,7 +62043,7 @@ function createToolbar(host, container) {
   bar.insertBefore(fingerBtn, toolButtons.get("pen"));
   const paintFinger = () => {
     const on = host.fingerDrawsOn();
-    (0, import_obsidian12.setIcon)(fingerBtn, on ? "pencil" : "hand");
+    (0, import_obsidian13.setIcon)(fingerBtn, on ? "pencil" : "hand");
     fingerBtn.title = on ? tr("El dedo dibuja. Pulsa para que mueva la pizarra.") : tr("El dedo mueve la pizarra. Pulsa para dibujar con \xE9l.");
     fingerBtn.setAttr("aria-label", fingerBtn.title);
     fingerBtn.toggleClass("active", on);
@@ -61775,7 +62063,7 @@ function createToolbar(host, container) {
     if (penBtn && penBtn.getAttr("data-nib") !== host.penStyle) {
       const nib = penStyleById(host.penStyle);
       penBtn.empty();
-      (0, import_obsidian12.setIcon)(penBtn, nib.icon);
+      (0, import_obsidian13.setIcon)(penBtn, nib.icon);
       penBtn.setAttr("data-nib", nib.id);
       penBtn.title = tr("{p0} (P) \u2014 opciones al pulsar de nuevo", { p0: tr(nib.label) });
     }
@@ -61798,77 +62086,77 @@ function createToolbar(host, container) {
   };
   bar.createDiv({ cls: "onenote-divider" });
   const undoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(undoBtn, "undo-2");
+  (0, import_obsidian13.setIcon)(undoBtn, "undo-2");
   undoBtn.title = tr("Deshacer (Ctrl+Z)");
   undoBtn.onclick = () => host.undo();
   const redoBtn = bar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(redoBtn, "redo-2");
+  (0, import_obsidian13.setIcon)(redoBtn, "redo-2");
   redoBtn.title = tr("Rehacer (Ctrl+Shift+Z)");
   redoBtn.onclick = () => host.redo();
   const insertBar = container.createDiv({ cls: "notelens-insert-dock" });
   shield(insertBar);
   const pdfBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(pdfBtn, "file-text");
+  (0, import_obsidian13.setIcon)(pdfBtn, "file-text");
   pdfBtn.title = tr("Insertar PDF de la b\xF3veda");
   pdfBtn.onclick = () => host.insertPdf();
   const videoBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(videoBtn, "play-circle");
+  (0, import_obsidian13.setIcon)(videoBtn, "play-circle");
   videoBtn.title = tr("Insertar v\xEDdeo: YouTube, TikTok, Instagram, X, Vimeo, Dailymotion, Loom\u2026 o un archivo de v\xEDdeo local");
   videoBtn.onclick = () => host.insertVideo();
   const imageBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(imageBtn, "image-plus");
+  (0, import_obsidian13.setIcon)(imageBtn, "image-plus");
   imageBtn.title = tr("Insertar imagen de la b\xF3veda");
   imageBtn.onclick = () => host.insertImage();
   const attachBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(attachBtn, "paperclip");
+  (0, import_obsidian13.setIcon)(attachBtn, "paperclip");
   attachBtn.title = tr("Adjuntar cualquier archivo de la b\xF3veda");
   attachBtn.onclick = () => host.insertFile();
   const linkBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(linkBtn, "link");
+  (0, import_obsidian13.setIcon)(linkBtn, "link");
   linkBtn.title = tr("Enlazar una nota o pizarra de la b\xF3veda");
   linkBtn.onclick = () => host.insertLink();
   const uploadBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(uploadBtn, "upload");
+  (0, import_obsidian13.setIcon)(uploadBtn, "upload");
   uploadBtn.title = tr("Subir archivo desde el dispositivo");
   uploadBtn.onclick = () => void host.uploadFileFromDevice();
   insertBar.createDiv({ cls: "onenote-divider" });
   const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(stickyBtn, "sticky-note");
+  (0, import_obsidian13.setIcon)(stickyBtn, "sticky-note");
   stickyBtn.title = tr("Nueva nota adhesiva");
   stickyBtn.onclick = () => host.addStickyNote();
   const tableBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(tableBtn, "table-2");
+  (0, import_obsidian13.setIcon)(tableBtn, "table-2");
   tableBtn.title = tr("Insertar tabla");
   tableBtn.onclick = () => host.insertTable();
   const codeBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(codeBtn, "code-2");
+  (0, import_obsidian13.setIcon)(codeBtn, "code-2");
   codeBtn.title = tr("Insertar bloque de c\xF3digo");
   codeBtn.onclick = () => host.insertCodeBlock();
   const chartBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(chartBtn, "bar-chart-3");
+  (0, import_obsidian13.setIcon)(chartBtn, "bar-chart-3");
   chartBtn.title = tr("Insertar gr\xE1fico: barras, l\xEDneas, circular, dispersi\xF3n o funci\xF3n y = f(x)");
   chartBtn.onclick = () => host.insertChart();
   const mathBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(mathBtn, "sigma");
+  (0, import_obsidian13.setIcon)(mathBtn, "sigma");
   mathBtn.title = tr("Insertar ecuaci\xF3n: escr\xEDbela a mano y se convierte sola, o teclea la notaci\xF3n. Tambi\xE9n vale $x^2$ dentro de cualquier texto");
   mathBtn.onclick = () => host.insertMathBlock();
   insertBar.createDiv({ cls: "onenote-divider" });
   const recorderBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(recorderBtn, "mic");
+  (0, import_obsidian13.setIcon)(recorderBtn, "mic");
   recorderBtn.title = tr("Grabar audio: se guarda como MP3 y se a\xF1ade a la pizarra");
   recorderBtn.onclick = () => host.toggleRecorder();
   const translateBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(translateBtn, "languages");
+  (0, import_obsidian13.setIcon)(translateBtn, "languages");
   translateBtn.title = tr("Traducir texto");
   translateBtn.onclick = () => host.translateText();
   const documentBar = container.createDiv({ cls: "notelens-document-dock" });
   shield(documentBar);
   const rulerBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(rulerBtn, "ruler");
+  (0, import_obsidian13.setIcon)(rulerBtn, "ruler");
   rulerBtn.title = tr("Mostrar regla inteligente");
   rulerBtn.onclick = () => host.toggleRuler();
   const straightBtn = documentBar.createEl("button", { cls: "onenote-dock-btn notelens-straight-btn" });
-  (0, import_obsidian12.setIcon)(straightBtn, "slash");
+  (0, import_obsidian13.setIcon)(straightBtn, "slash");
   straightBtn.title = tr("L\xEDneas rectas: mant\xE9n pulsado mientras dibujas (como May\xFAs en el ordenador)");
   straightBtn.setAttr("aria-label", straightBtn.title);
   straightBtn.toggleClass("hidden", !(navigator.maxTouchPoints > 0));
@@ -61896,33 +62184,33 @@ function createToolbar(host, container) {
     }
   });
   const a4Btn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(a4Btn, "file-stack");
+  (0, import_obsidian13.setIcon)(a4Btn, "file-stack");
   a4Btn.title = tr("Mostrar gu\xEDas de p\xE1gina A4");
   a4Btn.onclick = () => host.toggleA4Guides();
   documentBar.createDiv({ cls: "onenote-divider" });
   const bookmarkBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(bookmarkBtn, "bookmark-plus");
+  (0, import_obsidian13.setIcon)(bookmarkBtn, "bookmark-plus");
   bookmarkBtn.title = tr("Guardar marcador de secci\xF3n");
   bookmarkBtn.onclick = () => host.addViewportBookmark();
   const navBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(navBtn, "folder-tree");
+  (0, import_obsidian13.setIcon)(navBtn, "folder-tree");
   navBtn.title = tr("Navegar entre las pizarras y notas de la b\xF3veda");
   navBtn.onclick = () => host.toggleNavigator();
   const calcBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(calcBtn, "calculator");
+  (0, import_obsidian13.setIcon)(calcBtn, "calculator");
   calcBtn.title = tr("Calculadora cient\xEDfica");
   calcBtn.onclick = () => host.toggleCalculator();
   documentBar.createDiv({ cls: "onenote-divider" });
   const exportBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(exportBtn, "file-down");
+  (0, import_obsidian13.setIcon)(exportBtn, "file-down");
   exportBtn.title = tr("Exportar a PDF A4");
   exportBtn.onclick = () => void host.exportA4Pdf();
   const shareBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(shareBtn, "share-2");
+  (0, import_obsidian13.setIcon)(shareBtn, "share-2");
   shareBtn.title = tr("Exportar paquete editable de NoteLens");
   shareBtn.onclick = () => void host.exportSharePackage();
   const importBtn = documentBar.createEl("button", { cls: "onenote-dock-btn" });
-  (0, import_obsidian12.setIcon)(importBtn, "package-open");
+  (0, import_obsidian13.setIcon)(importBtn, "package-open");
   importBtn.title = tr("Importar paquete editable de NoteLens");
   importBtn.onclick = () => void host.importSharePackage();
   panelHooks(container).__refreshToolbar = () => {
@@ -61942,7 +62230,7 @@ function createToolbar(host, container) {
 function createBoardTitle(host, container) {
   const plaque = container.createDiv({ cls: "notelens-board-title" });
   shield(plaque);
-  (0, import_obsidian12.setIcon)(plaque.createSpan({ cls: "notelens-board-title-icon" }), "file-text");
+  (0, import_obsidian13.setIcon)(plaque.createSpan({ cls: "notelens-board-title-icon" }), "file-text");
   const name = plaque.createSpan({ cls: "notelens-board-title-name" });
   const page = plaque.createSpan({ cls: "notelens-board-title-page" });
   const refresh = () => {
@@ -61961,34 +62249,34 @@ function createNavigationControls(host, container) {
   const controls = container.createDiv({ cls: "notelens-navigation-controls" });
   shield(controls);
   const zoomOut = controls.createEl("button", { cls: "notelens-nav-btn" });
-  (0, import_obsidian12.setIcon)(zoomOut, "minus");
+  (0, import_obsidian13.setIcon)(zoomOut, "minus");
   zoomOut.title = tr("Alejar");
   zoomOut.onclick = () => host.zoomOut();
   const zoomLabel = controls.createEl("button", { cls: "notelens-zoom-label" });
   zoomLabel.title = tr("Restablecer zoom");
   zoomLabel.onclick = () => host.resetView();
   const zoomIn = controls.createEl("button", { cls: "notelens-nav-btn" });
-  (0, import_obsidian12.setIcon)(zoomIn, "plus");
+  (0, import_obsidian13.setIcon)(zoomIn, "plus");
   zoomIn.title = tr("Acercar");
   zoomIn.onclick = () => host.zoomIn();
   const reset = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-reset" });
-  (0, import_obsidian12.setIcon)(reset, "maximize");
+  (0, import_obsidian13.setIcon)(reset, "maximize");
   reset.title = tr("Restablecer vista");
   reset.onclick = () => host.resetView();
   const fit = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fit" });
-  (0, import_obsidian12.setIcon)(fit, "scan");
+  (0, import_obsidian13.setIcon)(fit, "scan");
   fit.title = tr("Ajustar la vista a todo el contenido");
   fit.onclick = () => host.fitToContent();
   const map = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-map" });
-  (0, import_obsidian12.setIcon)(map, "map");
+  (0, import_obsidian13.setIcon)(map, "map");
   map.title = tr("Mostrar u ocultar el minimapa");
   map.onclick = () => host.toggleMiniMap();
   const full = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-fullscreen" });
-  (0, import_obsidian12.setIcon)(full, "maximize-2");
+  (0, import_obsidian13.setIcon)(full, "maximize-2");
   full.title = tr("Pizarra a pantalla completa (Esc para salir)");
   full.onclick = () => host.toggleFullscreen();
   const help = controls.createEl("button", { cls: "notelens-nav-btn notelens-nav-help" });
-  (0, import_obsidian12.setIcon)(help, "keyboard");
+  (0, import_obsidian13.setIcon)(help, "keyboard");
   help.title = tr("Atajos de teclado");
   const shortcuts = createShortcutsPanel(container);
   help.onclick = () => {
@@ -62000,7 +62288,7 @@ function createNavigationControls(host, container) {
     map.toggleClass("active", host.getMiniMapVisible());
     full.toggleClass("active", host.isFullscreen());
     full.empty();
-    (0, import_obsidian12.setIcon)(full, host.isFullscreen() ? "minimize-2" : "maximize-2");
+    (0, import_obsidian13.setIcon)(full, host.isFullscreen() ? "minimize-2" : "maximize-2");
   };
   refresh();
   panelHooks(container).__refreshNavigation = refresh;
@@ -62011,7 +62299,7 @@ function createShortcutsPanel(container) {
   const header = panel.createDiv({ cls: "notelens-shortcuts-header" });
   header.createSpan({ text: tr("Atajos") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
-  (0, import_obsidian12.setIcon)(closeBtn, "x");
+  (0, import_obsidian13.setIcon)(closeBtn, "x");
   const groups = [
     ["Herramientas", [["V", "Seleccionar"], ["L", "Lazo"], ["M", "Mano: arrastra para moverte por la pizarra"], ["P", "L\xE1piz (pulsa de nuevo: bol\xEDgrafo, l\xE1piz, pluma, rotulador, pincel)"], ["H", "Subrayador"], ["E", "Goma"], ["T", "Texto"], ["S", "Formas"]]],
     ["Edici\xF3n", [["Ctrl+Z / Ctrl+Y", "Deshacer / rehacer"], ["Ctrl+A", "Seleccionar todo"], ["Ctrl+D", "Duplicar selecci\xF3n"], ["Ctrl+C / X / V", "Copiar, cortar y pegar"], ["Supr", "Borrar selecci\xF3n"], ["Flechas", "Mover selecci\xF3n (Shift: \xD710)"], ["Ctrl+F", "Buscar en la pizarra"]]],
@@ -62040,14 +62328,14 @@ function createBookmarksControl(host, container) {
   const dock = container.createDiv({ cls: "notelens-bookmarks-dock" });
   shield(dock);
   const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle" });
-  (0, import_obsidian12.setIcon)(toggle, "book-open-check");
+  (0, import_obsidian13.setIcon)(toggle, "book-open-check");
   toggle.title = tr("Marcadores de secci\xF3n");
   const panel = dock.createDiv({ cls: "notelens-bookmarks-panel hidden" });
   const panelHeader = panel.createDiv({ cls: "notelens-bookmarks-header" });
   panelHeader.createSpan({ text: tr("Marcadores") });
   const headerButtons = panelHeader.createDiv({ cls: "notelens-bookmarks-header-buttons" });
   const add = headerButtons.createEl("button", { cls: "notelens-table-control" });
-  (0, import_obsidian12.setIcon)(add, "plus");
+  (0, import_obsidian13.setIcon)(add, "plus");
   add.title = tr("Guardar posici\xF3n actual");
   let clearSearch = () => {
   };
@@ -62056,7 +62344,7 @@ function createBookmarksControl(host, container) {
     host.addViewportBookmark();
   };
   const closeBookmarks = headerButtons.createEl("button", { cls: "notelens-embed-close" });
-  (0, import_obsidian12.setIcon)(closeBookmarks, "x");
+  (0, import_obsidian13.setIcon)(closeBookmarks, "x");
   closeBookmarks.title = tr("Cerrar");
   closeBookmarks.onclick = () => panel.addClass("hidden");
   let searchQuery = "";
@@ -62161,11 +62449,11 @@ function createBookmarksControl(host, container) {
         startRename(item, go, bookmark);
       };
       const rename = item.createEl("button", { cls: "notelens-table-control" });
-      (0, import_obsidian12.setIcon)(rename, "pencil");
+      (0, import_obsidian13.setIcon)(rename, "pencil");
       rename.title = tr("Renombrar marcador");
       rename.onclick = () => startRename(item, go, bookmark);
       const remove = item.createEl("button", { cls: "notelens-table-control" });
-      (0, import_obsidian12.setIcon)(remove, "x");
+      (0, import_obsidian13.setIcon)(remove, "x");
       remove.title = tr("Eliminar marcador");
       remove.onclick = () => host.deleteViewportBookmark(bookmark.id);
       if (renameId === bookmark.id) {
@@ -62192,7 +62480,7 @@ function createPagesControl(host, container) {
   const dock = container.createDiv({ cls: "notelens-pages-dock" });
   shield(dock);
   const toggle = dock.createEl("button", { cls: "notelens-bookmarks-toggle notelens-pages-toggle" });
-  (0, import_obsidian12.setIcon)(toggle, "files");
+  (0, import_obsidian13.setIcon)(toggle, "files");
   toggle.title = tr("P\xE1ginas de la libreta");
   const count = toggle.createSpan({ cls: "notelens-pages-count" });
   const panel = dock.createDiv({ cls: "notelens-bookmarks-panel notelens-pages-panel hidden" });
@@ -62200,7 +62488,7 @@ function createPagesControl(host, container) {
   header.createSpan({ text: tr("P\xE1ginas") });
   const actions = header.createDiv({ cls: "notelens-bookmarks-header-buttons" });
   const add = actions.createEl("button", { cls: "notelens-table-control" });
-  (0, import_obsidian12.setIcon)(add, "file-plus-2");
+  (0, import_obsidian13.setIcon)(add, "file-plus-2");
   add.title = tr("A\xF1adir p\xE1gina");
   let clearSearch = () => {
   };
@@ -62209,7 +62497,7 @@ function createPagesControl(host, container) {
     host.addDocumentPage();
   };
   const close = actions.createEl("button", { cls: "notelens-embed-close" });
-  (0, import_obsidian12.setIcon)(close, "x");
+  (0, import_obsidian13.setIcon)(close, "x");
   close.title = tr("Cerrar");
   close.onclick = () => panel.addClass("hidden");
   let searchQuery = "";
@@ -62283,11 +62571,11 @@ function createPagesControl(host, container) {
         startRename(item, go, page);
       };
       const rename = item.createEl("button", { cls: "notelens-table-control" });
-      (0, import_obsidian12.setIcon)(rename, "pencil");
+      (0, import_obsidian13.setIcon)(rename, "pencil");
       rename.title = tr("Renombrar p\xE1gina");
       rename.onclick = () => startRename(item, go, page);
       const remove = item.createEl("button", { cls: "notelens-table-control notelens-page-remove" });
-      (0, import_obsidian12.setIcon)(remove, "x");
+      (0, import_obsidian13.setIcon)(remove, "x");
       remove.title = pages.length === 1 ? tr("Debe quedar al menos una p\xE1gina") : tr("Eliminar p\xE1gina");
       remove.toggleClass("is-disabled", pages.length === 1);
       remove.onclick = () => {
@@ -62318,7 +62606,7 @@ function createFocusModeControl(host, container) {
   button.onclick = () => host.toggleFocusMode();
   const refresh = () => {
     button.empty();
-    (0, import_obsidian12.setIcon)(button, host.getFocusModeEnabled() ? "eye" : "eye-off");
+    (0, import_obsidian13.setIcon)(button, host.getFocusModeEnabled() ? "eye" : "eye-off");
     button.title = host.getFocusModeEnabled() ? tr("Mostrar controles") : tr("Despejar la pantalla");
     button.toggleClass("active", host.getFocusModeEnabled());
   };
@@ -62329,7 +62617,7 @@ function createOptionsPanel(host, container, close) {
   const panel = container.createDiv({ cls: "notelens-pen-panel hidden" });
   shield(panel);
   const panelClose = panel.createEl("button", { cls: "notelens-panel-close" });
-  (0, import_obsidian12.setIcon)(panelClose, "x");
+  (0, import_obsidian13.setIcon)(panelClose, "x");
   panelClose.title = tr("Cerrar (Esc)");
   panelClose.setAttr("aria-label", panelClose.title);
   panelClose.onclick = () => close();
@@ -62337,7 +62625,7 @@ function createOptionsPanel(host, container, close) {
     const header = section.createDiv({ cls: "notelens-tool-panel-header" });
     const iconWrap = header.createDiv({ cls: "notelens-tool-panel-icon" });
     if (icon === "eraser") setEraserIcon(iconWrap, 19);
-    else (0, import_obsidian12.setIcon)(iconWrap, icon);
+    else (0, import_obsidian13.setIcon)(iconWrap, icon);
     header.createDiv({ cls: "notelens-tool-heading", text: tr(title) });
   }
   const selectSection = panel.createDiv({ cls: "notelens-panel-section notelens-panel-select" });
@@ -62351,7 +62639,7 @@ function createOptionsPanel(host, container, close) {
   ]) {
     const b3 = selectModeRow.createEl("button", { cls: "notelens-choice-card" });
     const top = b3.createDiv({ cls: "notelens-choice-top" });
-    (0, import_obsidian12.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
+    (0, import_obsidian13.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
     top.createSpan({ cls: "notelens-choice-name", text: tr(mode2.label) });
     b3.createSpan({ cls: "notelens-choice-hint", text: tr(mode2.hint) });
     b3.onclick = () => {
@@ -62390,7 +62678,7 @@ function createOptionsPanel(host, container, close) {
   const nibHint = penSection.createDiv({ cls: "notelens-panel-hint notelens-nib-hint" });
   for (const nib of PEN_STYLES) {
     const b3 = nibRow.createEl("button", { cls: "notelens-nib" });
-    (0, import_obsidian12.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
+    (0, import_obsidian13.setIcon)(b3.createSpan({ cls: "notelens-mode-icon" }), nib.icon);
     b3.createSpan({ text: tr(nib.label) });
     b3.title = tr(nib.hint);
     b3.setAttr("aria-label", tr(nib.label));
@@ -62437,7 +62725,7 @@ function createOptionsPanel(host, container, close) {
   for (const c3 of PALETTE_COLORS) addColorSwatch(paletteGrid, c3);
   const customRow = penSection.createDiv({ cls: "notelens-custom-color" });
   const customIcon = customRow.createSpan({ cls: "notelens-mode-icon" });
-  (0, import_obsidian12.setIcon)(customIcon, "pipette");
+  (0, import_obsidian13.setIcon)(customIcon, "pipette");
   customRow.createSpan({ text: tr(" Tinta personalizada...") });
   const colorInput = customRow.createEl("input");
   colorInput.type = "color";
@@ -62489,7 +62777,7 @@ function createOptionsPanel(host, container, close) {
   const highlighterPalette = highlighterSection.createDiv({ cls: "notelens-color-grid" });
   for (const c3 of HIGHLIGHTER_COLORS) addColorSwatch(highlighterPalette, c3, (hex) => host.setHighlighterColor(hex));
   const highlighterCustomRow = highlighterSection.createDiv({ cls: "notelens-custom-color" });
-  (0, import_obsidian12.setIcon)(highlighterCustomRow.createSpan({ cls: "notelens-mode-icon" }), "pipette");
+  (0, import_obsidian13.setIcon)(highlighterCustomRow.createSpan({ cls: "notelens-mode-icon" }), "pipette");
   highlighterCustomRow.createSpan({ text: tr(" Fluor personalizado...") });
   const highlighterColorInput = highlighterCustomRow.createEl("input");
   highlighterColorInput.type = "color";
@@ -62549,7 +62837,7 @@ function createOptionsPanel(host, container, close) {
   ]) {
     const b3 = eraserModeRow.createEl("button", { cls: "notelens-choice-card" });
     const top = b3.createDiv({ cls: "notelens-choice-top" });
-    (0, import_obsidian12.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
+    (0, import_obsidian13.setIcon)(top.createSpan({ cls: "notelens-mode-icon" }), mode2.icon);
     top.createSpan({ cls: "notelens-choice-name", text: tr(mode2.label) });
     b3.createSpan({ cls: "notelens-choice-hint", text: tr(mode2.hint) });
     b3.onclick = () => {
@@ -62615,7 +62903,7 @@ function createOptionsPanel(host, container, close) {
   ];
   for (const shape of shapes) {
     const b3 = shapeRow.createEl("button", { cls: "notelens-shape-choice" });
-    (0, import_obsidian12.setIcon)(b3, shape.icon);
+    (0, import_obsidian13.setIcon)(b3, shape.icon);
     b3.title = shape.title;
     b3.onclick = () => {
       host.setShapeKind(shape.kind);
@@ -62695,7 +62983,7 @@ function createOptionsPanel(host, container, close) {
     const nib = penStyleById(host.penStyle);
     penHeading.setText(tr(nib.label));
     penHeadingIcon.empty();
-    (0, import_obsidian12.setIcon)(penHeadingIcon, nib.icon);
+    (0, import_obsidian13.setIcon)(penHeadingIcon, nib.icon);
     nibHint.setText(tr(nib.hint));
     for (const [b3, id] of nibButtons) b3.toggleClass("active", id === host.penStyle);
     if (!panel.hasClass("hidden")) renderPreview();
@@ -62725,7 +63013,7 @@ function createQuickTagsBar(container, onPick, onSummary) {
     chip.title = tr(TAG_HINTS[t3.id] ?? t3.label);
     chip.style.setProperty("--tag-color", t3.color);
     const iconEl = chip.createSpan({ cls: "onenote-tag-icon" });
-    (0, import_obsidian12.setIcon)(iconEl, t3.icon);
+    (0, import_obsidian13.setIcon)(iconEl, t3.icon);
     chip.createSpan({ text: tr(t3.label) });
     chip.onclick = () => {
       setActive(t3.id);
@@ -62736,7 +63024,7 @@ function createQuickTagsBar(container, onPick, onSummary) {
   if (onSummary) {
     bar.createDiv({ cls: "onenote-divider" });
     const summary = bar.createEl("button", { cls: "onenote-tag-chip onenote-tag-summary" });
-    (0, import_obsidian12.setIcon)(summary.createSpan({ cls: "onenote-tag-icon" }), "list-checks");
+    (0, import_obsidian13.setIcon)(summary.createSpan({ cls: "onenote-tag-icon" }), "list-checks");
     summary.createSpan({ text: tr("Resumen") });
     summary.title = tr("Todas las etiquetas de la pizarra: tareas pendientes, dudas, ideas e importantes");
     summary.onclick = onSummary;
@@ -62745,7 +63033,7 @@ function createQuickTagsBar(container, onPick, onSummary) {
 }
 function createSettingsPanel(host, container) {
   const btn = container.createEl("button", { cls: "notelens-settings-btn" });
-  (0, import_obsidian12.setIcon)(btn, "settings");
+  (0, import_obsidian13.setIcon)(btn, "settings");
   btn.setAttr("aria-label", tr("Formato del fondo"));
   btn.title = tr("Formato del fondo");
   shield(btn);
@@ -62754,7 +63042,7 @@ function createSettingsPanel(host, container) {
   const header = panel.createDiv({ cls: "notelens-settings-header" });
   header.createSpan({ text: tr("Formato del fondo") });
   const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
-  (0, import_obsidian12.setIcon)(closeBtn, "x");
+  (0, import_obsidian13.setIcon)(closeBtn, "x");
   closeBtn.onclick = () => panel.addClass("hidden");
   panel.createDiv({ cls: "notelens-settings-label", text: tr("Estilo de p\xE1gina") });
   const bgRow = panel.createDiv({ cls: "notelens-settings-row notelens-settings-row-grid" });
@@ -62765,7 +63053,7 @@ function createSettingsPanel(host, container) {
       cls: `notelens-settings-choice ${activeBackground === opt.id ? "active" : ""}`
     });
     const iconEl = b3.createSpan({ cls: "notelens-settings-choice-icon" });
-    (0, import_obsidian12.setIcon)(iconEl, opt.icon);
+    (0, import_obsidian13.setIcon)(iconEl, opt.icon);
     b3.createSpan({ cls: "notelens-settings-choice-label", text: tr(opt.label) });
     b3.title = tr(opt.label);
     b3.onclick = () => {
@@ -62776,13 +63064,13 @@ function createSettingsPanel(host, container) {
     bgButtons.push([b3, opt.id]);
   }
   const openSettings = panel.createEl("button", { cls: "notelens-settings-link" });
-  (0, import_obsidian12.setIcon)(openSettings.createSpan(), "settings-2");
+  (0, import_obsidian13.setIcon)(openSettings.createSpan(), "settings-2");
   openSettings.createSpan({ text: tr("Ajustes del plugin") });
   openSettings.title = tr("Abre los ajustes de NoteLens en Obsidian");
   openSettings.onclick = () => host.openPluginSettings();
   const marginControl = panel.createEl("label", { cls: "notelens-settings-margin" });
   const marginIcon = marginControl.createSpan({ cls: "notelens-settings-margin-icon" });
-  (0, import_obsidian12.setIcon)(marginIcon, "separator-vertical");
+  (0, import_obsidian13.setIcon)(marginIcon, "separator-vertical");
   const marginCopy = marginControl.createSpan({ cls: "notelens-settings-margin-copy" });
   marginCopy.createSpan({ cls: "notelens-settings-margin-title", text: tr("Margen izquierdo") });
   marginCopy.createSpan({ cls: "notelens-settings-margin-hint", text: tr("Independiente del estilo") });
@@ -62846,7 +63134,7 @@ function createSettingsPanel(host, container) {
     };
   }
   const customPage = panel.createDiv({ cls: "notelens-custom-color notelens-paper-custom" });
-  (0, import_obsidian12.setIcon)(customPage.createSpan({ cls: "notelens-mode-icon" }), "palette");
+  (0, import_obsidian13.setIcon)(customPage.createSpan({ cls: "notelens-mode-icon" }), "palette");
   customPage.createSpan({ text: tr(" Color de p\xE1gina personalizado") });
   const customPageInput = customPage.createEl("input");
   customPageInput.type = "color";
@@ -62857,7 +63145,7 @@ function createSettingsPanel(host, container) {
   };
   panel.createDiv({ cls: "notelens-settings-sep" });
   const resetBtn = panel.createEl("button", { cls: "notelens-settings-action" });
-  (0, import_obsidian12.setIcon)(resetBtn.createSpan(), "maximize");
+  (0, import_obsidian13.setIcon)(resetBtn.createSpan(), "maximize");
   resetBtn.createSpan({ text: tr(" Restablecer vista") });
   resetBtn.onclick = () => {
     host.resetView();
@@ -62884,16 +63172,29 @@ var A4_SCENE_H2 = 1123;
 var TEXT_COLORS2 = ["#f8fafc", "#111827", "#38bdf8", "#ef4444", "#22c55e", "#a855f7", "#eab308"];
 var TEXT_HIGHLIGHTS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fbcfe8", "#ddd6fe", "#a7f3d0", "#fed7aa"];
 var DEFAULT_TEXT_HIGHLIGHT = TEXT_HIGHLIGHTS[0];
-function paintPrismTokens(parent, tokens) {
+function flattenPrismTokens(tokens, cls = []) {
+  const out = [];
   for (const token of Array.isArray(tokens) ? tokens : [tokens]) {
     if (typeof token === "string") {
-      parent.appendText(token);
+      if (token) out.push({ text: token, cls });
       continue;
     }
     const aliases = Array.isArray(token.alias) ? token.alias : token.alias ? [token.alias] : [];
-    const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
-    paintPrismTokens(span, token.content);
+    const own = [...cls, "token", token.type, ...aliases].filter(Boolean);
+    out.push(...flattenPrismTokens(token.content, own));
   }
+  return out;
+}
+function splitTokensIntoLines(pieces) {
+  const lines = [[]];
+  for (const piece of pieces) {
+    const parts = piece.text.split("\n");
+    parts.forEach((part, index) => {
+      if (index > 0) lines.push([]);
+      if (part) lines[lines.length - 1].push({ text: part, cls: piece.cls });
+    });
+  }
+  return lines;
 }
 function continueList(editor) {
   const value = editor.value;
@@ -62976,12 +63277,59 @@ var LANGUAGE_ALIASES = {
   text: "plaintext",
   txt: "plaintext"
 };
+var LANGUAGE_SIGNS = [
+  ["python", [/^[ \t]*def [\w_]+\s*\(.*\)\s*(?:->[^:]+)?:/m, /^[ \t]*from [\w.]+ import /m, /^[ \t]*(?:el)?if .+:[ \t]*$/m, /^[ \t]*class [\w_]+(?:\(.*\))?:/m, /\bself\b/, /\b(?:None|True|False)\b/, /\bprint\(/, /^[ \t]*(?:for|while) .+:[ \t]*$/m]],
+  ["typescript", [/\binterface [A-Z]\w*\s*\{/, /^[ \t]*(?:export )?type [A-Z]\w* =/m, /:\s*(?:string|number|boolean|void|any|unknown)\b/, /\bimplements \w/, /\bas [A-Z]\w*\b/, /\breadonly \w/, /\benum [A-Z]\w*/]],
+  ["javascript", [/\b(?:const|let|var) \w+\s*=/, /\bfunction\s*\w*\s*\(/, /=>\s*[{(]/, /\bconsole\.log\(/, /\b(?:require|import)\s*[(\w]/, /\bdocument\.querySelector/, /===|!==/]],
+  ["csharp", [/\busing System\b/, /\bnamespace \w/, /\bpublic (?:class|static|void|string|int)\b/, /\bConsole\.Write/, /\bvar \w+\s*=\s*new\b/]],
+  ["java", [/\bpublic class \w/, /\bpublic static void main\b/, /\bSystem\.out\.print/, /\bimport java\./, /\b(?:private|protected) \w+ \w+\s*[;=(]/]],
+  ["kotlin", [/\bfun \w+\s*\(/, /\bval \w+\s*[:=]/, /\bvar \w+\s*:\s*\w/, /\bprintln\(/]],
+  ["swift", [/\bfunc \w+\s*\(/, /\blet \w+\s*[:=]/, /\bimport (?:Foundation|SwiftUI|UIKit)\b/, /\bguard let\b/]],
+  ["go", [/\bpackage main\b/, /\bfunc \w+\s*\([^)]*\)\s*\w*\s*\{/, /:=/, /\bfmt\.(?:Print|Sprint)/, /\bimport \(/]],
+  ["rust", [/\bfn \w+\s*\(/, /\blet mut \b/, /\bprintln!\(/, /\bimpl \w/, /\b(?:pub|use) (?:fn|struct|crate|std)\b/, /->\s*(?:Result|Option|\w+)</]],
+  ["cpp", [/#include\s*<(?:iostream|vector|string|map)>/, /\bstd::/, /\bcout\s*<</, /\btemplate\s*</, /\busing namespace std\b/]],
+  ["c", [/#include\s*<(?:stdio|stdlib|string)\.h>/, /\bprintf\s*\(/, /\bint main\s*\(/, /\bmalloc\s*\(/, /\bstruct \w+\s*\{/]],
+  ["php", [/<\?php/, /\$\w+\s*=/, /\becho\b/, /\bfunction \w+\s*\(\s*\$/]],
+  ["ruby", [/\bdef \w+[\s(]/, /^[ \t]*end[ \t]*$/m, /\bputs\b/, /\brequire ['"]/, /\bdo \|\w+\|/]],
+  ["sql", [/\bSELECT\b[\s\S]+\bFROM\b/i, /\bINSERT INTO\b/i, /\bCREATE TABLE\b/i, /\b(?:LEFT|INNER|RIGHT) JOIN\b/i, /\b(?:GROUP|ORDER) BY\b/i, /\bUPDATE\b[\s\S]+\bSET\b/i]],
+  ["powershell", [/\bGet-\w+|\bSet-\w+|\bNew-\w+/, /\bWrite-(?:Host|Output)\b/, /\bparam\s*\(/i, /\$\w+\s*=\s*/]],
+  ["bash", [/^#!.*\b(?:ba|z)?sh\b/m, /^[ \t]*(?:echo|cd|mkdir|rm|cp|mv|grep|sed|awk|curl|chmod) /m, /\$\{\w+\}/, /^[ \t]*(?:if|for|while) .*(?:; then|; do)[ \t]*$/m, /\|\s*(?:grep|awk|sed|xargs)\b/]],
+  ["css", [/^[ \t]*[.#]?[\w-]+[^\n{]*\{[^}]*:[^}]*;/m, /\b(?:margin|padding|display|color|background|font-size)\s*:/, /@media\b/, /\b\d+(?:px|rem|em|vh|vw)\b/]],
+  ["markup", [/<\/(?:div|span|p|body|html|head|section|li|ul|table)>/, /<(?:!DOCTYPE html|html|div|span|p)\b/i, /<\w+[^>]*\/>/, /<\?xml\b/]],
+  ["yaml", [/^[ \t]*[\w-]+:\s*(?:$|[^{[\n])/m, /^[ \t]*- [\w"']/m, /^---[ \t]*$/m]],
+  ["latex", [/\\(?:begin|end)\{\w+\}/, /\\(?:documentclass|usepackage|section|frac|textbf)\b/, /\$\$[\s\S]+\$\$/]],
+  ["markdown", [/^#{1,6} \S/m, /^[ \t]*[-*+] \S/m, /\[[^\]]+\]\([^)]+\)/, /^>[ \t]/m, /\*\*[^*]+\*\*/]],
+  ["r", [/<-\s*(?:function|c\()/, /\blibrary\(\w+\)/, /\bdata\.frame\(/, /\bggplot\(/]],
+  ["matlab", [/^[ \t]*function\s+(?:\[?[\w, ]+\]?\s*=\s*)?\w+\(/m, /\bdisp\(/, /^[ \t]*end[ \t]*$/m, /\bzeros\(|\bones\(/]]
+];
+function detectLanguage(text) {
+  const source = text.trim();
+  if (source.length < 12) return null;
+  if (/^[[{]/.test(source) && /[}\]]$/.test(source)) {
+    try {
+      const parsed = JSON.parse(source);
+      if (parsed && typeof parsed === "object") return "json";
+    } catch {
+    }
+  }
+  let best = null;
+  for (const [id, signs] of LANGUAGE_SIGNS) {
+    let score = 0;
+    for (const sign of signs) if (sign.test(source)) score++;
+    if (score > (best?.score ?? 0)) best = { id, score };
+  }
+  return best && best.score >= 2 ? best.id : null;
+}
 function normalizeLanguage(raw) {
   const key2 = (raw ?? "").trim().toLowerCase();
   if (!key2) return "plaintext";
   return LANGUAGE_ALIASES[key2] ?? key2;
 }
 var CANVAS_MENU_TOOLS = ["hand", "select"];
+var INK_FREE_EMBEDS = ["youtube", "web-video", "video", "audio", "epub", "file", "note", "board", "chart"];
+var TAP_SLOP = 8;
+var TAP_MAX_MS = 350;
+var DOUBLE_TAP_MS = 320;
 var RULER_HEIGHT = 54;
 function withMark(run, key2, on) {
   const next = { ...run };
@@ -63025,7 +63373,7 @@ function richChange(command, value, current) {
       return null;
   }
 }
-var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileView {
+var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian14.FileView {
   constructor(leaf, plugin) {
     super(leaf);
     this.allowNoFile = false;
@@ -63290,6 +63638,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.stageEl = this.workspaceEl.createDiv({ cls: "onenote-stage" });
     this.domLayerEl = this.stageEl.createDiv({ cls: "onenote-dom-layer" });
     this.renderer = new CanvasRenderer(this.workspaceEl);
+    this.topStageEl = this.workspaceEl.createDiv({ cls: "onenote-top-stage" });
+    this.topLayerEl = this.topStageEl.createDiv({ cls: "onenote-dom-layer onenote-top-layer" });
     this.registerDomEvent(this.renderer.canvas, "contextlost", (event) => event.preventDefault());
     this.registerDomEvent(this.renderer.canvas, "contextrestored", () => this.handleResize());
     this.register(() => {
@@ -63314,17 +63664,17 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       () => this.saver?.currentPayload() ?? null
     );
     this.saver = new PersistenceManager(this.app, () => this.loadFailed ? null : this.file, () => {
-      new import_obsidian13.Notice(tr("No se ha podido guardar la pizarra. Conserva esta pesta\xF1a abierta y comprueba el almacenamiento."), 1e4);
+      new import_obsidian14.Notice(tr("No se ha podido guardar la pizarra. Conserva esta pesta\xF1a abierta y comprueba el almacenamiento."), 1e4);
     });
     this.applySettings();
     this.plugin.openBoards.add(this);
     this.buildChrome();
-    void (0, import_obsidian13.loadMathJax)();
-    void (0, import_obsidian13.loadPrism)().then((prism) => {
+    void (0, import_obsidian14.loadMathJax)();
+    void (0, import_obsidian14.loadPrism)().then((prism) => {
       this.prism = prism;
       for (const tb of this.pageTexts) {
         if (tb.variant !== "code") continue;
-        const el = this.domLayerEl.querySelector(`[data-id="${tb.id}"]`);
+        const el = this.pageElement(tb.id);
         if (el && el !== this.activeTextSourceEl) {
           this.paintTextContent(el, tb);
           this.syncFittedSize(el, tb);
@@ -63388,7 +63738,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       console.error("NoteLens: error loading file", e);
       this.loadFailed = true;
       this.data = createEmptyDocument();
-      new import_obsidian13.Notice(tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando est\xE9 disponible."), 1e4);
+      new import_obsidian14.Notice(tr("No se ha podido leer la pizarra. El archivo original queda protegido; vuelve a abrirlo cuando est\xE9 disponible."), 1e4);
     }
     if (this.workspaceEl) {
       this.workspaceEl.inert = this.loadFailed;
@@ -63423,7 +63773,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   updateSafeInsets() {
     if (!this.workspaceEl) return;
     const host = this.workspaceEl.parentElement ?? this.workspaceEl;
-    if (!import_obsidian13.Platform.isMobile) {
+    if (!import_obsidian14.Platform.isMobile) {
       host.style.removeProperty("--nl-safe-bottom");
       return;
     }
@@ -63433,7 +63783,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     const navbar = host.ownerDocument.querySelector(".mobile-navbar");
     const measured = navbar?.offsetHeight ?? 0;
-    const reserved = measured > 0 ? measured + 10 : import_obsidian13.Platform.isPhone ? 68 : 0;
+    const reserved = measured > 0 ? measured + 10 : import_obsidian14.Platform.isPhone ? 68 : 0;
     host.style.setProperty("--nl-safe-bottom", `calc(${reserved}px + env(safe-area-inset-bottom, 0px))`);
   }
   handleResize() {
@@ -63445,7 +63795,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.applyStageTransform();
     this.renderInk();
     this.updateMarginLinePosition();
-    this.workspaceEl.toggleClass("is-short", import_obsidian13.Platform.isMobile && rect.height < 260);
+    this.workspaceEl.toggleClass("is-short", import_obsidian14.Platform.isMobile && rect.height < 260);
     if (rect.width <= 700 && this.lastOpenedPanel) this.closeOtherPanelsIfNarrow(this.lastOpenedPanel);
   }
   // ------------------------------------------------------------------
@@ -63468,16 +63818,41 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.renderA4Guides();
     this.renderMiniMap();
   }
+  /** One page element by id, wherever it was drawn: under the ink or above it. */
+  pageElement(id) {
+    const selector = `[data-id="${id}"]`;
+    return this.domLayerEl.querySelector(selector) ?? this.topLayerEl.querySelector(selector);
+  }
+  /** Where an embed is drawn: over the ink if it is something you operate. */
+  layerFor(embed) {
+    return INK_FREE_EMBEDS.includes(embed.kind) ? this.topLayerEl : this.domLayerEl;
+  }
+  /**
+   * Where a text box is drawn. A note card is a thing you stick on the board
+   * and move about, and a code block carries its own buttons; neither is
+   * paper to write over. Prose and formulas are, so they stay under the ink.
+   */
+  layerForText(tb) {
+    return tb.stickyColor || tb.variant === "code" ? this.topLayerEl : this.domLayerEl;
+  }
+  /** Both halves of the page, for the marks that can land on either. */
+  pageLayers() {
+    return [this.domLayerEl, this.topLayerEl];
+  }
   renderDomLayer() {
     this.domLayerEl.empty();
+    this.topLayerEl.empty();
+    this.renderBookmarkMarkers();
     for (const b3 of this.pageBadges) this.renderBadge(b3);
     for (const t3 of this.pageTexts) this.renderTextBox(t3);
     for (const table of this.pageTables) this.renderTable(table);
-    for (const e of this.pageEmbeds) renderEmbedFrame(this, this.domLayerEl, e);
+    for (const e of this.pageEmbeds) renderEmbedFrame(this, this.layerFor(e), e);
   }
   applyStageTransform() {
     const { x: x4, y: y3, scale } = this.data.viewTransform;
-    this.stageEl.style.transform = `translate(${x4}px, ${y3 - this.keyboardLift}px) scale(${scale})`;
+    const transform = `translate(${x4}px, ${y3 - this.keyboardLift}px) scale(${scale})`;
+    this.stageEl.style.transform = transform;
+    this.topStageEl.style.transform = transform;
     this.updateBackgroundPosition();
     this.renderA4Guides();
     this.renderMiniMap();
@@ -63567,7 +63942,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.renderRuler();
     };
     const closeRuler = label.createEl("button", { cls: "notelens-embed-close notelens-ruler-close" });
-    (0, import_obsidian13.setIcon)(closeRuler, "x");
+    (0, import_obsidian14.setIcon)(closeRuler, "x");
     closeRuler.title = tr("Ocultar la regla");
     closeRuler.setAttr("aria-label", tr("Ocultar la regla"));
     closeRuler.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -63669,6 +64044,16 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   isRulerVisible() {
     return this.rulerState.visible;
+  }
+  /**
+   * Whether a press-and-hold here belongs to the drawing rather than to a
+   * menu. Windows hands a long press over as a right-click with "mouse"
+   * written on it, so the tool decides and not the pointer; a machine with no
+   * touch screen keeps its right-click with every tool.
+   */
+  longPressIsDrawing() {
+    if (CANVAS_MENU_TOOLS.includes(this.currentTool)) return false;
+    return this.isDrawing || this.coarsePointer();
   }
   isStraightLineHeld() {
     return this.straightLineHeld;
@@ -63812,7 +64197,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     return this.miniMapVisible;
   }
   toggleFullscreen() {
-    if (import_obsidian13.Platform.isMobile) {
+    if (import_obsidian14.Platform.isMobile) {
       this.commitTextEditor();
       if (this.stopMobileFullscreen) {
         this.stopMobileFullscreen();
@@ -63830,9 +64215,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       void document.exitFullscreen().catch(() => {
       });
     } else if (target.requestFullscreen) {
-      void target.requestFullscreen().catch(() => new import_obsidian13.Notice(tr("Obsidian no permite pantalla completa aqu\xED.")));
+      void target.requestFullscreen().catch(() => new import_obsidian14.Notice(tr("Obsidian no permite pantalla completa aqu\xED.")));
     } else {
-      new import_obsidian13.Notice(tr("Este dispositivo no permite pantalla completa."));
+      new import_obsidian14.Notice(tr("Este dispositivo no permite pantalla completa."));
     }
   }
   isFullscreen() {
@@ -64036,6 +64421,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.assistant = null;
     for (const child of Array.from(this.workspaceEl.children)) {
       if (child.classList.contains("onenote-stage")) continue;
+      if (child.classList.contains("onenote-top-stage")) continue;
       if (child.classList.contains("onenote-canvas")) continue;
       child.remove();
     }
@@ -64092,10 +64478,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const wrap = this.workspaceEl.createDiv({ cls: "notelens-minimap" });
     wrap.toggleClass("hidden", !this.miniMapVisible);
     const header = wrap.createDiv({ cls: "notelens-minimap-header" });
-    (0, import_obsidian13.setIcon)(header.createSpan({ cls: "notelens-minimap-icon" }), "map");
+    (0, import_obsidian14.setIcon)(header.createSpan({ cls: "notelens-minimap-icon" }), "map");
     header.createSpan({ cls: "notelens-minimap-title", text: tr("Mapa") });
     const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
-    (0, import_obsidian13.setIcon)(closeBtn, "x");
+    (0, import_obsidian14.setIcon)(closeBtn, "x");
     closeBtn.title = tr("Ocultar el mapa");
     closeBtn.onclick = () => this.toggleMiniMap();
     const canvas = wrap.createEl("canvas");
@@ -64210,7 +64596,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       ctx.stroke();
     }
     for (const t3 of this.pageTexts) {
-      const el = this.domLayerEl.querySelector(`[data-id="${t3.id}"]`);
+      const el = this.pageElement(t3.id);
       const w3 = el?.offsetWidth || t3.w || 200;
       const h3 = el?.offsetHeight || t3.h || 40;
       const fill2 = t3.stickyColor ? hexToRgba(t3.stickyColor, 0.9) : t3.variant === "code" ? "rgba(125, 211, 252, 0.45)" : t3.variant === "math" ? "rgba(167, 139, 250, 0.55)" : light ? "rgba(15, 23, 42, 0.3)" : "rgba(226, 232, 240, 0.5)";
@@ -64295,7 +64681,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.swallowNextCanvasMenu = false;
         return;
       }
-      if (!CANVAS_MENU_TOOLS.includes(this.currentTool) && (this.isDrawing || this.coarsePointer())) return;
+      if (this.longPressIsDrawing()) return;
       this.showCanvasMenu(e);
     });
     this.registerDomEvent(window, "keydown", (e) => this.onKeyDown(e));
@@ -64323,7 +64709,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   showCanvasMenu(e) {
     const pt2 = this.getSceneCoords(e.clientX, e.clientY);
-    const menu = new import_obsidian13.Menu();
+    const menu = new import_obsidian14.Menu();
     menu.addItem((item) => item.setTitle(tr("Cuadro de texto aqu\xED")).setIcon("type").onClick(() => this.createTextBoxAt(pt2.x, pt2.y)));
     menu.addItem((item) => item.setTitle(tr("Nota adhesiva aqu\xED")).setIcon("sticky-note").onClick(() => this.createStickyNoteAt(pt2.x, pt2.y)));
     menu.addItem((item) => item.setTitle(tr("Tabla aqu\xED")).setIcon("table-2").onClick(() => this.insertTableAt(pt2.x, pt2.y)));
@@ -64380,7 +64766,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.pasteObjects(JSON.parse(text.slice(CLIP_PREFIX.length)));
       } catch (err3) {
         console.error("NoteLens: paste failed", err3);
-        new import_obsidian13.Notice(tr("No se pudo pegar la selecci\xF3n."));
+        new import_obsidian14.Notice(tr("No se pudo pegar la selecci\xF3n."));
       }
       return;
     }
@@ -64408,7 +64794,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       }
       if (text.trim()) {
         if (/^([a-zA-Z]:[\\/]|\/\/|file:\/\/)/.test(text.trim()) && /\.[a-z0-9]{2,5}$/i.test(text.trim())) {
-          new import_obsidian13.Notice(tr("Ese archivo est\xE1 fuera de la b\xF3veda, as\xED que se pega como texto."), 4e3);
+          new import_obsidian14.Notice(tr("Ese archivo est\xE1 fuera de la b\xF3veda, as\xED que se pega como texto."), 4e3);
         }
         e.preventDefault();
         this.history.push();
@@ -64455,12 +64841,12 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         h: 0
       };
       this.data.embeds.push(embed);
-      renderEmbedFrame(this, this.domLayerEl, embed);
+      renderEmbedFrame(this, this.layerFor(embed), embed);
       this.save();
-      new import_obsidian13.Notice(tr("Imagen pegada en la pizarra"));
+      new import_obsidian14.Notice(tr("Imagen pegada en la pizarra"));
     } catch (err3) {
       console.error("NoteLens: paste failed", err3);
-      new import_obsidian13.Notice(tr("NoteLens: no se pudo pegar la imagen."));
+      new import_obsidian14.Notice(tr("NoteLens: no se pudo pegar la imagen."));
     }
   }
   onKeyDown(e) {
@@ -64634,7 +65020,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   getInsertionPoint(w3, h3) {
     const c3 = this.getViewportCenterScene();
     const measured = (item) => {
-      const el = this.domLayerEl.querySelector(`[data-id="${item.id}"]`);
+      const el = this.pageElement(item.id);
       return { x: item.x, y: item.y, w: item.w ?? el?.offsetWidth ?? 260, h: item.h ?? el?.offsetHeight ?? 60 };
     };
     const rects = [...this.pageTexts, ...this.pageTables, ...this.pageEmbeds].map(measured);
@@ -64701,6 +65087,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       this.startPan(e);
       return;
     }
+    if (this.shouldPassPointerToCanvas() && e.target?.closest(".onenote-top-stage")) return;
     const tipErase = e.pointerType === "pen" && e.button === 5;
     if (e.button !== 0 && !tipErase) return;
     const pt2 = this.getSceneCoords(e.clientX, e.clientY);
@@ -64729,9 +65116,9 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         this.lassoPoints = [pt2];
         this.lassoEl = createSvg("svg", { cls: "onenote-lasso" });
         this.lassoEl.createSvg("polygon");
-        this.domLayerEl.appendChild(this.lassoEl);
+        this.topLayerEl.appendChild(this.lassoEl);
       } else {
-        this.rubberEl = this.domLayerEl.createDiv({ cls: "onenote-rubberband" });
+        this.rubberEl = this.topLayerEl.createDiv({ cls: "onenote-rubberband" });
         this.positionRubber(pt2, pt2);
       }
       return;
@@ -64953,7 +65340,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     void this.plugin.saveSettings();
     this.syncToolbar();
-    new import_obsidian13.Notice(on ? tr("El dedo dibuja. Dos dedos mueven la pizarra.") : tr("El dedo mueve la pizarra."));
+    new import_obsidian14.Notice(on ? tr("El dedo dibuja. Dos dedos mueven la pizarra.") : tr("El dedo mueve la pizarra."));
   }
   /** Remembers the stylus across boards and restarts, not just this session. */
   rememberPen() {
@@ -65190,7 +65577,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   /** Scene-space rect of a DOM-layer element, from its live element. */
   elementSceneRect(id) {
-    const el = this.domLayerEl.querySelector(`[data-id="${id}"]`);
+    const el = this.pageElement(id);
     if (!el) return null;
     const badge = this.data.badges.find((item) => item.id === id);
     const scale = badge?.scale ?? 1;
@@ -65265,14 +65652,14 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   renderSelectionBox() {
     this.selectionBoxEl?.remove();
     this.selectionBoxEl = null;
-    this.domLayerEl.querySelectorAll(".notelens-selected").forEach((el) => el.removeClass("notelens-selected"));
+    for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-selected").forEach((el) => el.removeClass("notelens-selected"));
     const b3 = this.selectionBounds();
     if (!b3) return;
     for (const id of [...this.selBadges, ...this.selTexts, ...this.selTables, ...this.selEmbeds]) {
-      this.domLayerEl.querySelector(`[data-id="${id}"]`)?.addClass("notelens-selected");
+      this.pageElement(id)?.addClass("notelens-selected");
     }
     const pad = 8;
-    const box = this.domLayerEl.createDiv({ cls: "onenote-selection-box" });
+    const box = this.topLayerEl.createDiv({ cls: "onenote-selection-box" });
     box.style.left = `${b3.x - pad}px`;
     box.style.top = `${b3.y - pad}px`;
     box.style.width = `${b3.w + pad * 2}px`;
@@ -65289,7 +65676,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     });
     const action = (icon, title, run) => {
       const button = bar.createEl("button", { cls: "notelens-selection-action" });
-      (0, import_obsidian13.setIcon)(button, icon);
+      (0, import_obsidian14.setIcon)(button, icon);
       button.title = tr(title);
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -65350,7 +65737,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     };
     const startAngle = angleAt(event);
     let applied = 0;
-    const badge = this.domLayerEl.createDiv({ cls: "notelens-rotation-badge" });
+    const badge = this.topLayerEl.createDiv({ cls: "notelens-rotation-badge" });
     const showBadge = (deg) => {
       badge.setText(`${Math.round((deg % 360 + 360) % 360)}\xB0`);
       badge.style.left = `${center.x}px`;
@@ -65410,7 +65797,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       shape.rotation = norm((shape.rotation ?? 0) + deg);
     }
     const orbit = (obj, id, turns) => {
-      const el = this.domLayerEl.querySelector(`[data-id="${id}"]`);
+      const el = this.pageElement(id);
       if (!el) return;
       const rect = this.elementSceneRect(id);
       const w3 = rect?.w ?? 0, h3 = rect?.h ?? 0;
@@ -65462,7 +65849,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const moveDom = (obj, id) => {
       obj.x += dx;
       obj.y += dy;
-      const el = this.domLayerEl.querySelector(`[data-id="${id}"]`);
+      const el = this.pageElement(id);
       if (el) {
         el.style.left = `${obj.x}px`;
         el.style.top = `${obj.y}px`;
@@ -65614,7 +66001,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   syncSelectedGeometry() {
     for (const badge of this.pageBadges) {
       if (!this.selBadges.has(badge.id)) continue;
-      const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`);
+      const el = this.pageElement(badge.id);
       if (el) {
         el.style.left = `${badge.x}px`;
         el.style.top = `${badge.y}px`;
@@ -65623,7 +66010,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     for (const text of this.pageTexts) {
       if (!this.selTexts.has(text.id)) continue;
-      const el = this.domLayerEl.querySelector(`[data-id="${text.id}"]`);
+      const el = this.pageElement(text.id);
       if (el) {
         el.style.left = `${text.x}px`;
         el.style.top = `${text.y}px`;
@@ -65632,7 +66019,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     for (const table of this.pageTables) {
       if (!this.selTables.has(table.id)) continue;
-      const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`);
+      const el = this.pageElement(table.id);
       if (el) {
         el.style.left = `${table.x}px`;
         el.style.top = `${table.y}px`;
@@ -65642,7 +66029,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     for (const embed of this.pageEmbeds) {
       if (!this.selEmbeds.has(embed.id)) continue;
-      const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`);
+      const el = this.pageElement(embed.id);
       if (el) {
         el.style.left = `${embed.x}px`;
         el.style.top = `${embed.y}px`;
@@ -65662,19 +66049,19 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const bar = this.workspaceEl.createDiv({ cls: "notelens-search" });
     for (const type of ["pointerdown", "pointerup", "dblclick"]) bar.addEventListener(type, (e) => e.stopPropagation());
     bar.addEventListener("keydown", (e) => e.stopPropagation());
-    (0, import_obsidian13.setIcon)(bar.createSpan({ cls: "notelens-search-icon" }), "search");
+    (0, import_obsidian14.setIcon)(bar.createSpan({ cls: "notelens-search-icon" }), "search");
     const input = bar.createEl("input", { cls: "notelens-search-input" });
     input.type = "text";
     input.placeholder = tr("Buscar en la pizarra\u2026");
     const count = bar.createSpan({ cls: "notelens-search-count", text: "" });
     const prev = bar.createEl("button", { cls: "notelens-nav-btn" });
-    (0, import_obsidian13.setIcon)(prev, "chevron-up");
+    (0, import_obsidian14.setIcon)(prev, "chevron-up");
     prev.title = tr("Anterior (Shift+Enter)");
     const next = bar.createEl("button", { cls: "notelens-nav-btn" });
-    (0, import_obsidian13.setIcon)(next, "chevron-down");
+    (0, import_obsidian14.setIcon)(next, "chevron-down");
     next.title = tr("Siguiente (Enter)");
     const closeBtn = bar.createEl("button", { cls: "notelens-nav-btn" });
-    (0, import_obsidian13.setIcon)(closeBtn, "x");
+    (0, import_obsidian14.setIcon)(closeBtn, "x");
     closeBtn.title = tr("Cerrar (Esc)");
     this.searchEl = bar;
     const run = () => {
@@ -65707,7 +66094,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.searchEl = null;
     this.searchHits = [];
     this.searchIndex = -1;
-    this.domLayerEl.querySelectorAll(".notelens-search-hit").forEach((el) => el.removeClass("notelens-search-hit", "notelens-search-current"));
+    for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach((el) => el.removeClass("notelens-search-hit", "notelens-search-current"));
   }
   findMatches(query) {
     const q3 = query.trim().toLowerCase();
@@ -65728,15 +66115,15 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     return hits;
   }
   showSearchHit(count) {
-    this.domLayerEl.querySelectorAll(".notelens-search-hit").forEach((el) => el.removeClass("notelens-search-hit", "notelens-search-current"));
+    for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach((el) => el.removeClass("notelens-search-hit", "notelens-search-current"));
     const total = this.searchHits.length;
     count.setText(total ? `${this.searchIndex + 1}/${total}` : this.searchEl?.querySelector("input")?.value ? "0" : "");
     for (const hit of this.searchHits) {
-      this.domLayerEl.querySelector(`[data-id="${hit.id}"]`)?.addClass("notelens-search-hit");
+      this.pageElement(hit.id)?.addClass("notelens-search-hit");
     }
     const current = this.searchHits[this.searchIndex];
     if (!current) return;
-    this.domLayerEl.querySelector(`[data-id="${current.id}"]`)?.addClass("notelens-search-current");
+    this.pageElement(current.id)?.addClass("notelens-search-current");
     this.panToScene(current.x, current.y, Math.max(this.data.viewTransform.scale, 0.8));
   }
   // ------------------------------------------------------------------
@@ -65774,7 +66161,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.pasteCount = 0;
     void navigator.clipboard?.writeText(CLIP_PREFIX + JSON.stringify(copy)).catch(() => {
     });
-    new import_obsidian13.Notice(tr("{p0}: {p1} {p2}. Ctrl+V pega donde est\xE9 el rat\xF3n.", { p0: cut ? "Cortado" : "Copiado", p1: count, p2: count === 1 ? "objeto" : "objetos" }));
+    new import_obsidian14.Notice(tr("{p0}: {p1} {p2}. Ctrl+V pega donde est\xE9 el rat\xF3n.", { p0: cut ? "Cortado" : "Copiado", p1: count, p2: count === 1 ? "objeto" : "objetos" }));
     if (cut) this.deleteSelection();
   }
   pasteObjects(payload) {
@@ -66127,7 +66514,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     for (const t3 of this.pageTexts) {
       if (!this.selTexts.has(t3.id)) continue;
       mutate(t3);
-      const el = this.domLayerEl.querySelector(`[data-id="${t3.id}"]`);
+      const el = this.pageElement(t3.id);
       if (el) this.applyTextStyles(el, t3);
       touched = true;
     }
@@ -66191,7 +66578,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
     const saved = await this.app.vault.createBinary(path2, mp3);
     this.insertVaultFile(saved);
-    new import_obsidian13.Notice(tr("Grabaci\xF3n guardada ({p0} s): {p1}", { p0: Math.round(seconds), p1: saved.name }));
+    new import_obsidian14.Notice(tr("Grabaci\xF3n guardada ({p0} s): {p1}", { p0: Math.round(seconds), p1: saved.name }));
   }
   setCalculatorUnit(unit2) {
     this.calculatorUnit = unit2;
@@ -66230,8 +66617,8 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       (source) => this.placeFormula(source),
       (source, into) => {
         try {
-          into.appendChild((0, import_obsidian13.renderMath)(toRenderableLatex(source), true));
-          void (0, import_obsidian13.finishRenderMath)();
+          into.appendChild((0, import_obsidian14.renderMath)(toRenderableLatex(source), true));
+          void (0, import_obsidian14.finishRenderMath)();
         } catch {
           into.createSpan({ cls: "notelens-math-placeholder", text: tr("No se puede representar todav\xEDa") });
         }
@@ -66357,7 +66744,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
     this.save();
-    new import_obsidian13.Notice(tr("P\xE1gina limpiada"));
+    new import_obsidian14.Notice(tr("P\xE1gina limpiada"));
   }
   undo() {
     this.history.undo();
@@ -66386,7 +66773,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         pdfMode: mode2
       };
       this.data.embeds.push(embed);
-      renderEmbedFrame(this, this.domLayerEl, embed);
+      renderEmbedFrame(this, this.layerFor(embed), embed);
       this.save();
     }).open();
   }
@@ -66398,7 +66785,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       embed.x = c3.x - embed.w / 2;
       embed.y = c3.y - embed.h / 2;
       this.data.embeds.push(embed);
-      renderEmbedFrame(this, this.domLayerEl, embed);
+      renderEmbedFrame(this, this.layerFor(embed), embed);
       this.save();
     }).open();
   }
@@ -66417,7 +66804,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         h: 0
       };
       this.data.embeds.push(embed);
-      renderEmbedFrame(this, this.domLayerEl, embed);
+      renderEmbedFrame(this, this.layerFor(embed), embed);
       this.save();
     }).open();
   }
@@ -66454,7 +66841,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       return;
     }
     const file = this.app.vault.getFileByPath(path2);
-    if (!(file instanceof import_obsidian13.TFile)) {
+    if (!(file instanceof import_obsidian14.TFile)) {
       void this.app.workspace.openLinkText(path2, this.file?.path ?? "", newLeaf);
       return;
     }
@@ -66467,7 +66854,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   }
   linkPath(path2) {
     const file = this.app.vault.getFileByPath(path2);
-    if (file instanceof import_obsidian13.TFile) this.insertVaultFile(file);
+    if (file instanceof import_obsidian14.TFile) this.insertVaultFile(file);
   }
   async uploadFileFromDevice() {
     const picker = createEl("input");
@@ -66477,11 +66864,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (!localFile) return;
       const saved = await this.importLocalFile(localFile);
       if (!saved) {
-        new import_obsidian13.Notice(tr("NoteLens: no se pudo a\xF1adir el archivo."));
+        new import_obsidian14.Notice(tr("NoteLens: no se pudo a\xF1adir el archivo."));
         return;
       }
       this.insertVaultFile(saved);
-      new import_obsidian13.Notice(tr("Archivo a\xF1adido: {p0}", { p0: saved.name }));
+      new import_obsidian14.Notice(tr("Archivo a\xF1adido: {p0}", { p0: saved.name }));
     };
     picker.click();
   }
@@ -66525,10 +66912,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       names.push(saved.name);
     }
     if (!names.length) {
-      new import_obsidian13.Notice(tr("NoteLens: no se pudo a\xF1adir el archivo."));
+      new import_obsidian14.Notice(tr("NoteLens: no se pudo a\xF1adir el archivo."));
       return;
     }
-    new import_obsidian13.Notice(names.length === 1 ? tr("Archivo a\xF1adido: {p0}", { p0: names[0] }) : tr("{p0} archivos a\xF1adidos a la pizarra.", { p0: names.length }));
+    new import_obsidian14.Notice(names.length === 1 ? tr("Archivo a\xF1adido: {p0}", { p0: names[0] }) : tr("{p0} archivos a\xF1adidos a la pizarra.", { p0: names.length }));
   }
   /**
    * The file a piece of text names, when this vault holds it.
@@ -66564,7 +66951,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     if (base && candidate.toLowerCase().startsWith(`${base}/`)) candidate = candidate.slice(base.length + 1);
     else if (/^([A-Za-z]:\/|\/)/.test(candidate)) return null;
     const direct = this.app.vault.getFileByPath(candidate);
-    if (direct instanceof import_obsidian13.TFile) return direct;
+    if (direct instanceof import_obsidian14.TFile) return direct;
     const isReference = !!wiki || /^(obsidian|file):\/\//i.test(raw) || candidate.includes("/") || /\.[a-z0-9]{1,6}$/i.test(candidate);
     if (!isReference) return null;
     return this.app.metadataCache?.getFirstLinkpathDest(candidate.replace(/\.md$/i, ""), this.currentPath ?? "") ?? null;
@@ -66580,14 +66967,22 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     }
   }
   insertVaultFile(file, at2) {
-    if (file.extension.toLowerCase() === "pdf") {
+    const extension = file.extension.toLowerCase();
+    if (extension === "pdf") {
       this.insertPdfFile(file);
       return;
     }
+    if (extension === "epub") {
+      new EpubModeModal(this.app, (mode2) => this.placeVaultFile(file, at2, mode2)).open();
+      return;
+    }
+    this.placeVaultFile(file, at2);
+  }
+  placeVaultFile(file, at2, epubMode) {
     this.history.push();
     const kind = this.embedKindFor(file);
     const c3 = this.getViewportCenterScene();
-    const dimensions = kind === "video" ? { w: 560, h: 315 } : kind === "audio" ? { w: 430, h: 130 } : kind === "image" ? { w: 480, h: 0 } : kind === "note" ? { w: 320, h: 150 } : kind === "board" ? { w: 320, h: 96 } : { w: 360, h: 112 };
+    const dimensions = kind === "video" ? { w: 560, h: 315 } : kind === "audio" ? { w: 430, h: 130 } : kind === "image" ? { w: 480, h: 0 } : kind === "note" ? { w: 320, h: 150 } : kind === "board" ? { w: 320, h: 96 } : epubMode === "reader" ? { w: 520, h: 620 } : { w: 360, h: 112 };
     const spot = at2 ?? this.getInsertionPoint(dimensions.w, dimensions.h || 120);
     const centred = !at2 && kind !== "note" && kind !== "board";
     const embed = {
@@ -66598,10 +66993,11 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       x: centred ? c3.x - dimensions.w / 2 : spot.x,
       y: centred ? c3.y - dimensions.h / 2 : spot.y,
       w: dimensions.w,
-      h: dimensions.h
+      h: dimensions.h,
+      epubMode: kind === "epub" ? epubMode ?? "card" : void 0
     };
     this.data.embeds.push(embed);
-    renderEmbedFrame(this, this.domLayerEl, embed);
+    renderEmbedFrame(this, this.layerFor(embed), embed);
     this.save();
   }
   embedKindFor(file) {
@@ -66619,6 +67015,18 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   // ------------------------------------------------------------------
   onEmbedChanged() {
     this.save();
+  }
+  /** Draws one embed again where it belongs, after something about it changed. */
+  refreshEmbed(embed) {
+    this.history.push();
+    this.pageElement(embed.id)?.remove();
+    renderEmbedFrame(this, this.layerFor(embed), embed);
+    this.renderSelectionBox();
+    this.save();
+  }
+  /** Anything an embed has to let go of when the board closes. */
+  registerCleanup(fn) {
+    this.register(fn);
   }
   onEmbedDeleted(embed) {
     this.history.push();
@@ -66659,7 +67067,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     panelHooks(this.workspaceEl).__closePenPanel?.();
     this.syncToolCursor();
     this.syncToolbar();
-    new import_obsidian13.Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
+    new import_obsidian14.Notice(tr("Toca en el lienzo para colocar: {p0}", { p0: tr(tag.label) }));
   }
   createBadgeAt(x4, y3, tag) {
     const sourceTitle = stripLeadingEmoji(tag.label).trim() || tag.label;
@@ -66696,9 +67104,63 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       if (content) place(content);
     }, tag.id === "tag_hover" ? void 0 : "A\xF1ade el contexto de esta etiqueta. Tambi\xE9n puedes dibujar o adjuntar im\xE1genes desde Pizarra.", tag.id === "tag_todo").open();
   }
+  /**
+   * Runs `act` when an element is tapped: a press that stayed still and ended
+   * quickly, told apart from a stroke drawn across it or a drag that merely
+   * began on it. `double` says whether this tap closed a pair, which is the
+   * touch screen's double click.
+   *
+   * The press is read from the pointer events themselves and not from
+   * `click`: once a touch has been used to draw, the browser withholds the
+   * click it would otherwise synthesise, and the tap would be lost.
+   */
+  onTap(el, act) {
+    let press = null;
+    let lastTap = 0;
+    el.addEventListener("pointerdown", (e) => {
+      press = { x: e.clientX, y: e.clientY, at: performance.now() };
+    });
+    el.addEventListener("pointerup", (e) => {
+      const start = press;
+      press = null;
+      if (!start || e.button !== 0) return;
+      const now = performance.now();
+      if (now - start.at > TAP_MAX_MS) return;
+      if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) return;
+      const double = now - lastTap <= DOUBLE_TAP_MS;
+      lastTap = double ? 0 : now;
+      act(double);
+    });
+    el.addEventListener("click", (e) => e.stopPropagation());
+    el.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+  /**
+   * Draws each saved section where it was saved, so the board shows how it is
+   * organised without opening a panel to find out. They are faint until the
+   * pointer reaches one, sit under everything else on the page, and go inert
+   * while a tool paints: a marker must never eat a stroke.
+   */
+  renderBookmarkMarkers() {
+    for (const old of Array.from(this.topLayerEl.querySelectorAll(".notelens-bookmark-marker"))) old.remove();
+    const marks = this.data.bookmarks.filter((item) => this.belongsToActivePage(item));
+    marks.forEach((bookmark, index) => {
+      const el = this.topLayerEl.createDiv({ cls: "notelens-bookmark-marker" });
+      el.setAttr("data-id", bookmark.id);
+      el.style.left = `${bookmark.x}px`;
+      el.style.top = `${bookmark.y}px`;
+      (0, import_obsidian14.setIcon)(el.createSpan({ cls: "notelens-bookmark-marker-icon" }), "bookmark");
+      el.createSpan({ cls: "notelens-bookmark-marker-index", text: String(index + 1) });
+      el.createSpan({ cls: "notelens-bookmark-marker-label", text: bookmark.label });
+      el.title = tr("Marcador \xAB{p0}\xBB. Clic para volver a esta vista", { p0: bookmark.label });
+      this.onTap(el, () => this.goToViewportBookmark(bookmark.id));
+    });
+  }
   renderBadge(badge) {
     const tag = quickTagById(badge.tagId);
-    const el = this.domLayerEl.createDiv({ cls: "onenote-placed-badge" });
+    const el = this.topLayerEl.createDiv({ cls: "onenote-placed-badge" });
     el.setAttr("data-id", badge.id);
     el.style.left = `${badge.x}px`;
     el.style.top = `${badge.y}px`;
@@ -66712,7 +67174,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     el.toggleClass("is-checkable", checkable);
     el.toggleClass("is-done", !!badge.done);
     const iconEl = el.createSpan({ cls: "onenote-tag-icon" });
-    (0, import_obsidian13.setIcon)(iconEl, badge.done ? "check-circle-2" : tag.icon);
+    (0, import_obsidian14.setIcon)(iconEl, badge.done ? "check-circle-2" : tag.icon);
     const fallback = tr(stripLeadingEmoji(badge.label));
     const excerpt = badge.title?.trim() || (badge.tagId === "tag_hover" && badge.tooltip ? badge.tooltip.split("\n")[0].slice(0, 48) + (badge.tooltip.length > 48 ? "\u2026" : "") : fallback);
     el.createSpan({ cls: "onenote-badge-label", text: excerpt });
@@ -66720,10 +67182,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const completed = badge.checklist.filter((item) => item.done).length;
       el.createSpan({ cls: "onenote-badge-progress", text: `${completed}/${badge.checklist.length}` });
     }
-    if (badge.sketch) (0, import_obsidian13.setIcon)(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "pen-tool");
-    if (hasImages) (0, import_obsidian13.setIcon)(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "image");
+    if (badge.sketch) (0, import_obsidian14.setIcon)(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "pen-tool");
+    if (hasImages) (0, import_obsidian14.setIcon)(el.createSpan({ cls: "onenote-badge-sketch-mark" }), "image");
     const badgeClose = el.createEl("button", { cls: "onenote-badge-close" });
-    (0, import_obsidian13.setIcon)(badgeClose, "x");
+    (0, import_obsidian14.setIcon)(badgeClose, "x");
     badgeClose.title = tr("Quitar etiqueta");
     badgeClose.addEventListener("pointerdown", (e) => e.stopPropagation());
     badgeClose.addEventListener("click", (e) => {
@@ -66742,31 +67204,27 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     } else if (checkable) el.title = badge.done ? tr("{p0}. Hecho; clic para volver a marcar como pendiente", { p0: excerpt }) : tr("{p0}. Clic para cambiar su estado; doble clic para editar", { p0: excerpt });
     else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
     else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
-    let pressedAt = 0;
-    el.addEventListener("pointerdown", (e) => {
-      pressedAt = performance.now();
-      if (this.currentTool !== "select" || e.button !== 0) return;
-      e.stopPropagation();
-      e.preventDefault();
-      this.routeElementDrag(e, "badge", badge.id);
-    });
-    el.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (performance.now() - pressedAt > 350) return;
+    this.onTap(el, (double) => {
+      if (double) {
+        this.editBadgeNote(badge);
+        return;
+      }
       if (badge.tagId === "tag_todo" && badge.checklist?.length) this.advanceChecklist(badge);
       else if (checkable) this.toggleBadgeDone(badge);
       else if (badge.tagId === "tag_hover") this.showHoverTooltip(badge);
       else this.toggleTagSummary(badge.tagId);
     });
-    el.addEventListener("dblclick", (e) => {
+    el.addEventListener("pointerdown", (e) => {
+      if (this.currentTool !== "select" || e.button !== 0) return;
       e.stopPropagation();
       e.preventDefault();
-      this.editBadgeNote(badge);
+      this.routeElementDrag(e, "badge", badge.id);
     });
     el.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const menu = new import_obsidian13.Menu();
+      if (this.longPressIsDrawing()) return;
+      const menu = new import_obsidian14.Menu();
       menu.addItem((item) => item.setTitle(badge.tagId === "tag_todo" ? tr("Editar checklist, notas e im\xE1genes") : tr("Editar t\xEDtulo, nota e im\xE1genes")).setIcon("pencil").onClick(() => this.editBadgeNote(badge)));
       const menuChecklist = badge.tagId === "tag_todo" ? badge.checklist ?? [] : [];
       if (menuChecklist.length) {
@@ -66803,7 +67261,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
   /** Repaints one badge in place and refreshes everything that mirrors it. */
   refreshBadge(badge) {
     if (this.belongsToActivePage(badge)) {
-      const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`);
+      const el = this.pageElement(badge.id);
       el?.remove();
       this.renderBadge(badge);
     }
@@ -66841,7 +67299,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.refreshBadge(badge);
     if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
     const completed = checklist.filter((item) => item.done).length;
-    new import_obsidian13.Notice(tr("{p0}: {p1} \xB7 {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : tr("Paso")), p1: target.done ? tr("hecho") : tr("pendiente"), p2: completed, p3: checklist.length }), 2200);
+    new import_obsidian14.Notice(tr("{p0}: {p1} \xB7 {p2}/{p3}", { p0: target.text || (target.sketch ? tr("Paso a mano") : tr("Paso")), p1: target.done ? tr("hecho") : tr("pendiente"), p2: completed, p3: checklist.length }), 2200);
   }
   /** The "todas de esa tarea" path: every step at once, from the context menu. */
   setChecklistAll(badge, done) {
@@ -66851,7 +67309,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.syncBadgeDone(badge);
     this.refreshBadge(badge);
     if (this.hoverTooltipBadgeId === badge.id) this.showHoverTooltip(badge);
-    new import_obsidian13.Notice(done ? tr("Todos los pasos marcados como hechos") : tr("Todos los pasos marcados como pendientes"), 2200);
+    new import_obsidian14.Notice(done ? tr("Todos los pasos marcados como hechos") : tr("Todos los pasos marcados como pendientes"), 2200);
   }
   editBadgeNote(badge) {
     const tag = quickTagById(badge.tagId);
@@ -66869,7 +67327,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
         badge.done = !!badge.checklist?.length && badge.checklist.every((item) => item.done);
       }
       if (this.belongsToActivePage(badge)) {
-        const el = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`);
+        const el = this.pageElement(badge.id);
         el?.remove();
         this.renderBadge(badge);
       }
@@ -66914,7 +67372,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     const header = panel.createDiv({ cls: "notelens-tag-summary-header" });
     header.createSpan({ text: tr("Etiquetas de la libreta") });
     const closeBtn = header.createEl("button", { cls: "notelens-embed-close" });
-    (0, import_obsidian13.setIcon)(closeBtn, "x");
+    (0, import_obsidian14.setIcon)(closeBtn, "x");
     closeBtn.onclick = () => this.toggleTagSummary();
     let applySearch = () => {
     };
@@ -66934,7 +67392,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       const count = pageScoped.filter((b3) => b3.tagId === tag.id).length;
       const chip = filters.createEl("button", { cls: "onenote-tag-chip" });
       chip.style.setProperty("--tag-color", tag.color);
-      (0, import_obsidian13.setIcon)(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
+      (0, import_obsidian14.setIcon)(chip.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
       chip.createSpan({ text: count ? tr("{p0} {p1}", { p0: tr(tag.label), p1: count }) : tr(tag.label) });
       chip.toggleClass("active", this.tagSummaryFilter === tag.id);
       chip.onclick = () => {
@@ -66990,7 +67448,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
           this.toggleBadgeDone(badge);
         };
       } else {
-        (0, import_obsidian13.setIcon)(row.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
+        (0, import_obsidian14.setIcon)(row.createSpan({ cls: "onenote-tag-icon" }), tag.icon);
       }
       const body = row.createDiv({ cls: "notelens-tag-summary-body" });
       const meta = body.createDiv({ cls: "notelens-tag-summary-meta" });
@@ -67055,14 +67513,14 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.cancelHoverTooltipHide();
     this.hideHoverTooltip();
     const tag = quickTagById(badge.tagId);
-    const el = this.domLayerEl.createDiv({ cls: "onenote-top-tooltip" });
+    const el = this.topLayerEl.createDiv({ cls: "onenote-top-tooltip" });
     el.setAttr("data-tag", badge.tagId);
     el.style.setProperty("--tag-color", tag.color);
     el.toggleClass("is-done", !!badge.done);
     const checklist = badge.tagId === "tag_todo" ? badge.checklist ?? [] : [];
     const completed = checklist.filter((item) => item.done).length;
     const head = el.createDiv({ cls: "onenote-top-tooltip-head" });
-    (0, import_obsidian13.setIcon)(head.createSpan({ cls: "onenote-top-tooltip-icon" }), badge.done ? "check-circle-2" : tag.icon);
+    (0, import_obsidian14.setIcon)(head.createSpan({ cls: "onenote-top-tooltip-icon" }), badge.done ? "check-circle-2" : tag.icon);
     const heading = {
       tag_star: tr("Importante"),
       tag_question: badge.done ? tr("Duda resuelta") : tr("Duda pendiente"),
@@ -67079,7 +67537,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       for (const item of checklist) {
         const row = list.createEl("button", { cls: "onenote-top-tooltip-checklist-item" });
         row.toggleClass("is-done", item.done);
-        (0, import_obsidian13.setIcon)(row.createSpan(), item.done ? "square-check-big" : "square");
+        (0, import_obsidian14.setIcon)(row.createSpan(), item.done ? "square-check-big" : "square");
         if (item.sketch) {
           const handwriting = row.createEl("img", { cls: "onenote-top-tooltip-step-sketch" });
           handwriting.src = item.sketch;
@@ -67098,7 +67556,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       }
       const allDone = completed === checklist.length;
       const bulk = el.createEl("button", { cls: "onenote-top-tooltip-bulk" });
-      (0, import_obsidian13.setIcon)(bulk.createSpan(), allDone ? "circle" : "check-check");
+      (0, import_obsidian14.setIcon)(bulk.createSpan(), allDone ? "circle" : "check-check");
       bulk.createSpan({ text: allDone ? tr("Marcar todos como pendientes") : tr("Marcar todos como hechos") });
       bulk.addEventListener("pointerdown", (event) => event.stopPropagation());
       bulk.addEventListener("click", (event) => {
@@ -67139,7 +67597,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       el.createDiv({ cls: "onenote-top-tooltip-hint", text: near ? tr("Junto a: \xAB{p0}\xBB", { p0: near }) : hints[badge.tagId] ?? "" });
       if (near) el.createDiv({ cls: "onenote-top-tooltip-hint", text: hints[badge.tagId] ?? "" });
     }
-    const badgeEl = this.domLayerEl.querySelector(`[data-id="${badge.id}"]`);
+    const badgeEl = this.pageElement(badge.id);
     const badgeW = (badgeEl?.offsetWidth ?? 120) * (badge.scale ?? 1);
     const badgeH = (badgeEl?.offsetHeight ?? 28) * (badge.scale ?? 1);
     const vt2 = this.data.viewTransform;
@@ -67196,8 +67654,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       pageId: this.data.activePageId,
       x: x4,
       y: y3,
+      // Code reads at its own size, not at the prose size in the text panel;
+      // the A+ / A- buttons still grow it from there.
       text: "",
-      fontSize: this.textSize,
+      fontSize: variant === "code" ? 14 : this.textSize,
       color: stickyColor ? "#302b19" : variant === "code" ? "#e2e8f0" : this.textColor || (isLightColor(this.data.backgroundColor) ? "#111827" : "#f8fafc"),
       stickyColor,
       w: stickyColor ? 220 : variant === "code" ? 440 : variant === "math" ? 320 : 160,
@@ -67254,10 +67714,10 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     this.createTextBoxAt(at2.x, at2.y);
     const editor = this.activeTextEditor;
     if (!editor) return;
-    const isMac = import_obsidian13.Platform.isMacOS || import_obsidian13.Platform.isIosApp;
+    const isMac = import_obsidian14.Platform.isMacOS || import_obsidian14.Platform.isIosApp;
     const shortcut = isMac ? "pulsa Fn dos veces (o Control dos veces)" : "pulsa Win+H";
-    const hint = this.domLayerEl.createDiv({ cls: "notelens-dictation-hint" });
-    (0, import_obsidian13.setIcon)(hint.createSpan(), "mic");
+    const hint = this.topLayerEl.createDiv({ cls: "notelens-dictation-hint" });
+    (0, import_obsidian14.setIcon)(hint.createSpan(), "mic");
     hint.createSpan({ text: tr(" Dictado: {p0} y habla. Se escribe aqu\xED. Esc termina.", { p0: shortcut }) });
     hint.style.left = `${at2.x}px`;
     hint.style.top = `${at2.y + 56}px`;
@@ -67267,7 +67727,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
     };
     editor.addEventListener("blur", remove);
     editor.focus();
-    new import_obsidian13.Notice(tr("Dictado del sistema: {p0} con el cuadro de texto activo. Funciona sin conexi\xF3n.", { p0: shortcut }), 7e3);
+    new import_obsidian14.Notice(tr("Dictado del sistema: {p0} con el cuadro de texto activo. Funciona sin conexi\xF3n.", { p0: shortcut }), 7e3);
   }
   getViewportBookmarks() {
     return this.data.bookmarks;
@@ -67305,7 +67765,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian13.FileV
       app.setting?.open();
       app.setting?.openTabById(this.plugin.manifest.id);
     } catch {
-      new import_obsidian13.Notice(tr("Abre Ajustes \u203A Plugins de la comunidad \u203A NoteLens"));
+      new import_obsidian14.Notice(tr("Abre Ajustes \u203A Plugins de la comunidad \u203A NoteLens"));
     }
   }
   getPetPosition() {
@@ -67456,7 +67916,7 @@ ${rows.join("\n")}`);
     void this.captureBoardFormula(() => {
     }).then((source) => {
       if (source.trim()) this.insertMathBlock(tidyFormulaText(source));
-    }).catch(() => new import_obsidian13.Notice(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo.")));
+    }).catch(() => new import_obsidian14.Notice(tr("No he podido leer la escritura. Escribe la notaci\xF3n abajo.")));
   }
   /** Fast board operations exposed by the local assistant. */
   runBoardUtility(utility) {
@@ -67629,7 +68089,7 @@ ${rows.join("\n")}`);
   }
   deleteDocumentPage(id) {
     if (this.data.pages.length <= 1) {
-      new import_obsidian13.Notice(tr("La libreta debe conservar al menos una p\xE1gina."));
+      new import_obsidian14.Notice(tr("La libreta debe conservar al menos una p\xE1gina."));
       return;
     }
     const index = this.data.pages.findIndex((page) => page.id === id);
@@ -67657,7 +68117,7 @@ ${rows.join("\n")}`);
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.refreshTagSummary();
     this.save();
-    new import_obsidian13.Notice(tr("P\xE1gina eliminada. Puedes recuperarla con Ctrl+Z."));
+    new import_obsidian14.Notice(tr("P\xE1gina eliminada. Puedes recuperarla con Ctrl+Z."));
   }
   /**
    * Saves the current view at once, without a dialog in the way: the new
@@ -67669,6 +68129,7 @@ ${rows.join("\n")}`);
     this.history.push();
     const bookmark = { id: genId("bookmark"), pageId: this.data.activePageId, label, x: c3.x, y: c3.y, scale: this.data.viewTransform.scale };
     this.data.bookmarks.push(bookmark);
+    this.renderBookmarkMarkers();
     panelHooks(this.workspaceEl).__refreshBookmarks?.(bookmark.id);
     this.save();
   }
@@ -67677,6 +68138,7 @@ ${rows.join("\n")}`);
     if (!bookmark || !label.trim()) return;
     this.history.push();
     bookmark.label = label.trim();
+    this.renderBookmarkMarkers();
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.save();
   }
@@ -67685,6 +68147,7 @@ ${rows.join("\n")}`);
     if (!bookmark) return;
     this.history.push();
     this.data.bookmarks.remove(bookmark);
+    this.renderBookmarkMarkers();
     panelHooks(this.workspaceEl).__refreshBookmarks?.();
     this.save();
   }
@@ -67751,16 +68214,16 @@ ${rows.join("\n")}`);
         });
       }
       const saved = await this.app.vault.createBinary(path2, bytes);
-      new import_obsidian13.Notice(tr("PDF A4 creado: {p0}", { p0: saved.name }));
+      new import_obsidian14.Notice(tr("PDF A4 creado: {p0}", { p0: saved.name }));
       void this.app.workspace.openLinkText(saved.path, this.file?.path ?? "", true);
     } catch (error) {
       console.error("NoteLens: PDF export failed", error);
-      new import_obsidian13.Notice(tr("No se pudo exportar el PDF A4."));
+      new import_obsidian14.Notice(tr("No se pudo exportar el PDF A4."));
     }
   }
   async exportSharePackage() {
     try {
-      new import_obsidian13.Notice(tr("Preparando paquete editable de NoteLens..."));
+      new import_obsidian14.Notice(tr("Preparando paquete editable de NoteLens..."));
       this.syncActivePageMeta();
       const title = this.file?.basename ?? "Pizarra NoteLens";
       const result = await buildSharePackage(this.app, this.data, title);
@@ -67777,10 +68240,10 @@ ${rows.join("\n")}`);
       }
       const saved = await this.app.vault.createBinary(path2, result.bytes);
       const skipped = result.skippedAssets.length ? ` (${result.skippedAssets.length} adjunto(s) no disponible(s))` : "";
-      new import_obsidian13.Notice(tr("Paquete editable creado: {p0}{p1}", { p0: saved.name, p1: skipped }));
+      new import_obsidian14.Notice(tr("Paquete editable creado: {p0}{p1}", { p0: saved.name, p1: skipped }));
     } catch (error) {
       console.error("NoteLens: share export failed", error);
-      new import_obsidian13.Notice(tr("No se pudo crear el paquete para compartir."));
+      new import_obsidian14.Notice(tr("No se pudo crear el paquete para compartir."));
     }
   }
   async importSharePackage() {
@@ -67791,15 +68254,15 @@ ${rows.join("\n")}`);
       const source = picker.files?.[0];
       if (!source) return;
       try {
-        new import_obsidian13.Notice(tr("Importando pizarra editable de NoteLens..."));
+        new import_obsidian14.Notice(tr("Importando pizarra editable de NoteLens..."));
         const result = await importSharePackage(this.app, source, this.file?.parent?.path ?? "");
         const missing = result.missingAssets.length ? ` (${result.missingAssets.length} adjunto(s) no se pudieron recuperar)` : "";
-        new import_obsidian13.Notice(tr("Pizarra importada: {p0}{p1}", { p0: result.file.basename, p1: missing }));
+        new import_obsidian14.Notice(tr("Pizarra importada: {p0}{p1}", { p0: result.file.basename, p1: missing }));
         const leaf = this.app.workspace.getLeaf(true);
         await leaf.openFile(result.file);
       } catch (error) {
         console.error("NoteLens: share import failed", error);
-        new import_obsidian13.Notice(tr("No se pudo importar el paquete de NoteLens."));
+        new import_obsidian14.Notice(tr("No se pudo importar el paquete de NoteLens."));
       }
     };
     picker.click();
@@ -67841,7 +68304,7 @@ ${rows.join("\n")}`);
     }
     const targets = this.translatableSelection();
     if (targets.length === 0) {
-      new import_obsidian13.Notice(tr("Selecciona el cuadro de texto que quieres sustituir."));
+      new import_obsidian14.Notice(tr("Selecciona el cuadro de texto que quieres sustituir."));
       return;
     }
     this.history.push();
@@ -67878,7 +68341,7 @@ ${rows.join("\n")}`);
     };
     tb.w = anchor?.w ?? this.measureAutoWidth(tb);
     if (anchor) {
-      const el = this.domLayerEl.querySelector(`[data-id="${anchor.id}"]`);
+      const el = this.pageElement(anchor.id);
       tb.x = anchor.x;
       tb.y = anchor.y + (el?.offsetHeight ?? anchor.h ?? 48) + 12;
     } else {
@@ -67910,7 +68373,7 @@ ${rows.join("\n")}`);
     return Array.from({ length: table.rows }, () => Math.max(32, (table.h - 30) / table.rows));
   }
   renderTable(table) {
-    const el = this.domLayerEl.createDiv({ cls: "notelens-table" });
+    const el = this.topLayerEl.createDiv({ cls: "notelens-table" });
     el.setAttr("data-id", table.id);
     el.style.left = `${table.x}px`;
     el.style.top = `${table.y}px`;
@@ -67927,7 +68390,7 @@ ${rows.join("\n")}`);
     const controls = header.createDiv({ cls: "notelens-table-controls" });
     const control = (icon, title, action) => {
       const button = controls.createEl("button", { cls: "notelens-table-control" });
-      (0, import_obsidian13.setIcon)(button, icon);
+      (0, import_obsidian14.setIcon)(button, icon);
       button.title = tr(title);
       button.addEventListener("pointerdown", (event) => event.stopPropagation());
       button.onclick = (event) => {
@@ -67936,7 +68399,7 @@ ${rows.join("\n")}`);
       };
     };
     const headerBtn = controls.createEl("button", { cls: "notelens-table-control" });
-    (0, import_obsidian13.setIcon)(headerBtn, "heading");
+    (0, import_obsidian14.setIcon)(headerBtn, "heading");
     headerBtn.title = table.header ? tr("Quitar la fila de encabezado") : tr("Usar la primera fila como encabezado");
     headerBtn.toggleClass("active", !!table.header);
     headerBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
@@ -68018,7 +68481,7 @@ ${rows.join("\n")}`);
     return el;
   }
   showTableCellMenu(event, table, row, col) {
-    const menu = new import_obsidian13.Menu();
+    const menu = new import_obsidian14.Menu();
     if (row >= 0) {
       menu.addItem((item) => item.setTitle(tr("Insertar fila arriba")).setIcon("arrow-up-to-line").onClick(() => this.insertTableRow(table, row)));
       menu.addItem((item) => item.setTitle(tr("Insertar fila debajo")).setIcon("arrow-down-to-line").onClick(() => this.insertTableRow(table, row + 1)));
@@ -68049,7 +68512,7 @@ ${rows.join("\n")}`);
       this.save();
     }));
     menu.addItem((item) => item.setTitle(tr("Renombrar tabla")).setIcon("pencil").onClick(() => {
-      const titleEl = this.domLayerEl.querySelector(`[data-id="${table.id}"] .notelens-table-title`);
+      const titleEl = this.pageElement(table.id)?.querySelector(".notelens-table-title") ?? null;
       if (titleEl) this.renameTable(table, titleEl);
     }));
     menu.addItem((item) => item.setTitle(tr("Crear gr\xE1fico con estos datos")).setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
@@ -68120,7 +68583,7 @@ ${rows.join("\n")}`);
     const widths = [...this.tableColumnWidths(table)];
     const startX = event.clientX;
     const scale = this.data.viewTransform.scale;
-    const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`);
+    const el = this.pageElement(table.id);
     const grid = el?.querySelector(".notelens-table-grid");
     const onMove = (move) => {
       const delta = (move.clientX - startX) / scale;
@@ -68148,7 +68611,7 @@ ${rows.join("\n")}`);
     const heights = [...this.tableRowHeights(table)];
     const startY = event.clientY;
     const scale = this.data.viewTransform.scale;
-    const el = this.domLayerEl.querySelector(`[data-id="${table.id}"]`);
+    const el = this.pageElement(table.id);
     const grid = el?.querySelector(".notelens-table-grid");
     const onMove = (move) => {
       const delta = (move.clientY - startY) / scale;
@@ -68252,7 +68715,7 @@ ${rows.join("\n")}`);
     const pos = at2 ?? this.getInsertionPoint(size.w, size.h);
     const embed = { id: genId("embed"), pageId: this.data.activePageId, kind: "chart", src: "chart", chart: spec, x: pos.x, y: pos.y, w: size.w, h: size.h };
     this.data.embeds.push(embed);
-    renderEmbedFrame(this, this.domLayerEl, embed);
+    renderEmbedFrame(this, this.layerFor(embed), embed);
     this.clearSelection(false);
     this.selEmbeds.add(embed.id);
     this.renderSelectionBox();
@@ -68262,15 +68725,14 @@ ${rows.join("\n")}`);
     new ChartEditorModal(this.app, embed.chart ?? DEFAULT_CHART, (spec) => {
       this.history.push();
       embed.chart = spec;
-      const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`);
-      el?.remove();
-      renderEmbedFrame(this, this.domLayerEl, embed);
+      this.pageElement(embed.id)?.remove();
+      renderEmbedFrame(this, this.layerFor(embed), embed);
       this.renderSelectionBox();
       this.save();
     }).open();
   }
   renderTextBox(tb) {
-    const el = this.domLayerEl.createDiv({ cls: "onenote-textbox" });
+    const el = this.layerForText(tb).createDiv({ cls: "onenote-textbox" });
     if (tb.stickyColor) el.addClass("notelens-sticky-note");
     if (tb.variant === "code") {
       el.addClass("notelens-code-block");
@@ -68307,7 +68769,7 @@ ${rows.join("\n")}`);
     el.addEventListener("contextmenu", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const menu = new import_obsidian13.Menu();
+      const menu = new import_obsidian14.Menu();
       menu.addItem((item) => item.setTitle(tr("Eliminar cuadro de texto")).setIcon("trash").onClick(() => {
         this.history.push();
         this.hideFormatBar();
@@ -68342,7 +68804,7 @@ ${rows.join("\n")}`);
   }
   keepEditorUsableOnTouch(editor) {
     this.stopMobileEditor?.();
-    if (!import_obsidian13.Platform.isMobile) return;
+    if (!import_obsidian14.Platform.isMobile) return;
     this.stopMobileEditor = trackMobileEditor(
       editor,
       (lift) => this.setKeyboardLift(lift),
@@ -68362,7 +68824,7 @@ ${rows.join("\n")}`);
       this.beginRichEdit(tb, el);
       return;
     }
-    const editor = this.domLayerEl.createEl("textarea", { cls: "notelens-text-editor" });
+    const editor = this.layerForText(tb).createEl("textarea", { cls: "notelens-text-editor" });
     if (tb.variant === "code") {
       editor.addClass("notelens-code-editor");
       editor.setAttr("wrap", "off");
@@ -68448,7 +68910,7 @@ ${rows.join("\n")}`);
    * edited is the same rich element the board paints.
    */
   beginRichEdit(tb, el) {
-    const editor = this.domLayerEl.createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
+    const editor = this.layerForText(tb).createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
     editor.contentEditable = "true";
     editor.setAttr("role", "textbox");
     editor.setAttr("aria-multiline", "true");
@@ -68705,12 +69167,16 @@ ${indent}${mark}`);
         tb.color = "#e2e8f0";
         source.addClass("notelens-code-block");
       }
-      if (fence[1]) tb.language = normalizeLanguage(fence[1]);
+      if (fence[1]) {
+        tb.language = normalizeLanguage(fence[1]);
+        tb.languagePinned = true;
+      }
       replacement = fence[2];
     } else if (tb.variant === "code") {
       const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(raw);
       if (openFence) {
         tb.language = normalizeLanguage(openFence[1]);
+        tb.languagePinned = true;
         replacement = openFence[2];
       }
     }
@@ -68728,6 +69194,9 @@ ${indent}${mark}`);
       tb.runs = void 0;
     } else if (editor.instanceOf(HTMLTextAreaElement)) {
       tb.text = editor.value;
+    }
+    if (tb.variant === "code" && !tb.languagePinned) {
+      tb.language = detectLanguage(tb.text) ?? "plaintext";
     }
     this.applyTextStyles(source, tb);
     this.paintTextContent(source, tb);
@@ -68756,7 +69225,7 @@ ${indent}${mark}`);
         return;
       }
       el.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
-      void (0, import_obsidian13.finishRenderMath)();
+      void (0, import_obsidian14.finishRenderMath)();
       return;
     }
     if (tb.variant === "code") {
@@ -68788,7 +69257,7 @@ ${indent}${mark}`);
         this.appendLinkified(parent, part);
       }
     }
-    if (typeset) void (0, import_obsidian13.finishRenderMath)();
+    if (typeset) void (0, import_obsidian14.finishRenderMath)();
   }
   /**
    * Text with its inline marks turned into real formatting: `**negrita**`,
@@ -68838,43 +69307,86 @@ ${indent}${mark}`);
     if (last < text.length) el.appendChild(document.createTextNode(text.slice(last)));
   }
   /** Header with language and copy button, line-number gutter, Prism-highlighted source. */
+  /**
+   * A code block, line by line. Each line is its own row carrying its number,
+   * so the gutter cannot drift out of step with the code — which is what lets
+   * long lines fold, and lets a line be marked by pressing its number.
+   */
   paintCode(el, tb) {
     const lang = normalizeLanguage(tb.language);
     tb.language = lang;
     el.setAttr("data-language", lang);
+    el.toggleClass("is-wrapped", !!tb.codeWrap);
     const header = el.createDiv({ cls: "notelens-code-header" });
     header.createSpan({ cls: "notelens-code-lang", text: CODE_LANGUAGES.find(([id]) => id === lang)?.[1] ?? lang });
-    const copy = header.createEl("button", { cls: "notelens-code-copy" });
-    (0, import_obsidian13.setIcon)(copy, "copy");
+    if (lang !== "plaintext" && !tb.languagePinned) {
+      const guessed = header.createSpan({ cls: "notelens-code-guess", text: tr("auto") });
+      guessed.title = tr("Lenguaje deducido del propio c\xF3digo. Elige otro en la barra de formato si no acierta.");
+    }
+    const buttons = header.createDiv({ cls: "notelens-code-actions" });
+    const wrap = buttons.createEl("button", { cls: "notelens-code-copy" });
+    (0, import_obsidian14.setIcon)(wrap, "wrap-text");
+    wrap.toggleClass("active", !!tb.codeWrap);
+    wrap.title = tb.codeWrap ? tr("L\xEDneas largas: plegadas. Pulsa para que se desplacen.") : tr("L\xEDneas largas: se desplazan. Pulsa para plegarlas.");
+    wrap.addEventListener("pointerdown", (e) => e.stopPropagation());
+    wrap.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.history.push();
+      tb.codeWrap = tb.codeWrap ? void 0 : true;
+      this.repaintCodeBlock(tb);
+      this.save();
+    });
+    const copy = buttons.createEl("button", { cls: "notelens-code-copy" });
+    (0, import_obsidian14.setIcon)(copy, "copy");
     copy.title = tr("Copiar c\xF3digo");
     copy.addEventListener("pointerdown", (e) => e.stopPropagation());
     copy.addEventListener("click", (e) => {
       e.stopPropagation();
-      void navigator.clipboard?.writeText(tb.text).then(() => new import_obsidian13.Notice(tr("C\xF3digo copiado")));
-    });
-    const closeCode = header.createEl("button", { cls: "notelens-code-copy" });
-    (0, import_obsidian13.setIcon)(closeCode, "x");
-    closeCode.title = tr("Eliminar bloque");
-    closeCode.addEventListener("pointerdown", (e) => e.stopPropagation());
-    closeCode.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.removeTextBox(tb);
+      void navigator.clipboard?.writeText(tb.text).then(() => new import_obsidian14.Notice(tr("C\xF3digo copiado")));
     });
     const body = el.createDiv({ cls: "notelens-code-body" });
-    const lines = tb.text.split("\n");
-    const gutter = body.createDiv({ cls: "notelens-code-gutter" });
-    for (let i4 = 1; i4 <= lines.length; i4++) gutter.createDiv({ text: String(i4) });
-    const code = body.createEl("code", { cls: "notelens-code-source" });
     if (!tb.text) {
-      code.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de c\xF3digo vac\xEDo") });
+      body.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de c\xF3digo vac\xEDo") });
       return;
     }
     const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : void 0;
-    if (grammar && this.prism) {
-      paintPrismTokens(code, this.prism.tokenize(tb.text, grammar));
-    } else {
-      code.setText(tb.text);
-    }
+    const lines = grammar && this.prism ? splitTokensIntoLines(flattenPrismTokens(this.prism.tokenize(tb.text, grammar))) : tb.text.split("\n").map((line2) => line2 ? [{ text: line2, cls: [] }] : []);
+    const marks = new Set(tb.codeMarks ?? []);
+    body.style.setProperty("--code-gutter", `${String(lines.length).length + 1}ch`);
+    lines.forEach((pieces, index) => {
+      const number = index + 1;
+      const row = body.createDiv({ cls: "notelens-code-line" });
+      row.toggleClass("is-marked", marks.has(number));
+      const gutter = row.createEl("button", { cls: "notelens-code-num", text: String(number) });
+      gutter.title = marks.has(number) ? tr("Quitar la marca de esta l\xEDnea") : tr("Marcar esta l\xEDnea");
+      gutter.addEventListener("pointerdown", (e) => e.stopPropagation());
+      gutter.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.history.push();
+        const next = new Set(tb.codeMarks ?? []);
+        if (next.has(number)) next.delete(number);
+        else next.add(number);
+        tb.codeMarks = next.size ? Array.from(next).sort((a3, b3) => a3 - b3) : void 0;
+        this.repaintCodeBlock(tb);
+        this.save();
+      });
+      const code = row.createEl("code", { cls: "notelens-code-source" });
+      for (const piece of pieces) {
+        if (piece.cls.length) code.createSpan({ cls: piece.cls.join(" "), text: piece.text });
+        else code.appendText(piece.text);
+      }
+      if (!pieces.length) code.appendText("\n");
+    });
+  }
+  /** Redraws one code block in place, keeping the box the size its lines ask for. */
+  repaintCodeBlock(tb) {
+    const el = this.pageElement(tb.id);
+    if (!el) return;
+    this.paintTextContent(el, tb);
+    el.setCssStyles({ minHeight: "" });
+    tb.h = Math.max(72, el.offsetHeight);
+    el.style.minHeight = `${tb.h}px`;
+    this.renderSelectionBox();
   }
   /** Indents (or outdents) the current line or every selected line. */
   indentInEditor(editor, outdent, unit2) {
@@ -68908,7 +69420,7 @@ ${indent}${mark}`);
   }
   renderMathSafe(source, display) {
     try {
-      return (0, import_obsidian13.renderMath)(source, display);
+      return (0, import_obsidian14.renderMath)(source, display);
     } catch {
       const fallback = createSpan();
       fallback.className = "notelens-math-error";
@@ -68926,7 +69438,7 @@ ${indent}${mark}`);
       return;
     }
     preview.appendChild(this.renderMathSafe(toRenderableLatex(src), true));
-    void (0, import_obsidian13.finishRenderMath)();
+    void (0, import_obsidian14.finishRenderMath)();
   }
   /** Width that fits the longest line, like OneNote boxes that grow as you type. */
   measureAutoWidth(tb) {
@@ -68944,7 +69456,7 @@ ${indent}${mark}`);
     resizeHandle.title = tr("Redimensionar");
     resizeHandle.addEventListener("pointerdown", (e) => this.startTextResize(e, tb, el));
     const closeBtn = el.createEl("button", { cls: "notelens-box-close" });
-    (0, import_obsidian13.setIcon)(closeBtn, "x");
+    (0, import_obsidian14.setIcon)(closeBtn, "x");
     closeBtn.title = tr("Eliminar");
     closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
     closeBtn.addEventListener("click", (e) => {
@@ -68958,7 +69470,7 @@ ${indent}${mark}`);
     this.hideFormatBar();
     this.data.texts.remove(tb);
     this.selTexts.delete(tb.id);
-    this.domLayerEl.querySelector(`[data-id="${tb.id}"]`)?.remove();
+    this.pageElement(tb.id)?.remove();
     this.renderSelectionBox();
     this.save();
   }
@@ -69023,7 +69535,7 @@ ${indent}${mark}`);
       this.textPlacementHintEl.setAttr("aria-hidden", "true");
       this.textPlacementHintEl.createDiv({ cls: "notelens-text-placement-caret" });
       const tool = this.textPlacementHintEl.createDiv({ cls: "notelens-text-placement-tool" });
-      (0, import_obsidian13.setIcon)(tool, "type");
+      (0, import_obsidian14.setIcon)(tool, "type");
     }
     const rect = this.workspaceEl.getBoundingClientRect();
     this.textPlacementHintEl.style.left = `${e.clientX - rect.left}px`;
@@ -69064,7 +69576,7 @@ ${indent}${mark}`);
     if (badge && badge.getAttribute("data-tool") !== this.currentTool) {
       badge.setAttr("data-tool", this.currentTool);
       badge.empty();
-      (0, import_obsidian13.setIcon)(badge, highlighter ? "highlighter" : "pen");
+      (0, import_obsidian14.setIcon)(badge, highlighter ? "highlighter" : "pen");
     }
     this.inkCursorEl.setAttr("data-tool", this.currentTool);
     const scale = this.data.viewTransform.scale;
@@ -69175,7 +69687,7 @@ ${indent}${mark}`);
     const toggleButtons = /* @__PURE__ */ new Map();
     const mkToggle = (key2, icon, title, toggle) => {
       const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-      (0, import_obsidian13.setIcon)(b3, icon);
+      (0, import_obsidian14.setIcon)(b3, icon);
       b3.title = tr(title);
       b3.onclick = () => apply(toggle);
       toggleButtons.set(key2, b3);
@@ -69184,7 +69696,7 @@ ${indent}${mark}`);
     const rich = plainText && !el.instanceOf(HTMLTextAreaElement) ? el : null;
     const command = (key2, icon, title, run) => {
       const b3 = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-      (0, import_obsidian13.setIcon)(b3, icon);
+      (0, import_obsidian14.setIcon)(b3, icon);
       b3.title = tr(title);
       b3.onclick = () => {
         run();
@@ -69231,7 +69743,7 @@ ${indent}${mark}`);
         const lists = bar.createDiv({ cls: "notelens-format-lists" });
         const listButton = (icon, title, kind) => {
           const b3 = lists.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-          (0, import_obsidian13.setIcon)(b3, icon);
+          (0, import_obsidian14.setIcon)(b3, icon);
           b3.title = tr(title);
           b3.onclick = () => this.toggleRichList(tb, rich, kind);
         };
@@ -69254,21 +69766,21 @@ ${indent}${mark}`);
     if (!plainText) fontSelect.hide();
     const stepper = bar.createDiv({ cls: "notelens-format-stepper" });
     const minusBtn = stepper.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-    (0, import_obsidian13.setIcon)(minusBtn, "minus");
+    (0, import_obsidian14.setIcon)(minusBtn, "minus");
     minusBtn.title = tr("Reducir tama\xF1o");
     minusBtn.onclick = () => apply(() => {
       tb.fontSize = Math.max(10, tb.fontSize - 2);
     });
     const sizeLabel = stepper.createSpan({ cls: "notelens-format-size" });
     const plusBtn = stepper.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-    (0, import_obsidian13.setIcon)(plusBtn, "plus");
+    (0, import_obsidian14.setIcon)(plusBtn, "plus");
     plusBtn.title = tr("Aumentar tama\xF1o");
     plusBtn.onclick = () => apply(() => {
       tb.fontSize = Math.min(96, tb.fontSize + 2);
     });
     if (plainText) {
       const translateBtn = bar.createEl("button", { cls: "onenote-dock-btn notelens-format-btn" });
-      (0, import_obsidian13.setIcon)(translateBtn, "languages");
+      (0, import_obsidian14.setIcon)(translateBtn, "languages");
       translateBtn.title = tr("Traducir este cuadro");
       translateBtn.onclick = () => this.translateText();
     }
@@ -69327,6 +69839,7 @@ ${indent}${mark}`);
       languageSelect.value = normalizeLanguage(tb.language);
       languageSelect.onchange = () => apply(() => {
         tb.language = languageSelect.value;
+        tb.languagePinned = true;
         el.setAttr("data-language", tb.language);
       });
     }
@@ -69372,7 +69885,7 @@ ${indent}${mark}`);
     const closeBar = bar.createEl("button", { cls: "notelens-embed-close notelens-format-close is-glyph", text: "\u2715" });
     closeBar.title = tr("Terminar de editar (Esc)");
     closeBar.onclick = () => this.commitTextEditor();
-    if (import_obsidian13.Platform.isPhone) {
+    if (import_obsidian14.Platform.isPhone) {
       bar.addClass("is-docked");
       this.workspaceEl.addClass("is-editing-text");
     } else {
@@ -69436,7 +69949,7 @@ ${indent}${mark}`);
   /** Direct drag of one embed (frame headers work with any tool active). */
   startSingleEmbedDrag(e, embed) {
     this.history.push();
-    const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`);
+    const el = this.pageElement(embed.id);
     const startX = e.clientX;
     const startY = e.clientY;
     const origX = embed.x;
@@ -69493,7 +70006,7 @@ function stickyTilt(id) {
 }
 
 // src/settings.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 var DEFAULT_SETTINGS = {
   defaultBackground: "dots",
   defaultMargin: false,
@@ -69593,7 +70106,7 @@ async function probeOne(base) {
   ]) {
     try {
       const origin = /^https?:\/\/[^/]+/i.exec(url)?.[0] ?? "";
-      const response = await (0, import_obsidian14.requestUrl)({ url, method: "GET", headers: { Origin: origin, Referer: `${origin}/` }, throw: false });
+      const response = await (0, import_obsidian15.requestUrl)({ url, method: "GET", headers: { Origin: origin, Referer: `${origin}/` }, throw: false });
       const names = pick(response.json);
       if (response.status < 400 && Array.isArray(names)) return names.filter((name) => !!name);
     } catch {
@@ -69601,8 +70114,8 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.1.1" : "desconocida";
-var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
+var NOTELENS_BUILD = true ? "3.2.0" : "desconocida";
+var NoteLensSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -69632,7 +70145,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
     for (const item of this.items()) {
       if (item.visible && !item.visible()) continue;
       item.before?.(containerEl);
-      item.render(new import_obsidian14.Setting(containerEl));
+      item.render(new import_obsidian15.Setting(containerEl));
     }
     containerEl.createEl("p", { cls: "setting-item-description", text: tr("Las herramientas y la interfaz cambian al momento en las pizarras abiertas. Lo que hay bajo \xABPizarras nuevas\xBB solo afecta a las que crees a partir de ahora.") });
   }
@@ -69916,7 +70429,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
             s3.petX = null;
             s3.petY = null;
             save();
-            new import_obsidian14.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
+            new import_obsidian15.Notice(tr("Leen volver\xE1 a su esquina al reabrir la pizarra"));
           }));
         }
       },
@@ -70021,7 +70534,7 @@ var NoteLensSettingTab = class extends import_obsidian14.PluginSettingTab {
 };
 
 // src/main.ts
-var OneNotePlugin = class extends import_obsidian15.Plugin {
+var OneNotePlugin = class extends import_obsidian16.Plugin {
   constructor() {
     super(...arguments);
     this.settings = { ...DEFAULT_SETTINGS };
@@ -70047,7 +70560,7 @@ var OneNotePlugin = class extends import_obsidian15.Plugin {
       callback: () => void this.createNewOneNoteFile()
     });
     this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
-      if (!(file instanceof import_obsidian15.TFolder)) return;
+      if (!(file instanceof import_obsidian16.TFolder)) return;
       menu.addItem((item) => item.setTitle(tr("Nueva pizarra NoteLens")).setIcon("pencil").onClick(() => void this.createNewOneNoteFile(file)));
     }));
   }

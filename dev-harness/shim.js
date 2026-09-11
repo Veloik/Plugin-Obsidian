@@ -104,6 +104,24 @@
 		PluginSettingTab, SettingTab, renderMath, finishRenderMath, loadMathJax, loadPrism,
 		Plugin, Component, View, FileView, ItemView: View, Modal, FuzzySuggestModal, Setting, Menu, MenuItem, Notice, TFile, TFolder, TAbstractFile: class {},
 		WorkspaceLeaf: class {}, App: class {}, setIcon, normalizePath: (p) => p.replace(/\\/g, "/").replace(/\/+/g, "/"),
+		// Obsidian strips scripts, event handlers and anything that can fetch;
+		// the same has to happen here or the harness would be the more
+		// forgiving of the two and hide what the app itself would refuse.
+		sanitizeHTMLToDom: (html) => {
+			const parsed = new DOMParser().parseFromString("<body>" + html + "</body>", "text/html");
+			const frag = document.createDocumentFragment();
+			const banned = new Set(["SCRIPT", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "STYLE", "FORM", "INPUT", "BUTTON"]);
+			for (const el of Array.from(parsed.body.querySelectorAll("*"))) {
+				if (banned.has(el.tagName)) { el.remove(); continue; }
+				for (const attr of Array.from(el.attributes)) {
+					const name = attr.name.toLowerCase();
+					const value = attr.value.trim().toLowerCase();
+					if (name.startsWith("on") || value.startsWith("javascript:")) el.removeAttribute(attr.name);
+				}
+			}
+			while (parsed.body.firstChild) frag.appendChild(parsed.body.firstChild);
+			return frag;
+		},
 		requestUrl: async (opts) => { const o = typeof opts === "string" ? { url: opts } : opts; const r = await fetch(o.url, { method: o.method || "GET", headers: o.headers, body: o.body }); const text = await r.text(); let json = null; try { json = JSON.parse(text); } catch {} if (r.status >= 400 && o.throw !== false) throw new Error("Request failed, status " + r.status); return { status: r.status, text, json, headers: {} }; }, Platform: window.__presetPlatform || { isMobile: false, isDesktop: true, isMacOS: false, isIosApp: false }, getLanguage: () => window.__presetLanguage || "es", debounce: (f) => f, moment: null
 	};
 	window.__TFile = TFile;

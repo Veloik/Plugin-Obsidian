@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.2.0
+
+### Added
+
+- EPUBs can be read on the board. Putting a book on the canvas now asks the same kind of question a PDF does: a reader that opens the book right there — chapter by chapter, with a table of contents, its own pictures, and the place you left it remembered — or the small card that opens it in your usual reader. Either can become the other from a button, so the choice is never final. The book's markup is sanitised before it is shown: what survives is the text, its structure and its figures, never anything that could run.
+- Code blocks read their own language. Code pasted without a fence is recognised from the source itself — Python, JavaScript, TypeScript, Java, C#, Go, Rust, SQL, Bash, JSON, YAML, CSS, HTML and a dozen more — and highlighted at once, with an `auto` badge saying it was a guess. Choosing a language by hand, or writing a fence, pins it for good.
+- A code block is now drawn line by line, so its numbers can never drift out of step with its code. That buys two things: a button in its header folds long lines instead of scrolling them sideways, and pressing a line number marks that line — both remembered with the board.
+- Every saved section is drawn on the board where it was saved: a quiet dashed marker with its number and name, which brightens under the pointer and takes you back to that view when tapped.
+
+### Fixed
+
+- A tag is the one thing on the page a painting tool may still touch. It was inert with the pen in hand, which is backwards: tags are how a notebook is organised. They now stay live — and above everything else the page carries — so the stylus ticks one off or opens it like a finger does.
+- Nothing you operate can be painted on any more. Tags, section markers, videos, recordings, charts, tables, note cards, code blocks, books opened on the board, attachments and links to other notes and boards are drawn in a layer of their own above the ink: a line that crosses the page runs behind them, and a press that lands on one presses it instead of starting a stroke there. Selection boxes and handles were lifted up there too, so a selection is never buried under the strokes. Pages, pictures, prose and formulas stay under the ink, because writing on those is the whole point.
+- Drawing across a tag no longer opens the tag summary. A press on a tag is read from the pointer itself rather than from the browser's click, and only one that stayed still and ended quickly counts; anything that travelled is the stroke it looks like. Holding on a tag no longer opens its menu over the drawing either.
+- A code block carried two crosses: the one every box on the board has at its corner, and a second in its own header. The header keeps the folding and the copy; deleting stays where it is on everything else.
+
 ## 3.1.1
 
 Republished under a new number at the author's request; the code is the same as 3.1.0.

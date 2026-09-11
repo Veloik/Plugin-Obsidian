@@ -145,6 +145,25 @@ export interface TextBox {
 	/** A code block keeps text editing but gets its own readable treatment; a math box renders its text as LaTeX. */
 	variant?: "text" | "code" | "math";
 	language?: string;
+	/** Set once the language was chosen by hand or by a fence: guessing stops there. */
+	languagePinned?: boolean;
+	/** A code block that folds its long lines instead of scrolling them sideways. */
+	codeWrap?: boolean;
+	/** Lines of a code block singled out, 1-based, to point at what matters. */
+	codeMarks?: number[];
+}
+
+/** Marked code lines read back from disk: whole positive numbers, in order, deduplicated. */
+function sanitizeCodeMarks(raw: unknown): number[] | undefined {
+	if (!Array.isArray(raw)) return undefined;
+	const lines = new Set<number>();
+	for (const item of raw) {
+		const line = asNumber(item);
+		if (line === undefined || !Number.isFinite(line) || line < 1) continue;
+		lines.add(Math.round(line));
+		if (lines.size >= 500) break;
+	}
+	return lines.size ? Array.from(lines).sort((a, b) => a - b) : undefined;
 }
 
 /** Runs read back from disk: text is kept, everything else is a flag or a colour. */
@@ -256,6 +275,10 @@ export interface Embed {
 	pdfMode?: "viewer" | "pages";
 	/** Cached page count for pdfMode "pages" (fast re-open). */
 	pages?: number;
+	/** EPUB presentation: a card that opens the book outside, or a reader on the board. */
+	epubMode?: "card" | "reader";
+	/** Chapter the EPUB reader was left on, as an index into the spine. */
+	epubChapter?: number;
 	/** Vault-relative WebVTT track associated with a local video. */
 	captionSrc?: string;
 }
@@ -579,7 +602,10 @@ export function migrateDocument(raw: unknown): OneNoteDocument {
 			autoWidth: t.autoWidth === true,
 			rotation: asNumber(t.rotation),
 			variant: t.variant === "code" || t.variant === "math" ? t.variant : "text",
-			language: asString(t.language)?.slice(0, 32)
+			language: asString(t.language)?.slice(0, 32),
+			languagePinned: t.languagePinned === true || undefined,
+			codeWrap: t.codeWrap === true || undefined,
+			codeMarks: sanitizeCodeMarks(t.codeMarks)
 		});
 	}
 
@@ -655,6 +681,8 @@ export function migrateDocument(raw: unknown): OneNoteDocument {
 			page: asNumber(e.page),
 			pdfMode: e.pdfMode === "pages" || e.pdfMode === "scroll" ? "pages" : "viewer",
 			pages: asNumber(e.pages),
+			epubMode: e.epubMode === "reader" ? "reader" : undefined,
+			epubChapter: asNumber(e.epubChapter),
 			captionSrc: asString(e.captionSrc)
 		});
 	}

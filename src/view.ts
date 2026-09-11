@@ -23,7 +23,7 @@ import {
 	ChartData, createDocumentPage, createEmptyDocument, genId, migrateDocument
 } from "./types";
 import { clamp, cutStrokeAround, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha, stripLeadingEmoji } from "./tools";
-import { EmbedHost, ImagePickModal, NoteOrBoardPickModal, PdfModeModal, PdfPickModal, VaultFilePickModal, VideoInsertModal, renderEmbedFrame } from "./embeds";
+import { EmbedHost, EpubModeModal, ImagePickModal, NoteOrBoardPickModal, PdfModeModal, PdfPickModal, VaultFilePickModal, VideoInsertModal, renderEmbedFrame } from "./embeds";
 import { createNavigatorPanel, isBoardFile } from "./navigator";
 import { recognizeFormula, recognizeImage } from "./ocr";
 import { pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
@@ -55,17 +55,43 @@ const DEFAULT_TEXT_HIGHLIGHT = TEXT_HIGHLIGHTS[0];
 /** One node of Prism's token tree: a literal run, or a typed span holding more. */
 type PrismToken = string | { type: string; alias?: string | string[]; content: PrismToken | PrismToken[] };
 
-/** Paints Prism's tokens as elements, so highlighted code never travels as HTML. */
-function paintPrismTokens(parent: HTMLElement, tokens: PrismToken | PrismToken[]): void {
+/** One piece of highlighted code: its text, and the token classes it wears. */
+interface CodePiece { text: string; cls: string[] }
+
+/**
+ * Prism's token tree flattened into the pieces it paints, in order, each
+ * carrying the classes of every token it sits inside. Nesting is what the
+ * tree is for; a flat list is what can be cut into lines.
+ */
+function flattenPrismTokens(tokens: PrismToken | PrismToken[], cls: string[] = []): CodePiece[] {
+	const out: CodePiece[] = [];
 	for (const token of Array.isArray(tokens) ? tokens : [tokens]) {
 		if (typeof token === "string") {
-			parent.appendText(token);
+			if (token) out.push({ text: token, cls });
 			continue;
 		}
 		const aliases = Array.isArray(token.alias) ? token.alias : token.alias ? [token.alias] : [];
-		const span = parent.createSpan({ cls: ["token", token.type, ...aliases].filter(Boolean).join(" ") });
-		paintPrismTokens(span, token.content);
+		const own = [...cls, "token", token.type, ...aliases].filter(Boolean);
+		out.push(...flattenPrismTokens(token.content, own));
 	}
+	return out;
+}
+
+/**
+ * Cuts those pieces at every newline. A block comment or a template string is
+ * one token spanning several lines, and each line has to carry its own share
+ * of it to be drawn in a row of its own.
+ */
+function splitTokensIntoLines(pieces: CodePiece[]): CodePiece[][] {
+	const lines: CodePiece[][] = [[]];
+	for (const piece of pieces) {
+		const parts = piece.text.split("\n");
+		parts.forEach((part, index) => {
+			if (index > 0) lines.push([]);
+			if (part) lines[lines.length - 1].push({ text: part, cls: piece.cls });
+		});
+	}
+	return lines;
 }
 
 /** Enter inside a list item starts the next item; Enter on an empty item ends the list. Returns false when the line is not a list. */
@@ -124,6 +150,62 @@ const LANGUAGE_ALIASES: Record<string, string> = {
 	kt: "kotlin", rs: "rust", golang: "go", octave: "matlab", text: "plaintext", txt: "plaintext"
 };
 
+/**
+ * What each language is recognised by. Every pattern is a shape that belongs
+ * to one language and reads as ordinary text in the others, so a snippet only
+ * scores where it really comes from. Order breaks ties: the more particular
+ * language of a pair — TypeScript over JavaScript, C++ over C — comes first.
+ */
+const LANGUAGE_SIGNS: [string, RegExp[]][] = [
+	["python", [/^[ \t]*def [\w_]+\s*\(.*\)\s*(?:->[^:]+)?:/m, /^[ \t]*from [\w.]+ import /m, /^[ \t]*(?:el)?if .+:[ \t]*$/m, /^[ \t]*class [\w_]+(?:\(.*\))?:/m, /\bself\b/, /\b(?:None|True|False)\b/, /\bprint\(/, /^[ \t]*(?:for|while) .+:[ \t]*$/m]],
+	["typescript", [/\binterface [A-Z]\w*\s*\{/, /^[ \t]*(?:export )?type [A-Z]\w* =/m, /:\s*(?:string|number|boolean|void|any|unknown)\b/, /\bimplements \w/, /\bas [A-Z]\w*\b/, /\breadonly \w/, /\benum [A-Z]\w*/]],
+	["javascript", [/\b(?:const|let|var) \w+\s*=/, /\bfunction\s*\w*\s*\(/, /=>\s*[{(]/, /\bconsole\.log\(/, /\b(?:require|import)\s*[(\w]/, /\bdocument\.querySelector/, /===|!==/]],
+	["csharp", [/\busing System\b/, /\bnamespace \w/, /\bpublic (?:class|static|void|string|int)\b/, /\bConsole\.Write/, /\bvar \w+\s*=\s*new\b/]],
+	["java", [/\bpublic class \w/, /\bpublic static void main\b/, /\bSystem\.out\.print/, /\bimport java\./, /\b(?:private|protected) \w+ \w+\s*[;=(]/]],
+	["kotlin", [/\bfun \w+\s*\(/, /\bval \w+\s*[:=]/, /\bvar \w+\s*:\s*\w/, /\bprintln\(/]],
+	["swift", [/\bfunc \w+\s*\(/, /\blet \w+\s*[:=]/, /\bimport (?:Foundation|SwiftUI|UIKit)\b/, /\bguard let\b/]],
+	["go", [/\bpackage main\b/, /\bfunc \w+\s*\([^)]*\)\s*\w*\s*\{/, /:=/, /\bfmt\.(?:Print|Sprint)/, /\bimport \(/]],
+	["rust", [/\bfn \w+\s*\(/, /\blet mut \b/, /\bprintln!\(/, /\bimpl \w/, /\b(?:pub|use) (?:fn|struct|crate|std)\b/, /->\s*(?:Result|Option|\w+)</]],
+	["cpp", [/#include\s*<(?:iostream|vector|string|map)>/, /\bstd::/, /\bcout\s*<</, /\btemplate\s*</, /\busing namespace std\b/]],
+	["c", [/#include\s*<(?:stdio|stdlib|string)\.h>/, /\bprintf\s*\(/, /\bint main\s*\(/, /\bmalloc\s*\(/, /\bstruct \w+\s*\{/]],
+	["php", [/<\?php/, /\$\w+\s*=/, /\becho\b/, /\bfunction \w+\s*\(\s*\$/]],
+	["ruby", [/\bdef \w+[\s(]/, /^[ \t]*end[ \t]*$/m, /\bputs\b/, /\brequire ['"]/, /\bdo \|\w+\|/]],
+	["sql", [/\bSELECT\b[\s\S]+\bFROM\b/i, /\bINSERT INTO\b/i, /\bCREATE TABLE\b/i, /\b(?:LEFT|INNER|RIGHT) JOIN\b/i, /\b(?:GROUP|ORDER) BY\b/i, /\bUPDATE\b[\s\S]+\bSET\b/i]],
+	["powershell", [/\bGet-\w+|\bSet-\w+|\bNew-\w+/, /\bWrite-(?:Host|Output)\b/, /\bparam\s*\(/i, /\$\w+\s*=\s*/]],
+	["bash", [/^#!.*\b(?:ba|z)?sh\b/m, /^[ \t]*(?:echo|cd|mkdir|rm|cp|mv|grep|sed|awk|curl|chmod) /m, /\$\{\w+\}/, /^[ \t]*(?:if|for|while) .*(?:; then|; do)[ \t]*$/m, /\|\s*(?:grep|awk|sed|xargs)\b/]],
+	["css", [/^[ \t]*[.#]?[\w-]+[^\n{]*\{[^}]*:[^}]*;/m, /\b(?:margin|padding|display|color|background|font-size)\s*:/, /@media\b/, /\b\d+(?:px|rem|em|vh|vw)\b/]],
+	["markup", [/<\/(?:div|span|p|body|html|head|section|li|ul|table)>/, /<(?:!DOCTYPE html|html|div|span|p)\b/i, /<\w+[^>]*\/>/, /<\?xml\b/]],
+	["yaml", [/^[ \t]*[\w-]+:\s*(?:$|[^{[\n])/m, /^[ \t]*- [\w"']/m, /^---[ \t]*$/m]],
+	["latex", [/\\(?:begin|end)\{\w+\}/, /\\(?:documentclass|usepackage|section|frac|textbf)\b/, /\$\$[\s\S]+\$\$/]],
+	["markdown", [/^#{1,6} \S/m, /^[ \t]*[-*+] \S/m, /\[[^\]]+\]\([^)]+\)/, /^>[ \t]/m, /\*\*[^*]+\*\*/]],
+	["r", [/<-\s*(?:function|c\()/, /\blibrary\(\w+\)/, /\bdata\.frame\(/, /\bggplot\(/]],
+	["matlab", [/^[ \t]*function\s+(?:\[?[\w, ]+\]?\s*=\s*)?\w+\(/m, /\bdisp\(/, /^[ \t]*end[ \t]*$/m, /\bzeros\(|\bones\(/]]
+];
+
+/**
+ * Guesses what a snippet is written in, so code pasted without a fence is
+ * highlighted without anyone picking from a list. It answers null rather than
+ * guess badly: one stray match is a coincidence, not a language.
+ */
+function detectLanguage(text: string): string | null {
+	const source = text.trim();
+	if (source.length < 12) return null;
+	// JSON says what it is better than any pattern can: it either parses or not.
+	if (/^[[{]/.test(source) && /[}\]]$/.test(source)) {
+		try {
+			const parsed: unknown = JSON.parse(source);
+			if (parsed && typeof parsed === "object") return "json";
+		} catch { /* not JSON after all; the patterns below still get their turn */ }
+	}
+	let best: { id: string; score: number } | null = null;
+	for (const [id, signs] of LANGUAGE_SIGNS) {
+		let score = 0;
+		for (const sign of signs) if (sign.test(source)) score++;
+		if (score > (best?.score ?? 0)) best = { id, score };
+	}
+	return best && best.score >= 2 ? best.id : null;
+}
+
 /** Maps user-written or fenced language names to a Prism id. */
 function normalizeLanguage(raw: string | undefined): string {
 	const key = (raw ?? "").trim().toLowerCase();
@@ -133,6 +215,20 @@ function normalizeLanguage(raw: string | undefined): string {
 
 /** The only tools whose long press asks for the board menu instead of drawing. */
 const CANVAS_MENU_TOOLS: ToolId[] = ["hand", "select"];
+/**
+ * What rides above the ink, and so cannot be painted on: the tags and section
+ * markers a notebook is organised by, and everything you operate rather than
+ * annotate — a video, a recording, a chart, a table, a link to another note
+ * or board, and the note cards and code blocks that carry their own buttons.
+ * A page, a picture and prose stay underneath: writing on those is the point.
+ */
+const INK_FREE_EMBEDS: EmbedKind[] = ["youtube", "web-video", "video", "audio", "epub", "file", "note", "board", "chart"];
+/** How far a finger may slide on something live and still be read as a tap, in pixels. */
+const TAP_SLOP = 8;
+/** How long a press may last and still be a tap rather than a drag or a stroke. */
+const TAP_MAX_MS = 350;
+/** How close two taps must be to read as one double tap. */
+const DOUBLE_TAP_MS = 320;
 
 type RulerMode = "ruler" | "protractor";
 // The straight ruler's height, in the stylesheet and in the scale it draws.
@@ -210,6 +306,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	workspaceEl!: HTMLElement;
 	stageEl!: HTMLElement;
 	domLayerEl!: HTMLElement;
+	/** Above the ink: tags, section markers and the card a tag opens. */
+	private topStageEl!: HTMLElement;
+	private topLayerEl!: HTMLElement;
 
 	// --- Tool state (ToolbarHost) ---
 	currentTool: ToolId = "pen";
@@ -426,6 +525,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.domLayerEl = this.stageEl.createDiv({ cls: "onenote-dom-layer" });
 
 		this.renderer = new CanvasRenderer(this.workspaceEl);
+		// And one layer above the ink, for the two things that are not paper:
+		// the tags a notebook is organised by and the markers of its sections.
+		// A line drawn across the page runs behind them instead of over them.
+		this.topStageEl = this.workspaceEl.createDiv({ cls: "onenote-top-stage" });
+		this.topLayerEl = this.topStageEl.createDiv({ cls: "onenote-dom-layer onenote-top-layer" });
 		this.registerDomEvent(this.renderer.canvas, "contextlost", (event) => event.preventDefault());
 		this.registerDomEvent(this.renderer.canvas, "contextrestored", () => this.handleResize());
 		this.register(() => { this.stopMobileEditor?.(); this.stopMobileEditor = null; this.stopMobileFullscreen?.(); this.stopMobileFullscreen = null; });
@@ -457,7 +561,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.prism = prism;
 			for (const tb of this.pageTexts) {
 				if (tb.variant !== "code") continue;
-				const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${tb.id}"]`);
+				const el = this.pageElement(tb.id);
 				if (el && el !== this.activeTextSourceEl) {
 					this.paintTextContent(el, tb);
 					this.syncFittedSize(el, tb);
@@ -619,17 +723,47 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderMiniMap();
 	}
 
+	/** One page element by id, wherever it was drawn: under the ink or above it. */
+	private pageElement(id: string): HTMLElement | null {
+		const selector = `[data-id="${id}"]`;
+		return this.domLayerEl.querySelector<HTMLElement>(selector)
+			?? this.topLayerEl.querySelector<HTMLElement>(selector);
+	}
+
+	/** Where an embed is drawn: over the ink if it is something you operate. */
+	private layerFor(embed: Embed): HTMLElement {
+		return INK_FREE_EMBEDS.includes(embed.kind) ? this.topLayerEl : this.domLayerEl;
+	}
+
+	/**
+	 * Where a text box is drawn. A note card is a thing you stick on the board
+	 * and move about, and a code block carries its own buttons; neither is
+	 * paper to write over. Prose and formulas are, so they stay under the ink.
+	 */
+	private layerForText(tb: TextBox): HTMLElement {
+		return tb.stickyColor || tb.variant === "code" ? this.topLayerEl : this.domLayerEl;
+	}
+
+	/** Both halves of the page, for the marks that can land on either. */
+	private pageLayers(): HTMLElement[] {
+		return [this.domLayerEl, this.topLayerEl];
+	}
+
 	private renderDomLayer(): void {
 		this.domLayerEl.empty();
+		this.topLayerEl.empty();
+		this.renderBookmarkMarkers();
 		for (const b of this.pageBadges) this.renderBadge(b);
 		for (const t of this.pageTexts) this.renderTextBox(t);
 		for (const table of this.pageTables) this.renderTable(table);
-		for (const e of this.pageEmbeds) renderEmbedFrame(this, this.domLayerEl, e);
+		for (const e of this.pageEmbeds) renderEmbedFrame(this, this.layerFor(e), e);
 	}
 
 	private applyStageTransform(): void {
 		const { x, y, scale } = this.data.viewTransform;
-		this.stageEl.style.transform = `translate(${x}px, ${y - this.keyboardLift}px) scale(${scale})`;
+		const transform = `translate(${x}px, ${y - this.keyboardLift}px) scale(${scale})`;
+		this.stageEl.style.transform = transform;
+		this.topStageEl.style.transform = transform;
 		this.updateBackgroundPosition();
 		this.renderA4Guides();
 		this.renderMiniMap();
@@ -841,6 +975,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	isRulerVisible(): boolean { return this.rulerState.visible; }
+
+	/**
+	 * Whether a press-and-hold here belongs to the drawing rather than to a
+	 * menu. Windows hands a long press over as a right-click with "mouse"
+	 * written on it, so the tool decides and not the pointer; a machine with no
+	 * touch screen keeps its right-click with every tool.
+	 */
+	private longPressIsDrawing(): boolean {
+		if (CANVAS_MENU_TOOLS.includes(this.currentTool)) return false;
+		return this.isDrawing || this.coarsePointer();
+	}
 
 	isStraightLineHeld(): boolean { return this.straightLineHeld; }
 
@@ -1218,6 +1363,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.assistant = null;
 		for (const child of Array.from(this.workspaceEl.children)) {
 			if (child.classList.contains("onenote-stage")) continue;
+			if (child.classList.contains("onenote-top-stage")) continue;
 			if (child.classList.contains("onenote-canvas")) continue;
 			child.remove();
 		}
@@ -1385,7 +1531,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			ctx.stroke();
 		}
 		for (const t of this.pageTexts) {
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${t.id}"]`);
+			const el = this.pageElement(t.id);
 			const w = el?.offsetWidth || t.w || 200;
 			const h = el?.offsetHeight || t.h || 40;
 			const fill = t.stickyColor ? hexToRgba(t.stickyColor, 0.9) : t.variant === "code" ? "rgba(125, 211, 252, 0.45)" : t.variant === "math" ? "rgba(167, 139, 250, 0.55)" : light ? "rgba(15, 23, 42, 0.3)" : "rgba(226, 232, 240, 0.5)";
@@ -1489,7 +1635,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			// written on it — so the tool decides here, not the pointer. A
 			// right-click on a machine with no touch screen still opens the
 			// menu with any tool, because there a press is never a stroke.
-			if (!CANVAS_MENU_TOOLS.includes(this.currentTool) && (this.isDrawing || this.coarsePointer())) return;
+			if (this.longPressIsDrawing()) return;
 			this.showCanvasMenu(e);
 		});
 
@@ -1715,7 +1861,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				x: c.x - 240, y: c.y - 180, w: 480, h: 0
 			};
 			this.data.embeds.push(embed);
-			renderEmbedFrame(this, this.domLayerEl, embed);
+			renderEmbedFrame(this, this.layerFor(embed), embed);
 			this.save();
 			new Notice(tr("Imagen pegada en la pizarra"));
 		} catch (err) {
@@ -1894,7 +2040,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private getInsertionPoint(w: number, h: number): { x: number; y: number } {
 		const c = this.getViewportCenterScene();
 		const measured = (item: { id: string; x: number; y: number; w?: number; h?: number }) => {
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${item.id}"]`);
+			const el = this.pageElement(item.id);
 			return { x: item.x, y: item.y, w: item.w ?? el?.offsetWidth ?? 260, h: item.h ?? el?.offsetHeight ?? 60 };
 		};
 		const rects = [...this.pageTexts, ...this.pageTables, ...this.pageEmbeds].map(measured);
@@ -1980,6 +2126,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.startPan(e);
 			return;
 		}
+		// What lives above the ink is not paper. A press that lands on one of
+		// those presses it: nothing is drawn, erased or placed there, and a line
+		// that crosses the page runs behind it. The hand and the selection tools
+		// got theirs above — panning and dragging still start anywhere.
+		if (this.shouldPassPointerToCanvas() && (e.target as HTMLElement | null)?.closest(".onenote-top-stage")) return;
 		// The back of a stylus is its eraser (button 5), whatever tool is selected.
 		const tipErase = e.pointerType === "pen" && e.button === 5;
 		if (e.button !== 0 && !tipErase) return;
@@ -2012,9 +2163,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.lassoPoints = [pt];
 				this.lassoEl = createSvg("svg", { cls: "onenote-lasso" });
 				this.lassoEl.createSvg("polygon");
-				this.domLayerEl.appendChild(this.lassoEl);
+				this.topLayerEl.appendChild(this.lassoEl);
 			} else {
-				this.rubberEl = this.domLayerEl.createDiv({ cls: "onenote-rubberband" });
+				this.rubberEl = this.topLayerEl.createDiv({ cls: "onenote-rubberband" });
 				this.positionRubber(pt, pt);
 			}
 			return;
@@ -2530,7 +2681,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	/** Scene-space rect of a DOM-layer element, from its live element. */
 	private elementSceneRect(id: string): { x: number; y: number; w: number; h: number } | null {
-		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
+		const el = this.pageElement(id);
 		if (!el) return null;
 		const badge = this.data.badges.find(item => item.id === id);
 		const scale = badge?.scale ?? 1;
@@ -2604,17 +2755,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private renderSelectionBox(): void {
 		this.selectionBoxEl?.remove();
 		this.selectionBoxEl = null;
-		this.domLayerEl.querySelectorAll(".notelens-selected").forEach(el => el.removeClass("notelens-selected"));
+		for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-selected").forEach(el => el.removeClass("notelens-selected"));
 
 		const b = this.selectionBounds();
 		if (!b) return;
 
 		for (const id of [...this.selBadges, ...this.selTexts, ...this.selTables, ...this.selEmbeds]) {
-			(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`))?.addClass("notelens-selected");
+			this.pageElement(id)?.addClass("notelens-selected");
 		}
 
 		const pad = 8;
-		const box = this.domLayerEl.createDiv({ cls: "onenote-selection-box" });
+		// Drawn above the ink like every other handle: a selection you cannot
+		// see under the strokes is a selection you cannot work with.
+		const box = this.topLayerEl.createDiv({ cls: "onenote-selection-box" });
 		box.style.left = `${b.x - pad}px`;
 		box.style.top = `${b.y - pad}px`;
 		box.style.width = `${b.w + pad * 2}px`;
@@ -2694,7 +2847,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		const startAngle = angleAt(event);
 		let applied = 0;
-		const badge = this.domLayerEl.createDiv({ cls: "notelens-rotation-badge" });
+		const badge = this.topLayerEl.createDiv({ cls: "notelens-rotation-badge" });
 		const showBadge = (deg: number) => {
 			badge.setText(`${Math.round(((deg % 360) + 360) % 360)}°`);
 			badge.style.left = `${center.x}px`;
@@ -2749,7 +2902,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			shape.rotation = norm((shape.rotation ?? 0) + deg);
 		}
 		const orbit = (obj: { x: number; y: number; rotation?: number }, id: string, turns: boolean) => {
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
+			const el = this.pageElement(id);
 			if (!el) return;
 			const rect = this.elementSceneRect(id);
 			const w = rect?.w ?? 0, h = rect?.h ?? 0;
@@ -2802,7 +2955,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const moveDom = (obj: { x: number; y: number }, id: string) => {
 			obj.x += dx;
 			obj.y += dy;
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${id}"]`);
+			const el = this.pageElement(id);
 			if (el) {
 				el.style.left = `${obj.x}px`;
 				el.style.top = `${obj.y}px`;
@@ -2942,7 +3095,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private syncSelectedGeometry(): void {
 		for (const badge of this.pageBadges) {
 			if (!this.selBadges.has(badge.id)) continue;
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
+			const el = this.pageElement(badge.id);
 			if (el) {
 				el.style.left = `${badge.x}px`; el.style.top = `${badge.y}px`;
 				el.style.transform = `scale(${badge.scale ?? 1})`;
@@ -2950,17 +3103,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		for (const text of this.pageTexts) {
 			if (!this.selTexts.has(text.id)) continue;
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${text.id}"]`);
+			const el = this.pageElement(text.id);
 			if (el) { el.style.left = `${text.x}px`; el.style.top = `${text.y}px`; this.applyTextStyles(el, text); }
 		}
 		for (const table of this.pageTables) {
 			if (!this.selTables.has(table.id)) continue;
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
+			const el = this.pageElement(table.id);
 			if (el) { el.style.left = `${table.x}px`; el.style.top = `${table.y}px`; el.style.width = `${table.w}px`; el.style.height = `${table.h}px`; }
 		}
 		for (const embed of this.pageEmbeds) {
 			if (!this.selEmbeds.has(embed.id)) continue;
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${embed.id}"]`);
+			const el = this.pageElement(embed.id);
 			if (el) {
 				el.style.left = `${embed.x}px`; el.style.top = `${embed.y}px`; el.style.width = `${embed.w}px`;
 				if (embed.h > 0) el.style.height = `${embed.h}px`;
@@ -3022,7 +3175,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.searchEl = null;
 		this.searchHits = [];
 		this.searchIndex = -1;
-		this.domLayerEl.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
+		for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
 	}
 
 	private findMatches(query: string): { id: string; x: number; y: number }[] {
@@ -3045,15 +3198,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private showSearchHit(count: HTMLElement): void {
-		this.domLayerEl.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
+		for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
 		const total = this.searchHits.length;
 		count.setText(total ? `${this.searchIndex + 1}/${total}` : (this.searchEl?.querySelector<HTMLInputElement>("input"))?.value ? "0" : "");
 		for (const hit of this.searchHits) {
-			(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${hit.id}"]`))?.addClass("notelens-search-hit");
+			this.pageElement(hit.id)?.addClass("notelens-search-hit");
 		}
 		const current = this.searchHits[this.searchIndex];
 		if (!current) return;
-		(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${current.id}"]`))?.addClass("notelens-search-current");
+		this.pageElement(current.id)?.addClass("notelens-search-current");
 		this.panToScene(current.x, current.y, Math.max(this.data.viewTransform.scale, 0.8));
 	}
 
@@ -3427,7 +3580,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		for (const t of this.pageTexts) {
 			if (!this.selTexts.has(t.id)) continue;
 			mutate(t);
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${t.id}"]`);
+			const el = this.pageElement(t.id);
 			if (el) this.applyTextStyles(el, t);
 			touched = true;
 		}
@@ -3674,7 +3827,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				x: c.x - w / 2, y: c.y - (h || 500) / 2, w, h, pdfMode: mode
 			};
 			this.data.embeds.push(embed);
-			renderEmbedFrame(this, this.domLayerEl, embed);
+			renderEmbedFrame(this, this.layerFor(embed), embed);
 			this.save();
 		}).open();
 	}
@@ -3687,7 +3840,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			embed.x = c.x - embed.w / 2;
 			embed.y = c.y - embed.h / 2;
 			this.data.embeds.push(embed);
-			renderEmbedFrame(this, this.domLayerEl, embed);
+			renderEmbedFrame(this, this.layerFor(embed), embed);
 			this.save();
 		}).open();
 	}
@@ -3701,7 +3854,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				x: c.x - 240, y: c.y - 180, w: 480, h: 0
 			};
 			this.data.embeds.push(embed);
-			renderEmbedFrame(this, this.domLayerEl, embed);
+			renderEmbedFrame(this, this.layerFor(embed), embed);
 			this.save();
 		}).open();
 	}
@@ -3873,10 +4026,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private insertVaultFile(file: TFile, at?: { x: number; y: number }): void {
-		if (file.extension.toLowerCase() === "pdf") {
+		const extension = file.extension.toLowerCase();
+		if (extension === "pdf") {
 			this.insertPdfFile(file);
 			return;
 		}
+		if (extension === "epub") {
+			new EpubModeModal(this.app, (mode) => this.placeVaultFile(file, at, mode)).open();
+			return;
+		}
+		this.placeVaultFile(file, at);
+	}
+
+	private placeVaultFile(file: TFile, at?: { x: number; y: number }, epubMode?: "card" | "reader"): void {
 		this.history.push();
 		const kind = this.embedKindFor(file);
 		const c = this.getViewportCenterScene();
@@ -3885,6 +4047,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			: kind === "image" ? { w: 480, h: 0 }
 			: kind === "note" ? { w: 320, h: 150 }
 			: kind === "board" ? { w: 320, h: 96 }
+			: epubMode === "reader" ? { w: 520, h: 620 }
 			: { w: 360, h: 112 };
 		const spot = at ?? this.getInsertionPoint(dimensions.w, dimensions.h || 120);
 		// Cards land where they were asked for; media without a spot is centred on the view.
@@ -3893,10 +4056,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			id: genId("embed"), pageId: this.data.activePageId, kind, src: file.path,
 			x: centred ? c.x - dimensions.w / 2 : spot.x,
 			y: centred ? c.y - dimensions.h / 2 : spot.y,
-			w: dimensions.w, h: dimensions.h
+			w: dimensions.w, h: dimensions.h,
+			epubMode: kind === "epub" ? epubMode ?? "card" : undefined
 		};
 		this.data.embeds.push(embed);
-		renderEmbedFrame(this, this.domLayerEl, embed);
+		renderEmbedFrame(this, this.layerFor(embed), embed);
 		this.save();
 	}
 
@@ -3916,6 +4080,18 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	// ------------------------------------------------------------------
 
 	onEmbedChanged(): void { this.save(); }
+
+	/** Draws one embed again where it belongs, after something about it changed. */
+	refreshEmbed(embed: Embed): void {
+		this.history.push();
+		this.pageElement(embed.id)?.remove();
+		renderEmbedFrame(this, this.layerFor(embed), embed);
+		this.renderSelectionBox();
+		this.save();
+	}
+
+	/** Anything an embed has to let go of when the board closes. */
+	registerCleanup(fn: () => void): void { this.register(fn); }
 	onEmbedDeleted(embed: Embed): void {
 		this.history.push();
 		this.data.embeds.remove(embed);
@@ -3992,9 +4168,65 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}, tag.id === "tag_hover" ? undefined : "Añade el contexto de esta etiqueta. También puedes dibujar o adjuntar imágenes desde Pizarra.", tag.id === "tag_todo").open();
 	}
 
+	/**
+	 * Runs `act` when an element is tapped: a press that stayed still and ended
+	 * quickly, told apart from a stroke drawn across it or a drag that merely
+	 * began on it. `double` says whether this tap closed a pair, which is the
+	 * touch screen's double click.
+	 *
+	 * The press is read from the pointer events themselves and not from
+	 * `click`: once a touch has been used to draw, the browser withholds the
+	 * click it would otherwise synthesise, and the tap would be lost.
+	 */
+	private onTap(el: HTMLElement, act: (double: boolean) => void): void {
+		let press: { x: number; y: number; at: number } | null = null;
+		let lastTap = 0;
+		el.addEventListener("pointerdown", (e) => {
+			press = { x: e.clientX, y: e.clientY, at: performance.now() };
+		});
+		// The press is left to bubble: the board still ends whatever it started.
+		el.addEventListener("pointerup", (e) => {
+			const start = press;
+			press = null;
+			if (!start || e.button !== 0) return;
+			const now = performance.now();
+			if (now - start.at > TAP_MAX_MS) return;
+			if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) return;
+			const double = now - lastTap <= DOUBLE_TAP_MS;
+			lastTap = double ? 0 : now;
+			act(double);
+		});
+		// A click of its own would reach the board underneath; a double one
+		// selects the words in the label. Neither is wanted here.
+		el.addEventListener("click", (e) => e.stopPropagation());
+		el.addEventListener("dblclick", (e) => { e.preventDefault(); e.stopPropagation(); });
+	}
+
+	/**
+	 * Draws each saved section where it was saved, so the board shows how it is
+	 * organised without opening a panel to find out. They are faint until the
+	 * pointer reaches one, sit under everything else on the page, and go inert
+	 * while a tool paints: a marker must never eat a stroke.
+	 */
+	private renderBookmarkMarkers(): void {
+		for (const old of Array.from(this.topLayerEl.querySelectorAll(".notelens-bookmark-marker"))) old.remove();
+		const marks = this.data.bookmarks.filter(item => this.belongsToActivePage(item));
+		marks.forEach((bookmark, index) => {
+			const el = this.topLayerEl.createDiv({ cls: "notelens-bookmark-marker" });
+			el.setAttr("data-id", bookmark.id);
+			el.style.left = `${bookmark.x}px`;
+			el.style.top = `${bookmark.y}px`;
+			setIcon(el.createSpan({ cls: "notelens-bookmark-marker-icon" }), "bookmark");
+			el.createSpan({ cls: "notelens-bookmark-marker-index", text: String(index + 1) });
+			el.createSpan({ cls: "notelens-bookmark-marker-label", text: bookmark.label });
+			el.title = tr("Marcador «{p0}». Clic para volver a esta vista", { p0: bookmark.label });
+			this.onTap(el, () => this.goToViewportBookmark(bookmark.id));
+		});
+	}
+
 	private renderBadge(badge: Badge): void {
 		const tag = quickTagById(badge.tagId);
-		const el = this.domLayerEl.createDiv({ cls: "onenote-placed-badge" });
+		const el = this.topLayerEl.createDiv({ cls: "onenote-placed-badge" });
 		el.setAttr("data-id", badge.id);
 		el.style.left = `${badge.x}px`;
 		el.style.top = `${badge.y}px`;
@@ -4042,32 +4274,29 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		else if (badge.tagId === "tag_hover") el.title = tr("{p0}. Doble clic para editarla", { p0: excerpt });
 		else el.title = tr("{p0}. Clic para ver el resumen de etiquetas", { p0: tr(tag.label) });
 
-		let pressedAt = 0;
-		el.addEventListener("pointerdown", (e) => {
-			pressedAt = performance.now();
-			if (this.currentTool !== "select" || e.button !== 0) return;
-			e.stopPropagation();
-			e.preventDefault();
-			this.routeElementDrag(e, "badge", badge.id);
-		});
-		el.addEventListener("click", (e) => {
-			e.stopPropagation();
-			// A drag is not a click.
-			if (performance.now() - pressedAt > 350) return;
+		// A tag stays live under a tool that paints, so it can be ticked off or
+		// opened with the stylus, and nothing is ever drawn on it. Only a press
+		// that stayed still and ended quickly counts as a tap: a line that
+		// merely crosses the tag on its way is still a line.
+		this.onTap(el, (double) => {
+			if (double) { this.editBadgeNote(badge); return; }
 			if (badge.tagId === "tag_todo" && badge.checklist?.length) this.advanceChecklist(badge);
 			else if (checkable) this.toggleBadgeDone(badge);
 			else if (badge.tagId === "tag_hover") this.showHoverTooltip(badge);
 			else this.toggleTagSummary(badge.tagId);
 		});
-		el.addEventListener("dblclick", (e) => {
+		el.addEventListener("pointerdown", (e) => {
+			if (this.currentTool !== "select" || e.button !== 0) return;
 			e.stopPropagation();
 			e.preventDefault();
-			this.editBadgeNote(badge);
+			this.routeElementDrag(e, "badge", badge.id);
 		});
 
 		el.addEventListener("contextmenu", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
+			// Holding the stylus still on a tag is part of the drawing too.
+			if (this.longPressIsDrawing()) return;
 			const menu = new Menu();
 			menu.addItem(item => item
 				.setTitle(badge.tagId === "tag_todo" ? tr("Editar checklist, notas e imágenes") : tr("Editar título, nota e imágenes"))
@@ -4128,7 +4357,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Repaints one badge in place and refreshes everything that mirrors it. */
 	private refreshBadge(badge: Badge): void {
 		if (this.belongsToActivePage(badge)) {
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
+			const el = this.pageElement(badge.id);
 			el?.remove();
 			this.renderBadge(badge);
 		}
@@ -4199,7 +4428,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				badge.done = !!badge.checklist?.length && badge.checklist.every(item => item.done);
 			}
 			if (this.belongsToActivePage(badge)) {
-				const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
+				const el = this.pageElement(badge.id);
 				el?.remove();
 				this.renderBadge(badge);
 			}
@@ -4396,7 +4625,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.cancelHoverTooltipHide();
 		this.hideHoverTooltip();
 		const tag = quickTagById(badge.tagId);
-		const el = this.domLayerEl.createDiv({ cls: "onenote-top-tooltip" });
+		const el = this.topLayerEl.createDiv({ cls: "onenote-top-tooltip" });
 		el.setAttr("data-tag", badge.tagId);
 		el.style.setProperty("--tag-color", tag.color);
 		el.toggleClass("is-done", !!badge.done);
@@ -4483,7 +4712,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			if (near) el.createDiv({ cls: "onenote-top-tooltip-hint", text: hints[badge.tagId] ?? "" });
 		}
 		// Choose the side using the card's real size, so image notes never cover the top docks.
-		const badgeEl = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${badge.id}"]`);
+		const badgeEl = this.pageElement(badge.id);
 		const badgeW = (badgeEl?.offsetWidth ?? 120) * (badge.scale ?? 1);
 		const badgeH = (badgeEl?.offsetHeight ?? 28) * (badge.scale ?? 1);
 		const vt = this.data.viewTransform;
@@ -4543,7 +4772,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.clearSelection();
 		const tb: TextBox = {
 			id: genId("text"), pageId: this.data.activePageId, x, y,
-			text: "", fontSize: this.textSize,
+			// Code reads at its own size, not at the prose size in the text panel;
+			// the A+ / A- buttons still grow it from there.
+			text: "", fontSize: variant === "code" ? 14 : this.textSize,
 			color: stickyColor ? "#302b19" : variant === "code" ? "#e2e8f0" : this.textColor || (isLightColor(this.data.backgroundColor) ? "#111827" : "#f8fafc"),
 			stickyColor,
 			w: stickyColor ? 220 : variant === "code" ? 440 : variant === "math" ? 320 : 160,
@@ -4600,7 +4831,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!editor) return;
 		const isMac = Platform.isMacOS || Platform.isIosApp;
 		const shortcut = isMac ? "pulsa Fn dos veces (o Control dos veces)" : "pulsa Win+H";
-		const hint = this.domLayerEl.createDiv({ cls: "notelens-dictation-hint" });
+		const hint = this.topLayerEl.createDiv({ cls: "notelens-dictation-hint" });
 		setIcon(hint.createSpan(), "mic");
 		hint.createSpan({ text: tr(" Dictado: {p0} y habla. Se escribe aquí. Esc termina.", { p0: shortcut }) });
 		hint.style.left = `${at.x}px`;
@@ -4970,6 +5201,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.history.push();
 		const bookmark: ViewportBookmark = { id: genId("bookmark"), pageId: this.data.activePageId, label, x: c.x, y: c.y, scale: this.data.viewTransform.scale };
 		this.data.bookmarks.push(bookmark);
+		this.renderBookmarkMarkers();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.(bookmark.id);
 		this.save();
 	}
@@ -4979,6 +5211,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!bookmark || !label.trim()) return;
 		this.history.push();
 		bookmark.label = label.trim();
+		this.renderBookmarkMarkers();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.save();
 	}
@@ -4988,6 +5221,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (!bookmark) return;
 		this.history.push();
 		this.data.bookmarks.remove(bookmark);
+		this.renderBookmarkMarkers();
 		panelHooks(this.workspaceEl).__refreshBookmarks?.();
 		this.save();
 	}
@@ -5177,7 +5411,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 		tb.w = anchor?.w ?? this.measureAutoWidth(tb);
 		if (anchor) {
-			const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${anchor.id}"]`);
+			const el = this.pageElement(anchor.id);
 			tb.x = anchor.x;
 			tb.y = anchor.y + (el?.offsetHeight ?? anchor.h ?? 48) + 12;
 		} else {
@@ -5214,7 +5448,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	private renderTable(table: CanvasTable): HTMLElement {
-		const el = this.domLayerEl.createDiv({ cls: "notelens-table" });
+		// A table is filled in, not written over: it rides above the ink.
+		const el = this.topLayerEl.createDiv({ cls: "notelens-table" });
 		el.setAttr("data-id", table.id);
 		el.style.left = `${table.x}px`;
 		el.style.top = `${table.y}px`;
@@ -5348,7 +5583,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 		}));
 		menu.addItem(item => item.setTitle(tr("Renombrar tabla")).setIcon("pencil").onClick(() => {
-			const titleEl = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"] .notelens-table-title`);
+			const titleEl = this.pageElement(table.id)?.querySelector<HTMLElement>(".notelens-table-title") ?? null;
 			if (titleEl) this.renameTable(table, titleEl);
 		}));
 		menu.addItem(item => item.setTitle(tr("Crear gráfico con estos datos")).setIcon("bar-chart-3").onClick(() => this.chartFromTable(table)));
@@ -5424,7 +5659,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const widths = [...this.tableColumnWidths(table)];
 		const startX = event.clientX;
 		const scale = this.data.viewTransform.scale;
-		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
+		const el = this.pageElement(table.id);
 		const grid = el?.querySelector<HTMLElement>(".notelens-table-grid");
 		const onMove = (move: PointerEvent) => {
 			const delta = (move.clientX - startX) / scale;
@@ -5453,7 +5688,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const heights = [...this.tableRowHeights(table)];
 		const startY = event.clientY;
 		const scale = this.data.viewTransform.scale;
-		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${table.id}"]`);
+		const el = this.pageElement(table.id);
 		const grid = el?.querySelector<HTMLElement>(".notelens-table-grid");
 		const onMove = (move: PointerEvent) => {
 			const delta = (move.clientY - startY) / scale;
@@ -5559,7 +5794,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const pos = at ?? this.getInsertionPoint(size.w, size.h);
 		const embed: Embed = { id: genId("embed"), pageId: this.data.activePageId, kind: "chart", src: "chart", chart: spec, x: pos.x, y: pos.y, w: size.w, h: size.h };
 		this.data.embeds.push(embed);
-		renderEmbedFrame(this, this.domLayerEl, embed);
+		renderEmbedFrame(this, this.layerFor(embed), embed);
 		this.clearSelection(false);
 		this.selEmbeds.add(embed.id);
 		this.renderSelectionBox();
@@ -5570,16 +5805,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		new ChartEditorModal(this.app, embed.chart ?? DEFAULT_CHART, (spec) => {
 			this.history.push();
 			embed.chart = spec;
-			const el = this.domLayerEl.querySelector(`[data-id="${embed.id}"]`);
-			el?.remove();
-			renderEmbedFrame(this, this.domLayerEl, embed);
+			this.pageElement(embed.id)?.remove();
+			renderEmbedFrame(this, this.layerFor(embed), embed);
 			this.renderSelectionBox();
 			this.save();
 		}).open();
 	}
 
 	private renderTextBox(tb: TextBox): HTMLElement {
-		const el = this.domLayerEl.createDiv({ cls: "onenote-textbox" });
+		const el = this.layerForText(tb).createDiv({ cls: "onenote-textbox" });
 		if (tb.stickyColor) el.addClass("notelens-sticky-note");
 		if (tb.variant === "code") {
 			el.addClass("notelens-code-block");
@@ -5688,7 +5922,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.editSessionPushed = false;
 		// Prose is edited as it will look; code and formulas keep their source.
 		if (tb.variant !== "code" && tb.variant !== "math") { this.beginRichEdit(tb, el); return; }
-		const editor = this.domLayerEl.createEl("textarea", { cls: "notelens-text-editor" });
+		const editor = this.layerForText(tb).createEl("textarea", { cls: "notelens-text-editor" });
 		if (tb.variant === "code") {
 			editor.addClass("notelens-code-editor");
 			editor.setAttr("wrap", "off");
@@ -5778,7 +6012,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	 * edited is the same rich element the board paints.
 	 */
 	private beginRichEdit(tb: TextBox, el: HTMLElement): void {
-		const editor = this.domLayerEl.createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
+		const editor = this.layerForText(tb).createDiv({ cls: "notelens-text-editor notelens-rich-editor" });
 		editor.contentEditable = "true";
 		editor.setAttr("role", "textbox");
 		editor.setAttr("aria-multiline", "true");
@@ -6061,13 +6295,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				tb.color = "#e2e8f0";
 				source.addClass("notelens-code-block");
 			}
-			if (fence[1]) tb.language = normalizeLanguage(fence[1]);
+			if (fence[1]) { tb.language = normalizeLanguage(fence[1]); tb.languagePinned = true; }
 			replacement = fence[2];
 		} else if (tb.variant === "code") {
 			// Inside a code block an opening fence alone (```python) is enough to pick the language.
 			const openFence = /^```([\w+#.-]+)[ \t]*\r?\n([\s\S]*)$/.exec(raw);
 			if (openFence) {
 				tb.language = normalizeLanguage(openFence[1]);
+				tb.languagePinned = true;
 				replacement = openFence[2];
 			}
 		}
@@ -6088,6 +6323,11 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			tb.runs = undefined;
 		} else if (editor.instanceOf(HTMLTextAreaElement)) {
 			tb.text = editor.value;
+		}
+		// Code pasted without a fence still deserves its colours: what nobody
+		// chose is guessed from the source, and re-guessed as it is edited.
+		if (tb.variant === "code" && !tb.languagePinned) {
+			tb.language = detectLanguage(tb.text) ?? "plaintext";
 		}
 		this.applyTextStyles(source, tb);
 		this.paintTextContent(source, tb);
@@ -6192,13 +6432,42 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	/** Header with language and copy button, line-number gutter, Prism-highlighted source. */
+	/**
+	 * A code block, line by line. Each line is its own row carrying its number,
+	 * so the gutter cannot drift out of step with the code — which is what lets
+	 * long lines fold, and lets a line be marked by pressing its number.
+	 */
 	private paintCode(el: HTMLElement, tb: TextBox): void {
 		const lang = normalizeLanguage(tb.language);
 		tb.language = lang;
 		el.setAttr("data-language", lang);
+		el.toggleClass("is-wrapped", !!tb.codeWrap);
 		const header = el.createDiv({ cls: "notelens-code-header" });
 		header.createSpan({ cls: "notelens-code-lang", text: CODE_LANGUAGES.find(([id]) => id === lang)?.[1] ?? lang });
-		const copy = header.createEl("button", { cls: "notelens-code-copy" });
+		// A language nobody chose was guessed from the code itself; saying so is
+		// what makes it safe to be wrong.
+		if (lang !== "plaintext" && !tb.languagePinned) {
+			const guessed = header.createSpan({ cls: "notelens-code-guess", text: tr("auto") });
+			guessed.title = tr("Lenguaje deducido del propio código. Elige otro en la barra de formato si no acierta.");
+		}
+		const buttons = header.createDiv({ cls: "notelens-code-actions" });
+
+		const wrap = buttons.createEl("button", { cls: "notelens-code-copy" });
+		setIcon(wrap, "wrap-text");
+		wrap.toggleClass("active", !!tb.codeWrap);
+		wrap.title = tb.codeWrap ? tr("Líneas largas: plegadas. Pulsa para que se desplacen.") : tr("Líneas largas: se desplazan. Pulsa para plegarlas.");
+		wrap.addEventListener("pointerdown", (e) => e.stopPropagation());
+		wrap.addEventListener("click", (e) => {
+			e.stopPropagation();
+			this.history.push();
+			tb.codeWrap = tb.codeWrap ? undefined : true;
+			this.repaintCodeBlock(tb);
+			this.save();
+		});
+
+		// Deleting is the corner cross every box on the board already carries;
+		// a second one in the header was the same button twice.
+		const copy = buttons.createEl("button", { cls: "notelens-code-copy" });
 		setIcon(copy, "copy");
 		copy.title = tr("Copiar código");
 		copy.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -6206,29 +6475,55 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			e.stopPropagation();
 			void navigator.clipboard?.writeText(tb.text).then(() => new Notice(tr("Código copiado")));
 		});
-		const closeCode = header.createEl("button", { cls: "notelens-code-copy" });
-		setIcon(closeCode, "x");
-		closeCode.title = tr("Eliminar bloque");
-		closeCode.addEventListener("pointerdown", (e) => e.stopPropagation());
-		closeCode.addEventListener("click", (e) => { e.stopPropagation(); this.removeTextBox(tb); });
-
 		const body = el.createDiv({ cls: "notelens-code-body" });
-		const lines = tb.text.split("\n");
-		const gutter = body.createDiv({ cls: "notelens-code-gutter" });
-		for (let i = 1; i <= lines.length; i++) gutter.createDiv({ text: String(i) });
-		const code = body.createEl("code", { cls: "notelens-code-source" });
 		if (!tb.text) {
-			code.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de código vacío") });
+			body.createSpan({ cls: "notelens-math-placeholder", text: tr("Bloque de código vacío") });
 			return;
 		}
 		const grammar = lang !== "plaintext" ? this.prism?.languages?.[lang] : undefined;
-		if (grammar && this.prism) {
+		const lines = grammar && this.prism
 			// Tokenize rather than highlight: the tokens become real elements, so no
 			// markup is ever parsed out of the code the user typed.
-			paintPrismTokens(code, this.prism.tokenize(tb.text, grammar));
-		} else {
-			code.setText(tb.text);
-		}
+			? splitTokensIntoLines(flattenPrismTokens(this.prism.tokenize(tb.text, grammar)))
+			: tb.text.split("\n").map(line => (line ? [{ text: line, cls: [] }] : []));
+		const marks = new Set(tb.codeMarks ?? []);
+		// The gutter is as wide as its widest number, so nothing shifts as it grows.
+		body.style.setProperty("--code-gutter", `${String(lines.length).length + 1}ch`);
+		lines.forEach((pieces, index) => {
+			const number = index + 1;
+			const row = body.createDiv({ cls: "notelens-code-line" });
+			row.toggleClass("is-marked", marks.has(number));
+			const gutter = row.createEl("button", { cls: "notelens-code-num", text: String(number) });
+			gutter.title = marks.has(number) ? tr("Quitar la marca de esta línea") : tr("Marcar esta línea");
+			gutter.addEventListener("pointerdown", (e) => e.stopPropagation());
+			gutter.addEventListener("click", (e) => {
+				e.stopPropagation();
+				this.history.push();
+				const next = new Set(tb.codeMarks ?? []);
+				if (next.has(number)) next.delete(number); else next.add(number);
+				tb.codeMarks = next.size ? Array.from(next).sort((a, b) => a - b) : undefined;
+				this.repaintCodeBlock(tb);
+				this.save();
+			});
+			const code = row.createEl("code", { cls: "notelens-code-source" });
+			for (const piece of pieces) {
+				if (piece.cls.length) code.createSpan({ cls: piece.cls.join(" "), text: piece.text });
+				else code.appendText(piece.text);
+			}
+			// An empty line still needs its height, and an empty element has none.
+			if (!pieces.length) code.appendText("\n");
+		});
+	}
+
+	/** Redraws one code block in place, keeping the box the size its lines ask for. */
+	private repaintCodeBlock(tb: TextBox): void {
+		const el = this.pageElement(tb.id);
+		if (!el) return;
+		this.paintTextContent(el, tb);
+		el.setCssStyles({ minHeight: "" });
+		tb.h = Math.max(72, el.offsetHeight);
+		el.style.minHeight = `${tb.h}px`;
+		this.renderSelectionBox();
 	}
 
 	/** Indents (or outdents) the current line or every selected line. */
@@ -6313,7 +6608,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.hideFormatBar();
 		this.data.texts.remove(tb);
 		this.selTexts.delete(tb.id);
-		(this.domLayerEl.querySelector<HTMLElement>(`[data-id="${tb.id}"]`))?.remove();
+		this.pageElement(tb.id)?.remove();
 		this.renderSelectionBox();
 		this.save();
 	}
@@ -6727,6 +7022,9 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			languageSelect.value = normalizeLanguage(tb.language);
 			languageSelect.onchange = () => apply(() => {
 				tb.language = languageSelect.value;
+				// Chosen by hand: the guess never overrules it again, not even
+				// when the code is rewritten into something else entirely.
+				tb.languagePinned = true;
 				el.setAttr("data-language", tb.language);
 			});
 		}
@@ -6854,7 +7152,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** Direct drag of one embed (frame headers work with any tool active). */
 	private startSingleEmbedDrag(e: PointerEvent, embed: Embed): void {
 		this.history.push();
-		const el = this.domLayerEl.querySelector<HTMLElement>(`[data-id="${embed.id}"]`);
+		const el = this.pageElement(embed.id);
 		const startX = e.clientX;
 		const startY = e.clientY;
 		const origX = embed.x;

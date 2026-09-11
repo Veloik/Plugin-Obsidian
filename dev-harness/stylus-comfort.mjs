@@ -209,6 +209,185 @@ const title = await page.evaluate(() => {
 });
 ok("la pizarra lleva escrito el nombre de la nota", title.visible && !!title.text && title.text === title.expected, title.text);
 
+// --- a tag stays live under a tool that paints -----------------------------
+const tagGeo = await page.evaluate(() => {
+	const v = window.__view;
+	v.setTool("pen");
+	if (!v.fingerDrawsOn()) v.toggleFingerDraws();
+	v.data.badges.length = 0;
+	v.data.bookmarks.length = 0;
+	v.createBadgeAt(300, 500, { id: "tag_key", label: "Idea clave", icon: "lightbulb", color: "#facc15" });
+	Array.from(document.querySelectorAll(".notelens-hover-note-footer button")).find(b => b.textContent.trim() === "Guardar")?.click();
+	v.addViewportBookmark();
+	const el = document.querySelector(".onenote-placed-badge");
+	const r = el.getBoundingClientRect();
+	const mark = document.querySelector(".notelens-bookmark-marker");
+	const mr = mark?.getBoundingClientRect();
+	const style = getComputedStyle(el);
+	// The layer that holds them has to sit above the one the ink is painted on.
+	const inkZ = Number(getComputedStyle(v.renderer.canvas).zIndex);
+	const topZ = Number(getComputedStyle(document.querySelector(".onenote-top-stage")).zIndex);
+	return {
+		live: style.pointerEvents !== "none",
+		above: Number(style.zIndex) > 50,
+		overInk: topZ > inkZ,
+		inLayer: el.closest(".onenote-top-stage") !== null && mark?.closest(".onenote-top-stage") !== null,
+		badge: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+		marker: mr ? { x: mr.left + mr.width / 2, y: mr.top + mr.height / 2, label: mark.textContent } : null,
+		markerLive: mark ? getComputedStyle(mark).pointerEvents !== "none" : null
+	};
+});
+ok("la etiqueta sigue viva con el lápiz en la mano", tagGeo.live && tagGeo.above, JSON.stringify({ live: tagGeo.live, above: tagGeo.above }));
+ok("etiquetas y marcadores viven por encima de la tinta", tagGeo.overInk && tagGeo.inLayer, JSON.stringify({ overInk: tagGeo.overInk, inLayer: tagGeo.inLayer }));
+
+// Rebuilding the DOM layer replaces the tag's element, and a touch sent in the
+// same breath can be hit-tested against what was there before it.
+const reset = async () => {
+	await page.evaluate(() => {
+		document.querySelector(".notelens-tag-summary")?.remove();
+		window.__view.data.strokes.length = 0;
+		window.__view.renderAll();
+	});
+	await new Promise(r => setTimeout(r, 80));
+};
+const board = () => page.evaluate(() => ({
+	summary: !!document.querySelector(".notelens-tag-summary"),
+	strokes: window.__view.data.strokes.length,
+	scale: window.__view.data.viewTransform.scale
+}));
+
+// Drawing across a tag is drawing, not pressing it.
+await reset();
+await page.touchscreen.touchStart(tagGeo.badge.x - 40, tagGeo.badge.y);
+for (let i = 1; i <= 8; i++) await page.touchscreen.touchMove(tagGeo.badge.x - 40 + i * 14, tagGeo.badge.y + (i % 2 ? 4 : -4));
+await page.touchscreen.touchEnd();
+await new Promise(r => setTimeout(r, 300));
+const across = await board();
+ok("un trazo que cruza la etiqueta sigue siendo un trazo", !across.summary && across.strokes === 1, JSON.stringify(across));
+
+// A tap on it opens the summary and leaves no dot of ink behind.
+await reset();
+const spot = await page.evaluate(() => {
+	const r = document.querySelector(".onenote-placed-badge").getBoundingClientRect();
+	return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.touchscreen.tap(spot.x, spot.y);
+await new Promise(r => setTimeout(r, 300));
+const tap = await board();
+ok("tocarla con el lápiz la abre y no deja tinta", tap.summary && tap.strokes === 0, JSON.stringify(tap));
+
+// And holding on it does not open its menu while a tool paints.
+await reset();
+const tagMenu = await page.evaluate((p) => {
+	document.querySelector(".onenote-placed-badge").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: p.x, clientY: p.y }));
+	const opened = !!document.querySelector(".menu");
+	document.querySelector(".menu")?.remove();
+	window.__view.setTool("select");
+	document.querySelector(".onenote-placed-badge").dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: p.x, clientY: p.y }));
+	const withSelect = !!document.querySelector(".menu");
+	document.querySelector(".menu")?.remove();
+	window.__view.setTool("pen");
+	return { opened, withSelect };
+}, tagGeo.badge);
+ok("mantener sobre la etiqueta no abre su menú mientras se pinta", !tagMenu.opened && tagMenu.withSelect, JSON.stringify(tagMenu));
+
+// --- the sections are drawn on the board, and stay out of the ink ----------
+ok("el marcador se dibuja en la pizarra con su nombre", !!tagGeo.marker && tagGeo.marker.label.includes("Secci"), tagGeo.marker?.label ?? "ninguno");
+ok("el marcador también responde al lápiz", tagGeo.markerLive === true);
+
+// A press that lands on a marker presses it; it does not paint there.
+await reset();
+const markSpot = await page.evaluate(() => {
+	const r = document.querySelector(".notelens-bookmark-marker").getBoundingClientRect();
+	return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.touchscreen.touchStart(markSpot.x, markSpot.y);
+for (let i = 1; i <= 8; i++) await page.touchscreen.touchMove(markSpot.x + i * 16, markSpot.y + i * 3);
+await page.touchscreen.touchEnd();
+await new Promise(r => setTimeout(r, 300));
+const overMark = await board();
+ok("no se puede pintar empezando sobre un marcador", overMark.strokes === 0, JSON.stringify(overMark));
+
+// The same on a tag: the press presses it, and no stroke is born there.
+await reset();
+const tagSpot = await page.evaluate(() => {
+	const r = document.querySelector(".onenote-placed-badge").getBoundingClientRect();
+	return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.touchscreen.touchStart(tagSpot.x, tagSpot.y);
+for (let i = 1; i <= 8; i++) await page.touchscreen.touchMove(tagSpot.x + i * 16, tagSpot.y + i * 3);
+await page.touchscreen.touchEnd();
+await new Promise(r => setTimeout(r, 300));
+const overTag = await board();
+ok("no se puede pintar empezando sobre una etiqueta", overTag.strokes === 0, JSON.stringify(overTag));
+
+// --- what you operate rides above the ink ---------------------------------
+const embeds = await page.evaluate(() => {
+	const v = window.__view;
+	v.data.embeds.length = 0;
+	const base = { pageId: v.data.activePageId, x: 700, y: 300, w: 320, h: 180 };
+	const kinds = [
+		["youtube", "https://youtu.be/abc"], ["video", "clase.mp4"], ["audio", "apuntes.mp3"],
+		["note", "Tema 4.md"], ["board", "Pizarra 2.notelens"], ["file", "guion.docx"],
+		["chart", "grafico"], ["pdf", "libro.pdf"], ["image", "foto.png"]
+	];
+	kinds.forEach(([kind, src], i) => v.data.embeds.push({ ...base, id: "emb" + i, kind, src, y: 300 + i * 40 }));
+	v.setTool("pen");
+	v.renderAll();
+	const where = {};
+	for (const [kind] of kinds) {
+		const embed = v.data.embeds.find(e => e.kind === kind);
+		const el = v.pageElement(embed.id);
+		where[kind] = el ? (el.closest(".onenote-top-stage") ? "sobre" : "bajo") : "ninguno";
+	}
+	return where;
+});
+ok("vídeos, audio, gráficos y enlaces quedan por encima de la tinta",
+	["youtube", "video", "audio", "note", "board", "file", "chart"].every(k => embeds[k] === "sobre"), JSON.stringify(embeds));
+
+// Note cards and code blocks carry their own buttons: they ride up there too.
+const boxes = await page.evaluate(() => {
+	const v = window.__view;
+	v.commitTextEditor();
+	v.data.texts.length = 0;
+	v.data.texts.push(
+		{ id: "t_sticky", pageId: v.data.activePageId, x: 300, y: 900, text: "Repasar el tema 4", fontSize: 16, color: "#302b19", stickyColor: "#fde68a", w: 220, h: 150 },
+		{ id: "t_code", pageId: v.data.activePageId, x: 620, y: 900, text: "print('hola')", fontSize: 14, color: "#e2e8f0", variant: "code", language: "python", w: 440, h: 120 },
+		{ id: "t_prose", pageId: v.data.activePageId, x: 300, y: 1120, text: "Apuntes de clase", fontSize: 18, color: "#f8fafc", w: 220, h: 48 }
+	);
+	v.renderAll();
+	const where = (id) => {
+		const el = v.pageElement(id);
+		return el ? (el.closest(".onenote-top-stage") ? "sobre" : "bajo") : "ninguno";
+	};
+	v.data.tables.length = 0;
+	v.data.tables.push({ id: "tb1", pageId: v.data.activePageId, x: 900, y: 900, rows: 2, cols: 2, cells: [["a", "b"], ["c", "d"]], w: 260, h: 140 });
+	v.renderAll();
+	const table = v.pageElement("tb1");
+	return {
+		sticky: where("t_sticky"), code: where("t_code"), prose: where("t_prose"),
+		table: table ? (table.closest(".onenote-top-stage") ? "sobre" : "bajo") : "ninguna"
+	};
+});
+ok("los pósits, las tablas y los bloques de código también",
+	boxes.sticky === "sobre" && boxes.code === "sobre" && boxes.table === "sobre", JSON.stringify(boxes));
+ok("el texto normal se queda bajo la tinta, para poder anotarlo", boxes.prose === "bajo", boxes.prose);
+ok("los PDF y las imágenes siguen debajo, para poder anotarlos",
+	embeds.pdf === "bajo" && embeds.image === "bajo", JSON.stringify({ pdf: embeds.pdf, image: embeds.image }));
+
+const overVideo = await page.evaluate(async () => {
+	const v = window.__view;
+	v.data.strokes.length = 0;
+	const el = v.pageElement("emb0");
+	const r = el.getBoundingClientRect();
+	return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+});
+await page.touchscreen.touchStart(overVideo.x, overVideo.y);
+for (let i = 1; i <= 6; i++) await page.touchscreen.touchMove(overVideo.x + i * 12, overVideo.y + i * 4);
+await page.touchscreen.touchEnd();
+await new Promise(r => setTimeout(r, 250));
+ok("no se puede pintar empezando sobre un vídeo", (await page.evaluate(() => window.__view.data.strokes.length)) === 0);
+
 // --- a machine with no touch screen keeps its right-click ------------------
 const desk = await browser.newPage();
 desk.on("pageerror", e => { console.log("PAGEERROR", e.message); process.exitCode = 1; });

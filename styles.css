@@ -145,6 +145,19 @@
   z-index: 5;
 }
 
+/* The same page, above the ink. The stage is transformed, which makes it a
+   stacking context of its own, so nothing inside it can ever rise past the
+   canvas: what must not be painted over lives in this second layer instead. */
+.onenote-top-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  z-index: 7;
+}
+
 .onenote-dom-layer {
   position: absolute;
   top: 0;
@@ -306,7 +319,9 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   user-select: none;
-  z-index: 10;
+  /* Above everything else the page carries — text, tables, embeds, images —
+     so a tag is never buried by what it was put there to mark. */
+  z-index: 60;
   transition: transform 0.15s ease;
 }
 
@@ -487,7 +502,7 @@
 .notelens-code-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
   height: 28px;
   padding: 0 6px 0 12px;
   border-bottom: 1px solid rgba(125, 211, 252, 0.16);
@@ -501,6 +516,24 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* A language nobody chose, read off the code itself. */
+.notelens-code-guess {
+  padding: 1px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-family: var(--font-monospace);
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.notelens-code-actions {
+  display: flex;
+  margin-left: auto;
+  gap: 2px;
 }
 
 .notelens-code-copy {
@@ -518,40 +551,76 @@
 }
 
 .notelens-code-copy:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+.notelens-code-copy.active { background: rgba(125, 211, 252, 0.2); color: #7dd3fc; }
 .notelens-code-copy .svg-icon { width: 14px; height: 14px; }
 
 .notelens-code-body {
-  display: flex;
-  align-items: stretch;
+  padding: 8px 0;
   overflow: auto;
 }
 
-.notelens-code-gutter {
-  flex: 0 0 auto;
-  padding: 10px 8px 10px 10px;
-  border-right: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(148, 163, 184, 0.55);
-  font-family: var(--font-monospace);
-  font-size: 12px;
-  line-height: 1.55;
-  text-align: right;
-  user-select: none;
+/* One row per line, so the number beside it can never drift out of step —
+   which is what lets a long line fold and a line be marked by its number. */
+.notelens-code-line {
+  display: flex;
+  align-items: flex-start;
 }
 
-.notelens-code-gutter > div { height: 1.55em; line-height: 1.55em; }
+.notelens-code-num {
+  flex: 0 0 auto;
+  width: var(--code-gutter, 3ch);
+  height: auto;
+  padding: 0 10px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(148, 163, 184, 0.5);
+  font-family: var(--font-monospace);
+  /* Tied to the code beside it, so growing the block keeps the two in step. */
+  font-size: 0.8em;
+  line-height: 1.9375;
+  text-align: right;
+  cursor: pointer;
+  user-select: none;
+  /* Stays in view when a long line is scrolled sideways. */
+  position: sticky;
+  left: 0;
+}
+
+.notelens-code-num:hover { color: #e2e8f0; }
 
 .notelens-code-source {
   display: block;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  padding: 10px 14px;
+  padding: 0 14px 0 4px;
   background: transparent;
   color: inherit;
   font-family: var(--font-monospace);
-  font-size: 14px;
+  font-size: inherit;
   line-height: 1.55;
   white-space: pre;
   tab-size: 4;
+}
+
+/* Folded: the line goes on underneath itself instead of off the edge. */
+.notelens-code-block.is-wrapped .notelens-code-body { overflow-x: hidden; }
+.notelens-code-block.is-wrapped .notelens-code-source {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A line singled out by pressing its number. */
+.notelens-code-line.is-marked {
+  background: rgba(250, 204, 21, 0.1);
+  box-shadow: inset 2px 0 0 #facc15;
+}
+
+.notelens-code-line.is-marked .notelens-code-num {
+  background: rgba(250, 204, 21, 0.1);
+  color: #facc15;
+  font-weight: 700;
 }
 
 /* Token palette for highlighted code (works with or without Obsidian's own Prism theme). */
@@ -3402,8 +3471,12 @@
 .onenote-workspace[data-pass-ink="true"] .notelens-embed-body,
 .onenote-workspace[data-pass-ink="true"] .notelens-loose-image img,
 .onenote-workspace[data-pass-ink="true"] .onenote-textbox,
-.onenote-workspace[data-pass-ink="true"] .notelens-table,
-.onenote-workspace[data-pass-ink="true"] .onenote-placed-badge {
+/* A tag is the one thing on the page a painting tool may still touch: it is
+   how a notebook is organised, so the stylus taps it like a finger does. The
+   ink goes through it all the same — the press starts a stroke as well, and
+   only a tap that never travelled counts as a tap. Its little close button is
+   the exception to the exception: an invisible dead spot under a drawn line. */
+.onenote-workspace[data-pass-ink="true"] .onenote-badge-close {
   pointer-events: none;
 }
 
@@ -6272,4 +6345,132 @@ span.notelens-assistant-name {
   background: rgba(56, 189, 248, 0.28);
   border-color: rgba(56, 189, 248, 0.6);
   color: #8cc8ff;
+}
+
+/* ==========================================================================
+   BOOKMARK MARKERS ON THE BOARD
+   Each saved section, drawn where it was saved. Faint enough to read past,
+   there enough to steer by; a tool that paints goes straight through them.
+   ========================================================================== */
+.notelens-bookmark-marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  padding: 2px 8px 2px 6px;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(140, 200, 255, 0.3);
+  border-radius: 11px;
+  /* Opaque, not faded: a line drawn across the page must pass behind a marker
+     the way it passes behind a tag. What keeps it quiet is the muted ink it is
+     drawn in, not letting the board show through it. */
+  background: rgba(18, 22, 34, 0.94);
+  color: #71859c;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.notelens-bookmark-marker:hover {
+  color: #d8e7f8;
+  border-color: rgba(140, 200, 255, 0.85);
+  border-style: solid;
+}
+
+.notelens-bookmark-marker:hover .notelens-bookmark-marker-icon { color: #8cc8ff; }
+
+.notelens-bookmark-marker-icon {
+  display: grid;
+  place-items: center;
+  color: #5f7fa3;
+}
+
+.notelens-bookmark-marker-icon svg { width: 12px; height: 12px; }
+
+.notelens-bookmark-marker-index {
+  min-width: 13px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: rgba(140, 200, 255, 0.12);
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.notelens-bookmark-marker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* ==========================================================================
+   EPUB READER ON THE BOARD
+   The book read where the notes are, chapter by chapter. Its text is the
+   book's own, sanitised: only structure and emphasis survive, never script.
+   ========================================================================== */
+.notelens-epub-frame .notelens-embed-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: #0f1420;
+}
+
+.notelens-epub-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 22px 26px 30px;
+  overflow-y: auto;
+  color: #dde5f0;
+  font-size: 15px;
+  line-height: 1.72;
+  /* A book is read, not scanned: the measure stays close to a printed page. */
+  text-align: left;
+  overflow-wrap: break-word;
+}
+
+.notelens-epub-page > * { max-width: 62ch; }
+.notelens-epub-page img { max-width: 100%; height: auto; border-radius: 4px; }
+.notelens-epub-page h1,
+.notelens-epub-page h2,
+.notelens-epub-page h3 {
+  margin: 1.4em 0 0.5em;
+  color: #f1f5f9;
+  line-height: 1.3;
+}
+.notelens-epub-page h1 { font-size: 1.5em; }
+.notelens-epub-page h2 { font-size: 1.28em; }
+.notelens-epub-page h3 { font-size: 1.12em; }
+.notelens-epub-page p { margin: 0 0 0.9em; }
+.notelens-epub-page blockquote {
+  margin: 1em 0;
+  padding-left: 14px;
+  border-left: 2px solid rgba(140, 200, 255, 0.4);
+  color: #b6c4d6;
+  font-style: italic;
+}
+.notelens-epub-page table { border-collapse: collapse; }
+.notelens-epub-page td,
+.notelens-epub-page th { padding: 4px 8px; border: 1px solid rgba(255, 255, 255, 0.14); }
+
+.notelens-epub-loading {
+  padding: 24px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* The chapter list, sized so a long title does not push the header apart. */
+.notelens-epub-chapters {
+  max-width: 190px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  background: rgba(15, 20, 32, 0.9);
+  color: #cbd5e1;
+  font-size: 11px;
+  cursor: pointer;
 }
