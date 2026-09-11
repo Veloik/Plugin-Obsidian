@@ -549,22 +549,27 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 		straightBtn.toggleClass("active", held);
 	};
 	// A thumb that slides off the button, or a hand lifted over the edge of the
-	// screen, still has to end the hold: the release is listened for on the
-	// window and not only here, so no stroke is left straight for ever.
+	// screen, still has to end the hold, so the release is listened for on the
+	// window rather than only here — and in the capture phase, because the dock
+	// around the button stops the release from bubbling any further than itself.
+	// Listening on the way up meant the press went on for ever.
+	const listen = { capture: true } as const;
 	const release = (e: PointerEvent) => {
 		if (straightPointer !== null && e.pointerId !== straightPointer) return;
 		straightPointer = null;
-		window.removeEventListener("pointerup", release);
-		window.removeEventListener("pointercancel", release);
+		window.removeEventListener("pointerup", release, listen);
+		window.removeEventListener("pointercancel", release, listen);
 		holdStraight(false);
 	};
 	straightBtn.addEventListener("pointerdown", (e) => {
 		// Without this the press becomes a text selection on the dock.
 		e.preventDefault();
+		// A second finger arriving on the button does not restart the hold.
+		if (straightPointer !== null) return;
 		straightPointer = e.pointerId;
 		holdStraight(true);
-		window.addEventListener("pointerup", release);
-		window.addEventListener("pointercancel", release);
+		window.addEventListener("pointerup", release, listen);
+		window.addEventListener("pointercancel", release, listen);
 		// Capture keeps the release on the button itself where the browser
 		// allows it; a pointer it no longer knows about simply refuses.
 		try { straightBtn.setPointerCapture(e.pointerId); } catch { /* the window listeners still end the hold */ }

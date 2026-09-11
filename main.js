@@ -62165,19 +62165,21 @@ function createToolbar(host, container) {
     host.setStraightLineHeld(held);
     straightBtn.toggleClass("active", held);
   };
+  const listen = { capture: true };
   const release = (e) => {
     if (straightPointer !== null && e.pointerId !== straightPointer) return;
     straightPointer = null;
-    window.removeEventListener("pointerup", release);
-    window.removeEventListener("pointercancel", release);
+    window.removeEventListener("pointerup", release, listen);
+    window.removeEventListener("pointercancel", release, listen);
     holdStraight(false);
   };
   straightBtn.addEventListener("pointerdown", (e) => {
     e.preventDefault();
+    if (straightPointer !== null) return;
     straightPointer = e.pointerId;
     holdStraight(true);
-    window.addEventListener("pointerup", release);
-    window.addEventListener("pointercancel", release);
+    window.addEventListener("pointerup", release, listen);
+    window.addEventListener("pointercancel", release, listen);
     try {
       straightBtn.setPointerCapture(e.pointerId);
     } catch {
@@ -70114,7 +70116,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.2.2" : "desconocida";
+var NOTELENS_BUILD = true ? "3.2.3" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian15.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

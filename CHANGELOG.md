@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.3
+
+### Fixed
+
+- The straight-line button on a tablet would not let go. The dock around it stops a release from travelling any further than itself, and the button was listening for that release on its way up — so the press never ended, and the next stroke came out straight on its own. It now listens on the way down, where nothing can stop it. The button also keeps its own touch instead of handing it to the dock's sideways scroll, which was taking the press away before the hold began.
+
 ## 3.2.2
 
 Republished under a new number at the author's request; the code is the same as 3.2.0.

@@ -6340,8 +6340,16 @@ span.notelens-assistant-name {
 /* ==========================================================================
    STRAIGHT-LINE HOLD (tablets and phones)
    ========================================================================== */
+/* The dock scrolls sideways on a small screen, and a finger held on a button
+   inside it was being read as the start of that scroll: the browser took the
+   touch away and the hold ended before it began. This button keeps its own. */
+.notelens-straight-btn {
+  touch-action: none;
+}
+
 /* Held down, it is not a state you can forget about: the board says so too. */
-.onenote-workspace.is-straight-line .notelens-straight-btn {
+.onenote-workspace.is-straight-line .notelens-straight-btn,
+.notelens-straight-btn.active {
   background: rgba(56, 189, 248, 0.28);
   border-color: rgba(56, 189, 248, 0.6);
   color: #8cc8ff;

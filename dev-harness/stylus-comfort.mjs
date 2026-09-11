@@ -166,6 +166,9 @@ const straight = await page.evaluate(() => {
 	const out = {};
 	const btn = document.querySelector(".notelens-straight-btn");
 	out.shown = !!btn && !btn.classList.contains("hidden");
+	// The dock scrolls sideways on a small screen; a hold must not be read as
+	// the start of that scroll, or the browser takes the touch away.
+	out.keepsItsTouch = getComputedStyle(btn).touchAction === "none";
 	out.besideRuler = btn?.previousElementSibling?.classList.contains("onenote-dock-btn") && !!document.querySelector(".notelens-document-dock .notelens-straight-btn");
 	// Held with one thumb, the other hand curves across the page anyway.
 	const curve = (pointerId) => {
@@ -187,13 +190,16 @@ const straight = await page.evaluate(() => {
 	v.data.strokes.length = 0;
 	out.straight = curve(32);
 
-	window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 41, pointerType: "touch" }));
+	// Released on the button itself, the way a thumb does it: the dock around it
+	// stops the release from bubbling, so this is what a real tablet sends.
+	btn.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 41, pointerType: "touch" }));
 	out.released = v.isStraightLineHeld();
 	v.data.strokes.length = 0;
 	out.afterRelease = curve(33);
 	return out;
 });
 ok("el botón de líneas rectas está junto a la regla en una tableta", straight.shown && straight.besideRuler, JSON.stringify({ shown: straight.shown, besideRuler: straight.besideRuler }));
+ok("el botón no cede su toque al desplazamiento de la barra", straight.keepsItsTouch === true);
 ok("sin pulsarlo el trazo conserva su curva", straight.free > 2, `${straight.free} puntos`);
 ok("manteniéndolo pulsado el trazo sale recto", straight.held && straight.litUp && straight.straight === 2, `${straight.straight} puntos`);
 ok("al soltarlo se vuelve a dibujar libre", !straight.released && straight.afterRelease > 2, `${straight.afterRelease} puntos`);
