@@ -5,6 +5,11 @@ Lienzo infinito para Obsidian, pensado para tomar apuntes con lápiz.
 
 **[English](#english) · [Español](#español)**
 
+[![NoteLens in 87 seconds / NoteLens en 87 segundos](assets/notelens-promo.jpg)](assets/notelens-promo.mp4)
+
+*Recorded from the plugin itself: handwriting to text and to LaTeX, draw-and-hold shapes, tables,
+revision cards, handwriting search and ink replay. Grabado con el propio plugin.*
+
 ---
 
 ## English
@@ -29,6 +34,20 @@ steps. Shortcuts: `V` select · `P` pen · `H` highlighter · `E` eraser · `T` 
 The highlighter lays down the print of a flat felt tip: one even band, the same width
 whichever way you swipe, slanted at both ends the way a real marker leaves them, and
 deepening where two strokes cross instead of washing out.
+
+Handwriting can become typed text, as in OneNote: select it and press the **T** in the
+selection bar. The words are read on the device, line by line, with their spaces and capitals;
+a word you already use in the vault — a note's name, a heading — wins over a look-alike that
+is not a word. Ctrl+Z brings the ink back. Right-click the board and choose **Replay the ink**
+to watch the page being written again stroke by stroke, with pause, a progress bar and 1×, 2×
+or 4× speed. Ctrl+F searches handwriting as well as typed text, forgiving accents and a
+misread letter. Draw a circle, rectangle, triangle, diamond, line or arrow and hold the pen
+still for a moment before lifting it, and it becomes the clean shape. Select an answer or a
+formula and press the eye to cover it for revision: it stays frosted under "Tap to see" until
+you tap it, like a flashcard among your notes.
+
+Tables take one of six colours, shade alternate rows, grow with what is written in them, and
+Tab moves through the cells, adding a row at the end.
 
 Text boxes are edited as they will look, and take eleven typefaces. Select a word and make it
 bold, italic, underlined, struck through, highlighted or code, give it its own colour or its
@@ -93,6 +112,22 @@ is debounced at 350 ms through a write queue, with a flush on close so a fast ex
 lose the last stroke. Files are `.notelens` JSON: readable, diffable, versionable with Git,
 and the older `.onenote` files are migrated automatically.
 
+### Between devices
+
+A board is a file in your vault, so whatever syncs the vault syncs the boards: Obsidian
+Sync, Syncthing, iCloud Drive, Remotely Save, Self-hosted LiveSync or a git pull. NoteLens
+keeps an open board safe while that happens. When the file changes under it, the view takes
+the new version in and keeps your camera where it was; if you had unsaved strokes, they are
+merged element by element with what arrived, so neither side overwrites the other. A save
+never replaces a version of the file this device did not write. Sync tools that cannot merge
+leave a second file next to the board (Syncthing's `.sync-conflict-…`, Dropbox's
+`(conflicted copy)` and their Spanish equivalents); NoteLens notices them, offers to fold
+them into the board with one button and moves the copy to the trash afterwards.
+
+With Obsidian Sync, turn on **Sync all other types** under Vault configuration, otherwise
+`.notelens` files stay on the device that made them. Syncthing, iCloud and Remotely Save
+carry them as they are.
+
 ### Installing by hand
 
 Download `main.js`, `manifest.json` and `styles.css` from a release whose version matches the
@@ -111,18 +146,22 @@ one line in `src/i18n.ts`.
 
 ### Handwriting data
 
-Maths symbols are recognised by comparing your strokes with shapes people
-actually drew: 64 examples of each, taken from the
-[Hand-TeX](https://github.com/VoxelCubes/Hand-TeX) database, which extends the
-[Detexify](https://github.com/kirel/detexify-data) training data. Both are
-published under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/),
-and so is `src/ink-prototypes-odbl.ts`, the file generated from them. The rest
-of NoteLens stays MIT; no Hand-TeX code is used, only its published data.
+Handwritten maths is read by a small neural network that ships inside the
+plugin (`src/ink-model.ts`, weights only, about 450 KB) and runs offline in a
+few milliseconds. It was trained on handwriting from these public datasets:
 
-Regenerate that file with `python dev-harness/build-prototypes.py handtex.db`.
-Digits and Latin letters are not in it — Detexify collected drawings of LaTeX
-commands, so nobody drew a "2" — and their shapes are still written by hand in
-`src/ink-shapes.ts`.
+- [UJI Pen Characters v2](https://archive.ics.uci.edu/dataset/177) and
+  [Pen-Based Recognition of Handwritten Digits](https://archive.ics.uci.edu/dataset/81),
+  UCI Machine Learning Repository, CC BY 4.0.
+- [Hand-TeX](https://github.com/VoxelCubes/Hand-TeX), which extends the
+  [Detexify](https://github.com/kirel/detexify-data) data, and the
+  [HWRT database](https://doi.org/10.5281/zenodo.50022) by Martin Thoma, all
+  under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
+
+No sample is distributed, only the fitted numbers, and no code from those
+projects is used. It is measured on [MathWriting](https://github.com/google-research/google-research/tree/master/mathwriting)
+(CC BY-NC-SA), which is never trained on. `dev-harness/train-ink/` rebuilds the
+model and `dev-harness/formula-bench.mjs` scores whole formulas.
 
 ### Privacy
 
@@ -169,8 +208,9 @@ src/
   ink-equation.ts       the equation dialog, by hand or typed
   math-palette.ts       the symbol palette both editors share
   asciimath.ts          calculator notation to LaTeX
-  ink-shapes.ts         stroke matching, and the hand-written shapes
-  ink-prototypes-odbl.ts  symbol shapes from real handwriting (ODbL)
+  ink-math.ts           handwritten formula to LaTeX: segmentation and layout
+  ink-classifier.ts     the symbol network; ink-features.ts, what it sees
+  ink-model.ts          its weights (generated)
   features.ts           what is written but not shipped yet
   dom-raster.ts         typeset formulas to PNG, for the PDF export
   local-intelligence.ts summaries, tasks, outlines, flashcards, no models
@@ -210,6 +250,21 @@ pasos. Atajos: `V` seleccionar · `P` lápiz · `H` subrayador · `E` goma · `T
 El subrayador deja la huella de una punta plana de fieltro: una banda uniforme, del mismo
 grosor pases por donde pases, sesgada en los dos extremos como la deja un rotulador de
 verdad, y que se oscurece donde se cruzan dos trazos en lugar de lavarse.
+
+La escritura a mano se puede pasar a texto, como en OneNote: la seleccionas y pulsas la **T**
+de la barra de selección. Se lee en el propio equipo, renglón a renglón, con sus espacios y
+mayúsculas, y una palabra que ya usas en la bóveda —el nombre de una nota, un encabezado—
+gana a otra que sólo se le parece. Ctrl+Z devuelve la tinta. Con el botón derecho sobre la
+pizarra, **Reproducir la tinta** vuelve a escribir la página trazo a trazo, con pausa, barra de
+progreso y velocidad 1×, 2× o 4×. Ctrl+F busca también en lo escrito a mano, sin tener en
+cuenta tildes y perdonando una letra mal leída. Dibuja un círculo, un rectángulo, un
+triángulo, un rombo, una línea o una flecha y deja el lápiz quieto un momento antes de
+levantarlo: se convierte en la forma limpia. Selecciona una respuesta o una fórmula y pulsa el
+ojo para taparla y repasar: queda esmerilada bajo «Toca para ver» hasta que la tocas, como una
+tarjeta de memoria entre tus apuntes.
+
+Las tablas tienen seis colores, sombrean filas alternas, crecen con lo que escribes y el
+tabulador recorre las celdas, añadiendo una fila al final.
 
 Los cuadros de texto se editan tal y como van a quedar, y traen once tipografías.
 Seleccionas una palabra y la pones en negrita, cursiva, subrayada, tachada, resaltada o como
@@ -277,6 +332,22 @@ guardado se agrupa cada 350 ms en una cola de escrituras, con un volcado al cerr
 salir deprisa no se lleve el último trazo. Los archivos son `.notelens` en JSON: legibles,
 comparables, versionables con Git, y los antiguos `.onenote` se migran solos.
 
+### Entre dispositivos
+
+Una pizarra es un archivo de la bóveda, así que lo que sincronice la bóveda sincroniza las
+pizarras: Obsidian Sync, Syncthing, iCloud Drive, Remotely Save, Self-hosted LiveSync o un
+`git pull`. NoteLens protege la pizarra abierta mientras eso ocurre. Si el archivo cambia por
+debajo, la vista adopta la versión nueva y deja la cámara donde estaba; si tenías trazos sin
+guardar, se fusionan elemento a elemento con lo que llegó, de modo que ningún lado pisa al
+otro. Un guardado nunca sustituye una versión del archivo que este dispositivo no escribió.
+Las herramientas que no saben fusionar dejan un segundo archivo junto a la pizarra (el
+`.sync-conflict-…` de Syncthing, la «copia en conflicto» de Dropbox); NoteLens lo detecta,
+ofrece incorporarlo a la pizarra con un botón y después manda la copia a la papelera.
+
+Con Obsidian Sync activa **Sync all other types** en la configuración de la bóveda; si no,
+los `.notelens` se quedan en el dispositivo que los creó. Syncthing, iCloud y Remotely Save
+los llevan tal cual.
+
 ### Instalación manual
 
 Descarga `main.js`, `manifest.json` y `styles.css` de una release cuya versión coincida con
@@ -295,19 +366,23 @@ es un archivo ahí y una línea en `src/i18n.ts`.
 
 ### Datos de escritura a mano
 
-Los símbolos matemáticos se reconocen comparando tus trazos con formas que
-dibujó gente de verdad: 64 ejemplos de cada uno, tomados de la base de datos
-[Hand-TeX](https://github.com/VoxelCubes/Hand-TeX), que amplía los datos de
-entrenamiento de [Detexify](https://github.com/kirel/detexify-data). Las dos se
-publican bajo la [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/),
-y también el archivo que se genera a partir de ellas,
-`src/ink-prototypes-odbl.ts`. El resto de NoteLens sigue siendo MIT; no se usa
-nada del código de Hand-TeX, solo sus datos publicados.
+Las fórmulas escritas a mano las lee una pequeña red neuronal que va dentro
+del plugin (`src/ink-model.ts`, solo los pesos, unos 450 KB) y funciona sin
+conexión en pocos milisegundos. Se entrenó con escritura de estas bases de
+datos públicas:
 
-Ese archivo se regenera con `python dev-harness/build-prototypes.py handtex.db`.
-Los dígitos y las letras latinas no están ahí —Detexify recogía dibujos de
-comandos LaTeX, así que nadie dibujó un «2»— y sus formas siguen escritas a mano
-en `src/ink-shapes.ts`.
+- [UJI Pen Characters v2](https://archive.ics.uci.edu/dataset/177) y
+  [Pen-Based Recognition of Handwritten Digits](https://archive.ics.uci.edu/dataset/81),
+  UCI Machine Learning Repository, CC BY 4.0.
+- [Hand-TeX](https://github.com/VoxelCubes/Hand-TeX), que amplía los datos de
+  [Detexify](https://github.com/kirel/detexify-data), y la
+  [base HWRT](https://doi.org/10.5281/zenodo.50022) de Martin Thoma, todas bajo
+  la [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
+
+No se distribuye ninguna muestra, solo los números ajustados, y no se usa
+código de esos proyectos. Se mide con [MathWriting](https://github.com/google-research/google-research/tree/master/mathwriting)
+(CC BY-NC-SA), con la que nunca se entrena. `dev-harness/train-ink/` reconstruye
+el modelo y `dev-harness/formula-bench.mjs` puntúa fórmulas completas.
 
 ### Privacidad
 

@@ -72,7 +72,7 @@ try {
       v.data.viewTransform = { x: 10, y: 20, scale: .65 };
       v.data.texts.push({ id: "focus-test", x: 60, y: 800, w: 280, h: 48, text: "Notas", variant, color: "#ffffff", fontSize: 20 });
       v.renderAll();
-      v.beginTextEdit(v.data.texts.at(-1), v.domLayerEl.querySelector('[data-id="focus-test"]'));
+      v.beginTextEdit(v.data.texts.at(-1), v.pageElement("focus-test"));
     }, variant);
     await new Promise(resolve => setTimeout(resolve, 450));
     await page.keyboard.type(" prueba");

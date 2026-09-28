@@ -69,6 +69,8 @@
   const file = new window.__TFile("Pizarra_prueba.notelens");
   window.__saved = null;
   window.__workspaceHandlers = {};
+  window.__vaultHandlers = {};
+  window.__trashed = [];
   window.__created = [];
   const app = {
     vault: {
@@ -86,7 +88,11 @@
       getFileByPath(p) { return this.getAbstractFileByPath(p); },
       getFolderByPath(p) { return this.getAbstractFileByPath(p); },
       getFiles: () => [],
+      getMarkdownFiles: () => (window.__markdownFiles || []).map(path => ({ path, basename: path.replace(/^.*\//, "").replace(/\.md$/, ""), extension: "md" })),
       getResourcePath: (f) => f.path,
+      // Vault events (modify/create/delete/rename); a run fires them through window.__vaultHandlers.
+      on: (name, fn) => { (window.__vaultHandlers[name] ||= []).push(fn); return { name, fn }; },
+      offref: () => {},
       adapter: { getResourcePath: (p) => p, exists: async () => false }
     },
     workspace: {
@@ -100,8 +106,8 @@
     },
     loadLocalStorage: (key) => { try { return JSON.parse(localStorage.getItem("harness:" + key) ?? "null"); } catch { return null; } },
     saveLocalStorage: (key, value) => { try { localStorage.setItem("harness:" + key, JSON.stringify(value)); } catch {} },
-    fileManager: { getAvailablePathForAttachment: async (n) => "attachments/" + n },
-    metadataCache: { getFirstLinkpathDest: () => null }
+    fileManager: { getAvailablePathForAttachment: async (n) => "attachments/" + n, trashFile: async (f) => { window.__trashed.push(f.path); (window.__vaultHandlers.delete || []).forEach(fn => fn(f)); } },
+    metadataCache: { getFirstLinkpathDest: () => null, getFileCache: (f) => (window.__fileHeadings || {})[f.path] ? { headings: window.__fileHeadings[f.path].map(heading => ({ heading, level: 1 })) } : null }
   };
   const plugin = new PluginClass(app, { id: "notelens", dir: ".obsidian/plugins/notelens", version: "test" });
   await plugin.onload();

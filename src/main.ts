@@ -4,11 +4,11 @@ import { OneNoteCanvasView, VIEW_TYPE_ONENOTE, tidyFormulaText } from "./view";
 import { disposePdfWorker } from "./embeds";
 import { recognizeFormula } from "./ocr";
 import { formulaCandidateScore, recognizeInkFormula } from "./ink-math";
-import { matchShape, prototypeShapes } from "./ink-shapes";
 import { runLocalStudyTool } from "./local-intelligence";
 import { DocumentDefaults, createEmptyDocument } from "./types";
 import { DEFAULT_SETTINGS, NoteLensSettingTab, NoteLensSettings, normalizeSettings } from "./settings";
 import { getLocale, setLocale, tr } from "./i18n";
+import { loadInkMemory } from "./ink-memory";
 
 export default class OneNotePlugin extends Plugin {
 	override settings: NoteLensSettings = { ...DEFAULT_SETTINGS };
@@ -16,6 +16,10 @@ export default class OneNotePlugin extends Plugin {
 	override async onload(): Promise<void> {
 		this.settings = normalizeSettings(await this.loadData());
 		setLocale(this.settings.language);
+		loadInkMemory(this.settings.inkMemory, (packed) => {
+			this.settings.inkMemory = packed;
+			void this.saveSettings();
+		});
 		this.addSettingTab(new NoteLensSettingTab(this.app, this));
 
 		this.registerView(
@@ -100,5 +104,5 @@ export default class OneNotePlugin extends Plugin {
 // Exposed for the dev harness so the ranking helpers can be tested directly.
 export const __assistantTest = {
 	rankModels, recommendedVisionModel, parseAssistantActions, visionOptionsFor, VISION_CATALOGUE,
-	tidyFormulaText, recognizeFormula, recognizeInkFormula, formulaCandidateScore, runLocalStudyTool, prototypeShapes, matchShape
+	tidyFormulaText, recognizeFormula, recognizeInkFormula, formulaCandidateScore, runLocalStudyTool
 };

@@ -37,12 +37,12 @@ const touch = async (type, points) => {
 };
 const state = async label => page.evaluate(l => {
   const v = window.__view, wr = v.workspaceEl.getBoundingClientRect();
-  const el = v.domLayerEl.querySelector('[data-id="t1"]');
+  const el = v.pageElement("t1");
   const r = el.getBoundingClientRect();
   const vt = v.data.viewTransform, wr0 = v.workspaceEl.getBoundingClientRect();
   const drift = {};
   for (const [id, doc] of [["t1", [60, 300]], ["tb1", [60, 500]], ["e1", [60, 660]]]) {
-    const node = v.domLayerEl.querySelector(`[data-id="${id}"]`);
+    const node = v.pageElement(id);
     if (!node) { drift[id] = "ausente"; continue; }
     const box = node.getBoundingClientRect();
     drift[id] = [Math.round(box.left - (wr0.left + doc[0] * vt.scale + vt.x)), Math.round(box.top - (wr0.top + doc[1] * vt.scale + vt.y))];

@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.3.0
+
+### Added
+
+- Boards survive being synced while they are open. When Obsidian Sync, Syncthing, iCloud or a git pull rewrites the file under the view, the new version comes in with the camera where it was, and any strokes not yet saved here are merged element by element with what arrived instead of overwriting it. A save never replaces a version of the file this device did not write; a half-transferred file is left alone and repaired by the next save.
+- Conflict copies left by sync tools (`.sync-conflict-…`, `(conflicted copy)`, `(copia en conflicto)`) are announced on the board with a button that folds them in and sends the copy to the trash.
+- Ink to maths, as in OneNote. Select handwriting on the board and press Σ in the selection bar: the equation dialog opens with the ink on its pad and the LaTeX already read, you correct by writing over it or picking another reading, and Insert puts the typeset formula where the ink was. Ctrl+Z brings the ink back.
+- NoteLens learns your handwriting. Every symbol you correct under "Review" in the equation dialog, or leave as it was when it was flagged, is kept as an example of how you write it, and later readings lean towards your own examples. Only measurements of the strokes are stored, on this device; Settings > Handwriting shows how many and forgets them on request.
+- Ink to text, as in OneNote. Select handwriting and press the T in the selection bar: it becomes a text box in the same place, at about the same size and in the same colour. It is read on the device, line by line, with spaces between words, capitals told from small letters by their height, numbers kept as numbers inside a sentence, and the dot of an i put back on its stem; words you already use in the vault — note names and headings — are preferred over look-alikes. Ctrl+Z brings the ink back.
+- Cover for revision. Select a definition, an answer or a formula and press the eye in the selection bar: it is frosted under a "Tap to see" card, like a flashcard in the middle of your notes. A tap uncovers it, the eye in its corner covers it back, and the board menu shows or covers every card on the page at once.
+- Tables were redesigned. Each one is a card with its own colour — blue, violet, green, amber, pink or grey, from the palette in its header — a tinted header row and alternate rows shaded for reading across (switchable). Tab walks the cells like a spreadsheet and Tab in the last one adds a row; numbers line up on the right; a cell grows with what is written in it and the table grows with its cells, so the last row is never cut off. Its controls wait for the pointer instead of crowding the board, and on light paper the table turns light too. The PDF export prints each table in its colour, with its name, stripes and column widths.
+- A blank page says what the board can do — write with the pen, press T to type, hold the pen for a shape, turn handwriting into text or a formula, search what you wrote — and the welcome is gone from the first stroke.
+- Draw and hold for a clean shape. Draw a circle, an oval, a rectangle, a triangle, a diamond, a line or an arrow with the pen and keep it still for a moment before lifting it: the stroke becomes that shape, drawn cleanly, keeping its tilt and colour, and can then be moved, resized and filled like any other shape. Ctrl+Z gives the hand-drawn stroke back. Writing is left alone — the stroke must be a drawing's size and fit a shape closely — and the setting "Holding the pen turns a drawing into a shape" turns it off.
+- Search finds handwriting. Ctrl+F on the board now looks through what was written by hand as well as typed: each line of ink is read once, on the device, and the lines that match are framed and visited one by one like any other result. Handwriting is read imperfectly, so the search forgives accents, case and, in words of four letters or more, a misread letter. Typed text is found without minding accents too: "energia" finds "Energía".
+- A sentence with maths in it prints as it looks. A text box such as "El área es $\pi r^2$" used to reach the PDF with its source; it is now drawn as the board shows it, formula typeset among the words, with bold, colours and highlights kept. Boxes without formulas still go in as real text.
+- Ink replay. Right-click the board and choose "Replay the ink" to watch the page being written again, stroke by stroke in the order it was written, with pause, a progress bar to jump anywhere and 1×, 2× or 4× speed. Touching the board or pressing Escape ends it.
+- Several lines at once. A derivation written step under step comes out as one aligned block, lined up at the = signs, in the dialog, from a board selection and in the PDF export.
+
+### Changed
+
+- Handwriting → LaTeX was rebuilt. Symbols are now read by a small neural network trained on handwriting from hundreds of people (UJI Pen Characters, Pen Digits, Hand-TeX, HWRT) instead of shapes drawn by one person; strokes are cut into symbols by trying the ways they could group and keeping the most believable one; fractions, roots with their index, sums, limits, exponents and subscripts are read from the layout; sin, cos, log… are recognised as words; x/×, 1/| and the case of c, s, x… are decided from the line around them. On 1,000 school-level formulas from MathWriting, written by people the model never saw, token errors fall from 80 % to 36 % and whole formulas read right go from 0.3 % to 12 %, in 7 ms instead of 280 ms. Output is plain LaTeX.
+- The equation dialog and "Leer de la pizarra" no longer ask Tesseract to second-guess board ink: on handwriting it was wrong far more often than the strokes, and it downloaded its data the first time. Images and PDF pages are still read with it.
+- Primes (f′, u″) are read as primes instead of slashes, a lone capital such as the C of "C = 6000/(200 − 2x)" is measured against the rest of the formula, and each symbol is read at three slants and averaged, because hands lean.
+- Fewer misreadings in handwritten formulas, measured on 3,000 of them from MathWriting: a small = is no longer read as two minus signs, a small low digit after a letter is a subscript (x₀, p₁) while the x of "dx" stays on the line, a ∂ with nothing to differentiate is read as the 0 or 2 it resembles, a + with nothing after it is the t of "dt", and a lone exponent prefers 2 to z. Whole formulas read right go from 22.5 % to 23.7 % there, and from 12.4 % to 14.2 % on the separate test set.
+- The review list under the notation offers every doubtful symbol, commands such as \alpha included, with its look-alikes (x, X, ×; 1, l, |), and several of them can be corrected one after another.
+
+### Fixed
+
+- The PDF export printed Σ, subscripts, arrows and Greek letters written in text boxes and tables as the wrong characters; lines holding such characters are now drawn with the system's fonts, sharp, in the same place.
+- With a mouse, the ✕ of every text box and tag no longer covers the board at all times: it appears when the pointer comes over the object, as in OneNote. On a touch screen they stay visible.
+- A formula no longer sits in a dark purple box, which looked out of place on light paper: it lies on the page like the rest of the notes and its frame appears under the pointer or when selected.
+- The rounded rectangle in the shapes panel showed a circle for an icon.
+- Two fingers zoom the board wherever they land. A pinch that started on a table, a code block or an embed did nothing on a phone or tablet, because the object kept the fingers for itself; the second finger now hands both to the board, and whatever the first had started on the object is cancelled. The ruler and the protractor still turn under two fingers.
+
 ## 3.2.6
 
 ### Fixed

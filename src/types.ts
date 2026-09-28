@@ -144,6 +144,8 @@ export interface TextBox {
 	rotation?: number;
 	/** A code block keeps text editing but gets its own readable treatment; a math box renders its text as LaTeX. */
 	variant?: "text" | "code" | "math";
+	/** Covered for revision: shown blurred until tapped, like a flashcard. */
+	cover?: boolean;
 	language?: string;
 	/** Set once the language was chosen by hand or by a fence: guessing stops there. */
 	languagePinned?: boolean;
@@ -221,6 +223,10 @@ export interface CanvasTable {
 	/** Column widths and row heights in scene px; missing entries share the space evenly. */
 	colWidths?: number[];
 	rowHeights?: number[];
+	/** Accent colour of the table (TABLE_COLORS); sky blue when missing. */
+	color?: string;
+	/** Alternate rows tinted, for reading across a wide table. Default on. */
+	striped?: boolean;
 }
 
 /** Saved camera position for jumping between areas of an infinite canvas. */

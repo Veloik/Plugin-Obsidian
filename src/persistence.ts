@@ -14,7 +14,30 @@ export class PersistenceManager {
 	private writeQueue: Promise<void> = Promise.resolve();
 	private lastPayload: string | null = null;
 
-	constructor(private app: App, private getFile: () => TFile | null, private onError: (error: unknown) => void = () => {}) {}
+	constructor(
+		private app: App,
+		private getFile: () => TFile | null,
+		private onError: (error: unknown) => void = () => {},
+		/** The file held something this manager never wrote: another device or a sync tool got there first. */
+		private onExternal: (content: string) => void = () => {}
+	) {}
+
+	/**
+	 * What the file holds right now, as far as this manager knows. Set on load
+	 * and whenever an external version is accepted, so a write can tell that
+	 * someone else changed the file in the meantime.
+	 */
+	prime(payload: string | null): void {
+		this.lastPayload = payload;
+	}
+
+	lastWritten(): string | null {
+		return this.lastPayload;
+	}
+
+	hasPendingChanges(): boolean {
+		return this.dirty;
+	}
 
 	/** A cached snapshot belongs to one file only. Call after flushing the old file. */
 	reset(): void {
@@ -61,11 +84,26 @@ export class PersistenceManager {
 		const payload = JSON.stringify(doc);
 		const job = async () => {
 			try {
-				await this.app.vault.process(file, () => payload);
-				if (revision === this.revision) {
-					this.dirty = false;
-					this.lastPayload = payload;
+				// vault.process hands over the current bytes: anything that is neither
+				// what we last wrote nor what we are about to write came from outside,
+				// and overwriting it would throw away another device's work. The file
+				// is left as it is and the owner decides how to reconcile.
+				const clash = { content: null as string | null };
+				await this.app.vault.process(file, current => {
+					if (this.lastPayload !== null && current !== this.lastPayload && current !== payload && current.trim()) {
+						clash.content = current;
+						return current;
+					}
+					return payload;
+				});
+				if (clash.content !== null) {
+					this.onExternal(clash.content);
+					return;
 				}
+				// The file now holds this payload whatever happened meanwhile; only
+				// the dirty flag depends on nothing having changed since.
+				this.lastPayload = payload;
+				if (revision === this.revision) this.dirty = false;
 			} catch (e) {
 				console.error("NoteLens: error saving file", e);
 				this.onError(e);

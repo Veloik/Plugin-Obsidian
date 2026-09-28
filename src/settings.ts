@@ -4,6 +4,7 @@ import { BackgroundPattern, CanvasFont, DEFAULT_BG_COLOR, DEFAULT_LINE_COLOR, Gr
 import { LocaleSetting, setLocale, tr } from "./i18n";
 import { detectMemoryGb, rankModels, recommendedVisionModel } from "./assistant";
 import { EXPERIMENTAL } from "./features";
+import { forgetInk, inkMemorySize } from "./ink-memory";
 
 /** User preferences: defaults for new boards plus behaviour switches. */
 export interface NoteLensSettings {
@@ -25,6 +26,8 @@ export interface NoteLensSettings {
 	wheelZooms: boolean;
 	/** Fingers draw with the active tool instead of panning. */
 	fingerDraws: boolean;
+	/** Holding the pen still at the end of a drawing turns it into a clean shape. */
+	holdToShape: boolean;
 	showQuickTags: boolean;
 	showMinimap: boolean;
 	compactUi: boolean;
@@ -60,6 +63,8 @@ export interface NoteLensSettings {
 	/** Languages the one-click translator uses on selected text. */
 	translateFrom: string;
 	translateTo: string;
+	/** Examples of the user's handwriting, packed by ink-memory.ts. */
+	inkMemory: string[];
 }
 
 export const DEFAULT_SETTINGS: NoteLensSettings = {
@@ -77,6 +82,7 @@ export const DEFAULT_SETTINGS: NoteLensSettings = {
 	textSize: 20,
 	wheelZooms: false,
 	fingerDraws: false,
+	holdToShape: true,
 	showQuickTags: true,
 	showMinimap: false,
 	compactUi: false,
@@ -96,7 +102,8 @@ export const DEFAULT_SETTINGS: NoteLensSettings = {
 	ocrLanguage: "es",
 	translationPrivateOnly: false,
 	translateFrom: "es",
-	translateTo: "en"
+	translateTo: "en",
+	inkMemory: []
 };
 
 export function normalizeSettings(raw: unknown): NoteLensSettings {
@@ -119,9 +126,11 @@ export function normalizeSettings(raw: unknown): NoteLensSettings {
 	s.petY = fraction(s.petY);
 	s.petScale = typeof s.petScale === "number" && isFinite(s.petScale) ? Math.min(Math.max(s.petScale, 0.6), 1.6) : 1;
 	s.petBubbles = s.petBubbles !== false;
+	s.holdToShape = s.holdToShape !== false;
 	s.aiUseBoardContext = s.aiUseBoardContext === true;
 	if (typeof s.ocrLanguage !== "string" || !s.ocrLanguage) s.ocrLanguage = DEFAULT_SETTINGS.ocrLanguage;
 	s.translationPrivateOnly = s.translationPrivateOnly === true;
+	s.inkMemory = Array.isArray(s.inkMemory) ? s.inkMemory.filter((v: unknown) => typeof v === "string") : [];
 	if (!["sans", "serif", "rounded", "mono"].includes(s.defaultTextFont)) s.defaultTextFont = "sans";
 	if (!hex.test(s.defaultStickyColor)) s.defaultStickyColor = DEFAULT_SETTINGS.defaultStickyColor;
 	if (!hex.test(s.highlighterColor)) s.highlighterColor = DEFAULT_SETTINGS.highlighterColor;
@@ -407,6 +416,30 @@ export class NoteLensSettingTab extends PluginSettingTab {
 					.setName(tr("Dibujar con el dedo"))
 					.setDesc(tr("Activado: el dedo dibuja siempre con la herramienta activa; dos dedos desplazan y hacen zoom. Desactivado: el dedo dibuja hasta que uses un lápiz óptico, y a partir de ahí solo desplaza para no marcar la pizarra con la mano."))
 					.addToggle(t => t.setValue(s.fingerDraws).onChange(v => { s.fingerDraws = v; save(); })); }
+			},
+			{
+				name: tr("Mantener el lápiz convierte el dibujo en forma"),
+				desc: tr("Dibuja un círculo, un rectángulo, un triángulo, un rombo, una línea o una flecha y deja el lápiz quieto un momento sin levantarlo: se convierte en la forma limpia. Ctrl+Z devuelve el trazo."),
+				render: (setting) => { setting
+					.setName(tr("Mantener el lápiz convierte el dibujo en forma"))
+					.setDesc(tr("Dibuja un círculo, un rectángulo, un triángulo, un rombo, una línea o una flecha y deja el lápiz quieto un momento sin levantarlo: se convierte en la forma limpia. Ctrl+Z devuelve el trazo."))
+					.addToggle(t => t.setValue(s.holdToShape).onChange(v => { s.holdToShape = v; save(); })); }
+			},
+			heading(tr("Escritura a mano")),
+			{
+				name: tr("Tu letra"),
+				desc: tr("Cada símbolo que corriges o confirmas en «Revisar» al insertar una ecuación enseña a NoteLens cómo escribes. Solo se guardan medidas del trazo, en este dispositivo."),
+				render: (setting) => {
+					const count = () => tr("Ejemplos aprendidos de tu letra: {p0}", { p0: inkMemorySize() });
+					setting
+						.setName(tr("Tu letra"))
+						.setDesc(tr("Cada símbolo que corriges o confirmas en «Revisar» al insertar una ecuación enseña a NoteLens cómo escribes. Solo se guardan medidas del trazo, en este dispositivo."));
+					const status = setting.descEl.createDiv({ cls: "notelens-settings-status", text: count() });
+					setting.addButton(b => b.setButtonText(tr("Olvidar mi letra")).onClick(() => {
+						forgetInk();
+						status.setText(count());
+					}));
+				}
 			},
 			heading(tr("Interfaz")),
 			{

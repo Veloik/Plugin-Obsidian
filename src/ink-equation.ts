@@ -1,8 +1,8 @@
 import { formulaTokenPositions } from "./formula-candidates";
 import { inkHitsPoint } from "./ink-region";
 import { App, Modal, setIcon } from "obsidian";
-import { recognizeFormula } from "./ocr";
-import { InkMathRecognition, pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
+import { InkMathRecognition, InkMathToken, recognizeInkFormula } from "./ink-math";
+import { rememberInk, saveInkMemory } from "./ink-memory";
 import { tr } from "./i18n";
 import { MATH_GROUPS, insertMathSnippet } from "./math-palette";
 
@@ -16,10 +16,23 @@ interface InkStroke {
 const BOARD_W = 620;
 const BOARD_H = 300;
 
+/** Scales board ink to sit inside the pad with a margin, keeping its proportions. */
+function fitInk(ink: { width?: number; points: { x: number; y: number }[] }[]): InkStroke[] {
+	const all = ink.flatMap(s => s.points);
+	const minX = Math.min(...all.map(p => p.x)), minY = Math.min(...all.map(p => p.y));
+	const w = Math.max(1, Math.max(...all.map(p => p.x)) - minX), h = Math.max(1, Math.max(...all.map(p => p.y)) - minY);
+	const k = Math.min((BOARD_W - 80) / w, (BOARD_H - 60) / h, 3);
+	const ox = (BOARD_W - w * k) / 2, oy = (BOARD_H - h * k) / 2;
+	return ink.map(s => ({
+		width: Math.max(2, Math.min(6, (s.width ?? 3) * Math.min(k, 1.5))),
+		points: s.points.map(p => ({ x: ox + (p.x - minX) * k, y: oy + (p.y - minY) * k }))
+	}));
+}
+
 /**
  * Handwrite an equation and watch it become a formula, the way OneNote's ink
- * equation dialog works. Recognition runs locally with Tesseract, so it needs
- * no model, no account and no connection.
+ * equation dialog works. Recognition runs locally on the strokes (ink-math.ts),
+ * so it needs no model download, no account and no connection.
  */
 export class InkEquationModal extends Modal {
 	private strokes: InkStroke[] = [];
@@ -43,10 +56,13 @@ export class InkEquationModal extends Modal {
 		/** Cleans up what OCR returns for maths. */
 		private tidy: (raw: string) => string,
 		/** Reads a region of the real board, for formulas already written there. */
-		private readFromBoard?: (onProgress: (message: string) => void) => Promise<string>
+		private readFromBoard?: (onProgress: (message: string) => void) => Promise<string>,
+		/** Handwriting taken from the board, shown on the pad so it can be corrected. */
+		initialInk?: { width?: number; points: { x: number; y: number }[] }[]
 	) {
 		super(app);
 		this.source = initial;
+		if (initialInk?.length) this.strokes = fitInk(initialInk);
 	}
 
 	override onOpen(): void {
@@ -129,15 +145,39 @@ export class InkEquationModal extends Modal {
 			if (!src) { preview.createSpan({ cls: "notelens-ink-placeholder", text: tr("Aquí verás la ecuación") }); return; }
 			this.renderFormula(src, preview);
 		};
-		input.addEventListener("input", () => { candidates.addClass("hidden"); this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
+		// What the review list was offered and what was picked in it, to learn
+		// this hand from (ink-memory.ts). Typing in the notation breaks the link
+		// between symbols and ink, so only picks made before typing count.
+		let reviewed: InkMathToken[] = [];
+		let current: string[] = [];
+		const picked = new Map<InkMathToken, string>();
+		let typed = false;
+		input.addEventListener("input", () => { candidates.addClass("hidden"); typed = true; this.source = input.value; editedByUser = input.value !== lastAutomatic; drawPreview(); });
 		drawPreview();
+
+		// A pick teaches what that glyph is; a doubtful symbol left as it was,
+		// in a formula inserted without retyping, confirms the reading.
+		const learnFromReview = () => {
+			let learned = 0;
+			for (const token of reviewed) {
+				const label = picked.get(token) ?? (typed ? null : token.value);
+				if (!label || !token.strokes?.length) continue;
+				rememberInk(token.strokes.map(stroke => stroke.points), label);
+				learned++;
+			}
+			if (learned) saveInkMemory();
+		};
 
 		const showCandidates = (recognition: InkMathRecognition) => {
 			candidates.empty();
+			current = recognition.tokens.map(token => token.value);
+			picked.clear();
+			typed = false;
+			reviewed = [];
 			// Unknown glyphs come first: those are the ones the reader refused to
 			// name, and the ones the user most needs to fix.
 			const doubtful = recognition.tokens.filter(token => token.unknown
-				|| (token.value.length === 1 && token.confidence < 0.72 && token.alternatives.length > 1));
+				|| (token.confidence < 0.72 && token.alternatives.length > 1));
 			const uncertain = [...doubtful].sort((a, b) => Number(!!b.unknown) - Number(!!a.unknown)).slice(0, 7);
 			candidates.toggleClass("hidden", uncertain.length === 0);
 			if (!uncertain.length) return;
@@ -145,11 +185,11 @@ export class InkEquationModal extends Modal {
 				cls: "notelens-ink-candidates-label",
 				text: uncertain.some(token => token.unknown) ? tr("Sin reconocer") : tr("Revisar")
 			});
-			const candidateSource = input.value;
-			const positions = formulaTokenPositions(candidateSource, recognition.tokens.map(token => token.value));
+			const positions = formulaTokenPositions(input.value, current);
 			for (const token of uncertain) {
-				const tokenStart = positions[recognition.tokens.indexOf(token)];
-				if (tokenStart < 0) continue;
+				const index = recognition.tokens.indexOf(token);
+				if (positions[index] < 0) continue;
+				reviewed.push(token);
 				const select = candidates.createEl("select", { cls: "notelens-ink-candidate" });
 				select.toggleClass("is-unknown", !!token.unknown);
 				// The value it holds has to be among the options or the select
@@ -160,10 +200,15 @@ export class InkEquationModal extends Modal {
 				select.title = token.unknown
 					? tr("No he reconocido este símbolo. Elige uno de los parecidos, o escríbelo otra vez.")
 					: tr("Confianza {p0}%. Elige el símbolo correcto.", { p0: Math.round(token.confidence * 100) });
+				// Positions are found again at every pick, so several symbols can
+				// be corrected one after another.
 				select.onchange = () => {
-					if (tokenStart < 0 || input.value !== candidateSource) return;
-					candidates.addClass("hidden");
-					input.setRangeText(select.value, tokenStart, tokenStart + token.value.length, "end");
+					if (typed) return;
+					const at = formulaTokenPositions(input.value, current)[index];
+					if (at < 0) return;
+					input.setRangeText(select.value, at, at + current[index].length, "end");
+					current[index] = select.value;
+					picked.set(token, select.value);
 					this.source = input.value;
 					editedByUser = true;
 					drawPreview();
@@ -327,7 +372,7 @@ export class InkEquationModal extends Modal {
 		};
 		setTool("write");
 		// Handwriting first, as OneNote does; the keyboard is one click away.
-		setMode(this.source.trim() ? "type" : "hand");
+		setMode(this.source.trim() && !this.strokes.length ? "type" : "hand");
 
 		// --- footer
 		const footer = contentEl.createDiv({ cls: "notelens-ink-footer" });
@@ -335,6 +380,7 @@ export class InkEquationModal extends Modal {
 		const cancel = footer.createEl("button", { text: tr("Cancelar") });
 		insert.onclick = () => {
 			const value = input.value.trim();
+			if (value) learnFromReview();
 			this.close();
 			if (value) this.onSubmit(value);
 		};
@@ -369,72 +415,24 @@ export class InkEquationModal extends Modal {
 			const revision = this.recognitionRevision;
 			status.setText(tr("Analizando trazos y estructura…"));
 			try {
-				// The vector pass is instant and retains fractions, superscripts and
-				// stroke grouping. It is the primary recogniser for board ink.
+				// The strokes themselves, read by the trained recogniser: symbols,
+				// fractions, roots, exponents. It answers LaTeX in a few
+				// milliseconds, so there is nothing to wait for and nothing to
+				// download. An image OCR used to second-guess it here; on
+				// handwriting it was wrong far more often than the strokes were.
 				const vector = recognizeInkFormula(this.strokes);
-				let text = vector.source;
+				if (revision !== this.recognitionRevision || !this.containerEl.isConnected) return;
+				const text = vector.source;
 				if (text && (!editedByUser || input.value === lastAutomatic || !input.value.trim())) {
-					const tidied = this.tidy(text);
-					input.value = tidied;
-					this.source = tidied;
-					lastAutomatic = tidied;
+					input.value = text;
+					this.source = text;
+					lastAutomatic = text;
 					editedByUser = false;
 					drawPreview();
-					if (text === vector.source) showCandidates(vector); else candidates.addClass("hidden");
-				}
-				status.setText(vector.detail);
-
-				// White page, thick black ink: what the recogniser handles best.
-				const shot = createEl("canvas");
-				shot.width = canvas.width;
-				shot.height = canvas.height;
-				const shotCtx = shot.getContext("2d");
-				if (shotCtx) {
-					shotCtx.fillStyle = "#ffffff";
-					shotCtx.fillRect(0, 0, shot.width, shot.height);
-					shotCtx.drawImage(canvas, 0, 0);
-				}
-				// Only ask the local OCR fallback when geometry is unsure. This keeps
-				// the normal pen flow immediate and still covers uncommon letters.
-				if (vector.confidence < 0.78 || /\?/.test(vector.source)) {
-					let ocr = "";
-					try {
-						ocr = await recognizeFormula(shot, message => { if (revision === this.recognitionRevision) status.setText(message); });
-					} catch {
-						// Keep the vector result when the optional image recognizer is unavailable.
-					}
-					if (revision !== this.recognitionRevision || !this.containerEl.isConnected) return;
-					if (vector.unknown > 0) {
-						// A symbol the stroke reader refused to name is not a symbol the
-						// image reader gets to name unannounced: it read a spiral as "9".
-						// The guess is offered instead, next to the "?" it belongs to.
-						const guess = this.tidy(ocr).trim();
-						if (guess && guess.length <= 2) {
-							for (const token of vector.tokens) {
-								if (token.unknown && !token.alternatives.includes(guess)) token.alternatives.unshift(guess);
-							}
-						}
-						text = vector.source;
-					} else {
-						text = pickFormulaCandidate([
-							{ source: vector.source, bonus: vector.confidence * 8 },
-							{ source: ocr, bonus: 1.5 }
-						]);
-					}
-				}
-				const tidied = this.tidy(text);
-				if (tidied && (!editedByUser || input.value === lastAutomatic || !input.value.trim())) {
-					input.value = tidied;
-					this.source = tidied;
-					lastAutomatic = tidied;
-					editedByUser = false;
-					drawPreview();
-					if (text === vector.source) showCandidates(vector); else candidates.addClass("hidden");
-					status.setText(vector.unknown > 0
-					? vector.detail
-					: vector.confidence >= 0.78 ? vector.detail : tr("Lectura local combinada. Los símbolos dudosos aparecen debajo."));
+					showCandidates(vector);
+					status.setText(vector.detail);
 				} else {
-					status.setText(tidied ? tr("He respetado tu corrección manual.") : tr("No he reconocido nada todavía; sigue escribiendo o usa las estructuras."));
+					status.setText(text ? tr("He respetado tu corrección manual.") : tr("No he reconocido nada todavía; sigue escribiendo o usa las estructuras."));
 				}
 			} catch {
 				if (revision === this.recognitionRevision && this.containerEl.isConnected) status.setText(tr("No he podido leer la escritura. Escribe la notación abajo."));
@@ -443,6 +441,9 @@ export class InkEquationModal extends Modal {
 				if (this.pending && this.containerEl.isConnected) { this.pending = false; this.scheduleRecognition(); }
 			}
 		};
+		// Ink brought from the board is read straight away, so the doubtful
+		// symbols are offered for review without writing anything first.
+		if (this.strokes.length) this.scheduleRecognition();
 	}
 
 	/** Replaced in onOpen; declared so the handlers above can call it. */

@@ -3,6 +3,7 @@ dev-harness/node_modules/
 /assets/
 /dist/
 /NoteLens-promo.mp4
+/NoteLens-promo-*.mp4
 /notelens.dev.json
 /dev-harness/patches/
 /dev-harness/shots*/
@@ -10,3 +11,5 @@ dev-harness/node_modules/
 *.log
 .DS_Store
 dev-harness/missing-en.json
+
+/dev-harness/promo-frames/

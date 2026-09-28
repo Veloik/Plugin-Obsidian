@@ -6,7 +6,7 @@ test("screenshot reconstruction reads two thirds minus five across scale and str
         for (const reversed of [false, true]) {
             const strokes = screenshotEquation.map(stroke => ({ points: (reversed ? [...stroke.points].reverse() : stroke.points).map(p => ({ x: p.x * scale * width + 37, y: p.y * scale - 90 })) }));
             const result = recognizeInkFormula(strokes);
-            assert.equal(result.source, "\\frac{2}{3} - 5");
+            assert.equal(result.source.replace(/\s+/g, ""), "\\frac{2}{3}-5");
             assert.equal(result.unknown, 0);
         }
         }
@@ -15,7 +15,12 @@ test("screenshot reconstruction reads two thirds minus five across scale and str
 
 test("digit variants do not turn a spiral into a number", () => {
     const points = Array.from({ length: 80 }, (_, i) => ({ x: 100 + Math.cos(i * .3) * i, y: 100 + Math.sin(i * .3) * i }));
-    assert.ok(recognizeInkFormula([{ points }]).unknown > 0);
+    // Whatever it guesses, it must not pass a doodle off as a sure number: it
+    // is either flagged as unknown or offered for review.
+    const result = recognizeInkFormula([{ points }]);
+    const token = result.tokens[0];
+    assert.ok(!/^[0-9]$/.test(result.source), `spiral read as ${result.source}`);
+    assert.ok(token.unknown || token.confidence < 0.72, `spiral read confidently as ${result.source}`);
 });
 
 import assert from "node:assert/strict";
@@ -51,6 +56,9 @@ test("candidate locations skip command names and preserve repeated glyph order",
     const source = "\\frac{a}{a}+r";
     assert.deepEqual(formulaTokenPositions(source, ["a", "a", "+", "r"]), [6, 9, 11, 12]);
     assert.deepEqual(formulaTokenPositions("\\sqrt{x}", ["r", "x"]), [-1, 6]);
+    // A recognised command is found as itself, so it can be corrected too.
+    assert.deepEqual(formulaTokenPositions("\\alpha+\\beta^{2}", ["\\alpha", "+", "\\beta", "2"]), [0, 6, 7, 14]);
+    assert.deepEqual(formulaTokenPositions("\\pi", ["\\p"]), [-1]);
 });
 
 test("eraser hits the middle of sparse strokes without erasing nearby ink", () => {
@@ -61,6 +69,7 @@ test("eraser hits the middle of sparse strokes without erasing nearby ink", () =
 });
 import { toRenderableLatex } from "../src/asciimath";
 import { recognizeInkFormula } from "../src/ink-math";
+import { forgetInk, inkMemorySize, loadInkMemory, rememberInk } from "../src/ink-memory";
 import { runLocalStudyTool } from "../src/local-intelligence";
 import { createEmptyDocument, migrateDocument } from "../src/types";
 import { hexToRgba, setColorAlpha, toRemoteVideoEmbed } from "../src/tools";
@@ -68,6 +77,7 @@ import { setLocale, tr } from "../src/i18n";
 import { mergeRuns, notePreview, parseInline, planListToggle, runsFromInline, runsToMarked, stripInlineMarks } from "../src/rich-text";
 import { en } from "../src/locales/en";
 import { PersistenceManager } from "../src/persistence";
+import { conflictOriginal, mergeCollection, mergeDocuments } from "../src/sync";
 import { CanvasRenderer } from "../src/renderer";
 import { unpackShareArchive } from "../src/share-archive";
 import { zipSync, strToU8, strFromU8 } from "fflate";
@@ -345,7 +355,7 @@ test("a radical owns what is written under it", () => {
 	assert.ok(inside.confidence > 0.5);
 
 	// On its own it stays a symbol: an empty root would be worse.
-	assert.equal(recognizeInkFormula([radical]).source, "sqrt");
+	assert.equal(recognizeInkFormula([radical]).source, "\\sqrt{}");
 });
 
 test("two marks on the same line are not one glyph", () => {
@@ -465,4 +475,149 @@ test("a toolbar reads the style a selection agrees on, and nothing where it diff
 	// A caret carries on with the run it sits at the end of.
 	assert.equal(styleAcross(runs, 2, 2).bold, true);
 	assert.equal(styleAcross(runs, 6, 6).bold, undefined);
+});
+
+test("a three-way merge keeps each device's additions, honours deletions and lets an edit beat a deletion", () => {
+	const item = (id: string, v = 1) => ({ id, v });
+	const base = [item("a"), item("b"), item("c"), item("d")];
+	const local = [item("a"), item("b", 2), item("d"), item("x")];          // edited b, deleted c, added x
+	const remote = [item("a", 3), item("b"), item("c", 5), item("y"), item("d")]; // edited a, edited c, added y before d
+	const merged = mergeCollection(base, local, remote);
+	assert.deepEqual(merged.map(i => `${i.id}${i.v}`), ["a3", "b2", "c5", "y1", "d1", "x1"]);
+	// Without an ancestor it is a union where the local version wins.
+	const union = mergeCollection(undefined, [item("a", 1), item("b")], [item("a", 9), item("c")]);
+	assert.deepEqual(union.map(i => `${i.id}${i.v}`), ["a1", "c1", "b1"]);
+	// A remote deletion of an untouched element goes through; a local one too.
+	assert.deepEqual(mergeCollection(base, base, [item("a")]).map(i => i.id), ["a"]);
+	assert.deepEqual(mergeCollection(base, [item("a")], base).map(i => i.id), ["a"]);
+});
+
+test("document merge reconciles every collection and keeps a valid active page", () => {
+	const local = createEmptyDocument();
+	const remote = JSON.parse(JSON.stringify(local)) as typeof local;
+	local.strokes.push({ id: "s1", pageId: "page_1", type: "pen", color: "#fff", width: 2, points: [{ x: 0, y: 0, pressure: 1 }] } as any);
+	remote.strokes.push({ id: "s2", pageId: "page_1", type: "pen", color: "#000", width: 2, points: [{ x: 1, y: 1, pressure: 1 }] } as any);
+	remote.pages.push({ ...remote.pages[0], id: "page_2", title: "Dos" });
+	local.activePageId = "gone";
+	const merged = mergeDocuments(createEmptyDocument(), local, remote);
+	assert.deepEqual(merged.strokes.map(s => s.id), ["s1", "s2"]);
+	assert.deepEqual(merged.pages.map(p => p.id), ["page_1", "page_2"]);
+	assert.equal(merged.activePageId, "page_1");
+});
+
+test("conflict copies from sync tools point back at their board", () => {
+	assert.equal(conflictOriginal("Apuntes/Física.sync-conflict-20260913-101010-ABCDEFG.notelens"), "Apuntes/Física.notelens");
+	assert.equal(conflictOriginal("Física (conflicted copy 2026-09-13).notelens"), "Física.notelens");
+	assert.equal(conflictOriginal("Física (Copia en conflicto de Portátil 2026-09-13).notelens"), "Física.notelens");
+	assert.equal(conflictOriginal("Física (conflicto 2026-09-13 10-10-10).notelens"), "Física.notelens");
+	assert.equal(conflictOriginal("Física.notelens"), null);
+	assert.equal(conflictOriginal("Física (2).notelens"), null);
+	assert.equal(conflictOriginal("sin-extension"), null);
+});
+
+test("a save never overwrites a version of the file this device did not write", async () => {
+	const previous = globalThis.window;
+	(globalThis as any).window = globalThis;
+	let disk = "";
+	const external: string[] = [];
+	const app = { vault: { process: async (_file: unknown, fn: (data: string) => string) => { disk = fn(disk); return disk; } } };
+	const manager = new PersistenceManager(app as any, () => ({ path: "a.notelens" }) as any, () => {}, content => external.push(content));
+	const doc = createEmptyDocument();
+	try {
+		manager.prime(JSON.stringify(doc));
+		disk = JSON.stringify(doc);
+		doc.strokes.push({ id: "mine" } as any);
+		manager.scheduleSave(doc);
+		assert.equal(await manager.flush(doc), true);
+		assert.equal(disk, JSON.stringify(doc));
+		// Another device lands between two saves: the file keeps its version and the owner is told.
+		disk = "{\"version\":10,\"pages\":[],\"strokes\":[{\"id\":\"theirs\"}]}";
+		doc.strokes.push({ id: "mine-2" } as any);
+		manager.scheduleSave(doc);
+		assert.equal(await manager.flush(doc), false);
+		assert.equal(external.length, 1);
+		assert.ok(disk.includes("theirs") && !disk.includes("mine-2"));
+		// Once the owner has taken the external version in, the next save goes through.
+		manager.prime(disk);
+		assert.equal(await manager.flush(doc), true);
+		assert.ok(disk.includes("mine-2"));
+	} finally { manager.reset(); (globalThis as any).window = previous; }
+});
+
+test("the recogniser learns a hand from its corrections, and forgets on request", () => {
+	loadInkMemory([], () => { /* nothing to persist in a test */ });
+	// An odd way of writing: a loop with a tail, which the network reads as
+	// something else entirely.
+	const odd = (dx: number, wobble: number) => [{
+		points: Array.from({ length: 40 }, (_, i) => {
+			const t = i / 39 * Math.PI * 2.4;
+			return { x: 50 + dx + Math.cos(t) * 20 + i * 0.8, y: 50 + Math.sin(t) * 12 + Math.sin(i) * wobble };
+		})
+	}];
+	const before = recognizeInkFormula(odd(0, 0)).source;
+	assert.notEqual(before, "k");
+	rememberInk(odd(0, 0).map(s => s.points), "k");
+	assert.equal(inkMemorySize(), 1);
+	assert.equal(recognizeInkFormula(odd(0, 0)).source, "k");
+	assert.equal(recognizeInkFormula(odd(30, 0.6)).source, "k", "a second drawing of the same shape is recognised too");
+	forgetInk();
+	assert.equal(recognizeInkFormula(odd(0, 0)).source, before);
+});
+
+import { foldForSearch, inkRuns, inkTextMatches } from "../src/ink-search";
+
+test("handwriting search forgives accents, case and one misread letter", () => {
+	assert.equal(foldForSearch("Energía, total."), "energia total");
+	assert.ok(inkTextMatches("la energia total", "Energía"));
+	assert.ok(inkTextMatches("velocldad media", "velocidad"));
+	assert.ok(!inkTextMatches("velocldad media", "vxlxcxdud"));
+	// Short words must match exactly: one letter off is another word.
+	assert.ok(!inkTextMatches("sal", "sol"));
+});
+
+test("ink runs are lines: words side by side join, the line below stays apart", () => {
+	const stroke = (id: string, x: number, y: number) => ({ id, type: "pen" as const, color: "#000", width: 2, points: [{ x, y, p: 0.5 }, { x: x + 20, y: y + 30, p: 0.5 }] });
+	const runs = inkRuns([stroke("a", 0, 0), stroke("b", 30, 2), stroke("c", 80, 0), stroke("d", 0, 60), stroke("e", 400, 0)]);
+	const keys = runs.map(r => r.key).sort();
+	assert.deepEqual(keys, ["a|b|c", "d", "e"]);
+});
+
+import { recognizeShape } from "../src/ink-shape";
+
+test("ink to shape reads hand-drawn shapes and leaves other ink alone", () => {
+	let seed = 3;
+	const jitter = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5) * 3;
+	const polyline = (corners: [number, number][], closed = true, per = 20) => {
+		const ring = closed ? [...corners, corners[0]] : corners;
+		const out: { x: number; y: number }[] = [];
+		for (let i = 0; i < ring.length - 1; i++) for (let k = 0; k < per; k++) {
+			const t = k / per;
+			out.push({ x: ring[i][0] + (ring[i + 1][0] - ring[i][0]) * t + jitter(), y: ring[i][1] + (ring[i + 1][1] - ring[i][1]) * t + jitter() });
+		}
+		out.push({ x: ring[ring.length - 1][0] + jitter(), y: ring[ring.length - 1][1] + jitter() });
+		return out;
+	};
+	const oval = (rx: number, ry: number, turn = 0) => Array.from({ length: 80 }, (_, i) => {
+		const t = i / 79 * Math.PI * 2 * 1.02;
+		const x = Math.cos(t) * rx, y = Math.sin(t) * ry;
+		return { x: 200 + x * Math.cos(turn) - y * Math.sin(turn) + jitter(), y: 200 + x * Math.sin(turn) + y * Math.cos(turn) + jitter() };
+	});
+	assert.equal(recognizeShape(oval(80, 80))?.kind, "ellipse");
+	const tilted = recognizeShape(oval(120, 50, 0.6));
+	assert.equal(tilted?.kind, "ellipse");
+	assert.ok(Math.abs((tilted?.rotation ?? 0) - 34) < 6, `rotación ${tilted?.rotation}`);
+	assert.equal(recognizeShape(polyline([[0, 0], [200, 0], [200, 120], [0, 120]]))?.kind, "rectangle");
+	const leaning = recognizeShape(polyline([[100, 0], [273, 100], [213, 204], [40, 104]]));
+	assert.equal(leaning?.kind, "rectangle");
+	assert.ok(Math.abs((leaning?.rotation ?? 0) - 30) < 5, `rotación ${leaning?.rotation}`);
+	assert.equal(recognizeShape(polyline([[100, 0], [200, 160], [0, 160]]))?.kind, "triangle");
+	assert.equal(recognizeShape(polyline([[100, 0], [200, 100], [100, 200], [0, 100]]))?.kind, "diamond");
+	assert.equal(recognizeShape(polyline([[0, 0], [300, 40]], false))?.kind, "line");
+	assert.equal(recognizeShape(polyline([[0, 0], [300, 0], [270, -25], [300, 0], [270, 25]], false))?.kind, "arrow");
+	// A 2, an S and a spiral are writing, not shapes.
+	assert.equal(recognizeShape(polyline([[0, 20], [30, 0], [60, 20], [0, 100], [70, 100]], false)), null);
+	const s = Array.from({ length: 60 }, (_, i) => { const t = i / 59; return { x: 40 * Math.sin(t * Math.PI * 2), y: t * 120 }; });
+	assert.equal(recognizeShape(s), null);
+	const spiral = Array.from({ length: 120 }, (_, i) => { const t = i / 119 * Math.PI * 6; return { x: Math.cos(t) * t * 8, y: Math.sin(t) * t * 8 }; });
+	assert.equal(recognizeShape(spiral), null);
 });

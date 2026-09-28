@@ -1,7 +1,7 @@
 import { tidyFormulaText } from "./formula-text";
 export { tidyFormulaText } from "./formula-text";
 import { clipInkToRect } from "./ink-region";
-import { FileView, Menu, Notice, Platform, TFile, WorkspaceLeaf, finishRenderMath, loadMathJax, loadPrism, renderMath, setIcon } from "obsidian";
+import { FileView, Menu, Notice, Platform, TAbstractFile, TFile, WorkspaceLeaf, finishRenderMath, loadMathJax, loadPrism, renderMath, setIcon } from "obsidian";
 import { AngleUnit, createCalculatorPanel } from "./calculator";
 import { createRecorderPanel } from "./recorder";
 import { toRenderableLatex } from "./asciimath";
@@ -9,7 +9,7 @@ import { MATH_GROUPS, insertMathSnippet } from "./math-palette";
 import { buildSharePackage, importSharePackage as importShareArchive } from "./exchange";
 import { TranslationSource, createTranslatorPanel } from "./translator";
 import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
-import { RasterImage, rasterizeMath } from "./dom-raster";
+import { RasterImage, rasterizeMath, rasterizeTextBox } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer, HIGHLIGHTER_NIB } from "./renderer";
 import { trackMobileEditor, mountMobileBoard } from "./mobile-editor";
@@ -18,6 +18,7 @@ import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListTogg
 import { BaseStyle, closeEditable, editableText, paintEditable, readRuns, renderRuns, selectOffsets, selectionOffsets, spliceRuns, styleAcross, styleRange, surroundSelection, unwrapCode } from "./rich-editor";
 import { HistoryManager } from "./history";
 import { PersistenceManager } from "./persistence";
+import { conflictOriginal, mergeDocuments } from "./sync";
 import {
 	Badge, CanvasFont, CanvasTable, DocumentPage, Embed, EmbedKind, OneNoteDocument, PenStyle, Shape, ShapeKind, Stroke, TextBox, ViewportBookmark,
 	ChartData, createDocumentPage, createEmptyDocument, genId, migrateDocument
@@ -27,6 +28,9 @@ import { EmbedHost, EpubModeModal, ImagePickModal, NoteOrBoardPickModal, PdfMode
 import { createNavigatorPanel, isBoardFile } from "./navigator";
 import { recognizeFormula, recognizeImage } from "./ocr";
 import { pickFormulaCandidate, recognizeInkFormula } from "./ink-math";
+import { recognizeInkText } from "./ink-text";
+import { foldForSearch, inkRuns, inkTextMatches } from "./ink-search";
+import { recognizeShape } from "./ink-shape";
 import { ChartEditorModal, DEFAULT_CHART, specFromTable } from "./charts";
 import { HOVER_NOTE_BOARD_HEIGHT, HOVER_NOTE_BOARD_WIDTH, HoverNoteContent, HoverNoteModal } from "./hover-note";
 import { InkEquationModal } from "./ink-equation";
@@ -222,6 +226,15 @@ const CANVAS_MENU_TOOLS: ToolId[] = ["hand", "select"];
  * or board, and the note cards and code blocks that carry their own buttons.
  * A page, a picture and prose stay underneath: writing on those is the point.
  */
+/** Accent colours a table can take, as [id, name]; the id is what the file stores. */
+const TABLE_COLORS: [string, string][] = [
+	["sky", "Azul"], ["violet", "Violeta"], ["emerald", "Verde"], ["amber", "Ámbar"], ["rose", "Rosa"], ["slate", "Gris"]
+];
+const TABLE_ACCENTS: Record<string, string> = {
+	sky: "#38bdf8", violet: "#a78bfa", emerald: "#34d399", amber: "#f59e0b", rose: "#fb7185", slate: "#94a3b8"
+};
+const tableAccent = (id: string | undefined) => TABLE_ACCENTS[id ?? "sky"] ?? TABLE_ACCENTS.sky;
+
 const INK_FREE_EMBEDS: EmbedKind[] = ["youtube", "web-video", "video", "audio", "epub", "file", "note", "board", "chart"];
 /** How far a finger may slide on something live and still be read as a tap, in pixels. */
 const TAP_SLOP = 8;
@@ -327,8 +340,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private lassoPoints: { x: number; y: number }[] = [];
 	private lassoEl: SVGSVGElement | null = null;
 	private searchEl: HTMLElement | null = null;
-	private searchHits: { id: string; x: number; y: number }[] = [];
+	private searchHits: { id: string; x: number; y: number; box?: { x: number; y: number; w: number; h: number } }[] = [];
 	private searchIndex = -1;
+	/** Handwriting already read for search, by run of strokes (see ink-search.ts). */
+	private inkReadings = new Map<string, string>();
+	private rerunSearch: (() => void) | null = null;
+	private inkIndexing = false;
+	/** Draw-and-hold: where the pen came to rest, and the timer that turns the stroke into a shape. */
+	private holdAnchor: { x: number; y: number } | null = null;
+	private holdTimer: number | null = null;
 	/** Last copied objects, so pasting works even when the system clipboard refuses text. */
 	private clipboardPayload: ClipboardPayload | null = null;
 	private lastPointerClient: { x: number; y: number } | null = null;
@@ -413,6 +433,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	// --- Gesture state ---
 	private pointers = new Map<number, { x: number; y: number }>();
+	/** Every finger on the board, including those an object (a table, a PDF) took for itself. */
+	private touchesDown = new Map<number, { x: number; y: number }>();
 	private isPanning = false;
 	/** Set when a stylus barrel press started a pan, so its context menu is dropped. */
 	private swallowNextCanvasMenu = false;
@@ -457,6 +479,12 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	/** How far the board is shown lifted for a software keyboard. Presentation only. */
 	private keyboardLift = 0;
 	private loadFailed = false;
+	/** True between a pointer going down on the board and its release, when the document must not be swapped. */
+	private pointerHeld = false;
+	private externalRetry: number | null = null;
+	private syncBannerEl: HTMLElement | null = null;
+	/** Conflict copies the user chose to leave alone for this session. */
+	private ignoredConflicts = new Set<string>();
 	private activeTextEditor: HTMLTextAreaElement | HTMLElement | null = null;
 	private activeTextSourceEl: HTMLElement | null = null;
 	/** The box the rich editor belongs to, for edits driven from keys and menus. */
@@ -551,7 +579,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		);
 		this.saver = new PersistenceManager(this.app, () => this.loadFailed ? null : this.file, () => {
 			new Notice(tr("No se ha podido guardar la pizarra. Conserva esta pestaña abierta y comprueba el almacenamiento."), 10000);
-		});
+		}, content => this.handleExternalContent(content));
+		this.watchVault();
 		this.applySettings();
 		this.plugin.openBoards.add(this);
 
@@ -596,6 +625,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	override async onClose(): Promise<void> {
+		this.replay?.stop();
 		this.plugin.openBoards.delete(this);
 		this.commitTextEditor();
 		this.stopMobileFullscreen?.();
@@ -621,6 +651,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				const parsed: unknown = JSON.parse(content);
 				if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid board document");
 				this.data = migrateDocument(parsed);
+				this.saver?.prime(content);
 			} else {
 				this.data = createEmptyDocument(this.plugin.documentDefaults());
 			}
@@ -644,6 +675,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			panelHooks(this.workspaceEl).__refreshBookmarks?.();
 			this.refreshTagSummary();
 		}
+		this.refreshConflictBanner();
 	}
 
 	override async onUnloadFile(file: TFile): Promise<void> {
@@ -711,6 +743,120 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const strokes = except ? this.pageStrokes.filter(stroke => stroke !== except) : this.pageStrokes;
 		this.renderer.renderAll(strokes, this.pageShapes, this.data.viewTransform);
 		this.renderMiniMap();
+		this.updateEmptyHint();
+	}
+
+	// ------------------------------------------------------------------
+	// Ink replay
+	// ------------------------------------------------------------------
+
+	private replay: { stop: () => void } | null = null;
+
+	/**
+	 * Ink replay, as in OneNote: the page's handwriting is drawn again stroke by
+	 * stroke in the order it was written, to follow how a solution or a diagram
+	 * was built. Everything else stays on the page; touching the board, Escape
+	 * or the close button ends it and puts the ink back as it was.
+	 */
+	startInkReplay(): void {
+		this.replay?.stop();
+		const strokes = [...this.pageStrokes];
+		if (!strokes.length || !this.renderer) return;
+		this.clearSelection(false);
+		const counts = strokes.map(s => Math.max(1, s.points.length));
+		const total = counts.reduce((a, b) => a + b, 0);
+		// About a page a minute at most, and never a crawl for a few strokes.
+		const perSecond = Math.max(90, total / 30);
+		let progress = 0;
+		let speed = 1;
+		let playing = true;
+		let frame = 0;
+		let last = performance.now();
+		let lastKey = "";
+
+		const bar = this.workspaceEl.createDiv({ cls: "notelens-replay-bar" });
+		bar.addEventListener("pointerdown", (event) => event.stopPropagation());
+		const button = (cls: string, title: string) => {
+			const b = bar.createEl("button", { cls: `notelens-replay-button ${cls}` });
+			b.title = tr(title);
+			b.setAttribute("aria-label", tr(title));
+			return b;
+		};
+		const play = button("is-play", "Pausa");
+		setIcon(play, "pause");
+		const restart = button("is-restart", "Desde el principio");
+		setIcon(restart, "rotate-ccw");
+		const slider = bar.createEl("input", { cls: "notelens-replay-progress", type: "range" });
+		slider.min = "0";
+		slider.max = String(total);
+		slider.step = "1";
+		slider.setAttribute("aria-label", tr("Progreso de la reproducción"));
+		const rate = button("is-speed", "Velocidad");
+		rate.setText("1×");
+		const close = button("is-close", "Cerrar la reproducción");
+		close.setText("✕");
+
+		const draw = () => {
+			const visible: Stroke[] = [];
+			let left = progress;
+			for (let i = 0; i < strokes.length && left > 0; i++) {
+				if (left >= counts[i]) visible.push(strokes[i]);
+				else visible.push({ ...strokes[i], points: strokes[i].points.slice(0, Math.max(1, Math.floor(left))) });
+				left -= counts[i];
+			}
+			this.renderer?.renderAll(visible, this.pageShapes, this.data.viewTransform);
+		};
+		const setPlaying = (value: boolean) => {
+			playing = value;
+			setIcon(play, playing ? "pause" : "play");
+			play.title = tr(playing ? "Pausa" : "Reproducir");
+			play.setAttribute("aria-label", play.title);
+			last = performance.now();
+		};
+		const tick = (now: number) => {
+			if (playing) {
+				progress = Math.min(total, progress + (now - last) / 1000 * perSecond * speed);
+				slider.value = String(Math.round(progress));
+				if (progress >= total) setPlaying(false);
+			}
+			last = now;
+			// Paused, the ink only needs drawing again when the camera moves.
+			const vt = this.data.viewTransform;
+			const key = `${progress}|${vt.x}|${vt.y}|${vt.scale}`;
+			if (key !== lastKey) { lastKey = key; draw(); }
+			frame = window.requestAnimationFrame(tick);
+		};
+
+		play.addEventListener("click", () => {
+			if (!playing && progress >= total) progress = 0;
+			setPlaying(!playing);
+		});
+		restart.addEventListener("click", () => { progress = 0; setPlaying(true); });
+		slider.addEventListener("input", () => { progress = Number(slider.value); setPlaying(false); });
+		rate.addEventListener("click", () => {
+			speed = speed === 1 ? 2 : speed === 2 ? 4 : 1;
+			rate.setText(`${speed}×`);
+		});
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape") { event.stopPropagation(); stop(); }
+		};
+		// Writing on the board while it replays would mix the two; the first touch ends it.
+		const onBoard = (event: PointerEvent) => {
+			if (!(event.target instanceof Node) || !bar.contains(event.target)) stop();
+		};
+		const stop = () => {
+			window.cancelAnimationFrame(frame);
+			bar.remove();
+			window.removeEventListener("keydown", onKey, { capture: true });
+			this.workspaceEl.removeEventListener("pointerdown", onBoard, { capture: true });
+			this.replay = null;
+			this.renderInk();
+		};
+		close.addEventListener("click", stop);
+		window.addEventListener("keydown", onKey, { capture: true });
+		this.workspaceEl.addEventListener("pointerdown", onBoard, { capture: true });
+		this.replay = { stop };
+		frame = window.requestAnimationFrame(tick);
 	}
 
 	/** Full rebuild of ink and objects; only for structural document changes. */
@@ -721,6 +867,38 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		this.renderDomLayer();
 		this.renderA4Guides();
 		this.renderMiniMap();
+		this.updateEmptyHint();
+	}
+
+	private emptyHintEl: HTMLElement | null = null;
+
+	/**
+	 * A blank page greets whoever opens it with what the board can do, the
+	 * things nobody finds by looking at icons. It sits under everything, takes
+	 * no clicks, and is gone from the first stroke.
+	 */
+	private updateEmptyHint(): void {
+		if (!this.workspaceEl) return;
+		const empty = !this.pageStrokes.length && !this.pageShapes.length && !this.pageTexts.length
+			&& !this.pageTables.length && !this.pageBadges.length && !this.pageEmbeds.length;
+		if (!empty) { this.emptyHintEl?.remove(); this.emptyHintEl = null; return; }
+		if (this.emptyHintEl) return;
+		const hint = this.workspaceEl.createDiv({ cls: "notelens-empty-hint" });
+		hint.createDiv({ cls: "notelens-empty-title", text: tr("Tu pizarra está lista") });
+		const list = hint.createDiv({ cls: "notelens-empty-tips" });
+		const tips: [string, string][] = [
+			["pencil", "Escribe o dibuja con el lápiz"],
+			["type", "Pulsa T y toca donde quieras escribir con el teclado"],
+			["shapes", "Mantén el lápiz quieto al acabar un dibujo y se vuelve una forma perfecta"],
+			["sigma", "Selecciona tu letra y conviértela en texto o en fórmula"],
+			["search", "Ctrl+F encuentra también lo que escribes a mano"]
+		];
+		for (const [icon, text] of tips) {
+			const row = list.createDiv({ cls: "notelens-empty-tip" });
+			setIcon(row.createSpan({ cls: "notelens-empty-icon" }), icon);
+			row.createSpan({ text: tr(text) });
+		}
+		this.emptyHintEl = hint;
 	}
 
 	/** One page element by id, wherever it was drawn: under the ink or above it. */
@@ -1289,20 +1467,21 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			})));
 			const candidates: { source: string; bonus?: number }[] = [];
 			if (directFormula) candidates.push({ source: directFormula, bonus: 14 });
-			if (vector.source) candidates.push({ source: vector.source, bonus: vector.confidence * 9 });
-			// Photographs/PDF pages need OCR. Pure board ink only needs it when the
-			// geometry pass is uncertain, keeping the common route near-instant.
-			if (paintedMedia > 0 || (!directFormula && regionStrokes.length > 0 && vector.confidence < 0.78)) {
-				onProgress(paintedMedia > 0 ? tr("Leyendo la fórmula de la imagen…") : tr("Verificando símbolos dudosos…"));
+			if (vector.source) candidates.push({ source: vector.source, bonus: 30 });
+			// Photographs and PDF pages have no strokes, so only an image reader
+			// can see them. Board ink is read from the strokes alone: the image
+			// reader is worse at handwriting and used to overrule a good reading.
+			if (paintedMedia > 0 && !vector.source) {
+				onProgress(tr("Leyendo la fórmula de la imagen…"));
 				try {
 					const ocr = await recognizeFormula(canvas, onProgress);
-					if (ocr && !vector.unknown) candidates.push({ source: ocr, bonus: 1.5 });
+					if (ocr) candidates.push({ source: ocr, bonus: 1.5 });
 				} catch (error) {
 					// A model download failure must not discard existing formulas or ink.
 					if (!directFormula && !vector.source) throw error;
 				}
 			}
-			recognized = directFormula || (vector.unknown ? vector.source : pickFormulaCandidate(candidates));
+			recognized = directFormula || vector.source || pickFormulaCandidate(candidates);
 			onProgress(recognized ? (directFormula ? "Fórmula recuperada desde la pizarra." : vector.detail) : "");
 		} else if (painted > 0) {
 			onProgress(tr("Preparando el reconocimiento…"));
@@ -1601,6 +1780,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private setupEvents(): void {
 		this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.onPointerDown(e));
 		this.registerDomEvent(this.workspaceEl, "pointerdown", () => this.hideTextPlacementHint(), { capture: true });
+		this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.pinchOverObjects(e), { capture: true });
+		const lift = (e: PointerEvent) => { this.touchesDown.delete(e.pointerId); };
+		// The object under the fingers may keep their moves to itself; a pinch
+		// in progress reads them on the way down, before anything can stop them.
+		this.registerDomEvent(window, "pointermove", (e) => {
+			if (!this.pinchStart || !this.pointers.has(e.pointerId)) return;
+			this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+			this.updatePinch();
+		}, { capture: true });
+		this.registerDomEvent(window, "pointerup", lift, { capture: true });
+		this.registerDomEvent(window, "pointercancel", lift, { capture: true });
 		this.registerDomEvent(window, "pointermove", (e) => this.onPointerMove(e));
 		this.registerDomEvent(window, "pointerup", (e) => this.onPointerUp(e));
 		this.registerDomEvent(window, "pointercancel", (e) => this.onPointerUp(e));
@@ -1742,6 +1932,24 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			.setTitle(tr("Restablecer vista"))
 			.setIcon("maximize")
 			.onClick(() => this.resetView()));
+
+		if (this.pageTexts.some(t => t.cover)) {
+			menu.addItem(item => item
+				.setTitle(tr("Ver todas las tarjetas tapadas"))
+				.setIcon("eye")
+				.onClick(() => this.revealAllCovers(true)));
+			menu.addItem(item => item
+				.setTitle(tr("Tapar de nuevo las tarjetas"))
+				.setIcon("eye-off")
+				.onClick(() => this.revealAllCovers(false)));
+		}
+
+		if (this.pageStrokes.length) {
+			menu.addItem(item => item
+				.setTitle(tr("Reproducir la tinta"))
+				.setIcon("history")
+				.onClick(() => this.startInkReplay()));
+		}
 
 		if (this.pageStrokes.length || this.pageShapes.length || this.pageBadges.length || this.pageTexts.length || this.pageTables.length || this.pageEmbeds.length) {
 			menu.addItem(item => item
@@ -2089,6 +2297,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		}
 		// A hand resting on the screen while the pen writes is not a gesture.
 		if (e.pointerType === "touch" && this.penIsDown()) return;
+		this.emptyHintEl?.addClass("is-leaving");
 		this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
 		if (this.pointers.size === 2) {
@@ -2301,6 +2510,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				this.renderer.drawLiveWholeStroke(this.currentStroke, this.data.viewTransform);
 			}
 			this.renderedPoints = this.currentStroke.points.length;
+			if (!straight) this.watchPenHold(e);
 			this.save();
 			return;
 		}
@@ -2357,6 +2567,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.save();
 		}
 
+		this.cancelPenHold();
 		if (this.isDrawing) {
 			this.isDrawing = false;
 			this.currentStroke = null;
@@ -2387,6 +2598,56 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			}
 			if (this.erasedAny) this.save();
 		}
+	}
+
+	/**
+	 * Draw and hold: while the pen keeps moving the clock restarts; once it has
+	 * rested in one spot for a moment with the stroke still open, the stroke is
+	 * read as a shape. Resting means within a few screen pixels, since a hand
+	 * holding a pen still is never perfectly still.
+	 */
+	private watchPenHold(e: PointerEvent): void {
+		if (!this.plugin.settings.holdToShape || this.currentStroke?.type !== "pen") return;
+		const here = { x: e.clientX, y: e.clientY };
+		if (this.holdAnchor && Math.hypot(here.x - this.holdAnchor.x, here.y - this.holdAnchor.y) < 5) return;
+		this.holdAnchor = here;
+		if (this.holdTimer !== null) window.clearTimeout(this.holdTimer);
+		this.holdTimer = window.setTimeout(() => this.snapHeldStroke(), 650);
+	}
+
+	private cancelPenHold(): void {
+		if (this.holdTimer !== null) window.clearTimeout(this.holdTimer);
+		this.holdTimer = null;
+		this.holdAnchor = null;
+	}
+
+	/** The held stroke becomes the shape it was drawn as, if it is one. */
+	private snapHeldStroke(): void {
+		this.holdTimer = null;
+		const stroke = this.currentStroke;
+		if (!this.isDrawing || !stroke || stroke.type !== "pen" || stroke.points.length < 6) return;
+		// Too small on screen to be a drawing: that is handwriting pausing.
+		const xs = stroke.points.map(p => p.x), ys = stroke.points.map(p => p.y);
+		const screenSize = Math.hypot(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * this.data.viewTransform.scale;
+		if (screenSize < 60) return;
+		const guess = recognizeShape(stroke.points);
+		if (!guess) return;
+		const shape: Shape = {
+			id: genId("shape"), pageId: this.data.activePageId, kind: guess.kind,
+			x: guess.x, y: guess.y, w: guess.w, h: guess.h,
+			color: stroke.color, width: Math.max(1.5, stroke.width),
+			...(guess.rotation ? { rotation: guess.rotation } : {})
+		};
+		// Ctrl+Z first gives the hand-drawn stroke back, then removes it.
+		this.history.push();
+		this.data.strokes.remove(stroke);
+		this.data.shapes.push(shape);
+		this.isDrawing = false;
+		this.currentStroke = null;
+		this.renderedPoints = 0;
+		this.renderer.endLive();
+		this.renderInk();
+		this.save();
 	}
 
 	/**
@@ -2448,7 +2709,40 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		};
 	}
 
+	/**
+	 * Two fingers zoom the board wherever they land. Tables, code blocks and
+	 * embeds keep a single finger for themselves — to pick a cell, to scroll a
+	 * PDF — so a pinch that starts on one of them never reached the board and
+	 * did nothing. Watching every touch on the way down, the second finger
+	 * takes both away from the object: its gesture is cancelled, and the board
+	 * zooms.
+	 */
+	private pinchOverObjects(e: PointerEvent): void {
+		if (e.pointerType !== "touch" || this.penIsDown()) return;
+		this.touchesDown.set(e.pointerId, { x: e.clientX, y: e.clientY });
+		if (this.touchesDown.size !== 2) return;
+		// The ruler and the protractor turn under two fingers: they keep them.
+		if (e.target instanceof Element && e.target.closest(".notelens-smart-ruler")) return;
+		if (this.rulerEl && [...this.touchesDown.values()].some(at => this.rulerEl?.contains(document.elementFromPoint(at.x, at.y)))) return;
+		e.stopPropagation();
+		e.preventDefault();
+		const fingers = new Map(this.touchesDown);
+		// Whatever the first finger started on an object ends as if it had been
+		// interrupted. One the board already follows is ended by the pinch itself
+		// (a stroke just begun goes away with it).
+		for (const [id, at] of fingers) {
+			if (id === e.pointerId || this.pointers.has(id)) continue;
+			window.dispatchEvent(new PointerEvent("pointercancel", { pointerId: id, pointerType: "touch", clientX: at.x, clientY: at.y, bubbles: true }));
+		}
+		this.commitTextEditor();
+		this.touchesDown = fingers;
+		this.pointers.clear();
+		for (const [id, at] of fingers) this.pointers.set(id, at);
+		this.startPinch();
+	}
+
 	private startPinch(): void {
+		this.cancelPenHold();
 		if (this.isDrawing) {
 			this.isDrawing = false;
 			// The second finger means "move the board", not "leave a dot where I
@@ -2791,6 +3085,14 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			button.title = tr(title);
 			button.addEventListener("click", (event) => { event.stopPropagation(); run(); });
 		};
+		if ([...this.selStrokes].length && this.pageStrokes.some(s => this.selStrokes.has(s.id) && s.type !== "highlighter")) {
+			action("sigma", "Convertir la tinta en fórmula (LaTeX)", () => this.convertSelectedInkToMath());
+			action("type", "Convertir la tinta en texto", () => this.convertSelectedInkToText());
+		}
+		if (this.pageTexts.some(t => this.selTexts.has(t.id) && t.variant !== "code")) {
+			const covered = this.pageTexts.filter(t => this.selTexts.has(t.id)).every(t => t.cover);
+			action(covered ? "eye" : "eye-off", covered ? "Destapar" : "Tapar para repasar", () => this.toggleStudyCover());
+		}
 		action("copy", "Duplicar (Ctrl+D)", () => this.duplicateSelection());
 		action("rotate-ccw", "Girar 90° a la izquierda", () => this.rotateSelectionBy(-90));
 		action("rotate-cw", "Girar 90° a la derecha", () => this.rotateSelectionBy(90));
@@ -3157,6 +3459,15 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			this.searchIndex = this.searchHits.length ? 0 : -1;
 			this.showSearchHit(count);
 		};
+		this.rerunSearch = () => {
+			// Keep the hit being looked at when new results arrive from the ink.
+			const current = this.searchHits[this.searchIndex]?.id;
+			this.searchHits = this.findMatches(input.value);
+			const at = this.searchHits.findIndex(h => h.id === current);
+			this.searchIndex = at >= 0 ? at : this.searchHits.length ? 0 : -1;
+			this.showSearchHit(count);
+		};
+		this.indexPageInk();
 		const step = (delta: number) => {
 			if (!this.searchHits.length) return;
 			this.searchIndex = (this.searchIndex + delta + this.searchHits.length) % this.searchHits.length;
@@ -3176,17 +3487,21 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private closeSearch(): void {
 		this.searchEl?.remove();
 		this.searchEl = null;
+		this.rerunSearch = null;
+		this.topLayerEl.querySelectorAll(".notelens-ink-hit").forEach(el => el.remove());
 		this.searchHits = [];
 		this.searchIndex = -1;
 		for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
 	}
 
-	private findMatches(query: string): { id: string; x: number; y: number }[] {
+	private findMatches(query: string): { id: string; x: number; y: number; box?: { x: number; y: number; w: number; h: number } }[] {
 		const q = query.trim().toLowerCase();
 		if (!q) return [];
-		const hits: { id: string; x: number; y: number }[] = [];
+		const folded = foldForSearch(q);
+		const hits: typeof this.searchHits = [];
 		for (const t of this.pageTexts) {
-			if (t.text.toLowerCase().includes(q)) hits.push({ id: t.id, x: t.x + (t.w ?? 200) / 2, y: t.y + (t.h ?? 40) / 2 });
+			// Accents and case do not count: "energia" finds "Energía".
+			if (t.text.toLowerCase().includes(q) || (folded && foldForSearch(t.text).includes(folded))) hits.push({ id: t.id, x: t.x + (t.w ?? 200) / 2, y: t.y + (t.h ?? 40) / 2 });
 		}
 		for (const table of this.pageTables) {
 			if (table.cells.some(row => row.some(cell => cell.toLowerCase().includes(q)))) hits.push({ id: table.id, x: table.x + table.w / 2, y: table.y + table.h / 2 });
@@ -3197,13 +3512,60 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		for (const em of this.pageEmbeds) {
 			if (em.src.toLowerCase().includes(q)) hits.push({ id: em.id, x: em.x + em.w / 2, y: em.y + em.h / 2 });
 		}
+		// Handwriting, in reading order: top to bottom, then left to right.
+		const ink = inkRuns(this.pageStrokes)
+			.filter(run => { const text = this.inkReadings.get(run.key); return !!text && inkTextMatches(text, q); })
+			.sort((a, b) => Math.abs(a.box.y - b.box.y) > Math.min(a.box.h, b.box.h) * 0.5 ? a.box.y - b.box.y : a.box.x - b.box.x);
+		for (const run of ink) hits.push({ id: `ink:${run.key}`, x: run.box.x + run.box.w / 2, y: run.box.y + run.box.h / 2, box: run.box });
 		return hits;
+	}
+
+	/**
+	 * Reads the page's handwriting for search, a few lines at a time so the
+	 * board stays responsive, and only the lines not read before. When it is
+	 * done the open search is run again with the ink included.
+	 */
+	private indexPageInk(): void {
+		if (this.inkIndexing) return;
+		const pending = inkRuns(this.pageStrokes).filter(run => !this.inkReadings.has(run.key));
+		if (!pending.length) return;
+		this.inkIndexing = true;
+		const byId = new Map(this.pageStrokes.map(s => [s.id, s]));
+		const vocabulary = this.vaultVocabulary();
+		const step = () => {
+			const started = performance.now();
+			while (pending.length && performance.now() - started < 12) {
+				const run = pending.shift()!;
+				const strokes = run.ids.map(id => byId.get(id)).filter((s): s is Stroke => !!s)
+					.map(s => ({ width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+				try {
+					this.inkReadings.set(run.key, recognizeInkText(strokes, vocabulary).text);
+				} catch {
+					this.inkReadings.set(run.key, "");
+				}
+			}
+			if (pending.length && this.searchEl) { window.setTimeout(step, 0); return; }
+			this.inkIndexing = false;
+			this.rerunSearch?.();
+		};
+		window.setTimeout(step, 0);
 	}
 
 	private showSearchHit(count: HTMLElement): void {
 		for (const layer of this.pageLayers()) layer.querySelectorAll(".notelens-search-hit").forEach(el => el.removeClass("notelens-search-hit", "notelens-search-current"));
 		const total = this.searchHits.length;
 		count.setText(total ? `${this.searchIndex + 1}/${total}` : (this.searchEl?.querySelector<HTMLInputElement>("input"))?.value ? "0" : "");
+		// Handwriting has no element of its own: a frame is drawn around the line.
+		this.topLayerEl.querySelectorAll(".notelens-ink-hit").forEach(el => el.remove());
+		for (const hit of this.searchHits) {
+			if (!hit.box) continue;
+			const frame = this.topLayerEl.createDiv({ cls: "notelens-ink-hit" });
+			frame.dataset.id = hit.id;
+			frame.style.left = `${hit.box.x - 6}px`;
+			frame.style.top = `${hit.box.y - 6}px`;
+			frame.style.width = `${hit.box.w + 12}px`;
+			frame.style.height = `${hit.box.h + 12}px`;
+		}
 		for (const hit of this.searchHits) {
 			this.pageElement(hit.id)?.addClass("notelens-search-hit");
 		}
@@ -3696,6 +4058,107 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			tidyFormulaText,
 			(onProgress) => this.captureBoardFormula(onProgress)
 		).open();
+	}
+
+	/**
+	 * Ink to maths, as in OneNote: the selected handwriting is read, shown in
+	 * the equation dialog with the ink itself so it can be corrected by writing
+	 * over it or picking another reading, and on Insert the typeset formula
+	 * takes the place of the ink. One undo brings the ink back.
+	 */
+	convertSelectedInkToMath(): void {
+		const strokes = this.pageStrokes.filter(s => this.selStrokes.has(s.id) && s.type !== "highlighter");
+		if (!strokes.length) return;
+		const ink = strokes.map(s => ({ width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+		const recognition = recognizeInkFormula(ink);
+		const all = strokes.flatMap(s => s.points);
+		const left = Math.min(...all.map(p => p.x)), top = Math.min(...all.map(p => p.y));
+		const heights = strokes.map(s => Math.max(...s.points.map(p => p.y)) - Math.min(...s.points.map(p => p.y))).sort((a, b) => a - b);
+		const letter = heights[Math.floor(heights.length / 2)] || 24;
+		const ids = new Set(strokes.map(s => s.id));
+		new InkEquationModal(
+			this.app,
+			recognition.source,
+			(source) => {
+				this.history.push();
+				this.data.strokes = this.data.strokes.filter(s => !ids.has(s.id));
+				const formula: TextBox = {
+					id: genId("text"), pageId: this.data.activePageId, x: left, y: top,
+					text: source, fontSize: Math.round(Math.min(72, Math.max(14, letter * 0.85))),
+					color: strokes[0].color || (isLightColor(this.data.backgroundColor) ? "#111827" : "#f8fafc"),
+					w: 320, h: 60, fontFamily: this.textFont, variant: "math", autoWidth: true
+				};
+				this.data.texts.push(formula);
+				this.clearSelection(false);
+				this.renderAll();
+				this.selTexts.add(formula.id);
+				this.renderSelectionBox();
+				this.save();
+			},
+			(source, into) => {
+				try {
+					into.appendChild(renderMath(toRenderableLatex(source), true));
+					void finishRenderMath();
+				} catch {
+					into.createSpan({ cls: "notelens-math-placeholder", text: tr("No se puede representar todavía") });
+				}
+			},
+			tidyFormulaText,
+			(onProgress) => this.captureBoardFormula(onProgress),
+			ink
+		).open();
+	}
+
+	/**
+	 * Ink to text, as in OneNote: the selected handwriting becomes a text box
+	 * in the same place, at about the same size and in the same colour. Words
+	 * already in this vault (note names, headings, this board's text) are
+	 * preferred over look-alikes. One undo brings the ink back.
+	 */
+	convertSelectedInkToText(): void {
+		const strokes = this.pageStrokes.filter(s => this.selStrokes.has(s.id) && s.type !== "highlighter");
+		if (!strokes.length) return;
+		const ink = strokes.map(s => ({ width: s.width, points: s.points.map(p => ({ x: p.x, y: p.y })) }));
+		const reading = recognizeInkText(ink, this.vaultVocabulary());
+		if (!reading.text.trim()) {
+			new Notice(tr("No he podido leer esa tinta como texto."));
+			return;
+		}
+		const all = strokes.flatMap(s => s.points);
+		const left = Math.min(...all.map(p => p.x)), top = Math.min(...all.map(p => p.y));
+		const ids = new Set(strokes.map(s => s.id));
+		this.history.push();
+		this.data.strokes = this.data.strokes.filter(s => !ids.has(s.id));
+		const box: TextBox = {
+			id: genId("text"), pageId: this.data.activePageId, x: left, y: top,
+			text: reading.text,
+			// Small letters are about half the font size in most typefaces.
+			fontSize: Math.round(Math.min(72, Math.max(12, (reading.xHeight || 12) * 1.8))),
+			color: strokes[0].color || this.textColor, fontFamily: this.textFont, variant: "text", autoWidth: true
+		};
+		box.w = this.measureAutoWidth(box);
+		this.data.texts.push(box);
+		this.clearSelection(false);
+		this.renderAll();
+		this.selTexts.add(box.id);
+		this.renderSelectionBox();
+		this.save();
+		new Notice(tr("Tinta convertida en texto. Ctrl+Z la recupera."));
+	}
+
+	/** Words this person writes: note names, headings and the text on this board. */
+	private vaultVocabulary(): Set<string> {
+		const words = new Set<string>();
+		const add = (text: string | undefined) => {
+			for (const w of (text ?? "").split(/[^\p{L}\p{N}]+/u)) if (w.length > 1 && w.length < 24) words.add(w.toLowerCase());
+		};
+		for (const t of this.data.texts) add(t.text);
+		const files = this.app.vault.getMarkdownFiles().slice(0, 5000);
+		for (const file of files) {
+			add(file.basename);
+			for (const h of this.app.metadataCache.getFileCache(file)?.headings ?? []) add(h.heading);
+		}
+		return words;
 	}
 
 	/**
@@ -5268,6 +5731,16 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	private async rasterizeFormulas(doc: OneNoteDocument): Promise<Map<string, RasterImage>> {
 		const out = new Map<string, RasterImage>();
 		for (const tb of doc.texts) {
+			// A sentence with $…$ in it: the whole box as a picture, so the
+			// maths prints typeset among its words. Turned boxes keep their text.
+			if (tb.variant !== "math" && tb.variant !== "code" && !tb.rotation) {
+				const el = this.pageElement(tb.id);
+				if (el?.querySelector("mjx-container")) {
+					const image = await rasterizeTextBox(el, "#111827");
+					if (image) out.set(tb.id, image);
+				}
+				continue;
+			}
 			if (tb.variant !== "math") continue;
 			const box = this.domLayerEl.querySelector<HTMLElement>(`.notelens-math-block[data-id="${tb.id}"]`);
 			const math = box?.querySelector<HTMLElement>("mjx-container");
@@ -5457,11 +5930,17 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		el.style.left = `${table.x}px`;
 		el.style.top = `${table.y}px`;
 		el.style.width = `${table.w}px`;
-		el.style.height = `${table.h}px`;
+		// At least as tall as it was made; taller when what is written needs it,
+		// instead of cutting the last row off.
+		el.style.minHeight = `${table.h}px`;
 		el.style.transform = table.rotation ? `rotate(${table.rotation}deg)` : "";
+		el.style.setProperty("--table-accent", tableAccent(table.color));
+		el.toggleClass("is-striped", table.striped !== false);
 
 		const header = el.createDiv({ cls: "notelens-table-header" });
-		const titleEl = header.createSpan({ cls: "notelens-table-title", text: table.title?.trim() || "Tabla" });
+		const titleWrap = header.createDiv({ cls: "notelens-table-name" });
+		setIcon(titleWrap.createSpan({ cls: "notelens-table-icon" }), "table-2");
+		const titleEl = titleWrap.createSpan({ cls: "notelens-table-title", text: table.title?.trim() || tr("Tabla") });
 		titleEl.title = tr("Doble clic para renombrar la tabla");
 		titleEl.addEventListener("dblclick", (event) => { event.stopPropagation(); this.renameTable(table, titleEl); });
 		const controls = header.createDiv({ cls: "notelens-table-controls" });
@@ -5478,6 +5957,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		headerBtn.toggleClass("active", !!table.header);
 		headerBtn.addEventListener("pointerdown", (event) => event.stopPropagation());
 		headerBtn.onclick = (event) => { event.stopPropagation(); this.history.push(); table.header = !table.header; this.renderAll(); this.save(); };
+		control("palette", "Color de la tabla", () => this.showTableColors(table, controls));
 		control("rows-3", "Añadir fila al final", () => this.insertTableRow(table, table.rows));
 		control("columns-3", "Añadir columna al final", () => this.insertTableColumn(table, table.cols));
 		control("bar-chart-3", "Crear un gráfico con estos datos", () => this.chartFromTable(table));
@@ -5500,18 +5980,48 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		const grid = el.createDiv({ cls: "notelens-table-grid" });
 		grid.style.gridTemplateColumns = widths.map(w => `${w}px`).join(" ");
 		grid.style.gridTemplateRows = heights.map(h => `minmax(${h}px, auto)`).join(" ");
+		const cells: HTMLTextAreaElement[] = [];
+		// Numbers line up on the right, the way a column of figures is read.
+		const numeric = (value: string) => /^\s*[-+−]?[\d.,\s]+(%|€|\$)?\s*$/.test(value) && /\d/.test(value);
+		// A cell grows with what is written in it rather than scrolling.
+		const fit = (input: HTMLTextAreaElement) => {
+			input.setCssStyles({ minHeight: "0px" });
+			if (input.scrollHeight > input.clientHeight + 1) input.style.minHeight = `${input.scrollHeight}px`;
+		};
 		for (let row = 0; row < table.rows; row++) {
 			for (let col = 0; col < table.cols; col++) {
 				const input = grid.createEl("textarea", { cls: "notelens-table-cell" });
-				if (table.header && row === 0) input.addClass("is-header");
+				// One line tall to begin with (a textarea starts at two); fit() grows it.
+				input.rows = 1;
+				cells.push(input);
+				const isHeader = !!table.header && row === 0;
+				if (isHeader) input.addClass("is-header");
 				if (table.headerColumn && col === 0) input.addClass("is-header-column");
-				input.placeholder = table.header && row === 0 ? tr("Título") : "";
+				if (!isHeader && (row - (table.header ? 1 : 0)) % 2 === 1) input.addClass("is-alt-row");
+				input.placeholder = isHeader && !(table.headerColumn && col === 0) ? tr("Encabezado") : "";
 				input.value = table.cells[row]?.[col] ?? "";
-				input.setAttr("aria-label", `Fila ${row + 1}, columna ${col + 1}`);
+				input.toggleClass("is-number", !isHeader && numeric(input.value));
+				input.setAttr("aria-label", tr("Fila {p0}, columna {p1}", { p0: row + 1, p1: col + 1 }));
 				input.addEventListener("pointerdown", (event) => event.stopPropagation());
 				input.addEventListener("input", () => {
 					table.cells[row][col] = input.value;
+					input.toggleClass("is-number", !isHeader && numeric(input.value));
+					fit(input);
 					this.save();
+				});
+				// Tab walks the cells like a spreadsheet; Tab in the last one adds a row.
+				input.addEventListener("keydown", (event) => {
+					if (event.key !== "Tab") return;
+					event.preventDefault();
+					event.stopPropagation();
+					const index = row * table.cols + col + (event.shiftKey ? -1 : 1);
+					if (index >= 0 && index < cells.length) { cells[index].focus(); cells[index].select(); return; }
+					if (index < cells.length) return;
+					this.insertTableRow(table, table.rows);
+					window.setTimeout(() => {
+						const fresh = this.pageElement(table.id)?.querySelectorAll<HTMLTextAreaElement>(".notelens-table-cell");
+						fresh?.[table.rows * table.cols - table.cols]?.focus();
+					}, 0);
 				});
 				input.addEventListener("contextmenu", (event) => {
 					event.preventDefault();
@@ -5539,6 +6049,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			handle.addEventListener("pointerdown", (event) => this.startTableRowResize(event, table, row));
 		}
 
+		window.requestAnimationFrame(() => { for (const input of cells) fit(input); });
+
 		const resize = el.createDiv({ cls: "notelens-table-resize" });
 		resize.title = tr("Redimensionar tabla");
 		resize.addEventListener("pointerdown", (event) => this.startTableResize(event, table, el));
@@ -5554,6 +6066,44 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		return el;
 	}
 
+	/** A row of colour swatches under the table's header, plus the striped-rows switch. */
+	private showTableColors(table: CanvasTable, anchor: HTMLElement): void {
+		const host = anchor.closest(".notelens-table");
+		if (!host) return;
+		host.querySelector(".notelens-table-colors")?.remove();
+		const pop = host.createDiv({ cls: "notelens-table-colors" });
+		pop.addEventListener("pointerdown", (event) => event.stopPropagation());
+		for (const [id, name] of TABLE_COLORS) {
+			const swatch = pop.createEl("button", { cls: "notelens-table-swatch" });
+			swatch.style.setProperty("--swatch", tableAccent(id));
+			swatch.title = tr(name);
+			swatch.setAttr("aria-label", tr(name));
+			swatch.toggleClass("is-active", (table.color ?? "sky") === id);
+			swatch.addEventListener("click", (event) => {
+				event.stopPropagation();
+				this.history.push();
+				table.color = id;
+				this.renderAll();
+				this.save();
+			});
+		}
+		const stripes = pop.createEl("button", { cls: "notelens-table-stripes", text: tr("Filas alternas") });
+		stripes.toggleClass("is-active", table.striped !== false);
+		stripes.addEventListener("click", (event) => {
+			event.stopPropagation();
+			this.history.push();
+			table.striped = table.striped === false;
+			this.renderAll();
+			this.save();
+		});
+		const close = (event: PointerEvent) => {
+			if (event.target instanceof Node && pop.contains(event.target)) return;
+			pop.remove();
+			window.removeEventListener("pointerdown", close, true);
+		};
+		window.setTimeout(() => window.addEventListener("pointerdown", close, true), 0);
+	}
+
 	private showTableCellMenu(event: MouseEvent, table: CanvasTable, row: number, col: number): void {
 		const menu = new Menu();
 		if (row >= 0) {
@@ -5566,13 +6116,13 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			menu.addItem(item => item.setTitle(tr("Eliminar esta columna")).setIcon("minus").onClick(() => this.deleteTableColumn(table, col)));
 			menu.addSeparator();
 		}
-		menu.addItem(item => item.setTitle(table.header ? "Quitar fila de encabezado" : "Primera fila como encabezado").setIcon("heading").onClick(() => {
+		menu.addItem(item => item.setTitle(tr(table.header ? "Quitar fila de encabezado" : "Primera fila como encabezado")).setIcon("heading").onClick(() => {
 			this.history.push();
 			table.header = !table.header;
 			this.renderAll();
 			this.save();
 		}));
-		menu.addItem(item => item.setTitle(table.headerColumn ? "Quitar columna de encabezado" : "Primera columna como encabezado").setIcon("panel-left").onClick(() => {
+		menu.addItem(item => item.setTitle(tr(table.headerColumn ? "Quitar columna de encabezado" : "Primera columna como encabezado")).setIcon("panel-left").onClick(() => {
 			this.history.push();
 			table.headerColumn = !table.headerColumn;
 			this.renderAll();
@@ -5736,7 +6286,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 				grid.style.gridTemplateRows = table.rowHeights.map(h => `minmax(${h}px, auto)`).join(" ");
 			}
 			el.style.width = `${table.w}px`;
-			el.style.height = `${table.h}px`;
+			el.style.minHeight = `${table.h}px`;
 			this.renderSelectionBox();
 		};
 		const onUp = () => {
@@ -6603,6 +7153,50 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		closeBtn.title = tr("Eliminar");
 		closeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
 		closeBtn.addEventListener("click", (e) => { e.stopPropagation(); this.removeTextBox(tb); });
+		this.attachStudyCover(el, tb);
+	}
+
+	/**
+	 * Revision cover: the box is drawn blurred under a card that says "tap to
+	 * see", so a definition or a result can be recalled before it is read. A
+	 * tap uncovers it until the board is opened again; the eye in the corner
+	 * covers it back straight away.
+	 */
+	private attachStudyCover(el: HTMLElement, tb: TextBox): void {
+		el.querySelector(".notelens-study-cover")?.remove();
+		el.toggleClass("is-study-covered", !!tb.cover);
+		if (!tb.cover) { el.removeClass("is-revealed"); return; }
+		const cover = el.createDiv({ cls: "notelens-study-cover" });
+		const face = cover.createDiv({ cls: "notelens-study-face" });
+		setIcon(face.createSpan({ cls: "notelens-study-icon" }), "eye");
+		face.createSpan({ text: tr("Toca para ver") });
+		const again = cover.createEl("button", { cls: "notelens-study-again" });
+		setIcon(again, "eye-off");
+		again.title = tr("Tapar otra vez");
+		for (const target of [face, again]) {
+			target.addEventListener("pointerdown", (e) => { e.stopPropagation(); e.preventDefault(); });
+			target.addEventListener("dblclick", (e) => e.stopPropagation());
+		}
+		face.addEventListener("click", (e) => { e.stopPropagation(); el.addClass("is-revealed"); });
+		again.addEventListener("click", (e) => { e.stopPropagation(); el.removeClass("is-revealed"); });
+	}
+
+	/** Covers the selected boxes for revision, or uncovers them if all are covered. */
+	private toggleStudyCover(): void {
+		const boxes = this.pageTexts.filter(t => this.selTexts.has(t.id) && t.variant !== "code");
+		if (!boxes.length) return;
+		this.history.push();
+		const cover = !boxes.every(t => t.cover);
+		for (const tb of boxes) tb.cover = cover || undefined;
+		this.renderAll();
+		this.renderSelectionBox();
+		this.save();
+		new Notice(cover ? tr("Tapado para repasar. Toca la tarjeta para verla.") : tr("Destapado."));
+	}
+
+	/** Every covered box on the page, uncovered for a moment, or covered back. */
+	private revealAllCovers(show: boolean): void {
+		for (const tb of this.pageTexts) if (tb.cover) this.pageElement(tb.id)?.toggleClass("is-revealed", show);
 	}
 
 	private removeTextBox(tb: TextBox): void {
@@ -7183,9 +7777,209 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 	}
 
 	// ------------------------------------------------------------------
+	// Other devices
+
+	/**
+	 * A board is a file in the vault, so Obsidian Sync, Syncthing, iCloud or a
+	 * git pull can rewrite it while it is open here. The view listens for that
+	 * and takes the new version in, merging whatever this device has not saved
+	 * yet, instead of overwriting it with the next debounced save.
+	 */
+	private watchVault(): void {
+		this.registerEvent(this.app.vault.on("modify", file => {
+			if (!(file instanceof TFile) || !this.file || file.path !== this.file.path || this.loadFailed) return;
+			void this.app.vault.read(file).then(content => this.handleExternalContent(content)).catch(() => { /* the next write will tell */ });
+		}));
+		const conflictWatch = (file: TAbstractFile) => {
+			if (!(file instanceof TFile) || !this.file) return;
+			if (conflictOriginal(file.path) === this.file.path || file.path === this.file.path) this.refreshConflictBanner();
+		};
+		this.registerEvent(this.app.vault.on("create", conflictWatch));
+		this.registerEvent(this.app.vault.on("delete", conflictWatch));
+		this.registerEvent(this.app.vault.on("rename", conflictWatch));
+		this.registerDomEvent(this.workspaceEl, "pointerdown", () => { this.pointerHeld = true; }, { capture: true });
+		const release = () => { this.pointerHeld = false; };
+		this.registerDomEvent(window, "pointerup", release, { capture: true });
+		this.registerDomEvent(window, "pointercancel", release, { capture: true });
+		this.register(() => { if (this.externalRetry !== null) window.clearTimeout(this.externalRetry); });
+	}
+
+	/** Takes in a version of the open file this device did not write. */
+	handleExternalContent(content: string): void {
+		if (!this.file || this.loadFailed || !this.saver) return;
+		const base = this.saver.lastWritten();
+		if (content === base) return;
+		if (this.externalRetry !== null) window.clearTimeout(this.externalRetry);
+		this.externalRetry = null;
+		// Swapping the document under a stroke in progress or an open text box
+		// would lose what the hand is doing; wait for it to finish.
+		if (this.pointerHeld || this.isDrawing || this.activeTextEditor) {
+			this.externalRetry = window.setTimeout(() => {
+				this.externalRetry = null;
+				if (!this.file) return;
+				void this.app.vault.read(this.file).then(latest => this.handleExternalContent(latest)).catch(() => { /* retried on the next change */ });
+			}, 800);
+			return;
+		}
+
+		let remote: OneNoteDocument | null = null;
+		try {
+			const parsed: unknown = content.trim() ? JSON.parse(content) : null;
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) remote = migrateDocument(parsed);
+		} catch { remote = null; }
+		// An empty or half-written file (a sync tool mid-transfer) is not a
+		// version to adopt: this device's copy stays and the next save restores it.
+		this.saver.prime(content);
+		if (!remote) {
+			this.save();
+			return;
+		}
+
+		if (!this.saver.hasPendingChanges()) {
+			if (JSON.stringify(remote) === JSON.stringify(this.data)) return;
+			this.history?.push();
+			this.adoptDocument(remote);
+			new Notice(tr("Pizarra actualizada desde otro dispositivo."), 4000);
+			return;
+		}
+
+		let ancestor: OneNoteDocument | null = null;
+		try {
+			const parsedBase: unknown = base ? JSON.parse(base) : null;
+			if (parsedBase && typeof parsedBase === "object" && !Array.isArray(parsedBase)) ancestor = migrateDocument(parsedBase);
+		} catch { ancestor = null; }
+		this.history?.push();
+		this.adoptDocument(mergeDocuments(ancestor, this.data, remote));
+		this.save();
+		new Notice(tr("Pizarra fusionada con los cambios de otro dispositivo."), 4000);
+	}
+
+	/** Replaces the document on screen, keeping the camera where the user left it. */
+	private adoptDocument(doc: OneNoteDocument): void {
+		const camera = { ...this.data.viewTransform };
+		const activeId = this.data.activePageId;
+		this.data = doc;
+		const page = doc.pages.find(item => item.id === activeId) ?? doc.pages[0];
+		if (page.id === activeId) page.viewTransform = camera;
+		this.applyPageMeta(page);
+		this.clearSelection(false);
+		this.renderAll();
+		this.updateBackground();
+		panelHooks(this.workspaceEl).__refreshTitle?.();
+		panelHooks(this.workspaceEl).__refreshPages?.();
+		panelHooks(this.workspaceEl).__refreshBookmarks?.();
+		this.refreshTagSummary();
+		this.renderMiniMap();
+	}
+
+	/** Conflict copies of the open board that a sync tool left next to it. */
+	private conflictCopies(): TFile[] {
+		if (!this.file) return [];
+		const path = this.file.path;
+		return this.app.vault.getFiles().filter(file => conflictOriginal(file.path) === path && !this.ignoredConflicts.has(file.path));
+	}
+
+	private refreshConflictBanner(): void {
+		this.syncBannerEl?.remove();
+		this.syncBannerEl = null;
+		if (!this.workspaceEl || !this.file || this.loadFailed) return;
+
+		const originalPath = conflictOriginal(this.file.path);
+		const original = originalPath ? this.app.vault.getAbstractFileByPath(originalPath) : null;
+		if (original instanceof TFile) {
+			const banner = this.buildSyncBanner(tr("Esta pizarra es una copia en conflicto de «{name}».", { name: original.basename }));
+			const merge = banner.createEl("button", { cls: "notelens-sync-action mod-cta", text: tr("Fusionar en la original") });
+			merge.onclick = () => void this.mergeIntoOriginal(original);
+			return;
+		}
+
+		const copies = this.conflictCopies();
+		if (copies.length === 0) return;
+		const banner = this.buildSyncBanner(copies.length === 1
+			? tr("Otro dispositivo dejó una copia en conflicto de esta pizarra.")
+			: tr("Otros dispositivos dejaron {n} copias en conflicto de esta pizarra.", { n: copies.length }));
+		const merge = banner.createEl("button", { cls: "notelens-sync-action mod-cta", text: tr("Fusionar aquí") });
+		merge.onclick = () => void this.mergeConflictCopies(copies);
+		const ignore = banner.createEl("button", { cls: "notelens-sync-action", text: tr("Ignorar") });
+		ignore.onclick = () => {
+			for (const copy of copies) this.ignoredConflicts.add(copy.path);
+			this.refreshConflictBanner();
+		};
+	}
+
+	private buildSyncBanner(message: string): HTMLElement {
+		const banner = this.workspaceEl.createDiv({ cls: "notelens-sync-banner" });
+		banner.createSpan({ cls: "notelens-sync-message", text: message });
+		banner.addEventListener("pointerdown", event => event.stopPropagation());
+		this.syncBannerEl = banner;
+		return banner;
+	}
+
+	private async readBoard(file: TFile): Promise<OneNoteDocument | null> {
+		try {
+			const parsed: unknown = JSON.parse(await this.app.vault.read(file));
+			if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+			return migrateDocument(parsed);
+		} catch {
+			return null;
+		}
+	}
+
+	private async trashCopy(file: TFile): Promise<void> {
+		await this.app.fileManager.trashFile(file);
+	}
+
+	/** Brings the elements of the conflict copies into the open board; this board wins on a shared id. */
+	private async mergeConflictCopies(copies: TFile[]): Promise<void> {
+		this.commitTextEditor();
+		let merged = this.data;
+		const taken: TFile[] = [];
+		for (const copy of copies) {
+			const doc = await this.readBoard(copy);
+			if (!doc) {
+				new Notice(tr("No se ha podido leer «{name}»; se deja donde está.", { name: copy.basename }), 6000);
+				continue;
+			}
+			merged = mergeDocuments(null, merged, doc);
+			taken.push(copy);
+		}
+		if (taken.length === 0) return;
+		this.history?.push();
+		this.adoptDocument(merged);
+		this.save();
+		if (!await this.saver.flush(this.data)) return;
+		for (const copy of taken) {
+			this.ignoredConflicts.add(copy.path);
+			await this.trashCopy(copy).catch(() => { /* already folded in; the file just stays */ });
+		}
+		new Notice(tr("Copia en conflicto fusionada."), 4000);
+		this.refreshConflictBanner();
+	}
+
+	/** Puts this copy's elements into the original board and opens that one instead. */
+	private async mergeIntoOriginal(original: TFile): Promise<void> {
+		if (!this.file) return;
+		this.commitTextEditor();
+		if (!await this.saver.flush(this.data)) return;
+		const target = await this.readBoard(original);
+		if (!target) {
+			new Notice(tr("No se ha podido leer «{name}»; se deja donde está.", { name: original.basename }), 6000);
+			return;
+		}
+		const merged = mergeDocuments(null, target, this.data);
+		const copy = this.file;
+		await this.app.vault.process(original, () => JSON.stringify(merged));
+		await this.leaf.openFile(original);
+		await this.trashCopy(copy).catch(() => { /* the copy stays; the original now holds everything */ });
+		new Notice(tr("Copia en conflicto fusionada."), 4000);
+	}
+
+	// ------------------------------------------------------------------
 
 	save(): void {
 		if (this.loadFailed) return;
+		// Anything added to a blank page, by any path, sends the welcome away.
+		if (this.emptyHintEl) this.updateEmptyHint();
 		this.syncActivePageMeta();
 		this.saver?.scheduleSave(this.data);
 	}

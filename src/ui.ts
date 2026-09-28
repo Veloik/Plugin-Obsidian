@@ -1297,7 +1297,7 @@ function createOptionsPanel(host: ToolbarHost, container: HTMLElement, close: ()
 		{ kind: "line", icon: "minus", title: tr("Línea") },
 		{ kind: "arrow", icon: "move-right", title: tr("Flecha") },
 		{ kind: "rectangle", icon: "square", title: tr("Rectángulo") },
-		{ kind: "rounded-rectangle", icon: "square-round-corner", title: tr("Rectángulo redondeado") },
+		{ kind: "rounded-rectangle", icon: "rectangle-horizontal", title: tr("Rectángulo redondeado") },
 		{ kind: "ellipse", icon: "circle", title: tr("Elipse") },
 		{ kind: "diamond", icon: "diamond", title: tr("Rombo") },
 		{ kind: "triangle", icon: "triangle", title: tr("Triángulo") },

@@ -166,7 +166,7 @@ const chrome = await desk.evaluate(async () => {
 		handleClear: rotate && barBox ? rotate.right <= barBox.left + 1 : false
 	};
 });
-ok("un objeto seleccionado se borra de una sola manera", chrome.selected && chrome.ownCloses === 0 && chrome.barActions === 4, JSON.stringify(chrome));
+ok("un objeto seleccionado se borra de una sola manera", chrome.selected && chrome.ownCloses === 0 && chrome.barActions === 5, JSON.stringify(chrome));
 ok("y su asa de girar no queda bajo la barra", chrome.handleClear);
 
 if (!process.exitCode) console.log("todo correcto");

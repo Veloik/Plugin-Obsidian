@@ -14,6 +14,42 @@ const A4_W_MM = 210;
 const A4_H_MM = 297;
 const SCENE_TO_MM = A4_W_MM / A4_SCENE_W;
 
+/**
+ * Characters the PDF's built-in fonts can draw (Latin-1 and the few extra
+ * punctuation marks of WinAnsi). Anything else — Σ, subscripts, arrows, Greek,
+ * emoji — comes out as the wrong glyph, so such text goes in as a picture.
+ */
+const PRINTABLE = /^[\u0020-\u00ff\u2013\u2014\u2018\u2019\u201a\u201c\u201d\u201e\u2020\u2021\u2022\u2026\u2030\u2039\u203a\u20ac\u2122]*$/;
+
+/**
+ * Writes lines of text at a baseline, as `pdf.text` does; when they hold
+ * characters the built-in fonts lack, they are drawn with the browser's own
+ * fonts onto a sharp image instead, at the same size and place.
+ */
+function writeLines(pdf: jsPDF, lines: string[], x: number, y: number, style: { pt: number; family: string; bold?: boolean; italic?: boolean; color: { r: number; g: number; b: number } }): void {
+	if (lines.every(line => PRINTABLE.test(line.replace(/\t/g, " "))) || typeof document === "undefined") {
+		pdf.text(lines, x, y);
+		return;
+	}
+	const mm = style.pt * 0.3528;
+	const lineMm = mm * 1.15;
+	const scale = 14;
+	const canvas = createEl("canvas");
+	const ctx = canvas.getContext("2d");
+	if (!ctx) { pdf.text(lines, x, y); return; }
+	const family = style.family === "courier" ? "Courier New, monospace" : style.family === "times" ? "Times New Roman, serif" : "Helvetica, Arial, sans-serif";
+	const font = `${style.italic ? "italic " : ""}${style.bold ? "700" : "400"} ${mm * scale}px ${family}`;
+	ctx.font = font;
+	const width = Math.max(...lines.map(line => ctx.measureText(line).width)) / scale + 1;
+	canvas.width = Math.ceil(width * scale);
+	canvas.height = Math.ceil((lines.length * lineMm + mm * 0.4) * scale);
+	ctx.font = font;
+	ctx.fillStyle = `rgb(${style.color.r}, ${style.color.g}, ${style.color.b})`;
+	ctx.textBaseline = "alphabetic";
+	lines.forEach((line, i) => ctx.fillText(line, 0, (mm * 0.85 + i * lineMm) * scale));
+	pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y - mm * 0.85, width, canvas.height / scale);
+}
+
 interface Rgb { r: number; g: number; b: number; }
 
 /**
@@ -197,19 +233,20 @@ function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument, formulas:
 		const box = { x: text.x, y: text.y, w: text.w ?? 260, h: text.h ?? text.fontSize * 1.5 };
 		if (!intersects(box, page) || !text.text.trim()) continue;
 		const [x, y] = pagePoint(page, text.x, text.y);
-		// A typeset formula goes in as the picture the board shows; its source
-		// is only written when the browser could not produce one.
-		const formula = text.variant === "math" ? formulas.get(text.id) : undefined;
-		if (formula) {
-			pdf.addImage(formula.dataUrl, "PNG", x + (formula.dx ?? 0) * SCENE_TO_MM, y + (formula.dy ?? 0) * SCENE_TO_MM, formula.width * SCENE_TO_MM, formula.height * SCENE_TO_MM);
-			continue;
-		}
-		const color = ink(rgb(text.color, { r: 17, g: 24, b: 39 }));
 		if (text.stickyColor) {
 			const sticky = rgb(text.stickyColor, { r: 255, g: 242, b: 168 });
 			pdf.setFillColor(sticky.r, sticky.g, sticky.b);
 			pdf.roundedRect(x, y, box.w * SCENE_TO_MM, box.h * SCENE_TO_MM, 1.5, 1.5, "F");
 		}
+		// A typeset formula — or a sentence with formulas inside — goes in as the
+		// picture the board shows; its source is only written when the browser
+		// could not produce one.
+		const formula = text.variant !== "code" ? formulas.get(text.id) : undefined;
+		if (formula) {
+			pdf.addImage(formula.dataUrl, "PNG", x + (formula.dx ?? 0) * SCENE_TO_MM, y + (formula.dy ?? 0) * SCENE_TO_MM, formula.width * SCENE_TO_MM, formula.height * SCENE_TO_MM);
+			continue;
+		}
+		const color = ink(rgb(text.color, { r: 17, g: 24, b: 39 }));
 		const family = text.variant === "code" ? "courier" : pdfFontFor(text.fontFamily);
 		const style = text.bold ? (text.italic ? "bolditalic" : "bold") : text.italic ? "italic" : "normal";
 		pdf.setFont(family, style);
@@ -218,38 +255,69 @@ function drawText(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument, formulas:
 		// On paper the inline marks are formatting, not characters: `**dato**` prints as dato.
 		const body = text.variant === "code" ? text.text : stripInlineMarks(text.text);
 		const lines = pdf.splitTextToSize(body, Math.max(12, box.w * SCENE_TO_MM - 3)) as string[];
-		pdf.text(lines, x + 1.5, y + text.fontSize * 0.28 + 1.5);
+		writeLines(pdf, lines, x + 1.5, y + text.fontSize * 0.28 + 1.5, { pt: Math.max(7, text.fontSize * 0.75), family, bold: text.bold, italic: text.italic, color });
 	}
 }
+
+/** The table accents of the board (see TABLE_ACCENTS in view.ts), as RGB for the page. */
+const TABLE_ACCENT_RGB: Record<string, [number, number, number]> = {
+	sky: [56, 189, 248], violet: [167, 139, 250], emerald: [52, 211, 153], amber: [245, 158, 11], rose: [251, 113, 133], slate: [148, 163, 184]
+};
+/** An accent mixed with white paper: `amount` of the colour, the rest white. */
+const tint = ([r, g, b]: [number, number, number], amount: number): [number, number, number] =>
+	[r, g, b].map(c => Math.round(c * amount + 255 * (1 - amount))) as [number, number, number];
 
 function drawTables(pdf: jsPDF, page: SceneBounds, doc: OneNoteDocument): void {
 	for (const table of doc.tables) {
 		if (!intersects(table, page)) continue;
+		const accent = TABLE_ACCENT_RGB[table.color ?? "sky"] ?? TABLE_ACCENT_RGB.sky;
 		const [x, y] = pagePoint(page, table.x, table.y);
 		const w = table.w * SCENE_TO_MM;
 		const h = table.h * SCENE_TO_MM;
-		const cellW = w / table.cols;
-		const cellH = h / table.rows;
-		pdf.setDrawColor(71, 85, 105);
+		// Columns and rows as wide and tall as they were dragged on the board.
+		const share = (sizes: number[] | undefined, count: number, total: number) => {
+			if (!sizes || sizes.length !== count) return Array.from({ length: count }, () => total / count);
+			const sum = sizes.reduce((a, b) => a + b, 0) || 1;
+			return sizes.map(size => size / sum * total);
+		};
+		// The name sits in its own band on top, as the board draws it.
+		const band = Math.min(h * 0.3, 34 * SCENE_TO_MM);
+		const colW = share(table.colWidths, table.cols, w);
+		const rowH = share(table.rowHeights, table.rows, h - band);
+		const bandFill = tint(accent, 0.12);
+		pdf.setFillColor(bandFill[0], bandFill[1], bandFill[2]);
+		pdf.setDrawColor(148, 163, 184);
 		pdf.setLineWidth(0.18);
-		pdf.rect(x, y, w, h, "S");
+		pdf.rect(x, y, w, band, "FD");
+		pdf.setFont("helvetica", "bold");
+		pdf.setFontSize(8.5);
+		pdf.setTextColor(30, 41, 59);
+		writeLines(pdf, [table.title?.trim() || tr("Tabla")], x + 2, y + band / 2 + 1.1, { pt: 8.5, family: "helvetica", bold: true, color: { r: 30, g: 41, b: 59 } });
+		let cy = y + band;
 		for (let row = 0; row < table.rows; row++) {
+			let cx = x;
 			for (let col = 0; col < table.cols; col++) {
-				const cx = x + col * cellW;
-				const cy = y + row * cellH;
-				if (table.header && row === 0) {
-					pdf.setFillColor(226, 232, 240);
+				const cellW = colW[col], cellH = rowH[row];
+				// The header in the table's own colour, and every other row shaded
+				// as on the board, so a printed table reads the same way.
+				const fill = table.header && row === 0 ? tint(accent, 0.28)
+					: table.striped !== false && (row - (table.header ? 1 : 0)) % 2 === 1 ? tint(accent, 0.07) : null;
+				if (fill) {
+					pdf.setFillColor(fill[0], fill[1], fill[2]);
 					pdf.rect(cx, cy, cellW, cellH, "F");
 				}
 				pdf.rect(cx, cy, cellW, cellH, "S");
 				const content = table.cells[row]?.[col] ?? "";
 				if (content) {
-					pdf.setFont("helvetica", table.header && row === 0 ? "bold" : "normal");
+					const bold = (table.header && row === 0) || (table.headerColumn && col === 0);
+					pdf.setFont("helvetica", bold ? "bold" : "normal");
 					pdf.setFontSize(8);
 					pdf.setTextColor(30, 41, 59);
-					pdf.text(pdf.splitTextToSize(content, Math.max(8, cellW - 2)) as string[], cx + 1, cy + 3.2);
+					writeLines(pdf, pdf.splitTextToSize(content, Math.max(8, cellW - 2)) as string[], cx + 1.2, cy + 3.4, { pt: 8, family: "helvetica", bold, color: { r: 30, g: 41, b: 59 } });
 				}
+				cx += cellW;
 			}
+			cy += rowH[row];
 		}
 	}
 }

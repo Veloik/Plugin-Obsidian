@@ -679,59 +679,111 @@
   background: rgba(18, 22, 34, 0.6);
 }
 
+/* Tables: a card with a coloured spine. Each table carries its own accent
+   (--table-accent, chosen from the palette in its header); the header row is
+   tinted with it, alternate rows are shaded for reading across, and the
+   controls stay out of sight until the pointer or a selection asks for them. */
 .notelens-table {
+  --table-accent: #38bdf8;
+  --table-surface: #111827;
+  --table-cell: #0f172a;
+  --table-alt: rgba(148, 163, 184, 0.06);
+  --table-line: rgba(148, 163, 184, 0.16);
+  --table-text: #e2e8f0;
+  --table-muted: #94a3b8;
   position: absolute;
   display: flex;
   min-width: 220px;
   min-height: 120px;
   flex-direction: column;
   overflow: visible;
-  border: 1px solid rgba(125, 211, 252, 0.45);
-  border-radius: 4px;
-  background: rgba(17, 24, 39, 0.96);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid color-mix(in srgb, var(--table-accent) 38%, transparent);
+  border-radius: 12px;
+  background: var(--table-surface);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 10px 28px rgba(0, 0, 0, 0.28);
   z-index: 10;
+}
+
+.onenote-workspace[data-bg-tone="light"] .notelens-table {
+  --table-surface: #ffffff;
+  --table-cell: #ffffff;
+  --table-alt: color-mix(in srgb, var(--table-accent) 6%, #f8fafc);
+  --table-line: rgba(15, 23, 42, 0.09);
+  --table-text: #1f2937;
+  --table-muted: #64748b;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 .notelens-table-header {
   display: flex;
-  min-height: 30px;
+  min-height: 34px;
   align-items: center;
   justify-content: space-between;
-  padding: 0 7px 0 10px;
-  border-bottom: 1px solid rgba(125, 211, 252, 0.22);
-  background: #172033;
-  color: #cbd5e1;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+  border-radius: 11px 11px 0 0;
+  border-bottom: 1px solid var(--table-line);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--table-accent) 16%, var(--table-surface)), var(--table-surface) 70%);
+  color: var(--table-text);
   cursor: grab;
 }
 
 .notelens-table-header:active { cursor: grabbing; }
 
-.notelens-table-title {
-  color: #7dd3fc;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0;
+.notelens-table-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
 }
 
-.notelens-table-controls { display: flex; gap: 2px; }
+.notelens-table-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--table-accent) 22%, transparent);
+  color: var(--table-accent);
+}
+.notelens-table-icon svg { width: 13px; height: 13px; }
+
+.notelens-table-title {
+  overflow: hidden;
+  color: var(--table-text);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notelens-table-controls { display: flex; gap: 2px; transition: opacity 140ms ease; }
+
+/* With a mouse the controls wait for the pointer; on a touch screen, where
+   nothing hovers, they stay. */
+@media (hover: hover) and (pointer: fine) {
+  .notelens-table:not(:hover):not(.notelens-selected):not(:focus-within) .notelens-table-controls { opacity: 0; }
+}
 
 .notelens-table-control {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: 6px;
   background: transparent;
-  color: #b8c5d6;
+  box-shadow: none;
+  color: var(--table-muted);
   cursor: pointer;
 }
 
 .notelens-table-control:hover {
-  background: rgba(125, 211, 252, 0.14);
-  color: #ffffff;
+  background: color-mix(in srgb, var(--table-accent) 18%, transparent);
+  color: var(--table-text);
 }
 
 .notelens-table-control svg { width: 14px; height: 14px; }
@@ -741,52 +793,63 @@
   min-height: 0;
   flex: 1;
   overflow: hidden;
+  border-radius: 0 0 11px 11px;
 }
 
 .notelens-table-cell {
   min-width: 0;
   min-height: 0;
-  padding: 7px 8px;
+  padding: 8px 10px;
   resize: none;
-  overflow: auto;
+  overflow: hidden;
   border: 0;
-  border-right: 1px solid rgba(148, 163, 184, 0.25);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  border-right: 1px solid var(--table-line);
+  border-bottom: 1px solid var(--table-line);
+  border-radius: 0;
   outline: none;
-  background: rgba(15, 23, 42, 0.42);
-  color: #e2e8f0;
-  font: 13px/1.35 var(--font-interface);
+  background: var(--table-cell);
+  box-shadow: none;
+  color: var(--table-text);
+  font: 14px/1.4 var(--font-interface);
 }
+
+.notelens-table-cell::placeholder { color: var(--table-muted); opacity: 0.55; font-weight: 500; }
+.notelens-table-cell.is-number { text-align: right; font-variant-numeric: tabular-nums; }
+.notelens-table.is-striped .notelens-table-cell.is-alt-row { background: var(--table-alt); }
+.onenote-workspace[data-bg-tone="dark"] .notelens-table.is-striped .notelens-table-cell.is-alt-row { background: color-mix(in srgb, var(--table-cell) 92%, #94a3b8); }
 
 .notelens-table-cell:focus {
   position: relative;
   z-index: 1;
-  background: rgba(15, 108, 189, 0.18);
-  box-shadow: inset 0 0 0 1px #38bdf8;
+  background: color-mix(in srgb, var(--table-accent) 12%, var(--table-cell));
+  box-shadow: inset 0 0 0 2px var(--table-accent);
 }
 
 .notelens-table-cell.is-header-column {
-  font-weight: 700;
-  background: rgba(56, 189, 248, 0.07);
+  font-weight: 650;
+  background: color-mix(in srgb, var(--table-accent) 8%, var(--table-cell));
 }
-.notelens-table-control.active { background: rgba(15, 108, 189, 0.35); color: #8cc8ff; }
+.notelens-table-control.active { background: color-mix(in srgb, var(--table-accent) 24%, transparent); color: var(--table-accent); }
 
 .notelens-table-cell.is-header {
-  background: rgba(30, 41, 59, 0.95);
-  color: #f8fafc;
+  background: color-mix(in srgb, var(--table-accent) 20%, var(--table-cell));
+  color: var(--table-text);
+  font-size: 12.5px;
   font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .notelens-table-resize {
   position: absolute;
-  right: -5px;
-  bottom: -5px;
+  right: -6px;
+  bottom: -6px;
   width: 12px;
   height: 12px;
-  border: 1px solid #e0f2fe;
-  border-radius: 1px;
-  background: #0f6cbd;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--table-accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: nwse-resize;
   opacity: 0;
   transition: opacity 120ms ease;
@@ -794,6 +857,46 @@
 
 .notelens-table:hover .notelens-table-resize,
 .notelens-table.notelens-selected .notelens-table-resize { opacity: 1; }
+
+/* The palette under the header: six accents and the striped-rows switch. */
+.notelens-table-colors {
+  position: absolute;
+  top: 38px;
+  right: 8px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border: 1px solid var(--table-line);
+  border-radius: 10px;
+  background: var(--table-surface);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+}
+.notelens-table-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) inset;
+  cursor: pointer;
+}
+.notelens-table-swatch.is-active { border-color: var(--table-text); }
+.notelens-table-stripes {
+  height: 24px;
+  margin-left: 4px;
+  padding: 0 8px;
+  border: 1px solid var(--table-line);
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--table-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.notelens-table-stripes.is-active { border-color: var(--table-accent); color: var(--table-text); background: color-mix(in srgb, var(--table-accent) 14%, transparent); }
 
 /* --------------------------------------------------------------------------
    EMBEDS (PDF / YouTube / video)
@@ -4011,13 +4114,22 @@
 /* --------------------------------------------------------------------------
    MATH (LaTeX via MathJax)
    -------------------------------------------------------------------------- */
+/* A formula sits on the page like the rest of the notes, as in OneNote; its
+   frame only appears under the pointer or when it is selected, so it can
+   still be found and grabbed. */
 .notelens-math-block {
   min-width: 120px;
   padding: 10px 14px;
-  border: 1px solid rgba(167, 139, 250, 0.32);
-  border-radius: 6px;
-  background: rgba(30, 27, 46, 0.72);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
   font-size: 20px;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+.notelens-math-block:hover,
+.notelens-math-block.notelens-selected {
+  border-color: rgba(167, 139, 250, 0.4);
+  background: rgba(167, 139, 250, 0.06);
 }
 
 .notelens-math-block.notelens-math-block > *,
@@ -6220,6 +6332,12 @@ span.notelens-assistant-name {
 
 .notelens-load-error { position: absolute; inset: 25% 12%; z-index: 100; padding: 24px; height: fit-content; border: 1px solid var(--text-error); border-radius: 12px; background: var(--background-primary); color: var(--text-normal); }
 
+/* Another device left a conflict copy next to this board: one line, two choices. */
+.notelens-sync-banner { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 95; display: flex; align-items: center; gap: 10px; max-width: min(92%, 640px); padding: 8px 14px; border: 1px solid var(--background-modifier-border); border-radius: 10px; background: var(--background-primary); color: var(--text-normal); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25); font-size: 13px; }
+.notelens-sync-message { flex: 1; min-width: 0; }
+.notelens-sync-action { padding: 4px 10px; border-radius: 6px; font-size: 12px; white-space: nowrap; }
+@media (max-width: 600px) { .notelens-sync-banner { flex-wrap: wrap; top: 8px; } }
+
 .notelens-video-fallback a { color: var(--text-accent, #a99aff); font-weight: 600; border-radius: 6px; }
 .notelens-video-fallback a:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
 
@@ -6482,3 +6600,168 @@ span.notelens-assistant-name {
   font-size: 11px;
   cursor: pointer;
 }
+
+/* Ink replay: a small player at the foot of the board. */
+.notelens-replay-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  z-index: 1003;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(440px, calc(100% - 32px));
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(28, 30, 34, 0.96);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  color: #e5e7eb;
+}
+.notelens-replay-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.notelens-replay-button:hover { background: rgba(255, 255, 255, 0.1); }
+.notelens-replay-button svg { width: 16px; height: 16px; }
+.notelens-replay-progress {
+  flex: 1 1 auto;
+  min-width: 60px;
+  accent-color: var(--interactive-accent, #7c3aed);
+}
+
+/* A line of handwriting that matches the search: framed, since ink has no element of its own. */
+.notelens-ink-hit {
+  position: absolute;
+  border-radius: 6px;
+  outline: 2px solid rgba(250, 204, 21, 0.55);
+  background: rgba(250, 204, 21, 0.06);
+  pointer-events: none;
+}
+.notelens-ink-hit.notelens-search-current {
+  outline-color: #facc15;
+  background: rgba(250, 204, 21, 0.14);
+}
+
+/* A board full of ✕: with a mouse, each object's close waits for the pointer
+   to come over it, as OneNote does. On a touch screen, where nothing hovers,
+   the rule above keeps them all in sight. */
+@media (hover: hover) and (pointer: fine) {
+  .onenote-workspace .onenote-textbox:not(:hover) button.notelens-box-close,
+  .onenote-workspace .onenote-placed-badge:not(:hover) button.onenote-badge-close { opacity: 0; }
+  .onenote-workspace button.notelens-box-close,
+  .onenote-workspace button.onenote-badge-close { transition: opacity 120ms ease; }
+}
+
+/* The welcome on a blank page: centred, quiet, under everything and never in
+   the way of the first stroke. */
+.notelens-empty-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: min(420px, calc(100% - 48px));
+  padding: 22px 24px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  color: #cbd5e1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 200ms ease;
+}
+.notelens-empty-hint.is-leaving { opacity: 0; }
+.onenote-workspace[data-bg-tone="light"] .notelens-empty-hint { border-color: rgba(15, 23, 42, 0.16); color: #475569; }
+.notelens-empty-title {
+  margin-bottom: 14px;
+  font-size: 18px;
+  font-weight: 650;
+  text-align: center;
+  opacity: 0.9;
+}
+.notelens-empty-tips { display: grid; gap: 10px; }
+.notelens-empty-tip { display: flex; align-items: center; gap: 12px; font-size: 13.5px; line-height: 1.35; opacity: 0.8; }
+.notelens-empty-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.14);
+}
+.notelens-empty-icon svg { width: 15px; height: 15px; }
+@container workspace (max-height: 560px) {
+  .notelens-empty-hint { display: none; }
+}
+
+/* Revision cover: the answer blurred under a card until it is tapped. */
+/* The cover frosts what is under it, so words written straight into the box
+   and typeset maths blur alike. Only as big as one box, so it costs little. */
+.notelens-study-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  background: rgba(15, 23, 42, 0.25);
+}
+.onenote-workspace[data-bg-tone="light"] .notelens-study-cover { background: rgba(255, 255, 255, 0.35); }
+.onenote-textbox.is-study-covered.is-revealed .notelens-study-cover {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: transparent;
+}
+.notelens-study-face {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px dashed rgba(167, 139, 250, 0.7);
+  border-radius: 999px;
+  background: rgba(30, 27, 46, 0.88);
+  color: #ede9fe;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.notelens-study-face:hover { border-style: solid; background: rgba(76, 29, 149, 0.9); }
+.notelens-study-icon svg { width: 15px; height: 15px; }
+.onenote-textbox.is-study-covered:not(.is-revealed) { min-height: 44px; }
+.onenote-textbox.is-study-covered.is-revealed .notelens-study-face { display: none; }
+.onenote-textbox.is-study-covered.is-revealed .notelens-study-cover { pointer-events: none; }
+.notelens-study-again {
+  position: absolute;
+  top: -12px;
+  left: -12px;
+  display: none;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(167, 139, 250, 0.7);
+  border-radius: 50%;
+  background: #2e1065;
+  color: #ede9fe;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.notelens-study-again svg { width: 13px; height: 13px; }
+.onenote-textbox.is-study-covered.is-revealed .notelens-study-again { display: grid; }
