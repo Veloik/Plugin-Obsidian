@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.4.0
+
+### Added
+
+- Word and PowerPoint files open and edit inside Obsidian. `.docx` opens as paginated pages with a ribbon (styles, fonts, colours, lists, tables, images, links, page breaks, find, undo/redo) and `.pptx` as slides with a filmstrip, shapes you can move and resize, pictures, charts, SmartArt and a presentation mode. Only the paragraphs you touch are written back, so the rest of the file stays as it was.
+- Create documents and presentations from NoteLens: templates for notes, reports and decks, from the ribbon, the command palette, the folder menu and the board dock. Any document can also sit on the board in a frame that folds, expands and can be drawn over with the pen.
+- Slide transitions (fade, push, cover, wipe, zoom) that are read from the file, chosen from the ribbon, written back and played while presenting.
+
+### Improved
+
+- Charts, tables, code blocks, the translator, the recorder and videos have a cleaner look; charts grow in when they appear.
+- Big boards are faster: what is off screen is not drawn, and far zoom draws ink as simple lines.
+- The ruler numbers are readable on a white board.
+- The eraser's "only what you touch" card no longer spills out of its panel on tablets.
+
+
 ## 3.3.0
 
 ### Added
