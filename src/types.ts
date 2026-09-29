@@ -240,7 +240,7 @@ export interface ViewportBookmark {
 	scale: number;
 }
 
-export type EmbedKind = "pdf" | "youtube" | "web-video" | "video" | "audio" | "epub" | "image" | "file" | "note" | "board" | "chart";
+export type EmbedKind = "pdf" | "youtube" | "web-video" | "video" | "audio" | "epub" | "office" | "image" | "file" | "note" | "board" | "chart";
 
 /** Chart definition stored with a "chart" embed. */
 export interface ChartData {
@@ -285,6 +285,10 @@ export interface Embed {
 	epubMode?: "card" | "reader";
 	/** Chapter the EPUB reader was left on, as an index into the spine. */
 	epubChapter?: number;
+	/** A Word or PowerPoint frame folded down to its title bar. */
+	folded?: boolean;
+	/** Slide a PowerPoint embed was left on, 0-based. */
+	officeSlide?: number;
 	/** Vault-relative WebVTT track associated with a local video. */
 	captionSrc?: string;
 }
@@ -664,7 +668,7 @@ export function migrateDocument(raw: unknown): OneNoteDocument {
 		const ex = asNumber(e?.x), ey = asNumber(e?.y), src = asString(e?.src);
 		if (!e || ex === undefined || ey === undefined || src === undefined) continue;
 		const kind: EmbedKind = asOneOf(e.kind,
-			["youtube", "web-video", "video", "audio", "epub", "image", "file", "note", "board", "chart"] as const) ?? "pdf";
+			["youtube", "web-video", "video", "audio", "epub", "office", "image", "file", "note", "board", "chart"] as const) ?? "pdf";
 		const provider = asOneOf(e.provider,
 			["youtube", "tiktok", "instagram", "x", "vimeo", "dailymotion", "streamable", "loom", "facebook"] as const);
 		const chart = asObject(e.chart);
@@ -689,6 +693,8 @@ export function migrateDocument(raw: unknown): OneNoteDocument {
 			pages: asNumber(e.pages),
 			epubMode: e.epubMode === "reader" ? "reader" : undefined,
 			epubChapter: asNumber(e.epubChapter),
+			officeSlide: asNumber(e.officeSlide),
+			folded: e.folded === true ? true : undefined,
 			captionSrc: asString(e.captionSrc)
 		});
 	}

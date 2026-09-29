@@ -121,6 +121,15 @@ function bandPath(pts: StrokePoint[], width: number): Path2D {
 	return path;
 }
 
+/** Below this zoom, ink is drawn as simple lines. */
+const FAR_SCALE = 0.4;
+
+interface StrokeBounds {
+	pts: StrokePoint[]; n: number;
+	fx: number; fy: number; lx: number; ly: number; mx: number; my: number;
+	minX: number; minY: number; maxX: number; maxY: number;
+}
+
 /**
  * DPR-aware stroke renderer. The canvas always matches the viewport size
  * (× devicePixelRatio) and the view transform is applied via ctx.setTransform,
@@ -138,6 +147,8 @@ export class CanvasRenderer {
 	private markerBands = new WeakMap<Stroke, { count: number; width: number; endX: number; endY: number; band: Path2D }>();
 	private liveFrame = 0;
 	private livePending: { stroke: Stroke; vt: ViewTransform } | null = null;
+	/** The box round each stroke's points, kept so an off-screen stroke costs a comparison and not a drawing. */
+	private bounds = new WeakMap<Stroke, StrokeBounds>();
 	private liveAllFrame = 0;
 	private livePendingAll: { strokes: Stroke[]; shapes: Shape[]; vt: ViewTransform } | null = null;
 
@@ -183,15 +194,91 @@ export class CanvasRenderer {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
+	/** The box round a stroke's points, rebuilt only when the points change (moved, scaled, extended or replaced). */
+	private strokeBounds(stroke: Stroke): StrokeBounds | null {
+		const pts = stroke.points;
+		if (!pts.length) return null;
+		const first = pts[0], last = pts[pts.length - 1], mid = pts[pts.length >> 1];
+		const known = this.bounds.get(stroke);
+		if (known && known.pts === pts && known.n === pts.length && known.fx === first.x && known.fy === first.y
+			&& known.lx === last.x && known.ly === last.y && known.mx === mid.x && known.my === mid.y) return known;
+		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+		for (const p of pts) {
+			if (p.x < minX) minX = p.x;
+			if (p.x > maxX) maxX = p.x;
+			if (p.y < minY) minY = p.y;
+			if (p.y > maxY) maxY = p.y;
+		}
+		const made: StrokeBounds = { pts, n: pts.length, fx: first.x, fy: first.y, lx: last.x, ly: last.y, mx: mid.x, my: mid.y, minX, minY, maxX, maxY };
+		this.bounds.set(stroke, made);
+		return made;
+	}
+
+	/** The part of the board the canvas shows, in board coordinates. */
+	private visibleRect(vt: ViewTransform): { x0: number; y0: number; x1: number; y1: number } {
+		const x0 = -vt.x / vt.scale, y0 = (this.lift - vt.y) / vt.scale;
+		return { x0, y0, x1: x0 + this.canvas.width / this.dpr / vt.scale, y1: y0 + this.canvas.height / this.dpr / vt.scale };
+	}
+
+	private strokeVisible(stroke: Stroke, view: { x0: number; y0: number; x1: number; y1: number }): boolean {
+		const b = this.strokeBounds(stroke);
+		if (!b) return true;
+		// The nib is wider than the line through the points, and a pencil grains a little outside it.
+		const pad = stroke.width * 1.6 + 3;
+		return !(b.maxX + pad < view.x0 || b.minX - pad > view.x1 || b.maxY + pad < view.y0 || b.minY - pad > view.y1);
+	}
+
+	private shapeVisible(shape: Shape, view: { x0: number; y0: number; x1: number; y1: number }): boolean {
+		const cx = shape.x + shape.w / 2, cy = shape.y + shape.h / 2;
+		// A circle round the shape holds it whatever its rotation; the margin covers the outline, an arrow head and a callout's tail.
+		const r = Math.hypot(shape.w, shape.h) / 2 + shape.width * 2 + 48;
+		return !(cx + r < view.x0 || cx - r > view.x1 || cy + r < view.y0 || cy - r > view.y1);
+	}
+
+	/**
+	 * Ink seen from far away: each stroke is a single line through a fraction of its points, and all the strokes of one
+	 * colour and width go down in one pass -- at that size nobody can tell the pressure of each segment, and twenty
+	 * thousand strokes cannot each be drawn on their own.
+	 */
+	private drawFromAfar(list: Stroke[], scale: number): void {
+		const groups = new Map<string, Stroke[]>();
+		for (const stroke of list) {
+			if (stroke.points.length < 2) { this.drawStroke(stroke); continue; }
+			const key = `${stroke.color}|${Math.round(stroke.width * 2)}`;
+			const group = groups.get(key);
+			if (group) group.push(stroke); else groups.set(key, [stroke]);
+		}
+		const step = Math.max(1, Math.floor(0.9 / scale));
+		this.ctx.lineCap = "round";
+		this.ctx.lineJoin = "round";
+		for (const group of groups.values()) {
+			const first = group[0];
+			this.ctx.globalAlpha = colorAlpha(first.color);
+			this.ctx.strokeStyle = opaqueColor(first.color);
+			this.ctx.lineWidth = Math.max(first.width * 0.8, 1.2 / scale);
+			this.ctx.beginPath();
+			for (const stroke of group) {
+				const pts = stroke.points;
+				this.ctx.moveTo(pts[0].x, pts[0].y);
+				for (let i = step; i < pts.length - 1; i += step) this.ctx.lineTo(pts[i].x, pts[i].y);
+				this.ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+			}
+			this.ctx.stroke();
+		}
+		this.ctx.globalAlpha = 1;
+	}
+
 	renderAll(strokes: Stroke[], shapes: Shape[], vt: ViewTransform): void {
 		this.liveBase = null;
 		this.clearDevice();
 		this.applyViewTransform(vt);
-		for (const shape of shapes) this.drawShape(shape);
+		// Only what the canvas shows is drawn: the rest of a big board costs a comparison, not a drawing.
+		const view = this.visibleRect(vt);
+		for (const shape of shapes) if (this.shapeVisible(shape, view)) this.drawShape(shape);
 		// Union matching bands before applying opacity: retracing never darkens them.
         const highlights = new Map<string, Path2D>();
         for (const stroke of strokes) {
-            if (stroke.type !== "highlighter" || !stroke.points.length) continue;
+            if (stroke.type !== "highlighter" || !stroke.points.length || !this.strokeVisible(stroke, view)) continue;
             let path = highlights.get(stroke.color);
             if (!path) { path = new Path2D(); highlights.set(stroke.color, path); }
             path.addPath(this.markerBand(stroke));
@@ -204,7 +291,13 @@ export class CanvasRenderer {
             this.ctx.fill(path);
             this.ctx.restore();
         }
-		for (const stroke of strokes) if (stroke.type !== "highlighter") this.drawStroke(stroke);
+		const far = vt.scale < FAR_SCALE;
+		const seen: Stroke[] = [];
+		for (const stroke of strokes) {
+			if (stroke.type === "highlighter" || !this.strokeVisible(stroke, view)) continue;
+			if (far) seen.push(stroke); else this.drawStroke(stroke);
+		}
+		if (far) this.drawFromAfar(seen, vt.scale);
 	}
 
 	drawStroke(stroke: Stroke): void {

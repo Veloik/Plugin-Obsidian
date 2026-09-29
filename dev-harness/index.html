@@ -111,6 +111,8 @@
   };
   const plugin = new PluginClass(app, { id: "notelens", dir: ".obsidian/plugins/notelens", version: "test" });
   await plugin.onload();
+  window.__plugin = plugin;
+  window.__app = app;
   const factory = Object.values(plugin.views)[0];
   const leaf = { app, view: null };
   const view = factory(leaf);

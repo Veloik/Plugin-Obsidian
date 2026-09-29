@@ -6,6 +6,8 @@ import { Embed, genId } from "./types";
 import { mountChartFrame } from "./charts";
 import { VIDEO_EXTENSIONS, clamp, toRemoteVideoEmbed } from "./tools";
 import { openEpub, paintEpubChapter } from "./epub";
+import type { OfficeKind } from "./office";
+import { OfficeHostApi, mountOfficeEditor } from "./office-editor";
 import { tr } from "./i18n";
 import { notePreview } from "./rich-text";
 
@@ -58,6 +60,7 @@ const KIND_ICONS: Record<string, string> = {
 	video: "play",
 	audio: "audio-lines",
 	epub: "book-open",
+	office: "file-text",
 	image: "image",
 	file: "paperclip",
 	note: "file-text",
@@ -118,6 +121,10 @@ export function renderEmbedFrame(host: EmbedHost, layer: HTMLElement, embed: Emb
 	}
 	if (embed.kind === "epub" && embed.epubMode === "reader") {
 		void mountEpubReader(host, layer, embed);
+		return;
+	}
+	if (embed.kind === "office") {
+		void mountOfficeFrame(host, layer, embed);
 		return;
 	}
 	if (embed.kind === "epub" || embed.kind === "file") {
@@ -767,6 +774,115 @@ async function mountEpubReader(host: EmbedHost, layer: HTMLElement, embed: Embed
 }
 
 // ---------------------------------------------------------------------------
+// Word and PowerPoint: read and edited on the board, saved into the same file
+// ---------------------------------------------------------------------------
+
+async function mountOfficeFrame(host: EmbedHost, layer: HTMLElement, embed: Embed): Promise<void> {
+	const kind: OfficeKind = embed.src.toLowerCase().endsWith(".pptx") ? "pptx" : "docx";
+	const frame = layer.createDiv({ cls: `notelens-embed notelens-office-frame is-${kind}` });
+	frame.setAttr("data-id", embed.id);
+	frame.style.left = `${embed.x}px`;
+	frame.style.top = `${embed.y}px`;
+	frame.style.width = `${embed.w || 640}px`;
+	frame.style.height = embed.folded ? "auto" : `${embed.h || 720}px`;
+	frame.toggleClass("is-folded", !!embed.folded);
+	if (embed.rotation) frame.style.transform = `rotate(${embed.rotation}deg)`;
+
+	const header = frame.createDiv({ cls: "notelens-embed-header" });
+	const badge = header.createSpan({ cls: `notelens-office-badge is-${kind}` });
+	setIcon(badge, kind === "pptx" ? "presentation" : "file-text");
+	header.createSpan({ cls: "notelens-embed-title", text: embedTitle(embed) });
+	header.createSpan({ cls: "notelens-office-spacer" });
+	const root = frame.createDiv();
+
+	const cleanups: (() => void)[] = [];
+	let expanded = false;
+	let origin: { parent: HTMLElement; next: ChildNode | null; style: string } | null = null;
+	const setFolded = (folded: boolean) => {
+		if (expanded) return;
+		embed.folded = folded || undefined;
+		frame.toggleClass("is-folded", folded);
+		frame.style.height = folded ? "auto" : `${embed.h || 720}px`;
+		host.onEmbedChanged();
+	};
+	const setExpanded = (on: boolean) => {
+		if (on === expanded) return;
+		const workspace = frame.closest<HTMLElement>(".onenote-workspace");
+		if (on) {
+			if (!workspace || !frame.parentElement) return;
+			origin = { parent: frame.parentElement, next: frame.nextSibling, style: frame.getAttribute("style") ?? "" };
+			workspace.appendChild(frame);
+			frame.removeAttribute("style");
+			frame.removeClass("is-folded");
+		} else if (origin) {
+			origin.parent.insertBefore(frame, origin.next);
+			frame.setAttribute("style", origin.style);
+			frame.toggleClass("is-folded", !!embed.folded);
+			origin = null;
+		}
+		expanded = on;
+		frame.toggleClass("is-expanded", on);
+		setIcon(expandBtn, on ? "minimize-2" : "maximize-2");
+		expandBtn.title = on ? tr("Volver a la pizarra") : tr("Expandir a toda la pizarra");
+	};
+
+	const iconButton = (cls: string, icon: string, label: string, run: () => void): HTMLButtonElement => {
+		const btn = header.createEl("button", { cls });
+		setIcon(btn, icon);
+		btn.title = label;
+		btn.setAttr("aria-label", label);
+		btn.addEventListener("pointerdown", (e) => e.stopPropagation());
+		btn.onclick = (e) => { e.stopPropagation(); run(); };
+		return btn;
+	};
+	const foldBtn = iconButton("notelens-embed-open", embed.folded ? "chevron-down" : "chevron-up", tr("Plegar o desplegar"), () => {
+		setFolded(!frame.hasClass("is-folded"));
+		setIcon(foldBtn, frame.hasClass("is-folded") ? "chevron-down" : "chevron-up");
+	});
+	// A document is for typing in; the pen draws over it only when asked to.
+	const inkBtn = iconButton("notelens-embed-open", "pen-line", tr("Dibujar sobre el documento"), () => {
+		frame.toggleClass("is-inkable", !frame.hasClass("is-inkable"));
+		inkBtn.toggleClass("is-on", frame.hasClass("is-inkable"));
+	});
+	const expandBtn = iconButton("notelens-embed-open", "maximize-2", tr("Expandir a toda la pizarra"), () => setExpanded(!expanded));
+	iconButton("notelens-embed-open", "external-link", tr("Abrir archivo original"), () => host.openVaultFile(embed.src));
+	iconButton("notelens-embed-close", "x", tr("Quitar de la pizarra"), () => {
+		setExpanded(false);
+		for (const fn of cleanups) fn();
+		frame.remove();
+		host.onEmbedDeleted(embed);
+	});
+	header.addEventListener("dblclick", (e) => {
+		if ((e.target as HTMLElement).closest("button")) return;
+		setFolded(!frame.hasClass("is-folded"));
+		setIcon(foldBtn, frame.hasClass("is-folded") ? "chevron-down" : "chevron-up");
+	});
+	setupFrameDrag(host, header, frame, embed);
+	setupFrameResize(host, frame, embed);
+	// Scrolling inside the page belongs to the page, not to the board under it.
+	root.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+	host.registerCleanup?.(() => { setExpanded(false); for (const fn of cleanups) fn(); });
+
+	const file = host.app.vault.getFileByPath(embed.src);
+	if (!(file instanceof TFile)) {
+		root.createDiv({ cls: "notelens-embed-missing", text: tr("No se pudo cargar: {p0}", { p0: embed.src }) });
+		return;
+	}
+	const api: OfficeHostApi = {
+		app: host.app,
+		registerCleanup: (fn) => cleanups.push(fn),
+		openExternal: (path) => host.openVaultFile(path),
+		expand: (on) => { setExpanded(on); return expanded === on; },
+		initialSlide: embed.officeSlide,
+		slideChanged: (index) => { if (embed.officeSlide !== index) { embed.officeSlide = index; host.onEmbedChanged(); } },
+		pickImage: (done) => new ImagePickModal(host.app, done).open()
+	};
+	const editor = await mountOfficeEditor(root, api, file);
+	if (editor) header.querySelector(".notelens-embed-title")?.setText(file.basename);
+}
+
+
+// ---------------------------------------------------------------------------
 // Frame interactions
 // ---------------------------------------------------------------------------
 
@@ -774,6 +890,7 @@ function setupFrameDrag(host: EmbedHost, header: HTMLElement, frame: HTMLElement
 	header.addEventListener("pointerdown", (e) => {
 		if (e.button !== 0) return;
 		if ((e.target as HTMLElement).closest(".notelens-embed-close, .notelens-embed-open, .notelens-pdf-nav")) return;
+		if (frame.hasClass("is-expanded")) return;
 		if (host.shouldPassPointerToCanvas()) return;
 		// Frame headers are draggable with any tool (force=true).
 		host.startEmbedDrag(e, frame, embed, true);

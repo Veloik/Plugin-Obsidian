@@ -28,7 +28,7 @@
 	P.getAttr = function (k) { return this.getAttribute(k); };
 	P.detach = function () { this.remove(); };
 	P.setCssStyles = function (styles) { for (const k in styles) this.style[k] = styles[k]; };
-	P.createSvg = function (tag, o) { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); this.appendChild(el); return el; };
+	P.createSvg = function (tag, o) { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (o && typeof o === "object") { if (o.attr) for (const k in o.attr) el.setAttribute(k, String(o.attr[k])); if (o.text) el.textContent = o.text; } if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); this.appendChild(el); return el; };
 	Node.prototype.instanceOf = function (type) { return this instanceof type; };
 	P.setCssProps = function (props) { for (const k in props) this.style.setProperty(k, props[k]); };
 	P.appendText = function (t) { this.appendChild(document.createTextNode(t)); return this; };
@@ -40,7 +40,7 @@
 	window.createDiv = (o) => applyOpts(document.createElement("div"), o);
 	window.createEl = (t, o) => applyOpts(document.createElement(t), o);
 	window.createSpan = (o) => applyOpts(document.createElement("span"), o);
-	window.createSvg = (tag, o) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); return el; };
+	window.createSvg = (tag, o) => { const el = document.createElementNS("http://www.w3.org/2000/svg", tag); const cls = typeof o === "string" ? o : o && o.cls; if (o && typeof o === "object") { if (o.attr) for (const k in o.attr) el.setAttribute(k, String(o.attr[k])); if (o.text) el.textContent = o.text; } if (cls) el.classList.add(...(Array.isArray(cls) ? cls : [cls])); return el; };
 	window.activeWindow = window;
 	window.activeDocument = document;
 
@@ -66,7 +66,7 @@
 	class TFolder { constructor(path = "/") { this.path = path; this.name = path.split("/").pop() || "/"; this.children = []; } isRoot() { return this.path === "/"; } }
 	class Notice { constructor(msg, ms) { const n = document.body.createDiv({ cls: "notice", text: typeof msg === "string" ? msg : String(msg) }); this.noticeEl = n; window.__notices = (window.__notices || []); window.__notices.push(String(msg)); if (ms !== 0) setTimeout(() => n.remove(), ms || 4000); } hide() { this.noticeEl.remove(); } setMessage(m) { this.noticeEl.setText(m); return this; } }
 	class Component { constructor() { this._ev = []; } registerDomEvent(el, type, fn, opts) { el.addEventListener(type, fn, opts); this._ev.push([el, type, fn, opts]); } register(fn) { this._ev.push([null, null, fn]); } registerEvent() {} registerInterval(i) { return i; } addChild(c) { return c; } load() {} unload() { for (const [el, t, fn, o] of this._ev) if (el) el.removeEventListener(t, fn, o); else fn(); } }
-	class View extends Component { constructor(leaf) { super(); this.leaf = leaf; this.app = leaf.app; this.containerEl = document.createElement("div"); this.containerEl.className = "view-container"; this.containerEl.createDiv({ cls: "view-header" }); this.containerEl.createDiv({ cls: "view-content" }); } addAction() { return document.createElement("a"); } }
+	class View extends Component { constructor(leaf) { super(); this.leaf = leaf; this.app = leaf.app; this.containerEl = document.createElement("div"); this.containerEl.className = "view-container"; this.containerEl.createDiv({ cls: "view-header" }); this.contentEl = this.containerEl.createDiv({ cls: "view-content" }); } addAction() { return document.createElement("a"); } }
 	class FileView extends View { constructor(leaf) { super(leaf); this.file = null; } async onLoadFile(file) { this.file = file; } async onUnloadFile() {} async onOpen() {} async onClose() {} }
 	class Modal { constructor(app) { this.app = app; this.modalEl = document.createElement("div"); this.modalEl.className = "modal"; this.titleEl = this.modalEl.createDiv({ cls: "modal-title" }); this.contentEl = this.modalEl.createDiv({ cls: "modal-content" }); this.containerEl = document.createElement("div"); this.containerEl.className = "modal-container"; this.bgEl = this.containerEl.createDiv({ cls: "modal-bg" }); this.containerEl.appendChild(this.modalEl); /* Obsidian dismisses a modal when its dimmed background is clicked; a dialog that guards against that has to face the same listener here. */ this.bgEl.addEventListener("click", () => this.close()); } open() { document.body.appendChild(this.containerEl); this._esc = (e) => { if (e.key === "Escape") this.close(); }; window.addEventListener("keydown", this._esc, true); this.onOpen && this.onOpen(); } close() { window.removeEventListener("keydown", this._esc, true); this.onClose && this.onClose(); this.containerEl.remove(); } setTitle(t) { this.titleEl.setText(t); return this; } }
 	class FuzzySuggestModal extends Modal { setPlaceholder() {} open() { const items = this.getItems ? this.getItems() : []; if (items.length && this.onChooseItem) this.onChooseItem(items[0]); } }

@@ -13,3 +13,4 @@ dev-harness/node_modules/
 dev-harness/missing-en.json
 
 /dev-harness/promo-frames/
+/dev-harness/shots-*.png

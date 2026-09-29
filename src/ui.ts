@@ -1,4 +1,4 @@
-import { setIcon } from "obsidian";
+import { Menu, setIcon } from "obsidian";
 import { BackgroundPattern, CanvasFont, DocumentPage, GridSize, ShapeKind, ViewportBookmark, PenStyle, Stroke } from "./types";
 import { CANVAS_FONTS } from "./fonts";
 import { ERASER_SPRITE } from "./eraser-sprite";
@@ -219,6 +219,7 @@ export interface ToolbarHost {
 	toggleNavigator(): void;
 	isNavigatorOpen(): boolean;
 	uploadFileFromDevice(): Promise<void>;
+	insertNewOffice(kind: "docx" | "pptx", variant?: string): Promise<void>;
 	insertTable(): void;
 	insertCodeBlock(): void;
 	startDictation(): void;
@@ -487,6 +488,16 @@ export function createToolbar(host: ToolbarHost, container: HTMLElement): void {
 	setIcon(uploadBtn, "upload");
 	uploadBtn.title = tr("Subir archivo desde el dispositivo");
 	uploadBtn.onclick = () => void host.uploadFileFromDevice();
+
+	const newDocBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });
+	setIcon(newDocBtn, "file-plus-2");
+	newDocBtn.title = tr("Documento nuevo") + ": Word / PowerPoint";
+	newDocBtn.onclick = (event) => {
+		const menu = new Menu();
+		menu.addItem(item => item.setTitle(tr("Documento de Word")).setIcon("file-text").onClick(() => void host.insertNewOffice("docx")));
+		menu.addItem(item => item.setTitle(tr("Presentación de PowerPoint")).setIcon("presentation").onClick(() => void host.insertNewOffice("pptx")));
+		menu.showAtMouseEvent(event);
+	};
 
 	insertBar.createDiv({ cls: "onenote-divider" });
 	const stickyBtn = insertBar.createEl("button", { cls: "onenote-dock-btn" });

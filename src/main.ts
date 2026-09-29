@@ -1,5 +1,7 @@
 import { VISION_CATALOGUE, parseAssistantActions, rankModels, recommendedVisionModel, visionOptionsFor } from "./assistant";
-import { Plugin, TFolder } from "obsidian";
+import { Menu, Plugin, TFolder } from "obsidian";
+import { OfficeFileView, OfficeTemplateModal, VIEW_TYPE_OFFICE, createOfficeFile } from "./office-view";
+import type { OfficeKind } from "./office";
 import { OneNoteCanvasView, VIEW_TYPE_ONENOTE, tidyFormulaText } from "./view";
 import { disposePdfWorker } from "./embeds";
 import { recognizeFormula } from "./ocr";
@@ -29,8 +31,29 @@ export default class OneNotePlugin extends Plugin {
 
 		this.registerExtensions(["notelens", "onenote"], VIEW_TYPE_ONENOTE);
 
+		// Word documents and presentations open in a tab of their own, like a note.
+		this.registerView(VIEW_TYPE_OFFICE, (leaf) => new OfficeFileView(leaf));
+		this.registerExtensions(["docx", "pptx"], VIEW_TYPE_OFFICE);
+
 		this.addRibbonIcon("pencil", tr("Nueva pizarra NoteLens"), () => {
 			void this.createNewOneNoteFile();
+		});
+
+		this.addRibbonIcon("file-plus-2", tr("Documento nuevo"), (event) => {
+			const menu = new Menu();
+			menu.addItem(item => item.setTitle(tr("Documento de Word")).setIcon("file-text").onClick(() => this.newOffice("docx")));
+			menu.addItem(item => item.setTitle(tr("Presentación de PowerPoint")).setIcon("presentation").onClick(() => this.newOffice("pptx")));
+			menu.showAtMouseEvent(event);
+		});
+		this.addCommand({
+			id: "create-word-document",
+			name: tr("Nuevo documento de Word"),
+			callback: () => this.newOffice("docx")
+		});
+		this.addCommand({
+			id: "create-presentation",
+			name: tr("Nueva presentación"),
+			callback: () => this.newOffice("pptx")
 		});
 
 		this.addCommand({
@@ -49,6 +72,14 @@ export default class OneNotePlugin extends Plugin {
 				.setTitle(tr("Nueva pizarra NoteLens"))
 				.setIcon("pencil")
 				.onClick(() => void this.createNewOneNoteFile(file)));
+			menu.addItem(item => item
+				.setTitle(tr("Nuevo documento de Word"))
+				.setIcon("file-text")
+				.onClick(() => this.newOffice("docx", file)));
+			menu.addItem(item => item
+				.setTitle(tr("Nueva presentación"))
+				.setIcon("presentation")
+				.onClick(() => this.newOffice("pptx", file)));
 		}));
 	}
 
@@ -83,6 +114,11 @@ export default class OneNotePlugin extends Plugin {
 	}
 
 	/** Creates a board inside `folder`, or at the root of the vault without one. */
+	/** Asks how the new document or presentation should start, makes it and opens it. */
+	newOffice(kind: OfficeKind, folder?: TFolder): void {
+		new OfficeTemplateModal(this.app, kind, (variant) => void createOfficeFile(this.app, kind, variant, folder)).open();
+	}
+
 	async createNewOneNoteFile(folder?: TFolder): Promise<void> {
 		const dateStr = new Date().toISOString().slice(0, 10);
 		const dir = folder && !folder.isRoot() ? `${folder.path}/` : "";

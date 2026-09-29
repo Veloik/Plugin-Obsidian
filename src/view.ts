@@ -24,6 +24,8 @@ import {
 	ChartData, createDocumentPage, createEmptyDocument, genId, migrateDocument
 } from "./types";
 import { clamp, cutStrokeAround, hexToRgba, hitTestStrokes, isLightColor, setColorAlpha, stripLeadingEmoji } from "./tools";
+import { newOfficeFile } from "./office";
+import { OfficeTemplateModal, officeTitle } from "./office-view";
 import { EmbedHost, EpubModeModal, ImagePickModal, NoteOrBoardPickModal, PdfModeModal, PdfPickModal, VaultFilePickModal, VideoInsertModal, renderEmbedFrame } from "./embeds";
 import { createNavigatorPanel, isBoardFile } from "./navigator";
 import { recognizeFormula, recognizeImage } from "./ocr";
@@ -235,7 +237,7 @@ const TABLE_ACCENTS: Record<string, string> = {
 };
 const tableAccent = (id: string | undefined) => TABLE_ACCENTS[id ?? "sky"] ?? TABLE_ACCENTS.sky;
 
-const INK_FREE_EMBEDS: EmbedKind[] = ["youtube", "web-video", "video", "audio", "epub", "file", "note", "board", "chart"];
+const INK_FREE_EMBEDS: EmbedKind[] = ["youtube", "web-video", "video", "audio", "epub", "office", "file", "note", "board", "chart"];
 /** How far a finger may slide on something live and still be read as a tap, in pixels. */
 const TAP_SLOP = 8;
 /** How long a press may last and still be a tap rather than a drag or a stroke. */
@@ -4382,6 +4384,19 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (file instanceof TFile) this.insertVaultFile(file);
 	}
 
+	/** A blank Word document or presentation, saved in the vault and opened on the board. */
+	async insertNewOffice(kind: "docx" | "pptx", variant?: string): Promise<void> {
+		const make = async (chosen: string) => {
+			const title = officeTitle(kind, chosen);
+			const bytes = newOfficeFile(kind, title, chosen);
+			const saved = await this.importLocalFile(new File([new Uint8Array(bytes)], `${title}.${kind}`));
+			if (!saved) { new Notice(tr("No se pudo crear el documento.")); return; }
+			this.insertVaultFile(saved);
+		};
+		if (variant) await make(variant);
+		else new OfficeTemplateModal(this.app, kind, (chosen) => void make(chosen)).open();
+	}
+
 	async uploadFileFromDevice(): Promise<void> {
 		const picker = createEl("input");
 		picker.type = "file";
@@ -4513,6 +4528,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 			: kind === "image" ? { w: 480, h: 0 }
 			: kind === "note" ? { w: 320, h: 150 }
 			: kind === "board" ? { w: 320, h: 96 }
+			: kind === "office" ? (file.extension.toLowerCase() === "pptx" ? { w: 720, h: 520 } : { w: 640, h: 720 })
 			: epubMode === "reader" ? { w: 520, h: 620 }
 			: { w: 360, h: 112 };
 		const spot = at ?? this.getInsertionPoint(dimensions.w, dimensions.h || 120);
@@ -4536,6 +4552,7 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 		if (["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "opus"].includes(ext)) return "audio";
 		if (["mp4", "webm", "mov", "mkv", "m4v"].includes(ext)) return "video";
 		if (ext === "epub") return "epub";
+		if (ext === "docx" || ext === "pptx") return "office";
 		if (ext === "md") return "note";
 		if (isBoardFile(file)) return "board";
 		return "file";

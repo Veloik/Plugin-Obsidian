@@ -3195,12 +3195,21 @@
 
 .notelens-choice-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, 1fr): a plain 1fr will not shrink below its content, so a long
+     label pushed the second card out of the panel on a narrow tablet. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   margin-bottom: 8px;
+  max-width: 100%;
 }
 
 .notelens-choice-card {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  height: auto;
   display: grid;
   align-content: start;
   gap: 3px;
@@ -3219,7 +3228,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
+
+.notelens-choice-name { min-width: 0; }
 
 .notelens-choice-name {
   font-size: 12px;
@@ -4366,7 +4378,7 @@
   z-index: 1000;
 }
 
-.notelens-insert-dock { left: 14px; }
+.notelens-insert-dock { left: 14px; gap: 1px; }
 .notelens-document-dock { right: 58px; }
 
 /* ==========================================================================
@@ -6765,3 +6777,927 @@ span.notelens-assistant-name {
 }
 .notelens-study-again svg { width: 13px; height: 13px; }
 .onenote-textbox.is-study-covered.is-revealed .notelens-study-again { display: grid; }
+
+/* ==========================================================================
+   WORD AND POWERPOINT ON THE BOARD
+   The file is painted as a page or a slide you can type into; what was typed
+   goes back into the same .docx / .pptx. The paper stays white in a dark theme
+   because that is what the document will look like anywhere else.
+   ========================================================================== */
+.notelens-office-frame .notelens-embed-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  background: #23272f;
+  container-type: inline-size;
+}
+
+.notelens-office-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+
+.notelens-office-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  color: #ffffff;
+}
+.notelens-office-badge.is-docx { background: #2b6cb6; }
+.notelens-office-badge.is-pptx { background: #c8532b; }
+.notelens-office-badge .svg-icon { width: 13px; height: 13px; }
+
+.notelens-office-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin: 0 auto 0 10px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(226, 232, 240, 0.75);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.notelens-office-dot-state { width: 7px; height: 7px; border-radius: 50%; background: #6b7280; }
+.notelens-office-status[data-state="saved"] .notelens-office-dot-state { background: #34d399; }
+.notelens-office-status[data-state="editing"] .notelens-office-dot-state { background: #fbbf24; }
+.notelens-office-status[data-state="error"] .notelens-office-dot-state { background: #f87171; }
+
+.notelens-office-frame.is-folded .notelens-office-ribbon,
+.notelens-office-frame.is-folded .notelens-office-body,
+.notelens-office-frame.is-folded .notelens-embed-resize { display: none; }
+.notelens-office-frame.is-expanded {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1100;
+  border-radius: 0;
+  transform: none;
+}
+.notelens-office-frame.is-expanded .notelens-embed-resize { display: none; }
+.notelens-office-frame.is-presenting .notelens-embed-header,
+.notelens-office-frame.is-presenting .notelens-office-ribbon,
+.notelens-office-frame.is-presenting .notelens-filmstrip { display: none; }
+.notelens-office-frame.is-presenting .notelens-embed-body { background: #000000; }
+.notelens-office-frame.is-presenting .notelens-office-page { padding: 0; cursor: pointer; }
+.notelens-office-frame.is-presenting .notelens-slide { box-shadow: none; }
+.notelens-office-frame.is-presenting .notelens-slide-para { pointer-events: none; user-select: none; }
+.notelens-present-exit {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  cursor: pointer;
+  opacity: 0.35;
+}
+.notelens-present-exit:hover { opacity: 1; }
+.notelens-office-btn.is-armed { background: rgba(239, 68, 68, 0.35); color: #ffffff; }
+.notelens-office-pages { margin-left: 6px; color: rgba(226, 232, 240, 0.6); font-size: 11px; white-space: nowrap; }
+
+/* ---- the ribbon ---- */
+.notelens-office-ribbon {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 2px;
+  padding: 5px 8px;
+  background: #1c1f26;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notelens-office-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 7px;
+  margin-right: 5px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+.notelens-office-group:last-child { border-right: 0; margin-right: 0; }
+
+.notelens-office-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #d1d5db;
+  box-shadow: none;
+  cursor: pointer;
+}
+.notelens-office-btn .svg-icon { width: 16px; height: 16px; }
+.notelens-office-btn:hover { background: rgba(255, 255, 255, 0.09); }
+.notelens-office-btn.is-on { background: rgba(58, 150, 221, 0.28); color: #ffffff; }
+.notelens-office-btn:disabled { opacity: 0.35; cursor: default; }
+
+.notelens-office-select {
+  height: 30px;
+  max-width: 168px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e5e7eb;
+  font-size: 12px;
+  box-shadow: none;
+}
+.notelens-office-size {
+  min-width: 34px;
+  color: #e5e7eb;
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.notelens-office-swatch {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 3px;
+  height: 3px;
+  border-radius: 2px;
+  background: transparent;
+}
+.notelens-office-palette {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: repeat(6, 22px);
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: #1c1f26;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+}
+.notelens-office-palette.hidden { display: none; }
+.notelens-office-dot {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* ---- Word: a sheet of paper on the desk ---- */
+.notelens-office-sheet {
+  position: relative;
+  margin: 0 auto;
+}
+.notelens-office-deck {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  width: var(--deck-w);
+  transform-origin: 0 0;
+}
+.notelens-office-paper {
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--page-w);
+  height: var(--page-h);
+  background: #ffffff;
+  color: #000000;
+  font-family: Calibri, "Segoe UI", system-ui, sans-serif;
+  font-size: 11pt;
+  line-height: 1.15;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 26px rgba(0, 0, 0, 0.35);
+  overflow-wrap: anywhere;
+}
+.notelens-office-paper.is-tall { height: auto; min-height: var(--page-h); }
+.notelens-office-paper::after {
+  content: attr(data-page);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  color: #8b929c;
+  font: 9pt system-ui, sans-serif;
+  text-align: center;
+}
+.notelens-office-pagebody { position: relative; z-index: 1; height: var(--body-h); overflow: hidden; }
+.notelens-office-paper.is-tall .notelens-office-pagebody { height: auto; overflow: visible; }
+/* A plain block: margins between paragraphs collapse as they do in Word, and the page body (a scroll container) still contains them. */
+.notelens-office-block { display: block; margin: 0; }
+.notelens-office-breakline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 18px;
+  color: #9aa1ab;
+  font: 8pt system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.notelens-office-breakline::before,
+.notelens-office-breakline::after { content: ""; flex: 1; border-top: 1px dashed #c4c9d1; }
+
+.notelens-office-para {
+  min-height: 1.15em;
+  margin: 0;
+  white-space: pre-wrap;
+  tab-size: 4;
+  outline: none;
+  color: inherit;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.notelens-office-para:focus { background: rgba(15, 108, 189, 0.06); }
+.notelens-office-para.is-locked { cursor: default; }
+.notelens-office-para[data-marker]::before { content: attr(data-marker) "  "; }
+.notelens-office-para.is-h1 { font-size: 20pt; font-weight: 700; }
+.notelens-office-para.is-h2 { font-size: 16pt; font-weight: 700; }
+.notelens-office-para.is-h3 { font-size: 14pt; font-weight: 700; }
+.notelens-office-para.is-h4,
+.notelens-office-para.is-h5,
+.notelens-office-para.is-h6 { font-size: 12pt; font-weight: 700; }
+.is-left { text-align: left; }
+.is-center { text-align: center; }
+.is-right { text-align: right; }
+.is-justify { text-align: justify; }
+.notelens-office-image { display: block; max-width: 100%; height: auto; margin: 4px 0; }
+
+.notelens-office-table {
+  margin: 0 0 6px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  max-width: 100%;
+}
+.notelens-office-table td {
+  padding: 1px 7px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.notelens-office-table.has-borders td { border: 1px solid #000000; }
+
+/* ---- PowerPoint: the slide at the width it is shown at ---- */
+.is-pptx .notelens-office-page { display: flex; padding: 18px; }
+.notelens-slide {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: auto;
+  container-type: inline-size;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.5);
+}
+.notelens-slide.is-readonly { box-shadow: none; pointer-events: none; }
+.notelens-slide-shape {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.notelens-slide-shape.is-ellipse { border-radius: 50%; }
+.notelens-slide-shape.is-rounded { border-radius: 6%; }
+.notelens-slide-picture { position: absolute; overflow: hidden; }
+.notelens-slide-picture > img { position: absolute; max-width: none; }
+.notelens-slide-picture > img.notelens-slide-picture-fill { position: static; display: block; width: 100%; height: 100%; object-fit: fill; }
+.notelens-slide-para {
+  min-height: 1em;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  outline: none;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.notelens-slide-para.is-bold { font-weight: 700; }
+.notelens-slide-para[data-bullet]::before { content: attr(data-bullet) " "; }
+.notelens-slide-para:focus { background: rgba(58, 150, 221, 0.16); }
+.notelens-slide-table table { width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed; }
+.notelens-slide-table td { padding: 0.4cqw 0.8cqw; border: 1px solid rgba(0, 0, 0, 0.25); vertical-align: top; }
+
+.notelens-filmstrip {
+  flex: 0 0 136px;
+  overflow-y: auto;
+  padding: 10px 10px 14px;
+  background: #1a1d23;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.notelens-thumb {
+  position: relative;
+  margin-bottom: 10px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.notelens-thumb:hover { border-color: rgba(255, 255, 255, 0.25); }
+.notelens-thumb.is-current { border-color: #3a96dd; }
+.notelens-thumb-slide { display: flex; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 3px; background: #ffffff; }
+.notelens-thumb-number {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  z-index: 1;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-size: 10px;
+}
+@container (max-width: 540px) {
+  .notelens-filmstrip { display: none; }
+}
+
+.notelens-thumb-add {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.7);
+  box-shadow: none;
+  cursor: pointer;
+}
+.notelens-thumb-add:hover { border-color: rgba(255, 255, 255, 0.5); color: #ffffff; }
+
+/* ==========================================================================
+   THE OFFICE EDITOR: one component for a frame on a board and for a tab
+   ========================================================================== */
+.notelens-office-app {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.notelens-office-app .notelens-office-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #23272f;
+  container-type: inline-size;
+}
+.notelens-office-frame.is-folded .notelens-office-app { display: none; }
+.notelens-office-frame:has(.notelens-office-app.is-presenting) .notelens-embed-header { display: none; }
+.notelens-office-app.is-presenting .notelens-office-ribbon,
+.notelens-office-app.is-presenting .notelens-office-find,
+.notelens-office-app.is-presenting .notelens-office-statusbar,
+.notelens-office-app.is-presenting .notelens-filmstrip,
+.notelens-office-app.is-presenting .notelens-office-side { display: none; }
+.notelens-office-app.is-presenting .notelens-office-body { background: #000000; }
+.notelens-office-app.is-presenting .notelens-office-page { padding: 0; cursor: pointer; }
+.notelens-office-app.is-presenting .notelens-slide { box-shadow: none; }
+.notelens-office-app.is-presenting .notelens-slide-para,
+.notelens-office-app.is-presenting .notelens-slide-selection { pointer-events: none; user-select: none; }
+.notelens-office-app.is-presenting { position: relative; }
+
+.notelens-office-view-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #23272f;
+  color: #e5e7eb;
+}
+
+.notelens-office-statusbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 12px;
+  background: #1c1f26;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(226, 232, 240, 0.7);
+  font-size: 11px;
+}
+.notelens-office-statusbar .notelens-office-status { margin: 0; }
+.notelens-office-stats { font-variant-numeric: tabular-nums; }
+
+.notelens-office-find {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #1c1f26;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.notelens-office-find.hidden { display: none; }
+.notelens-office-find-input {
+  flex: 1 1 auto;
+  max-width: 320px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f3f4f6;
+  font-size: 13px;
+}
+
+.notelens-office-font { width: 128px; }
+.notelens-office-style { width: 128px; }
+.notelens-office-dot.is-none {
+  background: linear-gradient(135deg, #ffffff 46%, #d64545 46%, #d64545 54%, #ffffff 54%);
+}
+
+.notelens-office-side {
+  flex: 0 0 210px;
+  overflow-y: auto;
+  padding: 12px 8px 16px;
+  background: #1a1d23;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.notelens-office-app.has-no-outline .notelens-office-side { display: none; }
+.notelens-office-side-title {
+  padding: 0 8px 8px;
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.notelens-office-side-empty { padding: 4px 8px; color: rgba(226, 232, 240, 0.4); font-size: 12px; line-height: 1.4; }
+.notelens-office-outline-item {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #d5dae2;
+  font-size: 12.5px;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notelens-office-outline-item:hover { background: rgba(255, 255, 255, 0.07); }
+.notelens-office-outline-item.is-level-0 { font-weight: 700; color: #ffffff; }
+.notelens-office-outline-item.is-level-2 { padding-left: 24px; }
+.notelens-office-outline-item.is-level-3 { padding-left: 34px; color: #aab2bf; }
+.notelens-office-outline-item.is-level-1 { padding-left: 16px; }
+/* On a narrow screen the outline is a drawer over the page, opened from the ribbon, instead of a column that eats the page. */
+.notelens-office-app .notelens-office-body { position: relative; }
+@container (max-width: 900px) {
+  .notelens-office-side.is-outline { display: none; }
+  .notelens-office-app.has-outline-open .notelens-office-side.is-outline {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 8;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* ---- objects on a slide ---- */
+.notelens-slide-shape.is-object:hover,
+.notelens-slide-picture.is-object:hover { outline: 1px dashed rgba(58, 150, 221, 0.75); }
+.is-decor { pointer-events: none; }
+.notelens-slide-selection {
+  position: absolute;
+  z-index: 20;
+  box-sizing: border-box;
+  border: 2px solid #3a96dd;
+  pointer-events: none;
+}
+.notelens-slide-grip {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: #3a96dd;
+  color: #ffffff;
+  transform: translateX(-50%);
+  cursor: move;
+  pointer-events: auto;
+}
+.notelens-slide-grip .svg-icon { width: 13px; height: 13px; }
+.notelens-slide-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #3a96dd;
+  border-radius: 3px;
+  background: #ffffff;
+  pointer-events: auto;
+}
+.notelens-slide-handle.is-nw { left: -7px; top: -7px; cursor: nwse-resize; }
+.notelens-slide-handle.is-n { left: calc(50% - 6px); top: -7px; cursor: ns-resize; }
+.notelens-slide-handle.is-ne { right: -7px; top: -7px; cursor: nesw-resize; }
+.notelens-slide-handle.is-e { right: -7px; top: calc(50% - 6px); cursor: ew-resize; }
+.notelens-slide-handle.is-se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.notelens-slide-handle.is-s { left: calc(50% - 6px); bottom: -7px; cursor: ns-resize; }
+.notelens-slide-handle.is-sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+.notelens-slide-handle.is-w { left: -7px; top: calc(50% - 6px); cursor: ew-resize; }
+
+.notelens-slide-shape[data-geo="triangle"] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.notelens-slide-shape[data-geo="diamond"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.notelens-slide-shape[data-geo="hexagon"] { clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%); }
+.notelens-slide-shape[data-geo="rightArrow"] { clip-path: polygon(0 25%, 60% 25%, 60% 0, 100% 50%, 60% 100%, 60% 75%, 0 75%); }
+.notelens-slide-shape[data-geo="star5"] { clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+
+/* With a pen tool active the board lets ink through documents, but a document being edited keeps the pointer unless it was told to be drawn on. */
+.onenote-workspace[data-pass-ink="true"] .notelens-office-frame:not(.is-inkable) .notelens-embed-body { pointer-events: auto; }
+.notelens-embed-open.is-on { background: rgba(58, 150, 221, 0.35); color: #ffffff; }
+
+.notelens-slide-para.is-italic { font-style: italic; }
+.notelens-slide-para.is-empty[data-hint]:not(:focus)::before { content: attr(data-hint); opacity: 0.32; font-weight: 400; font-style: italic; }
+
+/* ---- lines, freeforms and the rest of what real decks draw ---- */
+.notelens-slide-line { position: absolute; height: 0; transform-origin: 0 50%; pointer-events: none; }
+.notelens-slide-line.has-tail::after,
+.notelens-slide-line.has-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  border-top: 0.45em solid transparent;
+  border-bottom: 0.45em solid transparent;
+}
+.notelens-slide-line.has-tail::after { right: 0; transform: translate(60%, -50%); border-left: 0.9em solid currentColor; }
+.notelens-slide-line.has-head::before { left: 0; transform: translate(-60%, -50%); border-right: 0.9em solid currentColor; }
+.notelens-slide-geom { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.notelens-slide-shape.is-freeform { overflow: visible; }
+.notelens-slide-shape.is-freeform > .notelens-slide-para { position: relative; }
+.notelens-slide-shape.is-nowrap { overflow: visible; }
+.notelens-slide-shape.is-nowrap .notelens-slide-para { white-space: pre; overflow-wrap: normal; }
+.notelens-slide-table td.is-head { font-weight: 700; }
+.notelens-slide-shape[data-geo="parallelogram"] { clip-path: polygon(20% 0, 100% 0, 80% 100%, 0 100%); }
+.notelens-slide-shape[data-geo="trapezoid"] { clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); }
+.notelens-slide-shape[data-geo="chevron"] { clip-path: polygon(0 0, 70% 0, 100% 50%, 70% 100%, 0 100%, 30% 50%); }
+.notelens-slide-shape[data-geo="homePlate"] { clip-path: polygon(0 0, 75% 0, 100% 50%, 75% 100%, 0 100%); }
+.notelens-slide-shape[data-geo="pentagon"] { clip-path: polygon(50% 0, 100% 38%, 82% 100%, 18% 100%, 0 38%); }
+.notelens-slide-shape[data-geo="octagon"] { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+.notelens-slide-shape[data-geo="rtTriangle"] { clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.notelens-slide-shape[data-geo="leftArrow"] { clip-path: polygon(100% 25%, 40% 25%, 40% 0, 0 50%, 40% 100%, 40% 75%, 100% 75%); }
+.notelens-slide-shape[data-geo="upArrow"] { clip-path: polygon(25% 100%, 25% 40%, 0 40%, 50% 0, 100% 40%, 75% 40%, 75% 100%); }
+.notelens-slide-shape[data-geo="downArrow"] { clip-path: polygon(25% 0, 75% 0, 75% 60%, 100% 60%, 50% 100%, 0 60%, 25% 60%); }
+.notelens-slide-shape[data-geo="plus"], .notelens-slide-shape[data-geo="mathPlus"] { clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+.notelens-slide-shape[data-geo="flowChartDecision"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.notelens-slide-shape[data-geo="flowChartTerminator"] { border-radius: 999px; }
+.notelens-slide-shape[data-geo="flowChartConnector"], .notelens-slide-shape[data-geo="donut"] { border-radius: 50%; }
+.notelens-slide-table td.has-own-borders { border: none; }
+
+/* ---- headers, footers, floating pictures and text boxes of a page ---- */
+.notelens-office-header,
+.notelens-office-footer { position: absolute; z-index: 1; overflow: hidden; }
+.notelens-office-header .notelens-office-block,
+.notelens-office-footer .notelens-office-block { display: block; }
+.notelens-office-anchor { position: absolute; z-index: 2; max-width: none; pointer-events: none; user-select: none; }
+.notelens-office-anchor.is-behind { z-index: 0; }
+.notelens-office-textbox { margin: 4px 0; padding: 6px 10px; border: 1px solid #c9cfd8; border-radius: 3px; }
+.notelens-office-textbox .notelens-office-block { display: block; }
+.notelens-slide-chart-svg { display: block; width: 100%; height: 100%; }
+.notelens-slide-chart { padding: 0; }
+.notelens-office-table { max-width: calc(100% - 1px); }
+
+/* On a narrow screen the ribbon is one row you slide along; its colour swatches hang from the editor, not from the ribbon. */
+.notelens-office-app { container-type: inline-size; }
+.notelens-office-app:not(.notelens-office-view-root) { position: relative; }
+@container (max-width: 760px) {
+  .notelens-office-ribbon { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .notelens-office-ribbon::-webkit-scrollbar { display: none; }
+  .notelens-office-group { flex: 0 0 auto; }
+}
+.notelens-office-palette { position: absolute; top: auto; left: auto; }
+.notelens-office-link { color: #0563c1; text-decoration: underline; }
+.notelens-office-app .notelens-office-link { cursor: text; }
+
+/* ==========================================================================
+   CODE BLOCKS, v2: a window with a title bar, a modern palette, and a line
+   that lights up under the pointer.
+   ========================================================================== */
+.notelens-code-block {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #101b33 0%, #0a1020 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 14px 32px rgba(3, 8, 20, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.notelens-code-header {
+  height: 34px;
+  gap: 10px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+}
+/* Three little lights, like the corner of a window. */
+.notelens-code-header::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 11px;
+  height: 11px;
+  margin-right: 40px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 18px 0 0 #febc2e, 36px 0 0 #28c840;
+}
+.notelens-code-lang {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(122, 162, 247, 0.16);
+  color: #a9c1fb;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+}
+.notelens-code-guess { border-color: rgba(148, 163, 184, 0.22); color: #8b9bb4; }
+.notelens-code-copy { border-radius: 6px; }
+.notelens-code-body { padding: 10px 0 12px; }
+.notelens-code-line { transition: background 90ms ease; }
+.notelens-code-line:hover { background: rgba(122, 162, 247, 0.07); }
+.notelens-code-num {
+  background: #0c1528;
+  border-right: 1px solid rgba(148, 163, 184, 0.1);
+  color: rgba(139, 155, 180, 0.45);
+}
+.notelens-code-line:hover .notelens-code-num { color: #a9b8d4; }
+.notelens-code-source { font-feature-settings: "calt" 1, "liga" 1; }
+.notelens-code-line.is-marked { background: rgba(251, 191, 36, 0.11); box-shadow: inset 3px 0 0 #fbbf24; }
+
+/* A palette in the family of the well-loved editor themes. */
+.notelens-code-block .token.comment,
+.notelens-code-block .token.prolog,
+.notelens-code-block .token.doctype,
+.notelens-code-block .token.cdata { color: #5f6e93; font-style: italic; }
+.notelens-code-block .token.punctuation { color: #a9b1d6; }
+.notelens-code-block .token.property,
+.notelens-code-block .token.boolean,
+.notelens-code-block .token.constant,
+.notelens-code-block .token.symbol { color: #73daca; }
+.notelens-code-block .token.number { color: #ff9e64; }
+.notelens-code-block .token.tag,
+.notelens-code-block .token.deleted,
+.notelens-code-block .token.variable { color: #f7768e; }
+.notelens-code-block .token.selector,
+.notelens-code-block .token.char,
+.notelens-code-block .token.string,
+.notelens-code-block .token.inserted { color: #9ece6a; }
+.notelens-code-block .token.attr-name,
+.notelens-code-block .token.class-name { color: #e0af68; }
+.notelens-code-block .token.builtin { color: #2ac3de; }
+.notelens-code-block .token.operator,
+.notelens-code-block .token.entity,
+.notelens-code-block .token.url { color: #89ddff; }
+.notelens-code-block .token.atrule,
+.notelens-code-block .token.attr-value,
+.notelens-code-block .token.keyword { color: #bb9af7; }
+.notelens-code-block .token.function { color: #7aa2f7; }
+.notelens-code-block .token.regex,
+.notelens-code-block .token.important { color: #b4f9f8; }
+.notelens-code-editor.notelens-code-editor {
+  border-radius: 12px;
+  border-color: rgba(122, 162, 247, 0.7);
+  background: linear-gradient(180deg, #101b33 0%, #0a1020 100%);
+}
+
+/* ==========================================================================
+   TABLES, v2: a header with a rule under it, a cell that answers the pointer,
+   and softer lines between rows.
+   ========================================================================== */
+.notelens-table { border-radius: 14px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 16px 36px rgba(0, 0, 0, 0.32); }
+.notelens-table-header {
+  border-radius: 13px 13px 0 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--table-accent) 22%, var(--table-surface)), var(--table-surface) 75%);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--table-accent) 30%, transparent);
+}
+.notelens-table-grid { border-radius: 0 0 13px 13px; }
+.notelens-table-cell { transition: background 110ms ease; }
+.notelens-table-cell:hover:not(:focus) { background: color-mix(in srgb, var(--table-accent) 8%, var(--table-cell)); }
+.notelens-table-cell.is-header {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--table-accent) 30%, var(--table-cell)), color-mix(in srgb, var(--table-accent) 18%, var(--table-cell)));
+  box-shadow: inset 0 -2px 0 var(--table-accent);
+}
+.notelens-table-cell.is-header:hover:not(:focus) { background: linear-gradient(180deg, color-mix(in srgb, var(--table-accent) 36%, var(--table-cell)), color-mix(in srgb, var(--table-accent) 22%, var(--table-cell))); }
+.notelens-table-cell.is-number { color: color-mix(in srgb, var(--table-text) 88%, var(--table-accent)); }
+.notelens-table-cell:focus { box-shadow: inset 0 0 0 2px var(--table-accent), inset 0 0 14px color-mix(in srgb, var(--table-accent) 25%, transparent); }
+
+/* A slide that has a transition wears a small star in the strip; a presenting page keeps the outgoing slide on top while it plays. */
+.notelens-thumb.has-transition::after { content: "✦"; position: absolute; right: 5px; bottom: 3px; z-index: 1; color: #fbbf24; font-size: 11px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); }
+.notelens-office-app.is-presenting .notelens-office-page { position: relative; overflow: hidden; }
+.notelens-slide.is-transitioning { position: relative; z-index: 6; }
+
+/* On a light board the ruler is drawn in dark ink over a milky glass: pale ink on white was invisible. */
+.onenote-workspace[data-bg-tone="light"] .notelens-smart-ruler {
+  --nl-ruler-ink: rgba(14, 38, 66, 0.94);
+  --nl-ruler-edge: rgba(23, 88, 156, 0.92);
+  background: linear-gradient(180deg, rgba(238, 247, 255, 0.86), rgba(204, 227, 248, 0.74) 45%, rgba(238, 247, 255, 0.86));
+  box-shadow: 0 6px 18px rgba(14, 38, 66, 0.24), inset 0 0 0 1px rgba(23, 88, 156, 0.28);
+}
+.onenote-workspace[data-bg-tone="light"] .notelens-smart-ruler.is-protractor {
+  background: radial-gradient(120% 100% at 50% 100%, rgba(238, 247, 255, 0.88), rgba(204, 227, 248, 0.7) 62%, rgba(238, 247, 255, 0.84));
+}
+.onenote-workspace[data-bg-tone="light"] .notelens-tick.is-minor { stroke: rgba(14, 38, 66, 0.5); }
+.onenote-workspace[data-bg-tone="light"] .notelens-tick.is-medium { stroke: rgba(14, 38, 66, 0.72); }
+.onenote-workspace[data-bg-tone="light"] .notelens-tick.is-pivot,
+.onenote-workspace[data-bg-tone="light"] .notelens-ruler-pivot { stroke: rgba(14, 38, 66, 0.7); }
+.onenote-workspace[data-bg-tone="light"] .notelens-tick-number { font-weight: 600; }
+
+/* ==========================================================================
+   SIDE TOOLS, v2: translator, recorder, navigator and the media frames share
+   one look -- glass panels with a lit edge, pill controls, one accent.
+   ========================================================================== */
+.notelens-translator,
+.notelens-recorder,
+.notelens-navigator {
+  gap: 10px;
+  padding: 12px 14px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(34, 39, 52, 0.985), rgba(22, 26, 36, 0.99));
+  box-shadow: 0 22px 48px rgba(2, 6, 16, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.notelens-translator-header .notelens-calculator-icon,
+.notelens-recorder-header .notelens-calculator-icon,
+.notelens-navigator-header .notelens-calculator-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(99, 102, 241, 0.26));
+  color: #bae6fd;
+}
+.notelens-translator-header .notelens-calculator-title,
+.notelens-recorder-header .notelens-calculator-title,
+.notelens-navigator-header .notelens-calculator-title { font-size: 13px; }
+
+/* -- translator -- */
+.notelens-translator-select {
+  height: 32px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  padding: 0 12px;
+  box-shadow: none;
+}
+.notelens-translator-languages > button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 50%;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform 160ms ease, background 120ms ease;
+}
+.notelens-translator-languages > button:hover { background: rgba(56, 189, 248, 0.24); transform: rotate(180deg); }
+.notelens-translator-text {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  background: rgba(6, 9, 16, 0.55);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.notelens-translator-text:focus { border-color: rgba(56, 189, 248, 0.75); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16); outline: none; }
+.notelens-translator-result {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.1), rgba(99, 102, 241, 0.1));
+}
+.notelens-translator-capture { border-radius: 999px; }
+.notelens-translator-actions button { height: 32px; border-radius: 999px; }
+.notelens-translator-actions button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.notelens-translator-actions button.mod-cta {
+  border-color: transparent;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  font-weight: 650;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+.notelens-translator-actions button.mod-cta:hover:not(:disabled) { filter: brightness(1.1); background: linear-gradient(135deg, #2563eb, #0ea5e9); }
+
+/* -- recorder: a clock with a light, a meter that glows, a button you cannot miss -- */
+.notelens-recorder-status { min-height: 0; color: #a5b1c5; font-size: 12px; }
+.notelens-recorder-clock {
+  position: relative;
+  padding: 6px 0 2px;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 22px rgba(148, 197, 255, 0.35);
+}
+.notelens-recorder[data-state="recording"] .notelens-recorder-clock { text-shadow: 0 0 22px rgba(248, 113, 113, 0.55); }
+.notelens-recorder[data-state="recording"] .notelens-recorder-clock::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 12px #ef4444;
+  animation: notelens-pulse 1s ease-in-out infinite;
+}
+.notelens-recorder[data-state="recording"] {
+  border-color: rgba(248, 113, 113, 0.55);
+  box-shadow: 0 22px 48px rgba(2, 6, 16, 0.55), 0 0 34px rgba(239, 68, 68, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.notelens-recorder-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.notelens-recorder-meter-fill { border-radius: 999px; box-shadow: 0 0 12px rgba(250, 204, 21, 0.4); }
+.notelens-recorder-actions button { height: 38px; border-radius: 999px; font-weight: 600; }
+.notelens-recorder-record.notelens-recorder-record {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ef4444, #be123c);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.38);
+}
+.notelens-recorder-record.notelens-recorder-record:hover:not(:disabled) { filter: brightness(1.1); }
+.notelens-recorder-record .svg-icon { color: #ffffff; }
+.notelens-recorder-stop.notelens-recorder-stop {
+  border-color: transparent;
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.32);
+}
+.notelens-recorder-dictation { padding: 6px 12px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 999px; align-self: flex-start; }
+.notelens-recorder-dictation:hover { background: rgba(255, 255, 255, 0.07); }
+
+/* -- navigator -- */
+.notelens-navigator-item { border-radius: 10px; }
+.notelens-navigator-item.is-current { background: linear-gradient(90deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.12)); box-shadow: inset 2px 0 0 #38bdf8; }
+.notelens-navigator-new { border-radius: 999px; background: rgba(56, 189, 248, 0.14); }
+.notelens-navigator-search { border-radius: 999px; }
+
+/* -- media frames: video, audio, web video, PDF -- */
+.notelens-embed {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: #0d111c;
+  box-shadow: 0 20px 44px rgba(2, 6, 16, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.notelens-embed-header {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: linear-gradient(180deg, rgba(38, 44, 60, 0.96), rgba(24, 28, 40, 0.96));
+}
+.notelens-embed-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: rgba(56, 189, 248, 0.16); color: #7dd3fc; }
+.notelens-embed-icon .svg-icon { width: 13px; height: 13px; }
+.notelens-embed-title { font-size: 12.5px; color: #e2e8f0; }
+.notelens-embed-open:hover { background: rgba(56, 189, 248, 0.2); color: #bae6fd; }
+.notelens-embed-body { background: #080b12; }
+.notelens-audio-player { width: calc(100% - 36px); margin: 18px; border-radius: 999px; accent-color: #38bdf8; }
+.notelens-embed-missing {
+  flex-direction: column;
+  gap: 8px;
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 70%);
+  color: #8b9bb4;
+}
+.notelens-embed-missing::before {
+  content: "";
+  width: 30px;
+  height: 30px;
+  border: 2px dashed rgba(148, 163, 184, 0.45);
+  border-radius: 9px;
+}
