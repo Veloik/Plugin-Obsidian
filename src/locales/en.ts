@@ -5,6 +5,8 @@
  * to Spanish rather than breaking, so this file can grow without risk.
  */
 export const en: Record<string, string> = {
+	"Notas del orador": "Speaker notes",
+	"Escribe lo que dirás en esta diapositiva…": "Write what you will say over this slide…",
 "El paquete supera el límite de 64 MB comprimidos.": "The package exceeds the 64 MB compressed size limit.",
 "El paquete contiene demasiados archivos o supera el límite de memoria al descomprimir.": "The package contains too many files or exceeds the expanded memory limit.",
 

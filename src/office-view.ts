@@ -1,7 +1,8 @@
-import { App, FileView, Modal, Notice, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
+import { App, FileView, Modal, Notice, Platform, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
 import { tr } from "./i18n";
 import { ImagePickModal } from "./embeds";
 import { OfficeEditor, mountOfficeEditor } from "./office-editor";
+import { keepAboveKeyboard } from "./mobile-editor";
 import { newOfficeFile } from "./office";
 import type { OfficeKind } from "./office";
 import { TemplateChoice, deckThemes, docTemplates } from "./office-templates";
@@ -42,6 +43,7 @@ export class OfficeFileView extends FileView {
 		this.contentEl.empty();
 		this.contentEl.addClass("notelens-office-view");
 		const root = this.contentEl.createDiv({ cls: "notelens-office-view-root" });
+		if (Platform.isMobile) this.cleanups.push(keepAboveKeyboard(root));
 		const app = this.app as App & { openWithDefaultApp?: (path: string) => Promise<void> };
 		this.editor = await mountOfficeEditor(root, {
 			app: this.app,

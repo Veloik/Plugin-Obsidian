@@ -128,3 +128,52 @@ export function trackMobileEditor(editor: HTMLElement, move: (lift: number) => v
 		restoreBoard();
 	};
 }
+
+/**
+ * On a tablet the keyboard shrinks the window and Obsidian can leave this tab a
+ * strip with nothing painted in it: the screen goes black. While something in
+ * the board or document is being typed into, it lives in a box the size of
+ * what is visible above the keyboard, and goes back to its tab afterwards.
+ */
+export function keepAboveKeyboard(root: HTMLElement): () => void {
+	const isField = (el: Element | null): el is HTMLElement =>
+		!!el && root.contains(el) && el.matches("input:not([type=range],[type=checkbox],[type=radio],[type=color],[type=button],[type=file],[type=submit]), textarea, [contenteditable='true']");
+	let restore: (() => void) | null = null;
+	let timer = 0;
+	const lift = (field: HTMLElement) => {
+		if (restore) return;
+		const sel = root.ownerDocument.getSelection();
+		const saved = sel && sel.anchorNode && field.contains(sel.anchorNode)
+			? { a: sel.anchorNode, ao: sel.anchorOffset, f: sel.focusNode, fo: sel.focusOffset } : null;
+		const input = field as HTMLInputElement;
+		const caret = "selectionStart" in field ? [input.selectionStart, input.selectionEnd] as const : null;
+		restore = mountMobileBoard(root);
+		// Moving the box takes the focus with it; hand it back so the keyboard stays.
+		field.focus({ preventScroll: true });
+		if (caret && caret[0] !== null && caret[1] !== null) input.setSelectionRange(caret[0], caret[1]);
+		else if (saved?.a && saved.a.isConnected) sel?.setBaseAndExtent(saved.a, saved.ao, saved.f ?? saved.a, saved.f ? saved.fo : saved.ao);
+	};
+	const drop = () => {
+		if (!restore) return;
+		if (isField(root.ownerDocument.activeElement)) return;
+		restore();
+		restore = null;
+	};
+	const onIn = (e: FocusEvent) => {
+		window.clearTimeout(timer);
+		if (isField(e.target as Element)) lift(e.target as HTMLElement);
+	};
+	const onOut = () => {
+		window.clearTimeout(timer);
+		timer = window.setTimeout(drop, 350);
+	};
+	root.addEventListener("focusin", onIn);
+	root.addEventListener("focusout", onOut);
+	return () => {
+		window.clearTimeout(timer);
+		root.removeEventListener("focusin", onIn);
+		root.removeEventListener("focusout", onOut);
+		restore?.();
+		restore = null;
+	};
+}

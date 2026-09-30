@@ -7176,6 +7176,7 @@ span.notelens-assistant-name {
 .notelens-office-app.is-presenting .notelens-office-ribbon,
 .notelens-office-app.is-presenting .notelens-office-find,
 .notelens-office-app.is-presenting .notelens-office-statusbar,
+.notelens-office-app.is-presenting .notelens-office-notes,
 .notelens-office-app.is-presenting .notelens-filmstrip,
 .notelens-office-app.is-presenting .notelens-office-side { display: none; }
 .notelens-office-app.is-presenting .notelens-office-body { background: #000000; }
@@ -7701,3 +7702,51 @@ span.notelens-assistant-name {
   border: 2px dashed rgba(148, 163, 184, 0.45);
   border-radius: 9px;
 }
+
+/* Speaker notes under the slide: a folded bar until the speaker opens it. */
+.notelens-office-notes {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  background: #1c1f26;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.notelens-office-notes-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(226, 232, 240, 0.8);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.notelens-office-notes-toggle:hover { background: rgba(255, 255, 255, 0.05); }
+.notelens-office-notes-chevron { display: inline-flex; }
+.notelens-office-notes-chevron svg { width: 14px; height: 14px; }
+.notelens-office-notes-count { margin-left: auto; font-weight: 400; opacity: 0.7; font-variant-numeric: tabular-nums; }
+.notelens-office-notes-text {
+  display: none;
+  box-sizing: border-box;
+  width: 100%;
+  height: 22cqh;
+  min-height: 84px;
+  max-height: 200px;
+  padding: 8px 14px;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0;
+  background: #14161b;
+  box-shadow: none;
+  color: #e5e7eb;
+  font: 13px/1.5 var(--font-text, system-ui, sans-serif);
+  resize: none;
+}
+.notelens-office-notes-text:focus { outline: none; box-shadow: inset 0 2px 0 var(--interactive-accent, #6d8cff); }
+.notelens-office-notes.is-open .notelens-office-notes-text { display: block; }

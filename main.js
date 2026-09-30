@@ -1846,6 +1846,8 @@ var import_obsidian = require("obsidian");
 
 // src/locales/en.ts
 var en = {
+  "Notas del orador": "Speaker notes",
+  "Escribe lo que dir\xE1s en esta diapositiva\u2026": "Write what you will say over this slide\u2026",
   "El paquete supera el l\xEDmite de 64 MB comprimidos.": "The package exceeds the 64 MB compressed size limit.",
   "El paquete contiene demasiados archivos o supera el l\xEDmite de memoria al descomprimir.": "The package contains too many files or exceeds the expanded memory limit.",
   "\xBFNo se reproduce dentro de Obsidian?": "Not playing inside Obsidian?",
@@ -33013,6 +33015,12 @@ function deleteSlide(session, index) {
   for (const override2 of Array.from(types.getElementsByTagName("Override"))) {
     if (override2.getAttribute("PartName") === `/${path}`) override2.remove();
   }
+  const notes = notesPartOf(session, index);
+  if (notes) {
+    for (const override2 of Array.from(types.getElementsByTagName("Override"))) if (override2.getAttribute("PartName") === `/${notes}`) override2.remove();
+    session.removePart(notes);
+    session.removePart(relsPathOf(notes));
+  }
   session.removePart(path);
   session.removePart(`ppt/slides/_rels/${path.split("/").pop()}.rels`);
   session.touch(relsPath);
@@ -33535,7 +33543,9 @@ function duplicateSlide(session, index) {
   const relsDoc = session.xml(relsPath);
   const xml = `${XML_HEAD2}${serializer.serializeToString(doc.documentElement)}`;
   const rels = relsDoc ? `${XML_HEAD2}${serializer.serializeToString(relsDoc.documentElement)}` : null;
-  return registerSlide(session, index, xml, rels);
+  const made = registerSlide(session, index, xml, rels);
+  if (made >= 0) copyNotes(session, index, made);
+  return made;
 }
 function moveSlide(session, from, to) {
   const presentation = session.xml("ppt/presentation.xml");
@@ -33617,6 +33627,137 @@ function setTransition(session, index, transition, all = false) {
     session.touch(part);
   }
 }
+var CT_NOTES = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml";
+var CT_NOTES_MASTER = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml";
+var CT_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
+function relsPathOf(part) {
+  return `${part.split("/").slice(0, -1).join("/")}/_rels/${part.split("/").pop()}.rels`;
+}
+function notesPartOf(session, index) {
+  const part = session.slides[index];
+  const target = part ? session.rels(part).find((r) => r.type.endsWith("/notesSlide"))?.target : null;
+  return target && session.xml(target) ? target : null;
+}
+function notesBody(doc) {
+  const sps = deep(doc, P_NS2, "sp");
+  return sps.find((sp) => deep(sp, P_NS2, "ph")[0]?.getAttribute("type") === "body") ?? null;
+}
+function readNotes(session, index) {
+  const part = notesPartOf(session, index);
+  const body = part ? notesBody(session.xml(part)) : null;
+  if (!body) return "";
+  return deep(body, A_NS2, "p").map((p3) => {
+    let line = "";
+    for (const c3 of Array.from(p3.children)) {
+      if (c3.localName === "br") line += "\n";
+      else if (c3.localName === "r" || c3.localName === "fld") line += deep(c3, A_NS2, "t").map((t3) => t3.textContent ?? "").join("");
+    }
+    return line;
+  }).join("\n").replace(/\n+$/, "");
+}
+function addRelationship(session, relsPath, type, target) {
+  let rels = session.xml(relsPath);
+  if (!rels) {
+    session.addPart(relsPath, relationshipsXml([]));
+    rels = session.xml(relsPath);
+  }
+  if (!rels) return null;
+  const used = new Set(Array.from(rels.getElementsByTagName("Relationship")).map((r) => r.getAttribute("Id")));
+  let k3 = 1;
+  while (used.has(`rId${k3}`)) k3++;
+  const rel = rels.createElementNS(rels.documentElement.namespaceURI, "Relationship");
+  rel.setAttribute("Id", `rId${k3}`);
+  rel.setAttribute("Type", `${R_NS2}/${type}`);
+  rel.setAttribute("Target", target);
+  rels.documentElement.appendChild(rel);
+  session.touch(relsPath);
+  return `rId${k3}`;
+}
+function addOverride(session, part, contentType) {
+  const types = session.xml("[Content_Types].xml");
+  if (!types) return;
+  const el = types.createElementNS(types.documentElement.namespaceURI, "Override");
+  el.setAttribute("PartName", `/${part}`);
+  el.setAttribute("ContentType", contentType);
+  types.documentElement.appendChild(el);
+  session.touch("[Content_Types].xml");
+}
+var NOTES_GROUP = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>';
+var NOTES_IMAGE_SP = '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Imagen de diapositiva"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>';
+function ensureNotesMaster(session) {
+  const presentationPath = "ppt/presentation.xml";
+  const existing = session.rels(presentationPath).find((r) => r.type.endsWith("/notesMaster"))?.target;
+  if (existing && session.xml(existing)) return existing;
+  const presentation = session.xml(presentationPath);
+  if (!presentation) return null;
+  let n = 1;
+  while (session.files[`ppt/notesMasters/notesMaster${n}.xml`]) n++;
+  const path = `ppt/notesMasters/notesMaster${n}.xml`;
+  let t3 = 1;
+  while (session.files[`ppt/theme/theme${t3}.xml`]) t3++;
+  const themePath = `ppt/theme/theme${t3}.xml`;
+  const firstTheme = Object.keys(session.files).find((f3) => /^ppt\/theme\/theme\d+\.xml$/.test(f3));
+  const themeDoc = firstTheme ? session.xml(firstTheme) : null;
+  if (!themeDoc) return null;
+  session.addPart(themePath, serializer.serializeToString(themeDoc.documentElement));
+  addOverride(session, themePath, CT_THEME);
+  const body = '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notas"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" sz="quarter" idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="685800" y="4400550"/><a:ext cx="5486400" cy="3600450"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="es-ES"/></a:p></p:txBody></p:sp>';
+  const image = NOTES_IMAGE_SP.replace("<p:spPr/>", '<p:spPr><a:xfrm><a:off x="685800" y="1143000"/><a:ext cx="5486400" cy="3086100"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>');
+  session.addPart(path, `${XML_HEAD2}<p:notesMaster ${NS_DECL2}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${NOTES_GROUP}${image}${body}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:notesMaster>`);
+  session.addPart(relsPathOf(path), relationshipsXml([["rId1", "theme", `../theme/theme${t3}.xml`]]));
+  addOverride(session, path, CT_NOTES_MASTER);
+  const rid = addRelationship(session, "ppt/_rels/presentation.xml.rels", "notesMaster", `notesMasters/notesMaster${n}.xml`);
+  if (!rid) return null;
+  const list = presentation.createElementNS(P_NS2, "p:notesMasterIdLst");
+  const entry = presentation.createElementNS(P_NS2, "p:notesMasterId");
+  entry.setAttributeNS(R_NS2, "r:id", rid);
+  list.appendChild(entry);
+  const root = presentation.documentElement;
+  const anchor = kids(root, P_NS2, "sldMasterIdLst")[0];
+  if (anchor) anchor.after(list);
+  else root.insertBefore(list, root.firstChild);
+  session.touch(presentationPath);
+  return path;
+}
+function createNotes(session, index) {
+  const slide = session.slides[index];
+  const master = slide ? ensureNotesMaster(session) : null;
+  if (!slide || !master) return null;
+  let n = 1;
+  while (session.files[`ppt/notesSlides/notesSlide${n}.xml`]) n++;
+  const path = `ppt/notesSlides/notesSlide${n}.xml`;
+  const body = '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notas"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="es-ES"/></a:p></p:txBody></p:sp>';
+  session.addPart(path, `${XML_HEAD2}<p:notes ${NS_DECL2}><p:cSld><p:spTree>${NOTES_GROUP}${NOTES_IMAGE_SP}${body}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>`);
+  session.addPart(relsPathOf(path), relationshipsXml([["rId1", "notesMaster", `../notesMasters/${master.split("/").pop()}`], ["rId2", "slide", `../slides/${slide.split("/").pop()}`]]));
+  addOverride(session, path, CT_NOTES);
+  addRelationship(session, relsPathOf(slide), "notesSlide", `../notesSlides/notesSlide${n}.xml`);
+  return path;
+}
+function setNotes(session, index, text2, checkpoint = true) {
+  if (text2 === readNotes(session, index)) return;
+  let part = notesPartOf(session, index);
+  if (!part && !text2.trim()) return;
+  if (checkpoint) session.checkpoint();
+  part ?? (part = createNotes(session, index));
+  const doc = part ? session.xml(part) : null;
+  const body = notesBody(doc);
+  const tx = body ? kids(body, P_NS2, "txBody")[0] : null;
+  if (!part || !doc || !tx) return;
+  for (const p3 of kids(tx, A_NS2, "p")) p3.remove();
+  for (const line of text2.replace(/\r/g, "").split("\n")) {
+    tx.appendChild(parseFragment(doc, line ? `<a:p xmlns:a="${A_NS2}"><a:r><a:rPr lang="es-ES"/><a:t>${xmlEscape(line)}</a:t></a:r></a:p>` : `<a:p xmlns:a="${A_NS2}"><a:endParaRPr lang="es-ES"/></a:p>`));
+  }
+  session.touch(part);
+}
+function copyNotes(session, from, to) {
+  const text2 = readNotes(session, from);
+  const copied = session.slides[to];
+  if (!copied) return;
+  const relsDoc = session.xml(relsPathOf(copied));
+  for (const rel of Array.from(relsDoc?.getElementsByTagName("Relationship") ?? [])) if ((rel.getAttribute("Type") ?? "").endsWith("/notesSlide")) rel.remove();
+  if (relsDoc) session.touch(relsPathOf(copied));
+  if (text2) setNotes(session, to, text2, false);
+}
 
 // src/office-editor.ts
 var SAVE_DELAY = 1800;
@@ -33661,6 +33802,11 @@ async function mountOfficeEditor(root, host, file) {
     pill.setAttr("data-state", state);
     pillText.setText(text2);
   };
+  let notesPanel = null;
+  if (kind === "pptx") {
+    notesPanel = root.createDiv({ cls: "notelens-office-notes" });
+    statusbar.before(notesPanel);
+  }
   page.createDiv({ cls: "notelens-epub-loading", text: tr("Abriendo el documento\u2026") });
   const doc0 = root.ownerDocument;
   let session;
@@ -34016,6 +34162,8 @@ async function mountOfficeEditor(root, host, file) {
   };
   let current = 0;
   let showSlide = () => {
+  };
+  let syncNotes = () => {
   };
   let selectNode = () => {
   };
@@ -34570,6 +34718,7 @@ async function mountOfficeEditor(root, host, file) {
     thumbs[current]?.scrollIntoView({ block: "nearest" });
     lastEl = null;
     statsOut.setText(tr("Diapositiva {p0} de {p1}", { p0: current + 1, p1: doc.slides.length }));
+    syncNotes();
     host.slideChanged?.(current);
     if (focus) focusParagraph(doc, focus.node, focus.offset);
     const fresh = page.querySelector(":scope > .notelens-slide");
@@ -34597,6 +34746,42 @@ async function mountOfficeEditor(root, host, file) {
       showSlide(current + 1);
     };
     picker.onchange = () => showSlide(Number(picker?.value));
+  }
+  let notesInput = null;
+  let notesShown = false;
+  if (notesPanel) {
+    const bar = notesPanel.createEl("button", { cls: "notelens-office-notes-toggle" });
+    const chevron = bar.createSpan({ cls: "notelens-office-notes-chevron" });
+    (0, import_obsidian6.setIcon)(chevron, "chevron-up");
+    bar.createSpan({ text: tr("Notas del orador") });
+    const count = bar.createSpan({ cls: "notelens-office-notes-count" });
+    notesInput = notesPanel.createEl("textarea", { cls: "notelens-office-notes-text" });
+    notesInput.placeholder = tr("Escribe lo que dir\xE1s en esta diapositiva\u2026");
+    notesInput.spellcheck = true;
+    const input = notesInput;
+    const refresh2 = () => {
+      const words2 = input.value.trim() ? input.value.trim().split(/\s+/).length : 0;
+      count.setText(words2 ? tr("{p0} palabras", { p0: words2 }) : "");
+    };
+    const show = (on) => {
+      notesShown = on;
+      notesPanel?.toggleClass("is-open", on);
+      (0, import_obsidian6.setIcon)(chevron, on ? "chevron-down" : "chevron-up");
+      if (on) input.focus();
+    };
+    bar.onclick = () => show(!notesShown);
+    input.addEventListener("input", () => {
+      const now = Date.now();
+      setNotes(doc, current, input.value, now - lastNoteEdit > 1e3);
+      lastNoteEdit = now;
+      refresh2();
+    });
+    let lastNoteEdit = 0;
+    syncNotes = () => {
+      input.value = readNotes(doc, current);
+      lastNoteEdit = 0;
+      refresh2();
+    };
   }
   let presenting = false;
   let onPresentKey = null;
@@ -35805,6 +35990,159 @@ var VideoInsertModal = class extends import_obsidian7.Modal {
   }
 };
 
+// src/mobile-editor.ts
+function mountMobileBoard(board, fullscreen = false) {
+  if (board.parentElement?.classList.contains("notelens-mobile-viewport")) return () => {
+  };
+  const doc = board.ownerDocument;
+  const win = doc.defaultView;
+  const rect = board.getBoundingClientRect();
+  const marker = doc.createComment("notelens-board-position");
+  board.before(marker);
+  const host = doc.body.createDiv({
+    cls: `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`
+  });
+  const viewport = win.visualViewport;
+  const layout = () => {
+    const top = fullscreen ? viewport?.offsetTop ?? 0 : Math.max(rect.top, viewport?.offsetTop ?? 0);
+    const bottom = Math.min(win.innerHeight, (viewport?.offsetTop ?? 0) + (viewport?.height ?? win.innerHeight));
+    host.style.top = `${top}px`;
+    host.style.left = fullscreen ? "0px" : `${rect.left}px`;
+    host.style.width = fullscreen ? "100%" : `${Math.min(rect.width, win.innerWidth)}px`;
+    host.style.height = `${Math.max(1, (fullscreen ? bottom : Math.min(rect.bottom, bottom)) - top)}px`;
+  };
+  layout();
+  host.appendChild(board);
+  viewport?.addEventListener("resize", layout);
+  viewport?.addEventListener("scroll", layout);
+  win.addEventListener("resize", layout);
+  let stopped = false;
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    viewport?.removeEventListener("resize", layout);
+    viewport?.removeEventListener("scroll", layout);
+    win.removeEventListener("resize", layout);
+    if (marker.parentNode) marker.replaceWith(board);
+    host.remove();
+  };
+}
+function trackMobileEditor(editor, move, board, reserve = () => 0) {
+  const win = editor.ownerDocument.defaultView;
+  const viewport = win.visualViewport;
+  let stopped = false;
+  let lifted = 0;
+  let frame2 = 0;
+  const initialHeight = win.innerHeight;
+  const restoreBoard = board ? mountMobileBoard(board) : () => {
+  };
+  const chain = [];
+  for (let el = board ?? null; el && el !== editor.ownerDocument.body; el = el.parentElement) {
+    chain.unshift({ el, resting: el.getBoundingClientRect().height, previous: el.style.minHeight });
+  }
+  let holding = false;
+  const releaseHeights = () => {
+    if (!holding) return;
+    holding = false;
+    for (const box of chain) box.el.style.minHeight = box.previous;
+  };
+  const holdHeights = (bottom) => {
+    for (const box of chain) {
+      const rect = box.el.getBoundingClientRect();
+      const room = Math.min(box.resting, bottom - rect.top);
+      if (room > 80 && rect.height < room - 8) {
+        box.el.style.minHeight = `${Math.round(room)}px`;
+        holding = true;
+      }
+    }
+  };
+  const settle = () => {
+    frame2 = 0;
+    if (stopped || !editor.isConnected || !viewport) return;
+    const keyboard = Math.max(initialHeight, win.innerHeight) - viewport.height > 120;
+    const visibleBottom = viewport.offsetTop + viewport.height;
+    if (keyboard) holdHeights(visibleBottom);
+    else releaseHeights();
+    const box = editor.getBoundingClientRect();
+    const room = visibleBottom - 12 - Math.max(0, reserve());
+    const top = box.top + lifted;
+    const bottom = box.bottom + lifted;
+    const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;
+    if (Math.abs(wanted - lifted) < 0.5) return;
+    lifted = wanted;
+    move(lifted);
+  };
+  const schedule = () => {
+    if (!stopped && !frame2) frame2 = win.requestAnimationFrame(settle);
+  };
+  const focusTimer = win.setTimeout(() => {
+    if (!stopped && editor.isConnected && editor.ownerDocument.activeElement !== editor) editor.focus({ preventScroll: true });
+  }, 0);
+  const settleTimer = win.setTimeout(schedule, 250);
+  const observer = board ? new win.ResizeObserver(() => schedule()) : null;
+  if (board) observer?.observe(board);
+  viewport?.addEventListener("resize", schedule);
+  viewport?.addEventListener("scroll", schedule);
+  win.addEventListener("resize", schedule);
+  editor.addEventListener("input", schedule);
+  editor.addEventListener("focus", schedule);
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    win.clearTimeout(focusTimer);
+    win.clearTimeout(settleTimer);
+    win.cancelAnimationFrame(frame2);
+    observer?.disconnect();
+    viewport?.removeEventListener("resize", schedule);
+    viewport?.removeEventListener("scroll", schedule);
+    win.removeEventListener("resize", schedule);
+    editor.removeEventListener("input", schedule);
+    editor.removeEventListener("focus", schedule);
+    releaseHeights();
+    move(0);
+    restoreBoard();
+  };
+}
+function keepAboveKeyboard(root) {
+  const isField = (el) => !!el && root.contains(el) && el.matches("input:not([type=range],[type=checkbox],[type=radio],[type=color],[type=button],[type=file],[type=submit]), textarea, [contenteditable='true']");
+  let restore = null;
+  let timer = 0;
+  const lift = (field) => {
+    if (restore) return;
+    const sel = root.ownerDocument.getSelection();
+    const saved = sel && sel.anchorNode && field.contains(sel.anchorNode) ? { a: sel.anchorNode, ao: sel.anchorOffset, f: sel.focusNode, fo: sel.focusOffset } : null;
+    const input = field;
+    const caret = "selectionStart" in field ? [input.selectionStart, input.selectionEnd] : null;
+    restore = mountMobileBoard(root);
+    field.focus({ preventScroll: true });
+    if (caret && caret[0] !== null && caret[1] !== null) input.setSelectionRange(caret[0], caret[1]);
+    else if (saved?.a && saved.a.isConnected) sel?.setBaseAndExtent(saved.a, saved.ao, saved.f ?? saved.a, saved.f ? saved.fo : saved.ao);
+  };
+  const drop = () => {
+    if (!restore) return;
+    if (isField(root.ownerDocument.activeElement)) return;
+    restore();
+    restore = null;
+  };
+  const onIn = (e) => {
+    window.clearTimeout(timer);
+    if (isField(e.target)) lift(e.target);
+  };
+  const onOut = () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(drop, 350);
+  };
+  root.addEventListener("focusin", onIn);
+  root.addEventListener("focusout", onOut);
+  return () => {
+    window.clearTimeout(timer);
+    root.removeEventListener("focusin", onIn);
+    root.removeEventListener("focusout", onOut);
+    restore?.();
+    restore = null;
+  };
+}
+
 // src/office-view.ts
 var VIEW_TYPE_OFFICE = "notelens-office-view";
 var OfficeFileView = class extends import_obsidian8.FileView {
@@ -35844,6 +36182,7 @@ var OfficeFileView = class extends import_obsidian8.FileView {
     this.contentEl.empty();
     this.contentEl.addClass("notelens-office-view");
     const root = this.contentEl.createDiv({ cls: "notelens-office-view-root" });
+    if (import_obsidian8.Platform.isMobile) this.cleanups.push(keepAboveKeyboard(root));
     const app = this.app;
     this.editor = await mountOfficeEditor(root, {
       app: this.app,
@@ -61250,120 +61589,6 @@ var CanvasRenderer = class {
   }
 };
 
-// src/mobile-editor.ts
-function mountMobileBoard(board, fullscreen = false) {
-  if (board.parentElement?.classList.contains("notelens-mobile-viewport")) return () => {
-  };
-  const doc = board.ownerDocument;
-  const win = doc.defaultView;
-  const rect = board.getBoundingClientRect();
-  const marker = doc.createComment("notelens-board-position");
-  board.before(marker);
-  const host = doc.body.createDiv({
-    cls: `onenote-workspace-host notelens-mobile-viewport${fullscreen ? " is-fullscreen-board" : ""}`
-  });
-  const viewport = win.visualViewport;
-  const layout = () => {
-    const top = fullscreen ? viewport?.offsetTop ?? 0 : Math.max(rect.top, viewport?.offsetTop ?? 0);
-    const bottom = Math.min(win.innerHeight, (viewport?.offsetTop ?? 0) + (viewport?.height ?? win.innerHeight));
-    host.style.top = `${top}px`;
-    host.style.left = fullscreen ? "0px" : `${rect.left}px`;
-    host.style.width = fullscreen ? "100%" : `${Math.min(rect.width, win.innerWidth)}px`;
-    host.style.height = `${Math.max(1, (fullscreen ? bottom : Math.min(rect.bottom, bottom)) - top)}px`;
-  };
-  layout();
-  host.appendChild(board);
-  viewport?.addEventListener("resize", layout);
-  viewport?.addEventListener("scroll", layout);
-  win.addEventListener("resize", layout);
-  let stopped = false;
-  return () => {
-    if (stopped) return;
-    stopped = true;
-    viewport?.removeEventListener("resize", layout);
-    viewport?.removeEventListener("scroll", layout);
-    win.removeEventListener("resize", layout);
-    if (marker.parentNode) marker.replaceWith(board);
-    host.remove();
-  };
-}
-function trackMobileEditor(editor, move, board, reserve = () => 0) {
-  const win = editor.ownerDocument.defaultView;
-  const viewport = win.visualViewport;
-  let stopped = false;
-  let lifted = 0;
-  let frame2 = 0;
-  const initialHeight = win.innerHeight;
-  const restoreBoard = board ? mountMobileBoard(board) : () => {
-  };
-  const chain = [];
-  for (let el = board ?? null; el && el !== editor.ownerDocument.body; el = el.parentElement) {
-    chain.unshift({ el, resting: el.getBoundingClientRect().height, previous: el.style.minHeight });
-  }
-  let holding = false;
-  const releaseHeights = () => {
-    if (!holding) return;
-    holding = false;
-    for (const box of chain) box.el.style.minHeight = box.previous;
-  };
-  const holdHeights = (bottom) => {
-    for (const box of chain) {
-      const rect = box.el.getBoundingClientRect();
-      const room = Math.min(box.resting, bottom - rect.top);
-      if (room > 80 && rect.height < room - 8) {
-        box.el.style.minHeight = `${Math.round(room)}px`;
-        holding = true;
-      }
-    }
-  };
-  const settle = () => {
-    frame2 = 0;
-    if (stopped || !editor.isConnected || !viewport) return;
-    const keyboard = Math.max(initialHeight, win.innerHeight) - viewport.height > 120;
-    const visibleBottom = viewport.offsetTop + viewport.height;
-    if (keyboard) holdHeights(visibleBottom);
-    else releaseHeights();
-    const box = editor.getBoundingClientRect();
-    const room = visibleBottom - 12 - Math.max(0, reserve());
-    const top = box.top + lifted;
-    const bottom = box.bottom + lifted;
-    const wanted = keyboard ? Math.max(0, Math.min(bottom - room, top - viewport.offsetTop - 64)) : 0;
-    if (Math.abs(wanted - lifted) < 0.5) return;
-    lifted = wanted;
-    move(lifted);
-  };
-  const schedule = () => {
-    if (!stopped && !frame2) frame2 = win.requestAnimationFrame(settle);
-  };
-  const focusTimer = win.setTimeout(() => {
-    if (!stopped && editor.isConnected && editor.ownerDocument.activeElement !== editor) editor.focus({ preventScroll: true });
-  }, 0);
-  const settleTimer = win.setTimeout(schedule, 250);
-  const observer = board ? new win.ResizeObserver(() => schedule()) : null;
-  if (board) observer?.observe(board);
-  viewport?.addEventListener("resize", schedule);
-  viewport?.addEventListener("scroll", schedule);
-  win.addEventListener("resize", schedule);
-  editor.addEventListener("input", schedule);
-  editor.addEventListener("focus", schedule);
-  return () => {
-    if (stopped) return;
-    stopped = true;
-    win.clearTimeout(focusTimer);
-    win.clearTimeout(settleTimer);
-    win.cancelAnimationFrame(frame2);
-    observer?.disconnect();
-    viewport?.removeEventListener("resize", schedule);
-    viewport?.removeEventListener("scroll", schedule);
-    win.removeEventListener("resize", schedule);
-    editor.removeEventListener("input", schedule);
-    editor.removeEventListener("focus", schedule);
-    releaseHeights();
-    move(0);
-    restoreBoard();
-  };
-}
-
 // src/rich-editor.ts
 var isTrailingBreak = (child, parent, root) => child.nodeName === "BR" && parent === root && !child.nextSibling;
 function paintEditable(parent, text2) {
@@ -66968,6 +67193,7 @@ var OneNoteCanvasView = class _OneNoteCanvasView extends import_obsidian16.FileV
   // ------------------------------------------------------------------
   setupEvents() {
     this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.onPointerDown(e));
+    if (import_obsidian16.Platform.isMobile) this.register(keepAboveKeyboard(this.workspaceEl));
     this.registerDomEvent(this.workspaceEl, "pointerdown", () => this.hideTextPlacementHint(), { capture: true });
     this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.pinchOverObjects(e), { capture: true });
     const lift = (e) => {
@@ -73046,7 +73272,7 @@ async function probeOne(base) {
   }
   return null;
 }
-var NOTELENS_BUILD = true ? "3.4.0" : "desconocida";
+var NOTELENS_BUILD = true ? "3.4.1" : "desconocida";
 var NoteLensSettingTab = class extends import_obsidian17.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);

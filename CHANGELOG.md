@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.4.1
+
+### Added
+
+- Speaker notes in presentations: write what you will say under each slide; they are stored in the `.pptx` the way PowerPoint keeps them.
+
+### Fixed
+
+- On a tablet, typing in a document (or in any panel of the board) no longer turns the screen black when the keyboard appears. The view now fits the room above the keyboard while you type and goes back afterwards.
+
 ## 3.4.0
 
 ### Added

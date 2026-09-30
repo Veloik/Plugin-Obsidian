@@ -2743,6 +2743,12 @@ export function deleteSlide(session: OfficeSession, index: number): boolean {
 	for (const override of Array.from(types.getElementsByTagName("Override"))) {
 		if (override.getAttribute("PartName") === `/${path}`) override.remove();
 	}
+	const notes = notesPartOf(session, index);
+	if (notes) {
+		for (const override of Array.from(types.getElementsByTagName("Override"))) if (override.getAttribute("PartName") === `/${notes}`) override.remove();
+		session.removePart(notes);
+		session.removePart(relsPathOf(notes));
+	}
 	session.removePart(path);
 	session.removePart(`ppt/slides/_rels/${path.split("/").pop()}.rels`);
 	session.touch(relsPath);
@@ -3298,7 +3304,9 @@ export function duplicateSlide(session: OfficeSession, index: number): number {
 	const relsDoc = session.xml(relsPath);
 	const xml = `${XML_HEAD}${serializer.serializeToString(doc.documentElement)}`;
 	const rels = relsDoc ? `${XML_HEAD}${serializer.serializeToString(relsDoc.documentElement)}` : null;
-	return registerSlide(session, index, xml, rels);
+	const made = registerSlide(session, index, xml, rels);
+	if (made >= 0) copyNotes(session, index, made);
+	return made;
 }
 
 /** Moves a slide to another place in the order. */
@@ -3392,4 +3400,155 @@ export function setTransition(session: OfficeSession, index: number, transition:
 		}
 		session.touch(part);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Speaker notes
+// ---------------------------------------------------------------------------
+
+const CT_NOTES = "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml";
+const CT_NOTES_MASTER = "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml";
+const CT_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
+
+function relsPathOf(part: string): string {
+	return `${part.split("/").slice(0, -1).join("/")}/_rels/${part.split("/").pop()}.rels`;
+}
+
+function notesPartOf(session: OfficeSession, index: number): string | null {
+	const part = session.slides[index];
+	const target = part ? session.rels(part).find(r => r.type.endsWith("/notesSlide"))?.target : null;
+	return target && session.xml(target) ? target : null;
+}
+
+/** The body placeholder of a notes page: where the speaker's text lives. */
+function notesBody(doc: Document | null): Element | null {
+	const sps = deep(doc, P_NS, "sp");
+	return sps.find(sp => deep(sp, P_NS, "ph")[0]?.getAttribute("type") === "body") ?? null;
+}
+
+/** What the speaker will say over a slide, one paragraph per line; empty when the slide has no notes. */
+export function readNotes(session: OfficeSession, index: number): string {
+	const part = notesPartOf(session, index);
+	const body = part ? notesBody(session.xml(part)) : null;
+	if (!body) return "";
+	return deep(body, A_NS, "p").map(p => {
+		let line = "";
+		for (const c of Array.from(p.children)) {
+			if (c.localName === "br") line += "\n";
+			else if (c.localName === "r" || c.localName === "fld") line += deep(c, A_NS, "t").map(t => t.textContent ?? "").join("");
+		}
+		return line;
+	}).join("\n").replace(/\n+$/, "");
+}
+
+function addRelationship(session: OfficeSession, relsPath: string, type: string, target: string): string | null {
+	let rels = session.xml(relsPath);
+	if (!rels) { session.addPart(relsPath, relationshipsXml([])); rels = session.xml(relsPath); }
+	if (!rels) return null;
+	const used = new Set(Array.from(rels.getElementsByTagName("Relationship")).map(r => r.getAttribute("Id")));
+	let k = 1;
+	while (used.has(`rId${k}`)) k++;
+	const rel = rels.createElementNS(rels.documentElement.namespaceURI, "Relationship");
+	rel.setAttribute("Id", `rId${k}`);
+	rel.setAttribute("Type", `${R_NS}/${type}`);
+	rel.setAttribute("Target", target);
+	rels.documentElement.appendChild(rel);
+	session.touch(relsPath);
+	return `rId${k}`;
+}
+
+function addOverride(session: OfficeSession, part: string, contentType: string): void {
+	const types = session.xml("[Content_Types].xml");
+	if (!types) return;
+	const el = types.createElementNS(types.documentElement.namespaceURI, "Override");
+	el.setAttribute("PartName", `/${part}`);
+	el.setAttribute("ContentType", contentType);
+	types.documentElement.appendChild(el);
+	session.touch("[Content_Types].xml");
+}
+
+const NOTES_GROUP = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>';
+const NOTES_IMAGE_SP = '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Imagen de diapositiva"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr><p:spPr/></p:sp>';
+
+/** The deck's notes master, made (with a theme of its own) when the deck has none, as decks built here do not. */
+function ensureNotesMaster(session: OfficeSession): string | null {
+	const presentationPath = "ppt/presentation.xml";
+	const existing = session.rels(presentationPath).find(r => r.type.endsWith("/notesMaster"))?.target;
+	if (existing && session.xml(existing)) return existing;
+	const presentation = session.xml(presentationPath);
+	if (!presentation) return null;
+	let n = 1;
+	while (session.files[`ppt/notesMasters/notesMaster${n}.xml`]) n++;
+	const path = `ppt/notesMasters/notesMaster${n}.xml`;
+	let t = 1;
+	while (session.files[`ppt/theme/theme${t}.xml`]) t++;
+	const themePath = `ppt/theme/theme${t}.xml`;
+	const firstTheme = Object.keys(session.files).find(f => /^ppt\/theme\/theme\d+\.xml$/.test(f));
+	const themeDoc = firstTheme ? session.xml(firstTheme) : null;
+	if (!themeDoc) return null;
+	session.addPart(themePath, serializer.serializeToString(themeDoc.documentElement));
+	addOverride(session, themePath, CT_THEME);
+	const body = '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notas"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" sz="quarter" idx="1"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="685800" y="4400550"/><a:ext cx="5486400" cy="3600450"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="es-ES"/></a:p></p:txBody></p:sp>';
+	const image = NOTES_IMAGE_SP.replace("<p:spPr/>", '<p:spPr><a:xfrm><a:off x="685800" y="1143000"/><a:ext cx="5486400" cy="3086100"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>');
+	session.addPart(path, `${XML_HEAD}<p:notesMaster ${NS_DECL}><p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg><p:spTree>${NOTES_GROUP}${image}${body}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/></p:notesMaster>`);
+	session.addPart(relsPathOf(path), relationshipsXml([["rId1", "theme", `../theme/theme${t}.xml`]]));
+	addOverride(session, path, CT_NOTES_MASTER);
+	const rid = addRelationship(session, "ppt/_rels/presentation.xml.rels", "notesMaster", `notesMasters/notesMaster${n}.xml`);
+	if (!rid) return null;
+	const list = presentation.createElementNS(P_NS, "p:notesMasterIdLst");
+	const entry = presentation.createElementNS(P_NS, "p:notesMasterId");
+	entry.setAttributeNS(R_NS, "r:id", rid);
+	list.appendChild(entry);
+	const root = presentation.documentElement;
+	const anchor = kids(root, P_NS, "sldMasterIdLst")[0];
+	if (anchor) anchor.after(list); else root.insertBefore(list, root.firstChild);
+	session.touch(presentationPath);
+	return path;
+}
+
+function createNotes(session: OfficeSession, index: number): string | null {
+	const slide = session.slides[index];
+	const master = slide ? ensureNotesMaster(session) : null;
+	if (!slide || !master) return null;
+	let n = 1;
+	while (session.files[`ppt/notesSlides/notesSlide${n}.xml`]) n++;
+	const path = `ppt/notesSlides/notesSlide${n}.xml`;
+	const body = '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Notas"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="es-ES"/></a:p></p:txBody></p:sp>';
+	session.addPart(path, `${XML_HEAD}<p:notes ${NS_DECL}><p:cSld><p:spTree>${NOTES_GROUP}${NOTES_IMAGE_SP}${body}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>`);
+	session.addPart(relsPathOf(path), relationshipsXml([["rId1", "notesMaster", `../notesMasters/${master.split("/").pop()}`], ["rId2", "slide", `../slides/${slide.split("/").pop()}`]]));
+	addOverride(session, path, CT_NOTES);
+	addRelationship(session, relsPathOf(slide), "notesSlide", `../notesSlides/notesSlide${n}.xml`);
+	return path;
+}
+
+/** Sets a slide's speaker notes. The notes page is only made when there is something to say. */
+export function setNotes(session: OfficeSession, index: number, text: string, checkpoint = true): void {
+	if (text === readNotes(session, index)) return;
+	let part = notesPartOf(session, index);
+	if (!part && !text.trim()) return;
+	if (checkpoint) session.checkpoint();
+	part ??= createNotes(session, index);
+	const doc = part ? session.xml(part) : null;
+	const body = notesBody(doc);
+	const tx = body ? kids(body, P_NS, "txBody")[0] : null;
+	if (!part || !doc || !tx) return;
+	for (const p of kids(tx, A_NS, "p")) p.remove();
+	for (const line of text.replace(/\r/g, "").split("\n")) {
+		tx.appendChild(parseFragment(doc, line
+			? `<a:p xmlns:a="${A_NS}"><a:r><a:rPr lang="es-ES"/><a:t>${xmlEscape(line)}</a:t></a:r></a:p>`
+			: `<a:p xmlns:a="${A_NS}"><a:endParaRPr lang="es-ES"/></a:p>`));
+	}
+	session.touch(part);
+}
+
+/** Gives a copied slide notes of its own: two slides must never point at the same notes page. */
+function copyNotes(session: OfficeSession, from: number, to: number): void {
+	const text = readNotes(session, from);
+	const copied = session.slides[to];
+	if (!copied) return;
+	// The copy inherited the relationship to the original's notes page; it goes, and a page of its own is made.
+	const relsDoc = session.xml(relsPathOf(copied));
+	for (const rel of Array.from(relsDoc?.getElementsByTagName("Relationship") ?? [])) if ((rel.getAttribute("Type") ?? "").endsWith("/notesSlide")) rel.remove();
+	if (relsDoc) session.touch(relsPathOf(copied));
+	if (text) setNotes(session, to, text, false);
 }

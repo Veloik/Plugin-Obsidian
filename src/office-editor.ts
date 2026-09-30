@@ -2,6 +2,7 @@ import { App, Menu, Notice, TFile, setIcon } from "obsidian";
 import { tr } from "./i18n";
 import { clamp } from "./tools";
 import {
+	readNotes, setNotes,
 	Align, FormatOp, OfficeKind, OfficeSession, TableAction, addPicture, addShape, addSlide, addTextBox, changeIndent, countWords, currentStyle,
 	deleteSlide, documentOutline, duplicateShape, duplicateSlide, findText, focusParagraph, formatSelection, formatState, insertImage,
 	insertPageBreak, insertTable, listKinds, moveSlide, openOffice, paintDocx, paintSlide, paragraphStyles, removeShape, reorderShape,
@@ -67,6 +68,11 @@ export async function mountOfficeEditor(root: HTMLElement, host: OfficeHostApi, 
 	const pillText = pill.createSpan();
 	const statsOut = statusbar.createSpan({ cls: "notelens-office-stats" });
 	const setStatus = (state: Status, text: string) => { pill.setAttr("data-state", state); pillText.setText(text); };
+	let notesPanel: HTMLElement | null = null;
+	if (kind === "pptx") {
+		notesPanel = root.createDiv({ cls: "notelens-office-notes" });
+		statusbar.before(notesPanel);
+	}
 	page.createDiv({ cls: "notelens-epub-loading", text: tr("Abriendo el documento…") });
 	const doc0 = root.ownerDocument;
 
@@ -360,6 +366,7 @@ export async function mountOfficeEditor(root: HTMLElement, host: OfficeHostApi, 
 	let openFind: () => void = () => { /* docx only */ };
 	let current = 0;
 	let showSlide: (index: number, focus?: { node: Element; offset: number }) => void = () => { /* pptx only */ };
+	let syncNotes: () => void = () => { /* pptx only */ };
 	let selectNode: (node: Element) => void = () => { /* pptx only */ };
 
 	if (kind === "docx") {
@@ -768,6 +775,7 @@ export async function mountOfficeEditor(root: HTMLElement, host: OfficeHostApi, 
 		thumbs[current]?.scrollIntoView({ block: "nearest" });
 		lastEl = null;
 		statsOut.setText(tr("Diapositiva {p0} de {p1}", { p0: current + 1, p1: doc.slides.length }));
+		syncNotes();
 		host.slideChanged?.(current);
 		if (focus) focusParagraph(doc, focus.node, focus.offset);
 		const fresh = page.querySelector<HTMLElement>(":scope > .notelens-slide");
@@ -783,6 +791,38 @@ export async function mountOfficeEditor(root: HTMLElement, host: OfficeHostApi, 
 		prevBtn.onclick = (e) => { e.stopPropagation(); showSlide(current - 1); };
 		nextBtn.onclick = (e) => { e.stopPropagation(); showSlide(current + 1); };
 		picker.onchange = () => showSlide(Number(picker?.value));
+	}
+
+	// -- speaker notes --
+	let notesInput: HTMLTextAreaElement | null = null;
+	let notesShown = false;
+	if (notesPanel) {
+		const bar = notesPanel.createEl("button", { cls: "notelens-office-notes-toggle" });
+		const chevron = bar.createSpan({ cls: "notelens-office-notes-chevron" });
+		setIcon(chevron, "chevron-up");
+		bar.createSpan({ text: tr("Notas del orador") });
+		const count = bar.createSpan({ cls: "notelens-office-notes-count" });
+		notesInput = notesPanel.createEl("textarea", { cls: "notelens-office-notes-text" });
+		notesInput.placeholder = tr("Escribe lo que dirás en esta diapositiva…");
+		notesInput.spellcheck = true;
+		const input = notesInput;
+		const refresh = () => { const words = input.value.trim() ? input.value.trim().split(/\s+/).length : 0; count.setText(words ? tr("{p0} palabras", { p0: words }) : ""); };
+		const show = (on: boolean) => {
+			notesShown = on;
+			notesPanel?.toggleClass("is-open", on);
+			setIcon(chevron, on ? "chevron-down" : "chevron-up");
+			if (on) input.focus();
+		};
+		bar.onclick = () => show(!notesShown);
+		input.addEventListener("input", () => {
+			const now = Date.now();
+			// One undo step per burst of typing, as in the slides themselves.
+			setNotes(doc, current, input.value, now - lastNoteEdit > 1000);
+			lastNoteEdit = now;
+			refresh();
+		});
+		let lastNoteEdit = 0;
+		syncNotes = () => { input.value = readNotes(doc, current); lastNoteEdit = 0; refresh(); };
 	}
 
 	// -- presenting --

@@ -12,7 +12,7 @@ import { createA4Pdf, getCanvasContentBounds } from "./pdf-export";
 import { RasterImage, rasterizeMath, rasterizeTextBox } from "./dom-raster";
 import type OneNotePlugin from "./main";
 import { CanvasRenderer, HIGHLIGHTER_NIB } from "./renderer";
-import { trackMobileEditor, mountMobileBoard } from "./mobile-editor";
+import { trackMobileEditor, mountMobileBoard, keepAboveKeyboard } from "./mobile-editor";
 import { CANVAS_FONTS, fontStack } from "./fonts";
 import { LIST_MARK, LIST_PREFIX, ListKind, listKindOf, parseInline, planListToggle, runsFromInline, runsToMarked, runsToPlain } from "./rich-text";
 import { BaseStyle, closeEditable, editableText, paintEditable, readRuns, renderRuns, selectOffsets, selectionOffsets, spliceRuns, styleAcross, styleRange, surroundSelection, unwrapCode } from "./rich-editor";
@@ -1781,6 +1781,8 @@ export class OneNoteCanvasView extends FileView implements ToolbarHost, EmbedHos
 
 	private setupEvents(): void {
 		this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.onPointerDown(e));
+		// Any panel or box with a field in it: the keyboard must not leave the board a black strip.
+		if (Platform.isMobile) this.register(keepAboveKeyboard(this.workspaceEl));
 		this.registerDomEvent(this.workspaceEl, "pointerdown", () => this.hideTextPlacementHint(), { capture: true });
 		this.registerDomEvent(this.workspaceEl, "pointerdown", (e) => this.pinchOverObjects(e), { capture: true });
 		const lift = (e: PointerEvent) => { this.touchesDown.delete(e.pointerId); };
